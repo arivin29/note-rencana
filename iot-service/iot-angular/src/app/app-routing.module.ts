@@ -3,10 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DashboardPage }                   from './pages/dashboard/dashboard';
 import { IotDashboardPage }                from './pages/iot/dashboard/iot-dashboard';
-import { IotNodesPage }                    from './pages/iot/nodes/iot-nodes';
-import { IotNodeDetailPage }               from './pages/iot/node-detail/iot-node-detail';
 import { IotAlertsPage }                   from './pages/iot/alerts/iot-alerts';
-import { IotProjectsPage }                 from './pages/iot/projects/iot-projects';
 import { IotTelemetryPage }                from './pages/iot/telemetry/iot-telemetry';
 
 import { AnalyticsPage }                   from './pages/analytics/analytics';
@@ -84,10 +81,15 @@ const routes: Routes = [
   { path: 'dashboard', component: DashboardPage, data: { title: 'Dashboard'} },
   
   { path: 'iot/dashboard', component: IotDashboardPage, data: { title: 'IoT Dashboard'} },
-  { path: 'iot/nodes', component: IotNodesPage, data: { title: 'IoT Nodes'} },
-  { path: 'iot/nodes/:nodeId', component: IotNodeDetailPage, data: { title: 'IoT Node Detail'} },
+  {
+    path: 'iot/nodes',
+    loadChildren: () => import('./pages/iot/nodes/nodes.module').then((m) => m.NodesModule)
+  },
   { path: 'iot/alerts', component: IotAlertsPage, data: { title: 'IoT Alerts'} },
-  { path: 'iot/projects', component: IotProjectsPage, data: { title: 'IoT Projects'} },
+  {
+    path: 'iot/projects',
+    loadChildren: () => import('./pages/iot/projects/projects.module').then((m) => m.ProjectsModule)
+  },
   { path: 'iot/telemetry', component: IotTelemetryPage, data: { title: 'IoT Telemetry'} },
   
   { path: 'analytics', component: AnalyticsPage, data: { title: 'Analytics'} },

@@ -1,0 +1,266 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
+      <li class="breadcrumb-item active">Edit</li>
+    </ul>
+    <h1 class="page-header mb-0">Edit Node <span class="text-theme">{{ currentNodeId }}</span></h1>
+  </div>
+  <div class="ms-auto">
+    <a [routerLink]="['/iot/nodes', currentNodeId]" class="btn btn-outline-default me-2">
+      <i class="fa fa-eye fa-fw me-1"></i>
+      View Detail
+    </a>
+    <a routerLink="/iot/nodes" class="btn btn-outline-secondary me-2">
+      <i class="fa fa-arrow-left fa-fw me-1"></i>
+      Back to List
+    </a>
+    <button class="btn btn-theme">
+      <i class="fa fa-save fa-fw me-1"></i>
+      Update Node
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-9">
+    <card id="sectionOwnership" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0">Ownership & Project</div>
+        <div class="text-muted small">Perbarui relasi owner/project saat node dipindahkan tenant.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label text-uppercase small text-muted">Owner</label>
+            <select class="form-select" [ngModel]="form.ownerId" (ngModelChange)="onOwnerChange($event)">
+              <option *ngFor="let owner of ownerOptions" [value]="owner.id">{{ owner.name }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-uppercase small text-muted">Project</label>
+            <select class="form-select" [ngModel]="form.projectId" (ngModelChange)="onProjectChange($event)">
+              <option *ngFor="let project of projectOptions" [value]="project.id">{{ project.name }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-uppercase small text-muted">Node Model</label>
+            <select class="form-select" [(ngModel)]="form.nodeModelId" [ngModelOptions]="{standalone: true}">
+              <option *ngFor="let model of nodeModels" [value]="model.id">
+                {{ model.vendor }} – {{ model.model }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <card id="sectionIdentity" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0">Node Identity & Telemetry</div>
+        <div class="text-muted small">Pastikan metadata sesuai hardware terbaru.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Node Code</label>
+            <input class="form-control" [(ngModel)]="form.code" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Serial Number</label>
+            <input class="form-control" [(ngModel)]="form.serialNumber" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Install Date</label>
+            <input type="date" class="form-control" [(ngModel)]="form.installDate" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">DevEUI</label>
+            <input class="form-control" [(ngModel)]="form.devEui" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">IP Address</label>
+            <input class="form-control" [(ngModel)]="form.ipAddress" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Firmware Version</label>
+            <input class="form-control" [(ngModel)]="form.firmwareVersion" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Battery Type</label>
+            <select class="form-select" [(ngModel)]="form.batteryType" [ngModelOptions]="{standalone: true}">
+              <option *ngFor="let type of batteryTypes" [value]="type">{{ type }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Telemetry Mode</label>
+            <select class="form-select" [(ngModel)]="form.telemetryMode" [ngModelOptions]="{standalone: true}">
+              <option *ngFor="let mode of telemetryModes" [value]="mode">{{ mode | titlecase }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Telemetry Interval (sec)</label>
+            <input type="number" class="form-control" min="30" step="30" [(ngModel)]="form.telemetryInterval" [ngModelOptions]="{standalone: true}">
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <card id="sectionLocation" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0">Lokasi & Assignment</div>
+        <div class="text-muted small">Lokasi manual/GPS memastikan histori NodeAssignment valid.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Lokasi Type</label>
+            <select class="form-select" [(ngModel)]="form.locationType" [ngModelOptions]="{standalone: true}">
+              <option value="manual">Manual</option>
+              <option value="gps">GPS</option>
+              <option value="import">Import</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Latitude</label>
+            <input class="form-control" [(ngModel)]="form.latitude" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Longitude</label>
+            <input class="form-control" [(ngModel)]="form.longitude" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Elevation (m)</label>
+            <input type="number" class="form-control" [(ngModel)]="form.elevation" [ngModelOptions]="{standalone: true}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Address / Note</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="form.address" [ngModelOptions]="{standalone: true}"></textarea>
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <card id="sectionSensors" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent d-flex align-items-center">
+        <div>
+          <div class="card-title mb-0">Sensor Stack</div>
+          <div class="text-muted small">Edit channel flow/pressure/energi sesuai kondisi lapangan.</div>
+        </div>
+        <div class="ms-auto">
+          <button class="btn btn-outline-theme btn-sm" (click)="addSensor()">
+            <i class="fa fa-plus fa-fw me-1"></i>
+            Add Sensor
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div *ngIf="!sensors.length" class="text-muted text-center py-4 border rounded-3 border-dashed">
+          Belum ada sensor. Klik "Add Sensor" untuk mulai.
+        </div>
+        <div *ngFor="let sensor of sensors; let sensorIndex = index" class="border rounded-3 p-3 mb-3">
+          <div class="d-flex align-items-center mb-3">
+            <div>
+              <div class="fw-semibold">{{ sensor.label || 'Sensor #' + (sensorIndex + 1) }}</div>
+              <div class="text-muted small">{{ sensor.catalogId || 'No catalog selected' }}</div>
+            </div>
+            <div class="ms-auto">
+              <button class="btn btn-outline-danger btn-sm" (click)="removeSensor(sensorIndex)">
+                <i class="fa fa-trash fa-fw"></i>
+              </button>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Sensor Catalog</label>
+              <select class="form-select" [(ngModel)]="sensor.catalogId" [ngModelOptions]="{standalone: true}">
+                <option *ngFor="let catalog of sensorCatalogs" [value]="catalog.id">{{ catalog.label }}</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Label</label>
+              <input class="form-control" [(ngModel)]="sensor.label" [ngModelOptions]="{standalone: true}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Protocol</label>
+              <select class="form-select" [(ngModel)]="sensor.protocolChannel" [ngModelOptions]="{standalone: true}">
+                <option *ngFor="let protocol of protocolChannels" [value]="protocol">{{ protocol }}</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Install Date</label>
+              <input type="date" class="form-control" [(ngModel)]="sensor.installDate" [ngModelOptions]="{standalone: true}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Calibration Due</label>
+              <input type="date" class="form-control" [(ngModel)]="sensor.calibrationDue" [ngModelOptions]="{standalone: true}">
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="d-flex align-items-center mb-2">
+              <div class="fw-semibold">Channels</div>
+              <div class="ms-auto">
+                <button class="btn btn-outline-default btn-sm" (click)="addChannel(sensor)">
+                  <i class="fa fa-plus fa-fw me-1"></i>
+                  Add Channel
+                </button>
+              </div>
+            </div>
+            <div *ngIf="!sensor.channels.length" class="text-muted small">Belum ada channel.</div>
+            <div *ngFor="let channel of sensor.channels; let channelIndex = index" class="border rounded-3 p-3 mb-2 bg-light bg-opacity-25">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label">Metric</label>
+                  <input class="form-control" [(ngModel)]="channel.metricCode" [ngModelOptions]="{standalone: true}">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Unit</label>
+                  <input class="form-control" [(ngModel)]="channel.unit" [ngModelOptions]="{standalone: true}">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Register</label>
+                  <input class="form-control" [(ngModel)]="channel.register" [ngModelOptions]="{standalone: true}">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Min</label>
+                  <input type="number" class="form-control" [(ngModel)]="channel.minThreshold" [ngModelOptions]="{standalone: true}">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Max</label>
+                  <input type="number" class="form-control" [(ngModel)]="channel.maxThreshold" [ngModelOptions]="{standalone: true}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                  <button class="btn btn-outline-danger btn-sm w-100" (click)="removeChannel(sensor, channelIndex)">
+                    <i class="fa fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <card id="sectionPreview" class="border-0 shadow-sm">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0">Preview Payload</div>
+        <div class="text-muted small">Pratinjau request yang dikirim ke API metadata.</div>
+      </div>
+      <div class="card-body">
+        <pre class="bg-dark text-white rounded-3 p-3 small mb-0">{{ payloadPreview | json }}</pre>
+      </div>
+    </card>
+  </div>
+  <div class="col-xl-3">
+    <div class="sticky-top" style="top: 6rem;">
+      <nav-scroll>
+        <a class="nav-link" href="#sectionOwnership" data-toggle="scroll-to">Ownership &amp; Project</a>
+        <a class="nav-link" href="#sectionIdentity" data-toggle="scroll-to">Identity &amp; Telemetry</a>
+        <a class="nav-link" href="#sectionLocation" data-toggle="scroll-to">Lokasi &amp; Assignment</a>
+        <a class="nav-link" href="#sectionSensors" data-toggle="scroll-to">Sensor Stack</a>
+        <a class="nav-link" href="#sectionPreview" data-toggle="scroll-to">Payload Preview</a>
+      </nav-scroll>
+    </div>
+  </div>
+</div>

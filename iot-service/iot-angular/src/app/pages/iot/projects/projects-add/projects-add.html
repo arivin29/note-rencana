@@ -1,0 +1,148 @@
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+            <li class="breadcrumb-item"><a routerLink="/iot/projects">Projects</a></li>
+            <li class="breadcrumb-item active">Create</li>
+        </ul>
+        <h1 class="page-header mb-0">Create Project</h1>
+    </div>
+    <div class="ms-auto">
+        <a routerLink="/iot/projects" class="btn btn-outline-default">Back</a>
+    </div>
+</div>
+<form (ngSubmit)="submitProject()" #projectForm="ngForm">
+    <card>
+        <card-body>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-uppercase small text-muted">Owner</label>
+                    <select class="form-select" [(ngModel)]="form.ownerId" name="ownerId">
+                        <option *ngFor="let owner of ownerOptions" [value]="owner.idOwner">{{ owner.name }}</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Project Name</label>
+                    <input class="form-control" placeholder="Area A" [(ngModel)]="form.name" name="name" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Project Code</label>
+                    <input class="form-control" placeholder="PRJ-###" [(ngModel)]="form.projectCode" name="projectCode">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Area Type</label>
+                    <select class="form-select" [(ngModel)]="form.areaType" name="areaType">
+                        <option *ngFor="let type of areaTypes" [value]="type">{{ type | titlecase }}</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" [(ngModel)]="form.status" name="status">
+                        <option *ngFor="let status of statuses" [value]="status">{{ status | titlecase }}</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" rows="2" placeholder="Catatan area atau scope proyek"
+                        [(ngModel)]="form.description" name="description"></textarea>
+                </div>
+            </div>
+        </card-body>
+    </card>
+
+    <card class="mt-3">
+        <card-body>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Latitude</label>
+                    <input class="form-control" placeholder="-6.2213" [(ngModel)]="form.geoLat" name="geoLat">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Longitude</label>
+                    <input class="form-control" placeholder="106.8432" [(ngModel)]="form.geoLng" name="geoLng">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Target Nodes</label>
+                    <input type="number" class="form-control" min="1" [(ngModel)]="form.targetNodes" name="targetNodes">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Target Sensors</label>
+                    <input type="number" class="form-control" min="1" [(ngModel)]="form.targetSensors"
+                        name="targetSensors">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Telemetry Mode</label>
+                    <select class="form-select" [(ngModel)]="form.telemetryMode" name="telemetryMode">
+                        <option *ngFor="let mode of telemetryModes" [value]="mode">{{ mode | titlecase }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Interval (sec)</label>
+                    <input type="number" class="form-control" min="30" step="30" [(ngModel)]="form.telemetryInterval"
+                        name="telemetryInterval">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">SLA Level</label>
+                    <input class="form-control" placeholder="gold / silver / bronze" [(ngModel)]="form.slaLevel"
+                        name="slaLevel">
+                </div>
+        <div class="col-12">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" rows="2" [(ngModel)]="form.notes" name="notes"></textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Geofence (GeoJSON)</label>
+          <textarea class="form-control" rows="3" placeholder='{"type":"Polygon","coordinates":[]}'
+            [(ngModel)]="form.geoJson" name="geoJson"></textarea>
+        </div>
+            </div>
+        </card-body>
+    </card>
+
+    <div class="row g-3 mt-3">
+        <div class="col-lg-6">
+            <card>
+                <card-body>
+                    <div class="d-flex align-items-center mb-3">
+                                <div>
+                                    <div class="text-muted small">Owner</div>
+                                    <div class="fw-semibold">
+                                        <ng-container *ngFor="let o of ownerOptions">
+                                            <span *ngIf="o.idOwner === form.ownerId">{{ o.name }}</span>
+                                        </ng-container>
+                                    </div>
+                                </div>
+                                <div class="ms-auto text-muted small">
+                                    Status: {{ form.status | titlecase }}
+                                </div>
+                            </div>
+                    <div class="text-muted small">
+                        Target {{ form.targetNodes }} nodes &middot; {{ form.targetSensors }} sensors &middot;
+                        Telemetry {{ form.telemetryMode }} / {{ form.telemetryInterval }}s
+                    </div>
+                    <div class="text-muted small mt-2">
+                        Coordinates: {{ form.geoLat || '-' }}, {{ form.geoLng || '-' }}
+                    </div>
+                </card-body>
+            </card>
+        </div>
+        <div class="col-lg-6">
+            <card>
+                <card-body>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="fw-semibold">Payload Preview</div>
+                        <div class="ms-auto text-muted small">Demo JSON</div>
+                    </div>
+                    <pre class="bg-dark text-white rounded-3 p-3 small mb-0">{{ projectPayload | json }}</pre>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-3">
+        <button type="submit" class="btn btn-theme" [disabled]="!projectForm.form.valid">
+            <i class="fa fa-save fa-fw me-1"></i>
+            Save Project
+        </button>
+    </div>
+</form>

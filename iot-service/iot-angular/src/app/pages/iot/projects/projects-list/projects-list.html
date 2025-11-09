@@ -1,0 +1,134 @@
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+            <li class="breadcrumb-item active">Projects</li>
+        </ul>
+        <h1 class="page-header mb-0">IoT Projects</h1>
+    </div>
+    <div class="ms-auto">
+        <a routerLink="/iot/projects/new" class="btn btn-outline-theme">
+            <i class="fa fa-plus-circle fa-fw me-1"></i>
+            Add Project
+        </a>
+    </div>
+</div>
+
+<div class="mb-sm-4 mb-3 d-sm-flex">
+    <div class="mt-sm-0 mt-2">
+        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
+            <i class="fa fa-download fa-fw me-1 text-theme"></i>
+            Export Projects
+        </a>
+    </div>
+    <div class="ms-sm-4 mt-sm-0 mt-2">
+        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
+            <i class="fa fa-layer-group fa-fw me-1 text-theme"></i>
+            Group by Owner
+        </a>
+    </div>
+    <div class="ms-sm-4 mt-sm-0 mt-2 dropdown">
+        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none dropdown-toggle"
+            data-bs-toggle="dropdown">
+            More Actions
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
+            <a class="dropdown-item" href="javascript:;">Assign Owner Admin</a>
+            <div role="separator" class="dropdown-divider"></div>
+            <a class="dropdown-item" href="javascript:;">Archive Project</a>
+        </div>
+    </div>
+</div>
+
+<card>
+    <ul class="nav nav-tabs nav-tabs-v2 px-4">
+        <li class="nav-item me-3" *ngFor="let option of statusOptions">
+            <a href="javascript:;" class="nav-link px-2" [class.active]="filters.status === option"
+                (click)="setFilter('status', option)">
+                {{ option === 'All Status' ? 'All' : (option | titlecase) }}
+                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border ms-1">{{ statusCount(option)
+                    }}</span>
+            </a>
+        </li>
+    </ul>
+    <div class="p-4">
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
+                <div class="dropdown w-100">
+                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
+                        data-bs-toggle="dropdown">
+                        {{ filters.owner }}
+                    </button>
+                    <div class="dropdown-menu w-100">
+                        <button type="button" class="dropdown-item" *ngFor="let option of ownerOptions"
+                            (click)="setFilter('owner', option)">
+                            {{ option }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i
+                            class="fa fa-search opacity-50"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0"
+                        placeholder="Cari nama project / ID / lokasi" [(ngModel)]="searchTerm">
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-xl-4 col-md-6" *ngFor="let project of filteredProjects">
+                <card>
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex align-items-center mb-2">
+                                <div>
+                                    <div class="text-muted small">{{ project.owner.name }}</div>
+                                    <h5 class="mb-0">{{ project.name }}</h5>
+                                </div>
+                                <div class="ms-auto">
+                                    <span [class]="statusBadge(project.status)">{{ project.status | titlecase }}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mb-3">
+                                <span>ID: {{ project.idProject }}</span>
+                                <span>Last sync {{ project.lastSync }}</span>
+                            </div>
+                            <div class="row text-center mb-3">
+                                <div class="col">
+                                    <div class="fw-semibold fs-4">{{ project.nodes }}</div>
+                                    <div class="text-uppercase small text-muted">Nodes</div>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-semibold fs-4">{{ project.sensors }}</div>
+                                    <div class="text-uppercase small text-muted">Sensors</div>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-semibold fs-4 text-danger">{{ project.alerts }}</div>
+                                    <div class="text-uppercase small text-muted">Alerts</div>
+                                </div>
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <i class="fa fa-map-marker-alt fa-fw me-1"></i> {{ project.location }}
+                            </div>
+                            <div class="mt-auto d-flex gap-2">
+                                <a [routerLink]="['/iot/nodes']" class="btn btn-sm btn-outline-theme flex-fill">View
+                                    Nodes</a>
+                                <a [routerLink]="['/iot/telemetry']"
+                                    class="btn btn-sm btn-outline-secondary flex-fill">Telemetry</a>
+                            </div>
+                        </div>
+                    </div>
+                </card>
+            </div>
+            <div *ngIf="!filteredProjects.length" class="text-center text-muted py-5">
+                Tidak ada project sesuai filter.
+            </div>
+        </div>
+
+    </div>
+</card>

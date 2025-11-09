@@ -38,21 +38,11 @@ import { SidebarComponent }                from './components/sidebar/sidebar.co
 import { SidebarMobileBackdropComponent }  from './components/sidebar-mobile-backdrop/sidebar-mobile-backdrop.component';
 import { FooterComponent }                 from './components/footer/footer.component';
 import { ThemePanelComponent }             from './components/theme-panel/theme-panel.component';
-import { NavScrollComponent }              from './components/nav-scroll/nav-scroll.component';
-import { CardComponent, 
-         CardHeaderComponent, 
-         CardBodyComponent, 
-         CardFooterComponent, 
-         CardImgOverlayComponent, 
-         CardGroupComponent,
-         CardExpandTogglerComponent }      from './components/card/card.component';
+import { SharedComponentsModule }          from './shared/shared-components.module';
 
 import { DashboardPage }                   from './pages/dashboard/dashboard';
 import { IotDashboardPage }                from './pages/iot/dashboard/iot-dashboard';
-import { IotNodesPage }                    from './pages/iot/nodes/iot-nodes';
-import { IotNodeDetailPage }               from './pages/iot/node-detail/iot-node-detail';
 import { IotAlertsPage }                   from './pages/iot/alerts/iot-alerts';
-import { IotProjectsPage }                 from './pages/iot/projects/iot-projects';
 import { IotTelemetryPage }                from './pages/iot/telemetry/iot-telemetry';
 
 import { AnalyticsPage }                   from './pages/analytics/analytics';
@@ -134,21 +124,9 @@ import { HelperPage }                      from './pages/helper/helper';
     SidebarMobileBackdropComponent,
     FooterComponent,
     ThemePanelComponent,
-    NavScrollComponent,
-    CardComponent,
-    CardHeaderComponent,
-    CardBodyComponent,
-    CardFooterComponent,
-    CardImgOverlayComponent,
-    CardGroupComponent,
-    CardExpandTogglerComponent,
-    
     DashboardPage,
     IotDashboardPage,
-    IotNodesPage,
-    IotNodeDetailPage,
     IotAlertsPage,
-    IotProjectsPage,
     IotTelemetryPage,
     
     AnalyticsPage,
@@ -222,6 +200,7 @@ import { HelperPage }                      from './pages/helper/helper';
   ],
   imports: [
   	CommonModule,
+    SharedComponentsModule,
     AppRoutingModule,
     BrowserAnimationsModule,
     BrowserModule,
