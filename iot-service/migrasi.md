@@ -42,6 +42,11 @@ CREATE TABLE node_locations (
 );
 ```
 
+**Keterangan**
+- `owners`: master klien/tenant; `sla_level` membantu menentukan prioritas penanganan alert.
+- `projects`: area kerja per owner; `geofence` menyimpan batas area berbentuk GeoJSON untuk peta.
+- `node_locations`: katalog titik koordinat Node; `type` menunjukkan sumber koordinat (manual/GPS/import) dan `precision_m` menjadi indikator akurasi.
+
 ### 2. Node & Model Perangkat
 ```sql
 CREATE TABLE node_models (
@@ -92,6 +97,14 @@ CREATE TABLE node_assignments (
   updated_at         TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+**Keterangan**
+- `node_models`: katalog hardware gateway/perangkat sehingga atribut vendor/band/firmware tidak diulang di setiap node.
+- `nodes`: representasi perangkat di lapangan. Field penting:
+  - `dev_eui`: identitas LoRa/LPWAN unik.
+  - `telemetry_interval_sec`: jadwal kirim data untuk mendeteksi keterlambatan telemetri.
+  - `id_current_location`: menunjuk titik lokasi terbaru dari tabel `node_locations`.
+- `node_assignments`: riwayat perpindahan Node antar project/owner; `ticket_ref` menautkan ke pekerjaan teknisi dan `assigned_by` mencatat siapa yang memindahkan.
 
 ### 3. Sensor Master & Kanal
 ```sql
@@ -153,6 +166,12 @@ CREATE TABLE sensor_channels (
 );
 ```
 
+**Keterangan**
+- `sensor_types`: klasifikasi kasar (pressure, flow, voltage) untuk grouping UI/report.
+- `sensor_catalogs`: master spesifikasi tiap model sensor; `icon_asset` & `icon_color` dipakai untuk konsistensi visual, sementara `default_channels_json` berisi template register/unit bawaan pabrik.
+- `sensors`: sensor fisik yang terhubung ke node; `protocol_channel` menampung detail layer komunikasi (contoh RS485 slave id, kanal analog).
+- `sensor_channels`: parameter individual (flow, voltage, temperature) dalam satu sensor; `register_address` memetakan alamat Modbus/holding register dan `alert_suppression_window` mencegah spam alert berulang.
+
 ### 4. Time-Series & Alerting
 ```sql
 CREATE TABLE sensor_logs (
@@ -198,6 +217,11 @@ CREATE TABLE alert_events (
   updated_at       TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+**Keterangan**
+- `sensor_logs`: penyimpanan time-series bernilai besar; `value_engineered` adalah hasil konversi setelah multiplier/offset, sedangkan `ingestion_latency_ms` membantu memantau keterlambatan pipeline.
+- `alert_rules`: konfigurasi penjagaan tiap channel; `params_json` menyimpan detail aturan (ambang, slope, dsb) agar fleksibel.
+- `alert_events`: histori kejadian; kolom `acknowledged_by/at` dan `cleared_by/at` mendukung workflow tim operasional (acknowledge vs resolve) dan `note` merekam catatan penyelesaian.
 
 ### 5. Index & Partisi Tambahan
 - Tambahkan indeks tambahan seperti `CREATE INDEX idx_nodes_owner ON nodes(id_project, id_node_model);` sesuai kebutuhan query.
