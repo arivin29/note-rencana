@@ -192,3 +192,28 @@ AlertRule N ── 1 Sensor   |   AlertEvent N ── 1 AlertRule
 2. Definisikan skema API (REST/GraphQL) berdasar struktur JSON di atas.
 3. Siapkan mock data (per node/sensor) untuk prototyping UI.
 4. Tentukan limit retensi log & strategi archiving agar cost terkontrol.
+
+### 9. Template Frontend (HUD Angular)
+- Gunakan template **HUD Angular** dari SeanTheme (https://seantheme.com/hud-angular/ui/card) sebagai baseline UI dashboard sehingga styling, layout card, dan komponen tabel/grafik konsisten sejak awal.
+- Mapping: komponen `analytics` dan `iot` pada template dapat langsung menggambarkan ringkasan Owner→Project (bagian 6.1) dan kartu status Node (6.2), sedangkan komponen `card`/`widget` multi-column cocok untuk channel sensor dan grafik (6.3/6.4).
+- Integrasi: definisikan service Angular (`OwnerService`, `NodeService`) yang mengonsumsi skema API di langkah 2, lalu sambungkan ke resolvers/standalone components sesuai struktur module template.
+- Tema & akses: manfaatkan variable SCSS bawaan HUD untuk membedakan tenant/owner (warna ikon SensorCatalog) dan aktifkan guard/route-level loader agar role Ops vs Client memiliki layout serta menu yang relevan.
+
+### 10. Arsitektur Teknologi & Infrastruktur
+- **Ingestion Layer**: Node IoT (LoRaWAN/WiFi/4G/Ethernet) publish telemetry via MQTT menuju Mosquitto broker (port 1883/9001) dengan autentikasi devEui+password dan ACL per topik (`iot/{owner}/{project}/{node}/telemetry`) agar isolasi multi-tenant terjaga.
+- **Processing Layer**: PM2 mengelola tiga proses utama:
+  - `iot-api` (cluster 4 workers, NestJS) menyediakan REST+WebSocket, JWT auth, dan integrasi Postgres/Redis.
+  - `iot-mqtt-worker` (cluster 2) subscribe ke topic telemetry, melakukan validasi schema, batching, lalu menulis ke TimescaleDB/Influx (field `value_raw/value_engineered`) serta cache ringkasan ke Redis.
+  - `iot-alert-worker` (fork) membaca rule di Postgres, menarik data terbaru dari Redis/TSDB, menghitung kondisi threshold/derivative, lalu memicu notifikasi (email/Webhook) dan menulis AlertEvent.
+- **Data Stores & Tooling**:
+  - *Postgres + Timescale Extension*: metadata relasional plus time-series retention/continuous aggregate.
+  - *Redis*: cache session JWT, device status `last_seen_at`, dan queue ringan antar worker.
+  - *MinIO (S3 compatible)*: menyimpan lampiran (foto instalasi, dokumentasi kalibrasi) serta export CSV.
+  - *Grafana*: observability stack untuk metrik ingestion (lag, throughput), health worker (PM2 metrics), dan dashboard internal tim Ops.
+- **Security & Ops**: TLS untuk MQTT/Web API, rate limiting pada Mosquitto & NestJS, backup snapshot Postgres/MinIO harian, serta auto-restart PM2 bila worker gagal. Monitoring di Grafana/Alertmanager memastikan SLA telemetry terpenuhi.
+
+### 11. Rencana Mockup Dashboard (Angular HUD)
+- Prioritas minggu ini adalah memulai mockup front-end IoT di repo `iot-service/angular-iot` memakai template HUD Angular v5 (dashboard: https://seantheme.com/hud-angular/dashboard) agar struktur layout langsung menyerupai lingkungan produksi.
+- Scope awal: import layout utama (`app.component`, sidebar/top-nav), buat modul halaman `dashboard-iot` yang merender data dummy dari bagian 6 (ringkasan owner, detail node, grafik channel) dengan komponen card/grafik bawaan template.
+- Alur kerja: 1) sinkronkan dependency Angular dengan template HUD (Node 22 + `npm install --legacy-peer-deps`), 2) scaffold service mock (`OwnerMockService`, `TelemetryMockService`) yang membaca JSON lokal, 3) binding data ke widget analytics, tabel alarm, dan chart apex.
+- Deliverable: preview dashboard yang sudah menunjukkan KPI utama (jumlah node online, alert aktif, grafik sensor multi-parameter) sebagai dasar validasi UI bersama tim Ops/Client sebelum backend siap.

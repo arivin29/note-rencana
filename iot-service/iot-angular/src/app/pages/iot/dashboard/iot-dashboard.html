@@ -1,0 +1,106 @@
+<div class="container">
+  <div class="row g-3 mb-4">
+    <div class="col-xxl-3 col-lg-6" *ngFor="let kpi of kpis">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="flex-shrink-0 display-6 text-theme me-3">
+            <i [ngClass]="kpi.icon"></i>
+          </div>
+          <div>
+            <div class="text-uppercase text-secondary small">{{ kpi.label }}</div>
+            <div class="fs-3 fw-semibold mb-1">{{ kpi.value }}</div>
+            <div class="text-muted small" [ngClass]="{
+                'text-success': kpi.trend === 'up',
+                'text-danger': kpi.trend === 'down'
+              }">
+              {{ kpi.delta }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xxl-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header border-0 bg-white">
+          <div class="card-title mb-0">Alert Stream</div>
+          <div class="text-muted small">Last 10 minutes</div>
+        </div>
+        <div class="card-body">
+          <div *ngFor="let alert of alertSummary" class="d-flex align-items-start py-2 border-bottom border-200">
+            <div class="me-3">
+              <span [class]="getAlertBadgeClass(alert.severity)">{{ alert.severity | uppercase }}</span>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ alert.channel }}</div>
+              <div class="text-muted small">{{ alert.message }}</div>
+            </div>
+            <div class="ms-auto text-muted small">{{ alert.ts }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xxl-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header border-0 bg-white">
+          <div class="card-title mb-0">Node Health Snapshot</div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="text-uppercase text-muted small">
+              <tr>
+                <th>Node</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Last Seen</th>
+                <th class="text-end">Battery</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let node of nodeHealthTable">
+                <td class="fw-semibold">{{ node.code }}</td>
+                <td>{{ node.project }}</td>
+                <td><span [class]="getStatusBadgeClass(node.status)">{{ node.status | titlecase }}</span></td>
+                <td>{{ node.lastSeen }}</td>
+                <td class="text-end">{{ node.battery }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-xxl-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header border-0 bg-white">
+          <div class="card-title mb-0">Telemetry Window (last hour)</div>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4" *ngFor="let series of telemetryTrends">
+              <div class="border rounded-3 p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div>
+                    <div class="fw-semibold">{{ series.channel }}</div>
+                    <div class="text-muted small">{{ series.unit }}</div>
+                  </div>
+                  <span class="badge bg-light text-theme">Current {{ series.current }} {{ series.unit }}</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted">
+                  <div>Min: <span class="fw-semibold text-body">{{ series.min }}</span></div>
+                  <div>Avg: <span class="fw-semibold text-body">{{ series.avg }}</span></div>
+                  <div>Max: <span class="fw-semibold text-body">{{ series.max }}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

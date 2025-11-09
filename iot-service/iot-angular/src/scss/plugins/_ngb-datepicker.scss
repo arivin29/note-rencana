@@ -1,0 +1,112 @@
+body ngb-datepicker {
+	border-radius: $dropdown-border-radius;
+	padding: $spacer * .25;
+	
+	& .ngb-dp-header {
+		background: none;
+		padding-top: $spacer * .5;
+		padding-bottom: $spacer * .25;
+		
+		& .ngb-dp-arrow {
+			& .ngb-dp-arrow-btn {
+				color: rgba(var(--#{$prefix}inverse-rgb), .5);
+				
+				:dir(rtl) & {
+					transform: rotate(180deg);
+				}
+				&:hover {
+					color: rgba(var(--#{$prefix}inverse-rgb), 1);
+				}
+			}
+		}
+		& .ngb-dp-navigation-select {
+			& .form-select {
+				margin: 0 $spacer * .25;
+			}
+		}
+	}
+	& .ngb-dp-content {
+		&.ngb-dp-months {
+			background: none;
+			
+			& .ngb-dp-month {
+				flex: 1;
+				
+				& .ngb-dp-month-name {
+					background: none;
+					line-height: $line-height-base;
+					padding-top: $spacer * .25;
+					height: auto;
+				}
+				& .ngb-dp-weekdays {
+					background: none;
+					font-family: inherit;
+					font-weight: $font-weight-bold;
+					font-size: inherit;
+					margin-top: $spacer * .25;
+					border: none;
+					padding: rem(4px);
+					
+					& .ngb-dp-weekday {
+						height: auto;
+						line-height: rem(20px);
+						color: rgba(var(--#{$prefix}inverse-rgb), 1);
+					}
+				}
+				
+				& .ngb-dp-week {
+					& .ngb-dp-day {
+						padding: $spacer * .125;
+						height: auto;
+						
+						& .btn-light {
+							outline: none !important;
+							width: 100%;
+							text-align: center;
+							height: auto;
+							line-height: rem(20px);
+							background: transparent;
+							display: block;
+							padding: $spacer * .25 0;
+							border-radius: $border-radius-lg;
+							
+							&:hover {
+								background: rgba(var(--#{$prefix}inverse-rgb), .15);
+							}
+							
+							&.bg-primary,
+							&.range {
+								background: var(--#{$prefix}theme) !important;
+								color: var(--#{$prefix}theme-color) !important;
+								font-weight: $font-weight-semibold;
+								
+								&.faded {
+									font-weight: initial;
+									background: rgba(var(--#{$prefix}inverse-rgb), .15) !important;
+									color: var(--#{$prefix}body-color) !important;
+								}
+							}
+						}
+						&.ngb-dp-today {
+							& .btn-light {
+								background: rgba(var(--#{$prefix}inverse-rgb), .15);
+							}
+						}
+					}
+				}
+			}
+		}
+		& .ngb-dp-weekday, 
+		& .ngb-dp-week-number {
+			font-style: initial;
+		}
+		& .ngb-dp-day, 
+		& .ngb-dp-weekday, 
+		& .ngb-dp-week-number {
+			width: auto;
+			height: 2.25rem;
+			min-width: 2.5rem;
+			flex: 1;
+		}
+	}
+}

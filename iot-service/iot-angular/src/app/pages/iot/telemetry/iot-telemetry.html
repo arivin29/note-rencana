@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="d-flex align-items-center mb-3">
+    <div>
+      <div class="text-muted small">Telemetry Viewer</div>
+      <h4 class="mb-0">Aggregated series</h4>
+    </div>
+    <div class="ms-auto">
+      <div class="btn-group">
+        <button *ngFor="let agg of aggregations" type="button" class="btn" [ngClass]="{'btn-theme': selectedAggregation === agg, 'btn-outline-theme': selectedAggregation !== agg}" (click)="selectedAggregation = agg">
+          {{ agg }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="text-uppercase text-muted small">
+          <tr>
+            <th>Channel</th>
+            <th>Project</th>
+            <th>Unit</th>
+            <th>Aggregation</th>
+            <th>Min</th>
+            <th>Avg</th>
+            <th>Max</th>
+            <th class="text-end">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredTelemetry">
+            <td class="fw-semibold">{{ row.channel }}</td>
+            <td>{{ row.project }}</td>
+            <td>{{ row.unit }}</td>
+            <td>{{ row.aggregation }}</td>
+            <td>{{ row.min }}</td>
+            <td>{{ row.avg }}</td>
+            <td>{{ row.max }}</td>
+            <td class="text-end text-muted">{{ row.points }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

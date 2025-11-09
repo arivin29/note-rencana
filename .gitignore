@@ -1,0 +1,28 @@
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+*.log
+
+# Node / Angular artifacts
+node_modules/
+dist/
+.angular/
+tmp/
+temp/
+
+# Angular project specific (relative paths ensure root push remains small)
+iot-service/iot-angular/node_modules/
+iot-service/iot-angular/dist/
+iot-service/iot-angular/.angular/
+iot-service/iot-angular/tmp/
+
+# Coverage / test outputs
+coverage/
+reports/
+
+# Environment & tooling
+.env
+.env.*
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*

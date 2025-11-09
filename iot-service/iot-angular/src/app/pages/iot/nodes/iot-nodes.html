@@ -1,0 +1,60 @@
+<div class="container">
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Owner</label>
+          <select class="form-select" [(ngModel)]="filters.owner">
+            <option *ngFor="let option of ownerOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Project</label>
+          <select class="form-select" [(ngModel)]="filters.project">
+            <option *ngFor="let option of projectOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Status</label>
+          <select class="form-select" [(ngModel)]="filters.status">
+            <option *ngFor="let option of statusOptions" [value]="option">{{ option | titlecase }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header border-0 bg-white d-flex align-items-center">
+      <div class="card-title mb-0">Node Explorer</div>
+      <div class="ms-auto text-muted small">{{ filteredNodes.length }} nodes</div>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="text-uppercase text-muted small">
+          <tr>
+            <th>Node</th>
+            <th>Owner / Project</th>
+            <th>Status</th>
+            <th>Firmware</th>
+            <th>Telemetry</th>
+            <th class="text-end">Last Seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let node of filteredNodes">
+            <td class="fw-semibold"><a [routerLink]="['/iot/nodes', node.code]" class="text-decoration-none">{{ node.code }}</a></td>
+            <td>
+              <div class="fw-semibold">{{ node.owner }}</div>
+              <div class="text-muted small">{{ node.project }}</div>
+            </td>
+            <td><span [class]="badgeClass(node.status)">{{ node.status | titlecase }}</span></td>
+            <td>{{ node.firmware }}</td>
+            <td class="text-capitalize">{{ node.telemetryMode }}</td>
+            <td class="text-end text-muted">{{ node.lastSeen }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
