@@ -1,0 +1,95 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item"><a routerLink="/iot/owners">Owners</a></li>
+      <li class="breadcrumb-item active">Create</li>
+    </ul>
+    <h1 class="page-header mb-0">Create Owner</h1>
+  </div>
+  <div class="ms-auto">
+    <a routerLink="/iot/owners" class="btn btn-outline-default">Back</a>
+  </div>
+</div>
+
+<form (ngSubmit)="submitOwner()" #ownerForm="ngForm">
+  <card>
+    <card-body>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Owner ID</label>
+          <input class="form-control" placeholder="OWN-###" [(ngModel)]="form.idOwner" name="idOwner">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Owner Name</label>
+          <input class="form-control" placeholder="PT ABC" [(ngModel)]="form.name" name="name" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Industry</label>
+          <select class="form-select" [(ngModel)]="form.industry" name="industry">
+            <option *ngFor="let option of industryOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact Person</label>
+          <input class="form-control" [(ngModel)]="form.contactPerson" name="contactPerson" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact Email</label>
+          <input type="email" class="form-control" [(ngModel)]="form.contactEmail" name="contactEmail">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Contact Phone</label>
+          <input class="form-control" [(ngModel)]="form.contactPhone" name="contactPhone">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">SLA Level</label>
+          <select class="form-select" [(ngModel)]="form.slaLevel" name="slaLevel">
+            <option *ngFor="let sla of slaLevels" [value]="sla">{{ sla | titlecase }}</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Address</label>
+          <textarea class="form-control" rows="2" [(ngModel)]="form.address" name="address"></textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" rows="2" [(ngModel)]="form.notes" name="notes"></textarea>
+        </div>
+      </div>
+    </card-body>
+  </card>
+
+  <div class="row g-3 mt-3">
+    <div class="col-lg-6">
+      <card>
+        <card-body>
+          <div class="fw-semibold mb-2">Owner Summary</div>
+          <div class="text-muted small">{{ form.name || 'Owner Name' }}</div>
+          <div class="text-muted small">Industry: {{ form.industry }}</div>
+          <div class="text-muted small">Contact: {{ form.contactPerson || '-' }}</div>
+          <div class="text-muted small">Email: {{ form.contactEmail || '-' }}</div>
+          <div class="text-muted small">Phone: {{ form.contactPhone || '-' }}</div>
+        </card-body>
+      </card>
+    </div>
+    <div class="col-lg-6">
+      <card>
+        <card-body>
+          <div class="d-flex align-items-center mb-2">
+            <div class="fw-semibold">Payload Preview</div>
+            <div class="ms-auto text-muted small">Demo JSON</div>
+          </div>
+          <pre class="bg-dark text-white rounded-3 p-3 small mb-0">{{ payload | json }}</pre>
+        </card-body>
+      </card>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end mt-3">
+    <button type="submit" class="btn btn-theme" [disabled]="!ownerForm.form.valid">
+      <i class="fa fa-save fa-fw me-1"></i>
+      Save Owner
+    </button>
+  </div>
+</form>

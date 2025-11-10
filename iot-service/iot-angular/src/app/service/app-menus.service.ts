@@ -13,6 +13,7 @@ export class AppMenuService {
 			{ 'text': 'IoT Platform', 'is_header': true },
 			{ 'path': '/iot/dashboard', 'icon': 'bi bi-speedometer2', 'text': 'Overview' },
 			{ 'path': '/iot/projects', 'icon': 'bi bi-diagram-3', 'text': 'Projects' },
+			{ 'path': '/iot/owners', 'icon': 'bi bi-briefcase', 'text': 'Owners' },
 			{ 'path': '/iot/nodes', 'icon': 'bi bi-hdd-stack', 'text': 'Nodes' },
 			{ 'path': '/iot/alerts', 'icon': 'bi bi-bell', 'text': 'Alerts' },
 			{ 'path': '/iot/telemetry', 'icon': 'bi bi-activity', 'text': 'Telemetry Logs' },

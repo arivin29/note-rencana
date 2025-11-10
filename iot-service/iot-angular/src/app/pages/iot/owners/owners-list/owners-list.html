@@ -1,0 +1,150 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item active">Owners</li>
+    </ul>
+    <h1 class="page-header mb-0">IoT Owners</h1>
+  </div>
+  <div class="ms-auto">
+    <a routerLink="/iot/owners/new" class="btn btn-outline-theme">
+      <i class="fa fa-plus-circle fa-fw me-1"></i>
+      Add Owner
+    </a>
+  </div>
+</div>
+
+<div class="mb-sm-4 mb-3 d-sm-flex">
+  <div class="mt-sm-0 mt-2">
+    <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
+      <i class="fa fa-download fa-fw me-1 text-theme"></i>
+      Export Owners
+    </a>
+  </div>
+  <div class="ms-sm-4 mt-sm-0 mt-2">
+    <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
+      <i class="fa fa-envelope fa-fw me-1 text-theme"></i>
+      Invite Owner Admin
+    </a>
+  </div>
+  <div class="ms-sm-4 mt-sm-0 mt-2 dropdown">
+    <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+      More Actions
+    </a>
+    <div class="dropdown-menu dropdown-menu-end">
+      <a class="dropdown-item" href="javascript:;">Assign SLA</a>
+      <a class="dropdown-item" href="javascript:;">Generate Contract</a>
+      <div role="separator" class="dropdown-divider"></div>
+      <a class="dropdown-item" href="javascript:;">Archive Owner</a>
+    </div>
+  </div>
+</div>
+
+<card>
+  <ul class="nav nav-tabs nav-tabs-v2 px-4">
+    <li class="nav-item me-3" *ngFor="let option of statusOptions">
+      <a href="javascript:;" class="nav-link px-2" [class.active]="filters.status === option" (click)="setFilter('status', option)">
+        {{ option === 'All Status' ? 'All' : (option | titlecase) }}
+        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border ms-1">{{ statusCount(option) }}</span>
+      </a>
+    </li>
+  </ul>
+  <div class="p-4">
+    <div class="row g-3 mb-4">
+      <div class="col-lg-4 col-md-6">
+        <label class="text-muted text-uppercase small d-block mb-1">Industry</label>
+        <div class="dropdown w-100">
+          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown">
+            {{ filters.industry }}
+          </button>
+          <div class="dropdown-menu w-100">
+            <button type="button" class="dropdown-item" *ngFor="let option of industryOptions" (click)="setFilter('industry', option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search opacity-50"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Cari nama owner / ID / kontak"
+            [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)">
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover text-nowrap align-middle">
+        <thead class="text-uppercase text-muted small">
+          <tr>
+            <th class="w-10px"></th>
+            <th>Owner</th>
+            <th>Projects / Nodes / Sensors</th>
+            <th>SLA & Status</th>
+            <th>Contact</th>
+            <th>Alerts</th>
+            <th class="text-end">Last Activity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let owner of paginatedOwners">
+            <td class="w-10px align-middle">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" [id]="'owner-' + owner.idOwner">
+                <label class="form-check-label" [for]="'owner-' + owner.idOwner"></label>
+              </div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ owner.name }}</div>
+              <div class="text-muted small">{{ owner.industry || 'Unspecified' }}</div>
+              <div class="text-muted small">ID: {{ owner.idOwner }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ owner.projects }} Projects</div>
+              <div class="text-muted small">{{ owner.nodes }} Nodes · {{ owner.sensors }} Sensors</div>
+            </td>
+            <td>
+              <div class="text-muted small">SLA {{ owner.slaLevel | uppercase }}</div>
+              <span [class]="statusBadge(owner.status)">{{ owner.status | titlecase }}</span>
+            </td>
+            <td class="text-muted small">
+              <div><i class="fa fa-user fa-fw me-1"></i>{{ owner.contactPerson || '-' }}</div>
+              <div><i class="fa fa-envelope fa-fw me-1"></i>{{ owner.contactEmail || '-' }}</div>
+              <div><i class="fa fa-phone fa-fw me-1"></i>{{ owner.contactPhone || '-' }}</div>
+            </td>
+            <td class="fw-semibold text-danger">{{ owner.alerts }}</td>
+            <td class="text-end text-muted">{{ owner.lastActivity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!filteredOwners.length" class="text-center text-muted py-5 border-top">
+      Tidak ada owner sesuai filter.
+    </div>
+
+    <div class="d-md-flex align-items-center mt-3">
+      <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+        Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalEntries }} owners
+      </div>
+      <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
+        <span class="text-muted small me-2 text-uppercase">Rows</span>
+        <select class="form-select form-select-sm w-auto" [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
+      <ul class="pagination mb-0 justify-content-center">
+        <li class="page-item" [class.disabled]="currentPage === 1">
+          <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
+        </li>
+        <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+          <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === totalPages">
+          <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</card>
