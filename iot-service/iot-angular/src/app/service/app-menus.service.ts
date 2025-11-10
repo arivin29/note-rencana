@@ -13,10 +13,15 @@ export class AppMenuService {
 			{ 'text': 'IoT Platform', 'is_header': true },
 			{ 'path': '/iot/dashboard', 'icon': 'bi bi-speedometer2', 'text': 'Overview' },
 			{ 'path': '/iot/projects', 'icon': 'bi bi-diagram-3', 'text': 'Projects' },
-			{ 'path': '/iot/owners', 'icon': 'bi bi-briefcase', 'text': 'Owners' },
+			{ 'path': '/iot/owners', 'icon': 'bi bi-briefcase', 'text': 'Owners', 'children': [
+				{ 'path': '/iot/owners', 'text': 'Owner Directory' },
+				{ 'path': '/iot/owners#delivery', 'text': 'Data Delivery Config' }
+			]},
 			{ 'path': '/iot/nodes', 'icon': 'bi bi-hdd-stack', 'text': 'Nodes' },
 			{ 'path': '/iot/alerts', 'icon': 'bi bi-bell', 'text': 'Alerts' },
 			{ 'path': '/iot/telemetry', 'icon': 'bi bi-activity', 'text': 'Telemetry Logs' },
+			{ 'path': '/iot/widgets-showcase', 'icon': 'bi bi-grid-1x2', 'text': 'Widget Showcase' },
+			{ 'path': '/iot/config', 'icon': 'bi bi-sliders', 'text': 'IoT Config' },
 			{ 'icon': 'bi bi-envelope', 'text': 'Email', 'children': [
 					{ 'path': '/email/inbox', 'action': 'Inbox', 'text': 'Inbox' },
 					{ 'path': '/email/compose', 'action': 'Compose', 'text': 'Compose' },

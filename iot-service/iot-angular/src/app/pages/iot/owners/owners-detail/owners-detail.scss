@@ -1,0 +1,24 @@
+.forwarding-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+}
+
+.forwarding-card__status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.35rem;
+}
+
+.forwarding-card__status-dot.success {
+  background: #22c55e;
+}
+
+.forwarding-card__status-dot.failed {
+  background: #ef4444;
+}
+
+.forwarding-card__status-dot.pending {
+  background: #f59e0b;
+}

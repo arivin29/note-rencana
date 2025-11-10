@@ -1,0 +1,178 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item active">Telemetry</li>
+    </ul>
+    <h1 class="page-header mb-0">Telemetry Aggregates</h1>
+    <div class="text-muted text-opacity-75 small">
+      Monitoring hasil agregasi sensor channel per window {{ selectedAggregationLabel }}
+    </div>
+  </div>
+  <div class="ms-auto d-flex flex-wrap gap-2">
+    <button class="btn btn-outline-theme btn-sm">
+      <i class="fa fa-sync fa-fw me-1"></i>
+      Sync Aggregation
+    </button>
+    <button class="btn btn-outline-default btn-sm">
+      <i class="fa fa-bell fa-fw me-1"></i>
+      Configure Alerts
+    </button>
+    <button class="btn btn-theme btn-sm">
+      <i class="fa fa-file-export fa-fw me-1"></i>
+      Export CSV
+    </button>
+  </div>
+</div>
+
+<card class="shadow-sm">
+  <ul class="nav nav-tabs nav-tabs-v2 px-4 pt-3">
+    <li class="nav-item me-3" *ngFor="let agg of aggregations">
+      <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+        [class.active]="selectedAggregation === agg"
+        (click)="selectedAggregation = agg">
+        <span>{{ agg }}</span>
+        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
+          {{ aggregationLabels[agg] || agg }}
+        </span>
+      </a>
+    </li>
+  </ul>
+  <div class="p-4">
+    <div class="row g-3 mb-4">
+      <div class="col-lg-4 col-md-6">
+        <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
+        <div class="dropdown w-100">
+          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
+            data-bs-toggle="dropdown">
+            {{ filters.owner }}
+          </button>
+          <div class="dropdown-menu w-100">
+            <button class="dropdown-item" *ngFor="let option of ownerOptions" (click)="setFilter('owner', option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <label class="text-muted text-uppercase small d-block mb-1">Project</label>
+        <div class="dropdown w-100">
+          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
+            data-bs-toggle="dropdown">
+            {{ filters.project }}
+          </button>
+          <div class="dropdown-menu w-100">
+            <button class="dropdown-item" *ngFor="let option of projectOptions" (click)="setFilter('project', option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-12">
+        <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0"
+            placeholder="Cari channel / node / project"
+            [(ngModel)]="searchTerm">
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+          <div class="text-muted text-uppercase small mb-1">Total Channels</div>
+          <div class="fs-3 fw-bold text-theme">{{ totalChannels }}</div>
+          <div class="text-muted small">Matching {{ selectedAggregationLabel }} window</div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+          <div class="text-muted text-uppercase small mb-1">Total Data Points</div>
+          <div class="fs-3 fw-bold">{{ totalPoints | number }}</div>
+          <div class="text-muted small">Accumulated across filtered channels</div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+          <div class="text-muted text-uppercase small mb-1">Unique Nodes</div>
+          <div class="fs-3 fw-bold">{{ uniqueNodesCount }}</div>
+          <div class="text-muted small">Telemetry contributors</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <div>
+          <div class="text-muted text-uppercase small">Aggregation Window</div>
+          <div class="fw-semibold">{{ selectedAggregationLabel }}</div>
+        </div>
+        <div>
+          <div class="text-muted text-uppercase small">Owner Filter</div>
+          <div class="fw-semibold">{{ filters.owner }}</div>
+        </div>
+        <div>
+          <div class="text-muted text-uppercase small">Project Filter</div>
+          <div class="fw-semibold">{{ filters.project }}</div>
+        </div>
+        <div class="ms-auto text-muted small">
+          {{ totalChannels }} channel logs ditampilkan
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover text-nowrap align-middle mb-0">
+        <thead class="text-uppercase text-muted small">
+          <tr>
+            <th class="pt-0 pb-2">Channel</th>
+            <th class="pt-0 pb-2">Node / Unit</th>
+            <th class="pt-0 pb-2">Project / Owner</th>
+            <th class="pt-0 pb-2">Range ({{ selectedAggregationLabel }})</th>
+            <th class="pt-0 pb-2 text-end">Data Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredTelemetry">
+            <td>
+              <div class="fw-semibold text-inverse">{{ row.idSensorChannel }}</div>
+              <div class="text-muted small">Sensor {{ row.idSensor }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ row.idNode }}</div>
+              <div class="badge bg-dark bg-opacity-25 text-uppercase">{{ row.unit }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ row.project }}</div>
+              <div class="text-muted small">{{ row.owner }}</div>
+            </td>
+            <td>
+              <div class="d-flex justify-content-between text-muted small">
+                <span>Min</span>
+                <span class="text-success fw-semibold">{{ row.min | number: '1.2-2' }}</span>
+              </div>
+              <div class="d-flex justify-content-between text-muted small">
+                <span>Avg</span>
+                <span class="text-info fw-semibold">{{ row.avg | number: '1.2-2' }}</span>
+              </div>
+              <div class="d-flex justify-content-between text-muted small">
+                <span>Max</span>
+                <span class="text-danger fw-semibold">{{ row.max | number: '1.2-2' }}</span>
+              </div>
+            </td>
+            <td class="text-end">
+              <div class="fw-bold">{{ row.points }} pts</div>
+              <div class="text-muted small">Per {{ selectedAggregationLabel }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="text-center text-muted py-5 border-top" *ngIf="!filteredTelemetry.length">
+      Tidak ada log telemetry untuk filter ini.
+    </div>
+  </div>
+</card>

@@ -1,0 +1,65 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="handleBackdropClick()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">{{ mode === 'edit' ? 'Update Channel' : 'New Channel' }}</div>
+      <h5 class="mb-0">{{ mode === 'edit' ? 'Edit Channel' : 'Add Channel' }}</h5>
+      <div class="text-muted small">{{ sensorLabel || sensorId }}</div>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+  <div class="config-drawer-body">
+    <form #addChannelForm="ngForm" (ngSubmit)="handleSubmit(addChannelForm.valid ?? false)">
+      <input type="hidden" name="sensorId" [(ngModel)]="formModel.sensorId">
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Channel ID</label>
+        <input class="form-control" name="channelId" [(ngModel)]="formModel.channelId" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Metric Code</label>
+        <input class="form-control" name="metricCode" [(ngModel)]="formModel.metricCode" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Sensor Type</label>
+        <select class="form-select" name="sensorTypeId" [(ngModel)]="formModel.sensorTypeId" required>
+          <option *ngFor="let option of sensorTypeOptions" [ngValue]="option.id">{{ option.label }}</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label text-muted text-uppercase small">Unit</label>
+            <input class="form-control" name="unit" [(ngModel)]="formModel.unit" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label text-muted text-uppercase small">Precision</label>
+            <input type="number" step="0.001" class="form-control" name="precision"
+              [(ngModel)]="formModel.precision">
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label text-muted text-uppercase small">Min Threshold</label>
+            <input type="number" class="form-control" name="minThreshold" [(ngModel)]="formModel.minThreshold">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-4">
+            <label class="form-label text-muted text-uppercase small">Max Threshold</label>
+            <input type="number" class="form-control" name="maxThreshold" [(ngModel)]="formModel.maxThreshold">
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="addChannelForm.invalid">Save Channel</button>
+      </div>
+    </form>
+  </div>
+</div>

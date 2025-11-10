@@ -1,0 +1,55 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="handleBackdropClick()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">New Sensor</div>
+      <h5 class="mb-0">Add Sensor To Node</h5>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+  <div class="config-drawer-body">
+    <form #addSensorForm="ngForm" (ngSubmit)="handleSubmit(addSensorForm.valid ?? false)">
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Sensor Code</label>
+        <input class="form-control" name="sensorCode" [(ngModel)]="formModel.sensorCode" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Sensor Label</label>
+        <input class="form-control" name="label" [(ngModel)]="formModel.label" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Sensor Catalog</label>
+        <select class="form-select" name="sensorCatalogId" [(ngModel)]="formModel.sensorCatalogId" required>
+          <option *ngFor="let option of catalogOptions" [ngValue]="option.id">{{ option.label }}</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Location / Mounting</label>
+        <input class="form-control" name="location" [(ngModel)]="formModel.location">
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-muted text-uppercase small">Health Status</label>
+        <select class="form-select" name="health" [(ngModel)]="formModel.health">
+          <option value="online">Online</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="offline">Offline</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Protocol Channel</label>
+        <input class="form-control" name="protocolChannel" [(ngModel)]="formModel.protocolChannel">
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-muted text-uppercase small">Sampling Rate (sec)</label>
+        <input type="number" class="form-control" name="samplingRate" [(ngModel)]="formModel.samplingRate" min="1">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="addSensorForm.invalid">Save Sensor</button>
+      </div>
+    </form>
+  </div>
+</div>

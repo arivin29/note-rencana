@@ -1,0 +1,53 @@
+<widget-container [showHeader]="false">
+  <div class="radial-gauge-content w-100">
+    <!-- Header with icon and label -->
+    <div class="gauge-header text-center mb-3">
+      <div class="icon-badge mb-2" *ngIf="config.icon" [style.background]="getGradientBackground()">
+        <i [class]="'fa ' + config.icon"></i>
+      </div>
+      <div class="gauge-label">{{ config.label }}</div>
+      <div class="gauge-unit text-inverse text-opacity-50 mt-1">{{ config.unit }}</div>
+    </div>
+
+    <!-- Chart -->
+    <div class="gauge-chart-wrapper">
+      <apx-chart
+        [series]="chartOptions.series"
+        [chart]="chartOptions.chart"
+        [plotOptions]="chartOptions.plotOptions"
+        [fill]="chartOptions.fill"
+        [stroke]="chartOptions.stroke"
+        [labels]="chartOptions.labels">
+      </apx-chart>
+    </div>
+
+    <!-- Range and Status -->
+    <div class="gauge-footer">
+      <!-- Range Labels -->
+      <div class="range-labels d-flex justify-content-between align-items-center mb-2" *ngIf="config.showMinMax">
+        <span class="range-min">
+          <i class="fa fa-circle fa-xs text-success me-1"></i>
+          {{ config.min }}
+        </span>
+        <span class="range-current badge bg-theme text-theme-900">
+          {{ config.value | number: '1.0-2' }}
+        </span>
+        <span class="range-max">
+          <i class="fa fa-circle fa-xs text-danger me-1"></i>
+          {{ config.max }}
+        </span>
+      </div>
+
+      <!-- Status Badge -->
+      <div class="text-center" *ngIf="config.status">
+        <span class="badge status-badge" 
+          [class.bg-success]="config.status === 'online'"
+          [class.bg-danger]="config.status === 'offline'" 
+          [class.bg-warning]="config.status === 'warning'">
+          <i class="fa fa-circle fa-fw me-1"></i>
+          {{ config.status | titlecase }}
+        </span>
+      </div>
+    </div>
+  </div>
+</widget-container>

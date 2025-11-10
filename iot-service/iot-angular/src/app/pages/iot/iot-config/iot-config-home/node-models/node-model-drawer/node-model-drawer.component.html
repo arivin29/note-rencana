@@ -1,0 +1,67 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="handleBackdropClick()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">New Entry</div>
+      <h5 class="mb-0">Add Node Model</h5>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+  <div class="config-drawer-body">
+    <form #nodeModelForm="ngForm" (ngSubmit)="handleSubmit(nodeModelForm.valid ?? false)">
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Model Code</label>
+        <input type="text" class="form-control" name="modelCode" [(ngModel)]="formModel.modelCode" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Vendor</label>
+        <input type="text" class="form-control" name="vendor" [(ngModel)]="formModel.vendor" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Model Name</label>
+        <input type="text" class="form-control" name="modelName" [(ngModel)]="formModel.modelName" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Protocol</label>
+        <input type="text" class="form-control" name="protocol" [(ngModel)]="formModel.protocol">
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Hardware Class</label>
+        <select class="form-select" name="hardwareClass" [(ngModel)]="formModel.hardwareClass">
+          <option *ngFor="let option of hardwareClassOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Toolchain</label>
+        <input type="text" class="form-control" name="toolchain" [(ngModel)]="formModel.toolchain">
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Build Agent</label>
+        <input type="text" class="form-control" name="buildAgent" [(ngModel)]="formModel.buildAgent">
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Firmware Repo</label>
+        <input type="text" class="form-control" name="firmwareRepo" [(ngModel)]="formModel.firmwareRepo">
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Flash Protocol</label>
+        <input type="text" class="form-control" name="flashProtocol" [(ngModel)]="formModel.flashProtocol">
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Default Firmware</label>
+        <input type="text" class="form-control" name="defaultFirmware" [(ngModel)]="formModel.defaultFirmware">
+      </div>
+      <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" role="switch" name="supportsCodegen"
+          [(ngModel)]="formModel.supportsCodegen" id="supportsCodegenSwitch">
+        <label class="form-check-label" for="supportsCodegenSwitch">Supports Code Generator</label>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="nodeModelForm.invalid">Save Model</button>
+      </div>
+    </form>
+  </div>
+</div>

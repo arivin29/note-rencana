@@ -1,0 +1,343 @@
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+            <li class="breadcrumb-item active">Widget Showcase</li>
+        </ul>
+        <h1 class="page-header mb-0">Widget Showcase</h1>
+    </div>
+</div>
+
+<p class="lead mb-4">
+    Universal widget components untuk menampilkan data sensor dengan berbagai style visualisasi.
+</p>
+
+<!-- FILTER BUTTONS -->
+<card class="mb-4">
+    <card-body class="py-3">
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">Filter Widget Category</span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="btn-group flex-wrap" role="group">
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'all'"
+                (click)="filterCategory = 'all'">
+                <i class="fa fa-th me-1"></i> All Widgets
+            </button>
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'pressure'"
+                (click)="filterCategory = 'pressure'">
+                <i class="fa fa-gauge-high me-1"></i> Pressure
+            </button>
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'temperature'"
+                (click)="filterCategory = 'temperature'">
+                <i class="fa fa-temperature-half me-1"></i> Temperature
+            </button>
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'flow'"
+                (click)="filterCategory = 'flow'">
+                <i class="fa fa-water me-1"></i> Flow
+            </button>
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'level'"
+                (click)="filterCategory = 'level'">
+                <i class="fa fa-fill-drip me-1"></i> Level
+            </button>
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'power'"
+                (click)="filterCategory = 'power'">
+                <i class="fa fa-bolt me-1"></i> Power
+            </button>
+            <button type="button" class="btn btn-outline-theme" [class.active]="filterCategory === 'environment'"
+                (click)="filterCategory = 'environment'">
+                <i class="fa fa-leaf me-1"></i> Environment
+            </button>
+        </div>
+    </card-body>
+</card>
+
+<!-- NUMERIC WIDGETS -->
+<card class="mb-4" *ngIf="filterCategory === 'all' || filterCategory === 'pressure'">
+    <card-body>
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">
+                <i class="fa fa-gauge-high text-danger me-2"></i>
+                Pressure Sensors
+            </span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <radial-gauge-widget [config]="pressureGauge"></radial-gauge-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="pressureBigNumber"></big-number-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="pressureInfoCard"></info-card-widget>
+                </card>
+            </div>
+        </div>
+    </card-body>
+</card>
+
+<card class="mb-4" *ngIf="filterCategory === 'all' || filterCategory === 'temperature'">
+    <card-body>
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">
+                <i class="fa fa-temperature-half text-warning me-2"></i>
+                Temperature Sensors
+            </span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="temperatureBigNumber"></big-number-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <radial-gauge-widget [config]="temperatureGauge"></radial-gauge-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="temperatureInfoCard"></info-card-widget>
+                </card>
+            </div>
+        </div>
+    </card-body>
+</card>
+
+<card class="mb-4" *ngIf="filterCategory === 'all' || filterCategory === 'flow'">
+    <card-body>
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">
+                <i class="fa fa-water text-info me-2"></i>
+                Flow Sensors
+            </span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="flowInfoCard"></info-card-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="flowBigNumber"></big-number-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <radial-gauge-widget [config]="flowGauge"></radial-gauge-widget>
+                </card>
+            </div>
+        </div>
+    </card-body>
+</card>
+
+<card class="mb-4" *ngIf="filterCategory === 'all' || filterCategory === 'level'">
+    <card-body>
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">
+                <i class="fa fa-fill-drip text-primary me-2"></i>
+                Level Sensors
+            </span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="levelBigNumber"></big-number-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <radial-gauge-widget [config]="levelGauge"></radial-gauge-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="levelInfoCard"></info-card-widget>
+                </card>
+            </div>
+        </div>
+    </card-body>
+</card>
+
+<card class="mb-4" *ngIf="filterCategory === 'all' || filterCategory === 'power'">
+    <card-body>
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">
+                <i class="fa fa-bolt text-success me-2"></i>
+                Power & Electrical Sensors
+            </span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <radial-gauge-widget [config]="voltageGauge"></radial-gauge-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="voltageBigNumber"></big-number-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="currentInfoCard"></info-card-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="powerBigNumber"></big-number-widget>
+                </card>
+            </div>
+        </div>
+    </card-body>
+</card>
+
+<card class="mb-4" *ngIf="filterCategory === 'all' || filterCategory === 'environment'">
+    <card-body>
+        <div class="d-flex fw-bold small mb-3">
+            <span class="flex-grow-1">
+                <i class="fa fa-leaf text-teal me-2"></i>
+                Environmental Sensors
+            </span>
+            <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+                <i class="bi bi-fullscreen"></i>
+            </card-expand-toggler>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="humidityInfoCard"></info-card-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <radial-gauge-widget [config]="humidityGauge"></radial-gauge-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <big-number-widget [config]="co2BigNumber"></big-number-widget>
+                </card>
+            </div>
+            <div class="col-xl-3 col-md-4">
+                <card>
+                    <info-card-widget [config]="phInfoCard"></info-card-widget>
+                </card>
+            </div>
+        </div>
+    </card-body>
+</card>
+
+<!-- INFO -->
+<card class="mb-4">
+    <div class="card-body">
+        <h5 class="card-title">
+            <i class="fa fa-info-circle text-primary me-2"></i>
+            Cara Penggunaan
+        </h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>1. Import WidgetsModule</h6>
+                <pre class="bg-dark text-white p-3 rounded"><code>import {{ '{' }} WidgetsModule {{ '}' }} from '@components/widgets';
+
+@NgModule({{'{' }}
+  imports: [WidgetsModule]
+{{'}'}})
+export class YourModule {{ '{' }} {{ '}' }}</code></pre>
+            </div>
+            <div class="col-md-6">
+                <h6>2. Gunakan Widget Factory</h6>
+                <pre class="bg-dark text-white p-3 rounded"><code>constructor(private factory: WidgetFactoryService) {{ '{' }}{{ '}' }}
+
+ngOnInit() {{ '{' }}
+  this.widget = this.factory.createGaugeWidget(
+    'pressure', 2.4, {{'{' }} label: 'Inlet Pressure' {{'}' }}
+  );
+{{ '}' }}</code></pre>
+            </div>
+        </div>
+    </div>
+</card>
+
+<!-- Widget Types -->
+<card>
+    <div class="card-body">
+        <h5 class="card-title">
+            <i class="fa fa-list text-success me-2"></i>
+            Available Widget Types
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Widget Type</th>
+                        <th>Category</th>
+                        <th>Data Type</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Big Number</strong></td>
+                        <td><span class="badge bg-primary">Numeric</span></td>
+                        <td>Scalar</td>
+                        <td>KPI display, executive dashboard</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Info Card</strong></td>
+                        <td><span class="badge bg-primary">Numeric</span></td>
+                        <td>Scalar</td>
+                        <td>Compact overview with status</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Radial Gauge</strong></td>
+                        <td><span class="badge bg-success">Gauge</span></td>
+                        <td>Scalar</td>
+                        <td>Real-time monitoring, visual indicator</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Linear Gauge</strong></td>
+                        <td><span class="badge bg-success">Gauge</span></td>
+                        <td>Scalar</td>
+                        <td>Space-efficient display</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Line Chart</strong></td>
+                        <td><span class="badge bg-warning">Chart</span></td>
+                        <td>Time-series</td>
+                        <td>Trend analysis, historical view</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Threshold Alert</strong></td>
+                        <td><span class="badge bg-danger">Status</span></td>
+                        <td>Scalar</td>
+                        <td>Safety monitoring, alert system</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</card>

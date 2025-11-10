@@ -8,6 +8,8 @@ import {
   ApexXAxis,
   ApexFill
 } from 'ng-apexcharts';
+import { AddSensorFormValue, SensorCatalogOption, SensorHealthOption } from './node-detail-add-sensor-drawer/node-detail-add-sensor-drawer.component';
+import { AddChannelFormValue, SensorTypeOption } from './node-detail-add-channel-drawer/node-detail-add-channel-drawer.component';
 
 interface SensorChannelRow {
   id: string;
@@ -16,6 +18,8 @@ interface SensorChannelRow {
   latest: number;
   status: 'ok' | 'warning' | 'critical';
   trend: 'rising' | 'falling' | 'stable';
+  sensorTypeId: string;
+  sensorTypeLabel: string;
 }
 
 interface TelemetryRecord {
@@ -49,6 +53,20 @@ interface ChannelChart {
   };
 }
 
+type SensorHealth = SensorHealthOption;
+
+interface SensorDetail {
+  id: string;
+  label: string;
+  sensorCatalogId: string;
+  sensorCatalogLabel: string;
+  location: string;
+  health: SensorHealth;
+  protocolChannel?: string;
+  samplingRate?: number | null;
+  channels: SensorChannelRow[];
+}
+
 @Component({
   selector: 'nodes-detail',
   templateUrl: './nodes-detail.html',
@@ -57,10 +75,130 @@ interface ChannelChart {
 })
 export class NodesDetailPage {
   nodeId = 'NODE-001';
-  channels: SensorChannelRow[] = [
-    { id: 'SNS-10-PRES', metric: 'Pressure', unit: 'bar', latest: 2.4, status: 'ok', trend: 'stable' },
-    { id: 'SNS-10-TEMP', metric: 'Temperature', unit: '°C', latest: 27.8, status: 'warning', trend: 'rising' },
-    { id: 'SNS-10-FLOW', metric: 'Flow Rate', unit: 'm3/h', latest: 118.2, status: 'critical', trend: 'falling' }
+  isAddSensorDrawerOpen = false;
+  channelDrawerState = {
+    isOpen: false,
+    sensorId: '',
+    sensorLabel: ''
+  };
+  sensorCatalogOptions: SensorCatalogOption[] = [
+    { id: 'CAT-ROSEMOUNT-3051', label: 'Rosemount 3051 Pressure' },
+    { id: 'CAT-SIEMENS-MAG', label: 'Siemens SITRANS MAG 5000' },
+    { id: 'CAT-ABB-ULTRASONIC', label: 'ABB LLT100 Ultrasonic Level' }
+  ];
+  sensorTypeOptions: SensorTypeOption[] = [
+    { id: 'TYPE-PRESSURE', label: 'Pipeline Pressure' },
+    { id: 'TYPE-FLOW', label: 'Flow Meter' },
+    { id: 'TYPE-LEVEL', label: 'Reservoir Level' },
+    { id: 'TYPE-QUALITY', label: 'Water Quality' }
+  ];
+  sensors: SensorDetail[] = [
+    {
+      id: 'SNS-10',
+      label: 'Pressure Sensor Cluster',
+      sensorCatalogId: 'CAT-ROSEMOUNT-3051',
+      sensorCatalogLabel: 'Rosemount 3051 Pressure',
+      location: 'Vault 3 · Zone Barat',
+      health: 'online',
+      protocolChannel: 'RS485-1',
+      samplingRate: 120,
+      channels: [
+        {
+          id: 'SNS-10-PRES',
+          metric: 'Pressure',
+          unit: 'bar',
+          latest: 2.4,
+          status: 'ok',
+          trend: 'stable',
+          sensorTypeId: 'TYPE-PRESSURE',
+          sensorTypeLabel: 'Pipeline Pressure'
+        },
+        {
+          id: 'SNS-10-TEMP',
+          metric: 'Temperature',
+          unit: '°C',
+          latest: 27.8,
+          status: 'warning',
+          trend: 'rising',
+          sensorTypeId: 'TYPE-QUALITY',
+          sensorTypeLabel: 'Water Quality'
+        }
+      ]
+    },
+    {
+      id: 'SNS-21',
+      label: 'Reservoir Level Stack',
+      sensorCatalogId: 'CAT-ABB-ULTRASONIC',
+      sensorCatalogLabel: 'ABB LLT100 Ultrasonic Level',
+      location: 'Reservoir Utama',
+      health: 'maintenance',
+      protocolChannel: '4-20mA',
+      samplingRate: 60,
+      channels: [
+        {
+          id: 'SNS-21-LEVEL',
+          metric: 'Water Level',
+          unit: 'm',
+          latest: 3.18,
+          status: 'ok',
+          trend: 'stable',
+          sensorTypeId: 'TYPE-LEVEL',
+          sensorTypeLabel: 'Reservoir Level'
+        },
+        {
+          id: 'SNS-21-VIB',
+          metric: 'Vibration',
+          unit: 'mm/s',
+          latest: 1.8,
+          status: 'ok',
+          trend: 'falling',
+          sensorTypeId: 'TYPE-FLOW',
+          sensorTypeLabel: 'Flow Meter'
+        },
+        {
+          id: 'SNS-21-TEMP',
+          metric: 'Liquid Temp',
+          unit: '°C',
+          latest: 25.1,
+          status: 'warning',
+          trend: 'rising',
+          sensorTypeId: 'TYPE-QUALITY',
+          sensorTypeLabel: 'Water Quality'
+        }
+      ]
+    },
+    {
+      id: 'SNS-34',
+      label: 'Distribution Flow Meter',
+      sensorCatalogId: 'CAT-SIEMENS-MAG',
+      sensorCatalogLabel: 'Siemens SITRANS MAG 5000',
+      location: 'DMA 4 · Pintu Selatan',
+      health: 'offline',
+      protocolChannel: 'Modbus-12',
+      samplingRate: 300,
+      channels: [
+        {
+          id: 'SNS-34-FLOW',
+          metric: 'Flow Rate',
+          unit: 'm3/h',
+          latest: 118.2,
+          status: 'critical',
+          trend: 'falling',
+          sensorTypeId: 'TYPE-FLOW',
+          sensorTypeLabel: 'Flow Meter'
+        },
+        {
+          id: 'SNS-34-VOL',
+          metric: 'Totalized Volume',
+          unit: 'm3',
+          latest: 54012,
+          status: 'ok',
+          trend: 'rising',
+          sensorTypeId: 'TYPE-FLOW',
+          sensorTypeLabel: 'Flow Meter'
+        }
+      ]
+    }
   ];
 
   nodeMeta = {
@@ -124,6 +262,72 @@ export class NodesDetailPage {
     });
   }
 
+  openAddSensorDrawer() {
+    this.isAddSensorDrawerOpen = true;
+  }
+
+  handleAddSensorDrawerClose() {
+    this.isAddSensorDrawerOpen = false;
+  }
+
+  handleAddSensorSave(formValue: AddSensorFormValue) {
+    const catalog = this.sensorCatalogOptions.find((option) => option.id === formValue.sensorCatalogId);
+    const newSensor: SensorDetail = {
+      id: formValue.sensorCode,
+      label: formValue.label,
+      sensorCatalogId: formValue.sensorCatalogId,
+      sensorCatalogLabel: catalog?.label ?? 'Custom Catalog',
+      location: formValue.location || 'Unassigned',
+      health: formValue.health,
+      protocolChannel: formValue.protocolChannel,
+      samplingRate: formValue.samplingRate,
+      channels: []
+    };
+    this.sensors = [newSensor, ...this.sensors];
+    this.isAddSensorDrawerOpen = false;
+  }
+
+  openAddChannelDrawer(sensor: SensorDetail) {
+    this.channelDrawerState = {
+      isOpen: true,
+      sensorId: sensor.id,
+      sensorLabel: sensor.label
+    };
+  }
+
+  handleAddChannelDrawerClose() {
+    this.channelDrawerState = {
+      isOpen: false,
+      sensorId: '',
+      sensorLabel: ''
+    };
+  }
+
+  handleAddChannelSave(formValue: AddChannelFormValue) {
+    this.sensors = this.sensors.map((sensor) => {
+      if (sensor.id !== formValue.sensorId) {
+        return sensor;
+      }
+      return {
+        ...sensor,
+        channels: [
+          {
+            id: formValue.channelId,
+            metric: formValue.metricCode,
+            unit: formValue.unit,
+            latest: 0,
+            status: 'ok',
+            trend: 'stable',
+            sensorTypeId: formValue.sensorTypeId,
+            sensorTypeLabel: this.sensorTypeOptions.find((opt) => opt.id === formValue.sensorTypeId)?.label ?? 'Custom'
+          },
+          ...sensor.channels
+        ]
+      };
+    });
+    this.handleAddChannelDrawerClose();
+  }
+
   badgeClass(status: SensorChannelRow['status']) {
     switch (status) {
       case 'ok':
@@ -132,6 +336,17 @@ export class NodesDetailPage {
         return 'badge bg-warning text-dark';
       default:
         return 'badge bg-danger';
+    }
+  }
+
+  sensorHealthBadge(health: SensorHealth) {
+    switch (health) {
+      case 'online':
+        return 'badge bg-success-subtle text-success';
+      case 'maintenance':
+        return 'badge bg-warning-subtle text-warning';
+      default:
+        return 'badge bg-danger-subtle text-danger';
     }
   }
 

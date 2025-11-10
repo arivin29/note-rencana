@@ -1,0 +1,123 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a routerLink="/iot/config">IoT Config</a></li>
+      <li class="breadcrumb-item"><a routerLink="/iot/config/node-models">Node Models</a></li>
+      <li class="breadcrumb-item active">{{ model?.modelCode }}</li>
+    </ul>
+        <h1 class="page-header mb-0">{{ model?.modelName }}</h1>
+        <div class="text-muted text-opacity-75 small">
+            Vendor {{ model?.vendor }} • Toolchain {{ model?.toolchain }} • Build Agent {{ model?.buildAgent }}
+        </div>
+    </div>
+    <div class="ms-auto">
+    <a routerLink="/iot/config/node-models" class="btn btn-outline-default btn-sm me-2">
+            <i class="fa fa-arrow-left me-1"></i>
+            Back to List
+        </a>
+        <button class="btn btn-theme btn-sm">
+            <i class="fa fa-bolt me-1"></i>
+            Trigger Generator
+        </button>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-4 col-md-6">
+        <card class="shadow-sm h-100">
+            <card-body>
+                <div class="text-muted text-uppercase small mb-1">Hardware Class</div>
+                <div class="fs-4 fw-bold text-capitalize">{{ model?.hardwareClass }}</div>
+                <div class="text-muted small">Protocol: {{ model?.protocol }}</div>
+            </card-body>
+        </card>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <card class="shadow-sm h-100">
+            <card-body>
+                <div class="text-muted text-uppercase small mb-1">Firmware Repo</div>
+                <div class="fw-semibold text-truncate">{{ model?.firmwareRepo }}</div>
+                <div class="text-muted small">Default Firmware: {{ model?.defaultFirmware || 'N/A' }}</div>
+            </card-body>
+        </card>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <card class="shadow-sm h-100">
+            <card-body>
+                <div class="text-muted text-uppercase small mb-1">Flashing</div>
+                <div class="fw-semibold">{{ model?.flashProtocol }}</div>
+                <div class="text-muted small">Supports codegen: {{ model?.supportsCodegen ? 'Yes' : 'No' }}</div>
+            </card-body>
+        </card>
+    </div>
+</div>
+
+<card class="shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="mb-3">Device Payload Format</h4>
+        <p class="text-muted small">
+            Gunakan struktur JSON berikut saat perangkat mengirim telemetry ke server Deveket Helios.
+            Field wajib: <code>modelCode</code>, <code>firmwareVersion</code>, <code>deviceSerial</code>,
+            <code>timestamp</code>, dan <code>telemetry</code>.
+        </p>
+        <div class="bg-dark bg-opacity-50 rounded p-3 text-monospace small">
+            <pre class="mb-0 text-white">{{ payloadExample | json }}</pre>
+        </div>
+    </div>
+</card>
+
+<card class="shadow-sm">
+    <div class="card-body">
+        <h4 class="mb-3">Field Mapping & Validation</h4>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+                <thead class="text-uppercase text-muted small">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Example</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>modelCode</code></td>
+                        <td>string</td>
+                        <td>{{ model?.modelCode }}</td>
+                        <td>Harus sama dengan metadata NodeModel</td>
+                    </tr>
+                    <tr>
+                        <td><code>firmwareVersion</code></td>
+                        <td>string</td>
+                        <td>{{ model?.defaultFirmware || 'v1.0.0' }}</td>
+                        <td>Digunakan untuk validasi kompatibilitas</td>
+                    </tr>
+                    <tr>
+                        <td><code>deviceSerial</code></td>
+                        <td>string</td>
+                        <td>SN-XYZ-001</td>
+                        <td>Mapping ke kolom serial_number pada Node</td>
+                    </tr>
+                    <tr>
+                        <td><code>timestamp</code></td>
+                        <td>ISO8601 string</td>
+                        <td>2025-05-01T09:12:00Z</td>
+                        <td>UTC, dipakai untuk ordering telemetry</td>
+                    </tr>
+                    <tr>
+                        <td><code>telemetry</code></td>
+                        <td>object</td>
+                        <td>{{ '{' }} ... {{ '}' }}</td>
+                        <td>Isi disesuaikan catalog channel (pressure_bar, flow_m3h, dll.)</td>
+                    </tr>
+                    <tr>
+                        <td><code>signature</code></td>
+                        <td>string</td>
+                        <td>HMAC-SHA256(...)</td>
+                        <td>Opsional, gunakan jika perangkat mendukung signing</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div> 
+</card>

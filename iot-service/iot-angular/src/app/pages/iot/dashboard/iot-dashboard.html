@@ -1,56 +1,176 @@
-<div class="container">
-  <div class="row g-3 mb-4">
-    <div class="col-xxl-3 col-lg-6" *ngFor="let kpi of kpis">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="flex-shrink-0 display-6 text-theme me-3">
-            <i [ngClass]="kpi.icon"></i>
-          </div>
-          <div>
-            <div class="text-uppercase text-secondary small">{{ kpi.label }}</div>
-            <div class="fs-3 fw-semibold mb-1">{{ kpi.value }}</div>
-            <div class="text-muted small" [ngClass]="{
-                'text-success': kpi.trend === 'up',
-                'text-danger': kpi.trend === 'down'
-              }">
-              {{ kpi.delta }}
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="row mb-3">
+  <div class="col-xl-4 col-lg-4 col-md-6 mb-3 mb-md-0">
+    <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
+    <select class="form-select" [ngModel]="selectedOwner" (ngModelChange)="setFilter('owner', $event)">
+      <option *ngFor="let option of ownerFilterOptions" [ngValue]="option.value">{{ option.label }}</option>
+    </select>
+  </div>
+  <div class="col-xl-4 col-lg-4 col-md-6 mb-3 mb-md-0">
+    <label class="text-muted text-uppercase small d-block mb-1">Project</label>
+    <select class="form-select" [ngModel]="selectedProject" (ngModelChange)="setFilter('project', $event)">
+      <option *ngFor="let option of projectFilterOptions" [ngValue]="option.value">{{ option.label }}</option>
+    </select>
+  </div>
+  <div class="col-xl-4 col-lg-4 col-md-12">
+    <label class="text-muted text-uppercase small d-block mb-1">Time Range</label>
+    <select class="form-select" [ngModel]="selectedRange" (ngModelChange)="setFilter('range', $event)">
+      <option *ngFor="let option of timeRangeOptions" [ngValue]="option.value">{{ option.label }}</option>
+    </select>
+    <div class="text-muted small mt-2">
+      Viewing data for <span class="text-capitalize fw-semibold">{{ getOwnerLabel() }}</span>,
+      <span class="text-capitalize fw-semibold">{{ getProjectLabel() }}</span> in
+      <span class="fw-semibold">{{ getRangeLabel() }}</span>.
     </div>
   </div>
+</div>
 
-  <div class="row g-3">
-    <div class="col-xxl-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-header border-0 bg-white">
-          <div class="card-title mb-0">Alert Stream</div>
-          <div class="text-muted small">Last 10 minutes</div>
+<div class="row">
+  <div class="col-xl-3 col-lg-6" *ngFor="let stat of kpis">
+    <card class="mb-3">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1 text-uppercase">{{ stat.label }}</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
         </div>
-        <div class="card-body">
-          <div *ngFor="let alert of alertSummary" class="d-flex align-items-start py-2 border-bottom border-200">
-            <div class="me-3">
-              <span [class]="getAlertBadgeClass(alert.severity)">{{ alert.severity | uppercase }}</span>
+        <div class="row align-items-center mb-2">
+          <div class="col-7">
+            <h3 class="mb-0">{{ stat.value }}</h3>
+            <div class="small text-muted" [ngClass]="{'text-success': stat.trend === 'up', 'text-danger': stat.trend === 'down'}">
+              {{ stat.delta }}
             </div>
-            <div>
-              <div class="fw-semibold">{{ alert.channel }}</div>
-              <div class="text-muted small">{{ alert.message }}</div>
+          </div>
+          <div class="col-5">
+            <div class="mt-n2">
+              <apx-chart [series]="stat.chart.series" [chart]="stat.chart.options.chart"
+                [colors]="stat.chart.options.colors" [plotOptions]="stat.chart.options.plotOptions"
+                [stroke]="stat.chart.options.stroke" [fill]="stat.chart.options.fill"></apx-chart>
             </div>
-            <div class="ms-auto text-muted small">{{ alert.ts }}</div>
           </div>
         </div>
-      </div>
-    </div>
+        <div class="small text-inverse text-opacity-50 text-truncate">
+          <div *ngFor="let info of stat.info">
+            <div><i [ngClass]="info.icon" class="fa-fw me-1"></i> {{ info.text }}</div>
+          </div>
+        </div>
+      </card-body>
+    </card>
+  </div>
 
-    <div class="col-xxl-8">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header border-0 bg-white">
-          <div class="card-title mb-0">Node Health Snapshot</div>
+  <div class="col-xl-6">
+    <card class="mb-3">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1">Telemetry Streams</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
+        </div>
+        <div class="ratio ratio-21x9 mb-3">
+          <apx-chart [chart]="telemetryOverview.chart.options.chart" [series]="telemetryOverview.chart.series"
+            [colors]="telemetryOverview.chart.options.colors" [xaxis]="telemetryOverview.chart.options.xaxis"
+            [yaxis]="telemetryOverview.chart.options.yaxis" [fill]="telemetryOverview.chart.options.fill"
+            [tooltip]="telemetryOverview.chart.options.tooltip"
+            [dataLabels]="telemetryOverview.chart.options.dataLabels"
+            [grid]="telemetryOverview.chart.options.grid"
+            [stroke]="telemetryOverview.chart.options.stroke"
+            [legend]="telemetryOverview.chart.options.legend"></apx-chart>
+        </div>
+        <div class="row">
+          <div class="col-lg-6 mb-3 mb-lg-0" *ngFor="let stat of telemetryOverview.stats">
+            <div class="d-flex align-items-center">
+              <div class="w-50px h-50px">
+                <apx-chart [chart]="stat.chart.options.chart" [series]="stat.chart.series"
+                  [colors]="stat.chart.options.colors" [plotOptions]="stat.chart.options.plotOptions"
+                  [stroke]="stat.chart.options.stroke"></apx-chart>
+              </div>
+              <div class="ps-3 flex-1">
+                <div class="fs-10px fw-bold text-inverse text-opacity-50 mb-1">{{ stat.name }}</div>
+                <div class="mb-2 fs-5 text-truncate">{{ stat.total }}</div>
+                <div class="progress h-3px mb-1">
+                  <div class="progress-bar bg-theme" [ngStyle]="{ width: stat.progress }"></div>
+                </div>
+                <div class="fs-11px text-inverse text-opacity-50 mb-2 text-truncate">{{ stat.time }}</div>
+                <div class="d-flex align-items-center small" *ngFor="let info of stat.info">
+                  <i class="bi bi-circle-fill fs-6px me-2" [ngClass]="info.class"></i>
+                  <div class="flex-1">{{ info.title }}</div>
+                  <div>{{ info.value }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </card-body>
+    </card>
+  </div>
+
+  <div class="col-xl-6">
+    <card class="mb-3 h-100">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1">Data Delivery Health</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
+        </div>
+        <div class="d-flex align-items-center py-2 border-bottom border-200" *ngFor="let delivery of deliveryHealth">
+          <div class="flex-fill">
+            <div class="fw-semibold">{{ delivery.target }}</div>
+            <div class="text-muted small">{{ delivery.type }}</div>
+          </div>
+          <div class="text-muted small me-3 text-end">
+            <div>Success {{ delivery.successRate }}</div>
+            <div>Last sync {{ delivery.lastSync }}</div>
+          </div>
+          <div class="text-end">
+            <span [class]="getDeliveryStatusBadge(delivery.status)">{{ delivery.status | titlecase }}</span>
+            <div class="text-muted small">{{ delivery.enabled ? 'Enabled' : 'Disabled' }}</div>
+          </div>
+        </div>
+      </card-body>
+    </card>
+  </div>
+
+  <div class="col-xl-6">
+    <card class="mb-3">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1">Alert Stream</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
         </div>
         <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead class="text-uppercase text-muted small">
+          <table class="table align-middle mb-0 small text-nowrap">
+            <tbody>
+              <tr *ngFor="let alert of alertSummary">
+                <td><span [class]="getAlertBadgeClass(alert.severity)">{{ alert.severity | uppercase }}</span></td>
+                <td>
+                  <div class="fw-semibold">{{ alert.channel }}</div>
+                  <div class="text-muted small">{{ alert.message }}</div>
+                </td>
+                <td class="text-end text-muted small">{{ alert.ts }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </card-body>
+    </card>
+  </div>
+
+  <div class="col-xl-6">
+    <card class="mb-3">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1">Node Health Snapshot</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0 text-nowrap small">
+            <thead class="text-inverse text-opacity-50">
               <tr>
                 <th>Node</th>
                 <th>Project</th>
@@ -70,37 +190,79 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </card-body>
+    </card>
   </div>
 
-  <div class="row g-3 mt-1">
-    <div class="col-xxl-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header border-0 bg-white">
-          <div class="card-title mb-0">Telemetry Window (last hour)</div>
+  <div class="col-xl-6">
+    <card class="mb-3">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1">Owner Leaderboard</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
         </div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-4" *ngFor="let series of telemetryTrends">
-              <div class="border rounded-3 p-3 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div>
-                    <div class="fw-semibold">{{ series.channel }}</div>
-                    <div class="text-muted small">{{ series.unit }}</div>
-                  </div>
-                  <span class="badge bg-light text-theme">Current {{ series.current }} {{ series.unit }}</span>
-                </div>
-                <div class="d-flex justify-content-between small text-muted">
-                  <div>Min: <span class="fw-semibold text-body">{{ series.min }}</span></div>
-                  <div>Avg: <span class="fw-semibold text-body">{{ series.avg }}</span></div>
-                  <div>Max: <span class="fw-semibold text-body">{{ series.max }}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle mb-0 small text-nowrap">
+            <thead class="text-inverse text-opacity-50">
+              <tr>
+                <th>Owner</th>
+                <th>Nodes</th>
+                <th>Telemetry</th>
+                <th class="text-end">Alerts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let owner of ownerLeaderboard">
+                <td>
+                  <div class="fw-semibold">{{ owner.owner }}</div>
+                  <div class="text-muted small">SLA {{ owner.sla | uppercase }}</div>
+                </td>
+                <td>{{ owner.nodes }}</td>
+                <td>{{ owner.telemetryRate }}</td>
+                <td class="text-end">
+                  <span class="badge bg-dark bg-opacity-25">{{ owner.alerts }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
-    </div>
+      </card-body>
+    </card>
+  </div>
+
+  <div class="col-xl-6">
+    <card class="mb-3">
+      <card-body>
+        <div class="d-flex fw-bold small mb-3">
+          <span class="flex-grow-1">Activity Log</span>
+          <card-expand-toggler class="text-inverse text-opacity-50 text-decoration-none">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-striped table-borderless mb-0 small text-nowrap">
+            <tbody>
+              <tr *ngFor="let log of activityLog">
+                <td>
+                  <span class="d-flex align-items-center">
+                    <i class="bi bi-circle-fill fs-6px me-2" [ngClass]="{ 'text-theme': log.highlight }"></i>
+                    {{ log.title }}
+                  </span>
+                </td>
+                <td><small>{{ log.time }}</small></td>
+                <td>
+                  <span class="badge d-block rounded-0 pt-5px w-70px"
+                    [ngClass]="{ 'bg-theme text-theme-900': log.highlight, 'bg-inverse bg-opacity-25': !log.highlight }">
+                    {{ log.badge }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </card-body>
+    </card>
   </div>
 </div>

@@ -1,0 +1,70 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <h2 class="mb-0">Node Models</h2>
+    <div class="text-muted small">Kelola metadata platform, toolchain, dan build agent</div>
+  </div>
+  <div class="ms-auto text-muted small">
+    {{ stats.codegenSupported }} / {{ stats.total }} model mendukung code generator
+  </div>
+</div>
+
+<card class="shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+      <div class="input-group w-auto">
+        <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search"></i></span>
+        <input type="text" class="form-control border-start-0 ps-0" placeholder="Cari model / vendor / toolchain"
+          [(ngModel)]="nodeModelSearch">
+      </div>
+      <button class="btn btn-outline-theme btn-sm ms-auto" (click)="openDrawer()">
+        <i class="fa fa-plus fa-fw me-1"></i>
+        Add Model
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover text-nowrap align-middle mb-0">
+        <thead class="text-uppercase text-muted small">
+          <tr>
+            <th>Model</th>
+            <th>Vendor</th>
+            <th>Toolchain</th>
+            <th>Build Agent</th>
+            <th>Firmware Repo</th>
+            <th class="text-end">Supports Codegen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let model of filteredNodeModels" (click)="navigateToModel(model)" class="table-row-link">
+            <td>
+              <div class="fw-semibold text-theme">{{ model.modelCode }}</div>
+              <div class="text-muted small">{{ model.modelName }}</div>
+              <div class="badge bg-dark bg-opacity-25 text-uppercase">{{ model.hardwareClass }}</div>
+            </td>
+            <td>{{ model.vendor }}</td>
+            <td>{{ model.toolchain }}</td>
+            <td>{{ model.buildAgent }}</td>
+            <td class="text-truncate" style="max-width: 220px;">
+              <span class="text-muted small">{{ model.firmwareRepo }}</span>
+            </td>
+            <td class="text-end">
+              <span class="badge" [ngClass]="model.supportsCodegen ? 'bg-success' : 'bg-secondary'">
+                {{ model.supportsCodegen ? 'Yes' : 'No' }}
+              </span>
+              <div class="text-muted small">{{ model.flashProtocol }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="text-center text-muted py-4 border-top" *ngIf="!filteredNodeModels.length">
+      Tidak ada node model sesuai pencarian.
+    </div>
+  </div>
+</card>
+
+<app-node-model-drawer
+  [isOpen]="isDrawerOpen"
+  [hardwareClassOptions]="hardwareClassOptions"
+  (save)="handleDrawerSave($event)"
+  (close)="closeDrawer()"
+></app-node-model-drawer>

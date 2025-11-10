@@ -1,0 +1,24 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item active">Configuration</li>
+    </ul>
+    <h1 class="page-header mb-0">IoT Master Configuration</h1>
+    <div class="text-muted text-opacity-75 small">
+      Pilih tab untuk mengelola Node Models, Sensor Types, Catalogs, dan Channels
+    </div>
+  </div>
+</div>
+
+<ul class="nav nav-tabs nav-tabs-v2 px-4 mb-4">
+  <li class="nav-item me-3" *ngFor="let tab of tabs">
+    <a [routerLink]="tab.path" routerLinkActive="active"
+      class="nav-link px-2 d-flex align-items-center gap-2">
+      <i [ngClass]="tab.icon"></i>
+      <span>{{ tab.label }}</span>
+    </a>
+  </li>
+</ul>
+
+<router-outlet></router-outlet>

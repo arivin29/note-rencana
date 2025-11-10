@@ -1,225 +1,272 @@
 <div class="d-flex align-items-center mb-3">
-  <div>
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
-      <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
-      <li class="breadcrumb-item active">{{ nodeId }}</li>
-    </ol>
-    <h1 class="page-header mb-0">Node {{ nodeId }}</h1>
-  </div>
-  <div class="ms-auto d-flex gap-2">
-    <a [routerLink]="['/iot/nodes', nodeId, 'edit']" class="btn btn-outline-theme">
-      <i class="fa fa-pen fa-fw me-1"></i>
-      Edit Node
-    </a>
-    <a routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
-  </div>
+    <div>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+            <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
+            <li class="breadcrumb-item active">{{ nodeId }}</li>
+        </ol>
+        <h1 class="page-header mb-0">Node {{ nodeId }}</h1>
+    </div>
+    <div class="ms-auto d-flex gap-2">
+        <a [routerLink]="['/iot/nodes', nodeId, 'edit']" class="btn btn-outline-theme">
+            <i class="fa fa-pen fa-fw me-1"></i>
+            Edit Node
+        </a>
+        <a routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
+    </div>
 </div>
 
 <div class="mb-3 d-md-flex fw-bold text-inverse">
-  <div class="mt-md-0 mt-2">
-    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
-      <i class="fa fa-download fa-fw me-1 text-theme"></i>
-      Export Telemetry
-    </a>
-  </div>
-  <div class="ms-md-4 mt-md-0 mt-2">
-    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
-      <i class="fa fa-sync fa-fw me-1 text-theme"></i>
-      Force Sync
-    </a>
-  </div>
-  <div class="ms-md-4 mt-md-0 mt-2 dropdown-toggle">
-    <a href="javascript:;" data-bs-toggle="dropdown" class="text-decoration-none text-inverse text-opacity-75">
-      <i class="fa fa-gear fa-fw me-1 text-theme"></i>
-      More Actions
-    </a>
-    <div class="dropdown-menu">
-      <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
-      <a class="dropdown-item" href="javascript:;">Assign Technician</a>
-      <div role="separator" class="dropdown-divider"></div>
-      <a class="dropdown-item" href="javascript:;">Archive Node</a>
+    <div class="mt-md-0 mt-2">
+        <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
+            <i class="fa fa-download fa-fw me-1 text-theme"></i>
+            Export Telemetry
+        </a>
     </div>
-  </div>
+    <div class="ms-md-4 mt-md-0 mt-2">
+        <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
+            <i class="fa fa-sync fa-fw me-1 text-theme"></i>
+            Force Sync
+        </a>
+    </div>
+    <div class="ms-md-4 mt-md-0 mt-2 dropdown-toggle">
+        <a href="javascript:;" data-bs-toggle="dropdown" class="text-decoration-none text-inverse text-opacity-75">
+            <i class="fa fa-gear fa-fw me-1 text-theme"></i>
+            More Actions
+        </a>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
+            <a class="dropdown-item" href="javascript:;">Assign Technician</a>
+            <div role="separator" class="dropdown-divider"></div>
+            <a class="dropdown-item" href="javascript:;">Archive Node</a>
+        </div>
+    </div>
 </div>
 
 <div class="row gx-4">
-  <div class="col-lg-8">
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Node Snapshot
-        <span class="badge bg-success-subtle text-success ms-3">Uptime {{ nodeMeta.uptime }}</span>
-        <span class="badge bg-warning-subtle text-warning ms-2">{{ nodeMeta.alertsActive }} Alerts Active</span>
-      </card-header>
-      <card-body class="text-inverse">
-        <div class="row g-4">
-          <div class="col-md-6">
-            <div class="text-uppercase text-muted small">Owner</div>
-            <div class="fw-semibold">{{ nodeMeta.owner }}</div>
-            <div class="text-muted small">{{ nodeMeta.ownerContact }} · {{ nodeMeta.ownerPhone }}</div>
-          </div>
-          <div class="col-md-6">
-            <div class="text-uppercase text-muted small">Project</div>
-            <div class="fw-semibold">{{ nodeMeta.project }}</div>
-            <div class="text-muted small">Code: {{ nodeMeta.projectCode }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="text-uppercase text-muted small">Model</div>
-            <div class="fw-semibold">{{ nodeMeta.model }}</div>
-            <div class="text-muted small">{{ nodeMeta.protocol }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="text-uppercase text-muted small">Firmware</div>
-            <div class="fw-semibold">{{ nodeMeta.firmware }}</div>
-            <div class="text-muted small">Telemetry {{ nodeMeta.telemetryMode }} / {{ nodeMeta.telemetryInterval }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="text-uppercase text-muted small">Location</div>
-            <div class="fw-semibold">{{ nodeMeta.location }}</div>
-            <div class="text-muted small">{{ nodeMeta.coordinates }}</div>
-          </div>
-        </div>
-      </card-body>
-    </card>
-
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Sensor Channels
-        <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">
-          <i class="fa fa-chart-line me-1"></i>
-          View Telemetry Graph
-        </a>
-      </card-header>
-      <card-body class="p-0">
-        <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead class="text-uppercase text-muted small">
-              <tr>
-                <th>Channel</th>
-                <th>Metric</th>
-                <th class="text-end">Latest</th>
-                <th>Status</th>
-                <th>Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let channel of channels">
-                <td class="fw-semibold">{{ channel.id }}</td>
-                <td>{{ channel.metric }} ({{ channel.unit }})</td>
-                <td class="text-end fw-semibold">{{ channel.latest }} {{ channel.unit }}</td>
-                <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase }}</span></td>
-                <td class="text-capitalize">{{ channel.trend }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </card-body>
-    </card>
-
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Sensor Channel Trends
-        <span class="ms-auto text-muted small">Demo charts (last 30 min)</span>
-      </card-header>
-      <card-body>
-        <div class="row g-3">
-          <div class="col-md-6" *ngFor="let trend of channelCharts">
-            <div class="border rounded-3 p-3 h-100">
-              <div class="d-flex align-items-center mb-2">
-                <div>
-                  <div class="fw-semibold">{{ trend.label }}</div>
-                  <div class="text-muted small">{{ trend.metric }}</div>
+    <div class="col-lg-8">
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                Node Snapshot
+                <span class="badge bg-success-subtle text-success ms-3">Uptime {{ nodeMeta.uptime }}</span>
+                <span class="badge bg-warning-subtle text-warning ms-2">{{ nodeMeta.alertsActive }} Alerts Active</span>
+            </card-header>
+            <card-body class="text-inverse">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="text-uppercase text-muted small">Owner</div>
+                        <div class="fw-semibold">{{ nodeMeta.owner }}</div>
+                        <div class="text-muted small">{{ nodeMeta.ownerContact }} · {{ nodeMeta.ownerPhone }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-uppercase text-muted small">Project</div>
+                        <div class="fw-semibold">{{ nodeMeta.project }}</div>
+                        <div class="text-muted small">Code: {{ nodeMeta.projectCode }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-uppercase text-muted small">Model</div>
+                        <div class="fw-semibold">{{ nodeMeta.model }}</div>
+                        <div class="text-muted small">{{ nodeMeta.protocol }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-uppercase text-muted small">Firmware</div>
+                        <div class="fw-semibold">{{ nodeMeta.firmware }}</div>
+                        <div class="text-muted small">Telemetry {{ nodeMeta.telemetryMode }} / {{
+                            nodeMeta.telemetryInterval }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-uppercase text-muted small">Location</div>
+                        <div class="fw-semibold">{{ nodeMeta.location }}</div>
+                        <div class="text-muted small">{{ nodeMeta.coordinates }}</div>
+                    </div>
                 </div>
-                <div class="ms-auto text-success fw-bold">{{ trend.latest }}</div>
-              </div>
-              <apx-chart
-                [series]="trend.chart.series"
-                [chart]="trend.chart.options.chart"
-                [stroke]="trend.chart.options.stroke"
-                [dataLabels]="trend.chart.options.dataLabels"
-                [xaxis]="trend.chart.options.xaxis"
-                [colors]="trend.chart.options.colors"
-                [fill]="trend.chart.options.fill"
-              >
-              </apx-chart>
-            </div>
-          </div>
-        </div>
-      </card-body>
-    </card>
+            </card-body>
+        </card>
 
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Telemetry Highlights
-        <span class="ms-auto text-muted small">Updated {{ telemetryRecords[0]?.updatedAt }}</span>
-      </card-header>
-      <card-body class="p-0">
-        <table class="table mb-0">
-          <tbody>
-            <tr *ngFor="let record of telemetryRecords">
-              <td class="text-muted text-uppercase small w-25">{{ record.metric }}</td>
-              <td class="fw-semibold">{{ record.value }}</td>
-              <td class="text-muted small">{{ record.detail }}</td>
-              <td class="text-end text-muted small">{{ record.updatedAt }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </card-body>
-    </card>
-  </div>
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
+                Sensor Channels
+                <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
+                    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-50">
+                        <i class="fa fa-chart-line me-1"></i>
+                        View Telemetry Graph
+                    </a>
+                    <button type="button" class="btn btn-theme btn-sm" (click)="openAddSensorDrawer()">
+                        <i class="fa fa-plus me-1"></i>
+                        Add Sensor
+                    </button>
+                </div>
+            </card-header>
+            <card-body class="p-0">
+                <div *ngFor="let sensor of sensors; let idx = index" class="p-3" [ngClass]="{ 'border-top': idx > 0 }">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="me-auto">
+                            <div class="fw-semibold">{{ sensor.label }}</div>
+                            <div class="text-muted small">
+                                ID {{ sensor.id }} · Catalog {{ sensor.sensorCatalogLabel }}
+                            </div>
+                            <div class="text-muted small">
+                                {{ sensor.location }} · {{ sensor.protocolChannel || 'Channel N/A' }} · Sampling {{ sensor.samplingRate || '—' }}s
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-theme btn-sm" type="button" (click)="openAddChannelDrawer(sensor)">
+                            <i class="fa fa-plus me-1"></i>
+                            Add Channel
+                        </button>
+                        <span [class]="sensorHealthBadge(sensor.health)">{{ sensor.health | titlecase }}</span>
+                        <div class="text-muted small">{{ sensor.channels.length }} channel{{ sensor.channels.length > 1 ? 's' : '' }}</div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="text-uppercase text-muted small">
+                                <tr>
+                                    <th>Channel</th>
+                                    <th>Metric</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Latest</th>
+                                    <th>Status</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let channel of sensor.channels">
+                                    <td class="fw-semibold">
+                                        <a [routerLink]="['/iot/nodes', nodeId, 'sensor', channel.id]" 
+                                           class="text-decoration-none text-theme">
+                                            <i class="fa fa-chart-line me-1"></i>
+                                            {{ channel.id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div>{{ channel.metric }}</div>
+                                        <div class="text-muted small text-uppercase">{{ channel.unit }}</div>
+                                    </td>
+                                    <td>{{ channel.sensorTypeLabel }}</td>
+                                    <td class="text-end fw-semibold">{{ channel.latest }} {{ channel.unit }}</td>
+                                    <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase }}</span>
+                                    </td>
+                                    <td class="text-capitalize">{{ channel.trend }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </card-body>
+        </card>
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                Sensor Channel Trends
+                <span class="ms-auto text-muted small">Demo charts (last 30 min)</span>
+            </card-header>
+            <card-body>
+                <div class="row g-3">
+                    <div class="col-md-6" *ngFor="let trend of channelCharts">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="d-flex align-items-center mb-2">
+                                <div>
+                                    <div class="fw-semibold">{{ trend.label }}</div>
+                                    <div class="text-muted small">{{ trend.metric }}</div>
+                                </div>
+                                <div class="ms-auto text-success fw-bold">{{ trend.latest }}</div>
+                            </div>
+                            <apx-chart [series]="trend.chart.series" [chart]="trend.chart.options.chart"
+                                [stroke]="trend.chart.options.stroke" [dataLabels]="trend.chart.options.dataLabels"
+                                [xaxis]="trend.chart.options.xaxis" [colors]="trend.chart.options.colors"
+                                [fill]="trend.chart.options.fill">
+                            </apx-chart>
+                        </div>
+                    </div>
+                </div>
+            </card-body>
+        </card>
 
-  <div class="col-lg-4">
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Owner & Project
-        <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">Manage</a>
-      </card-header>
-      <card-body class="fw-bold">
-        <div class="mb-3">
-          <div class="text-muted small text-uppercase">Owner</div>
-          <div>{{ nodeMeta.owner }}</div>
-          <div class="text-muted fw-normal small">{{ nodeMeta.ownerContact }}</div>
-          <div class="text-muted fw-normal small">{{ nodeMeta.ownerPhone }}</div>
-        </div>
-        <div>
-          <div class="text-muted small text-uppercase">Project</div>
-          <div>{{ nodeMeta.project }}</div>
-          <div class="text-muted fw-normal small">Code {{ nodeMeta.projectCode }}</div>
-        </div>
-      </card-body>
-    </card>
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                Telemetry Highlights
+                <span class="ms-auto text-muted small">Updated {{ telemetryRecords[0]?.updatedAt }}</span>
+            </card-header>
+            <card-body class="p-0">
+                <table class="table mb-0">
+                    <tbody>
+                        <tr *ngFor="let record of telemetryRecords">
+                            <td class="text-muted text-uppercase small w-25">{{ record.metric }}</td>
+                            <td class="fw-semibold">{{ record.value }}</td>
+                            <td class="text-muted small">{{ record.detail }}</td>
+                            <td class="text-end text-muted small">{{ record.updatedAt }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </card-body>
+        </card>
+    </div>
 
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Location
-        <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">
-          <i class="fa fa-map-marked-alt"></i>
-          View Map
-        </a>
-      </card-header>
-      <card-body class="fw-bold">
-        <div>{{ nodeMeta.location }}</div>
-        <div class="text-muted small mb-2">{{ nodeMeta.coordinates }}</div>
-        <div class="bg-inverse bg-opacity-10 rounded-3 p-3 text-center text-muted small">
-          Map preview placeholder
-        </div>
-      </card-body>
-    </card>
+    
 
-    <card class="mb-4">
-      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-        Maintenance Timeline
-        <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">Add log</a>
-      </card-header>
-      <card-body class="fw-bold">
-        <div *ngFor="let log of maintenanceTimeline; let last = last" class="mb-3">
-          <div class="text-muted small">{{ log.date }}</div>
-          <div>{{ log.title }}</div>
-          <div class="text-muted small fw-normal">{{ log.description }}</div>
-          <div class="text-muted small">By {{ log.actor }}</div>
-          <hr class="my-3" *ngIf="!last">
-        </div>
-      </card-body>
-    </card>
-  </div>
+    <div class="col-lg-4">
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                Owner & Project
+                <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">Manage</a>
+            </card-header>
+            <card-body class="fw-bold">
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase">Owner</div>
+                    <div>{{ nodeMeta.owner }}</div>
+                    <div class="text-muted fw-normal small">{{ nodeMeta.ownerContact }}</div>
+                    <div class="text-muted fw-normal small">{{ nodeMeta.ownerPhone }}</div>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Project</div>
+                    <div>{{ nodeMeta.project }}</div>
+                    <div class="text-muted fw-normal small">Code {{ nodeMeta.projectCode }}</div>
+                </div>
+            </card-body>
+        </card>
+
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                Location
+                <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">
+                    <i class="fa fa-map-marked-alt"></i>
+                    View Map
+                </a>
+            </card-header>
+            <card-body class="fw-bold">
+                <div>{{ nodeMeta.location }}</div>
+                <div class="text-muted small mb-2">{{ nodeMeta.coordinates }}</div>
+                <div class="bg-inverse bg-opacity-10 rounded-3 p-3 text-center text-muted small">
+                    Map preview placeholder
+                </div>
+            </card-body>
+        </card>
+
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                Maintenance Timeline
+                <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">Add log</a>
+            </card-header>
+            <card-body class="fw-bold">
+                <div *ngFor="let log of maintenanceTimeline; let last = last" class="mb-3">
+                    <div class="text-muted small">{{ log.date }}</div>
+                    <div>{{ log.title }}</div>
+                    <div class="text-muted small fw-normal">{{ log.description }}</div>
+                    <div class="text-muted small">By {{ log.actor }}</div>
+                    <hr class="my-3" *ngIf="!last">
+                </div>
+            </card-body>
+        </card>
+    </div>
 </div>
+<app-node-detail-add-sensor-drawer [isOpen]="isAddSensorDrawerOpen"
+    [catalogOptions]="sensorCatalogOptions"
+    (close)="handleAddSensorDrawerClose()"
+    (save)="handleAddSensorSave($event)">
+</app-node-detail-add-sensor-drawer>
+
+<app-node-detail-add-channel-drawer [isOpen]="channelDrawerState.isOpen"
+    [sensorId]="channelDrawerState.sensorId"
+    [sensorLabel]="channelDrawerState.sensorLabel"
+    [sensorTypeOptions]="sensorTypeOptions"
+    (close)="handleAddChannelDrawerClose()"
+    (save)="handleAddChannelSave($event)">
+</app-node-detail-add-channel-drawer>

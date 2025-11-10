@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { DashboardPage } from './pages/dashboard/dashboard';
 import { IotDashboardPage } from './pages/iot/dashboard/iot-dashboard';
 import { IotAlertsPage } from './pages/iot/alerts/iot-alerts';
-import { IotTelemetryPage } from './pages/iot/telemetry/iot-telemetry';
+import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showcase';
 
 import { AnalyticsPage } from './pages/analytics/analytics';
 
@@ -91,10 +91,18 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/projects/projects.module').then((m) => m.ProjectsModule)
     },
     {
+        path: 'iot/config',
+        loadChildren: () => import('./pages/iot/iot-config/iot-config-module').then((m) => m.IotConfigModule)
+    },
+    {
         path: 'iot/owners',
         loadChildren: () => import('./pages/iot/owners/owners.module').then((m) => m.OwnersModule)
     },
-    { path: 'iot/telemetry', component: IotTelemetryPage, data: { title: 'IoT Telemetry' } },
+    {
+        path: 'iot/telemetry',
+        loadChildren: () => import('./pages/iot/telemetry/telemetry.module').then((m) => m.TelemetryModule)
+    },
+    { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
 
     { path: 'analytics', component: AnalyticsPage, data: { title: 'Analytics' } },
 

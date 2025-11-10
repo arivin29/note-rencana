@@ -11,8 +11,99 @@
     <a routerLink="/iot/owners" class="btn btn-outline-default">Back</a>
   </div>
 </div>
-<card>
-  <card-body class="text-muted">
-    Placeholder edit form for owner {{ ownerId }}.
+<card class="shadow-sm">
+  <card-body>
+    <form #ownerEditForm="ngForm" (ngSubmit)="handleSubmit(ownerEditForm.valid ?? false)">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label text-muted text-uppercase small">Owner Name</label>
+          <input type="text" class="form-control" name="name" [(ngModel)]="formModel.name" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label text-muted text-uppercase small">Industry</label>
+          <select class="form-select" name="industry" [(ngModel)]="formModel.industry" required>
+            <option *ngFor="let option of industryOptions" [ngValue]="option">{{ option }}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Contact Person</label>
+          <input class="form-control" name="contactPerson" [(ngModel)]="formModel.contactPerson" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Contact Email</label>
+          <input type="email" class="form-control" name="contactEmail" [(ngModel)]="formModel.contactEmail" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Contact Phone</label>
+          <input class="form-control" name="contactPhone" [(ngModel)]="formModel.contactPhone">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">SLA Level</label>
+          <select class="form-select text-capitalize" name="slaLevel" [(ngModel)]="formModel.slaLevel">
+            <option *ngFor="let option of slaOptions" [ngValue]="option">{{ option | titlecase }}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Timezone</label>
+          <input class="form-control" name="timezone" [(ngModel)]="formModel.timezone">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label text-muted text-uppercase small">Owner Address</label>
+          <input class="form-control" name="address" [(ngModel)]="formModel.address">
+        </div>
+        <div class="col-12">
+          <label class="form-label text-muted text-uppercase small">Notes</label>
+          <textarea class="form-control" rows="3" name="notes" [(ngModel)]="formModel.notes"
+            placeholder="Catatan penting untuk tim operasi"></textarea>
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <div class="text-muted text-uppercase small">Webhook Forwarding</div>
+                <div class="fw-semibold">Enable HTTP forwarder</div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="webhookToggle"
+                  [(ngModel)]="formModel.forwardingWebhookEnabled" name="forwardingWebhookEnabled">
+              </div>
+            </div>
+            <div class="text-muted small">
+              Kirim telemetry terbaru ke endpoint milik owner menggunakan payload JSON terstandarisasi.
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <div class="text-muted text-uppercase small">Database Forwarding</div>
+                <div class="fw-semibold">Enable MySQL / Postgres</div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="dbToggle"
+                  [(ngModel)]="formModel.forwardingDbEnabled" name="forwardingDbEnabled">
+              </div>
+            </div>
+            <div class="text-muted small">
+              Lakukan sinkronisasi batch ke database eksternal (warehouse) milik tenant.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-4">
+        <button type="button" class="btn btn-outline-default" routerLink="/iot/owners">Cancel</button>
+        <button type="submit" class="btn btn-theme" [disabled]="ownerEditForm.invalid || saving">
+          <span *ngIf="!saving"><i class="fa fa-save me-2"></i>Save Changes</span>
+          <span *ngIf="saving"><i class="fa fa-spinner fa-spin me-2"></i>Saving...</span>
+        </button>
+      </div>
+    </form>
   </card-body>
 </card>
