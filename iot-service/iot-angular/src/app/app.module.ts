@@ -8,6 +8,13 @@ import { BrowserModule, Title } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 
+// API Configuration 
+import { environment } from '../environments/environment';
+
+// SDK API Module
+import { ApiModule } from '../sdk/core/api.module';
+import { ApiConfiguration } from '../sdk/core/api-configuration';
+
 
 // Plugins
 import { NgScrollbarModule, NG_SCROLLBAR_OPTIONS } from 'ngx-scrollbar';
@@ -119,7 +126,7 @@ import { CalendarPage } from './pages/calendar/calendar';
 import { SettingsPage } from './pages/settings/settings';
 import { HelperPage } from './pages/helper/helper';
 import { SharedComponentsModule } from './shared/shared-components.module';
- 
+import { OwnerTestComponent } from './pages/owner-test/owner-test.component';
  
 @NgModule({
     declarations: [
@@ -204,7 +211,8 @@ import { SharedComponentsModule } from './shared/shared-components.module';
         ProfilePage,
         CalendarPage,
         SettingsPage,
-        HelperPage
+        HelperPage,
+        OwnerTestComponent
     ],
     imports: [
         CommonModule,
@@ -217,6 +225,9 @@ import { SharedComponentsModule } from './shared/shared-components.module';
         JsonPipe,
         SharedComponentsModule,
         WidgetsModule,
+        
+        // SDK API Module
+        ApiModule.forRoot({ rootUrl: environment.apiUrl }),
 
         NgChartsModule,
         NgScrollbarModule,
@@ -246,7 +257,7 @@ import { SharedComponentsModule } from './shared/shared-components.module';
             useValue: {
                 visibility: 'hover'
             }
-        }
+        } 
     ],
     bootstrap: [AppComponent]
 })

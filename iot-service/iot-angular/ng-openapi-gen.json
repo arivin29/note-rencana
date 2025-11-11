@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
+  "input": "http://localhost:3000/api-json",
+  "output": "src/sdk/core",
+  "ignoreUnusedModels": false,
+  "removeStaleFiles": true,
+  "servicePrefix": "",
+  "serviceSuffix": "Service",
+  "modelPrefix": "",
+  "modelSuffix": "",
+  "enumStyle": "alias",
+  "module": "ApiModule",
+  "configuration": "ApiConfiguration"
+}

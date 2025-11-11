@@ -16,6 +16,8 @@ iot-service/iot-angular/dist/
 iot-service/iot-angular/.angular/
 iot-service/iot-angular/tmp/
 
+iot-service/iot-backend/node_modules
+
 # Coverage / test outputs
 coverage/
 reports/

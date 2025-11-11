@@ -1,0 +1,27 @@
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: none;
+  margin-bottom: 1.5rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.table th {
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.modal {
+  overflow-y: auto;
+}
+
+.btn-group .btn {
+  margin: 0;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}

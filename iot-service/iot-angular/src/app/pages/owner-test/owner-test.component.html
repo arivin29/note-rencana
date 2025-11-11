@@ -1,0 +1,266 @@
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Owner API Test</h1>
+        <button class="btn btn-primary" (click)="createTestOwner()" [disabled]="loading">
+            <i class="fa fa-plus me-2"></i>Create Test Owner
+        </button>
+    </div>
+
+    <!-- Error Alert -->
+    <div class="alert alert-danger" *ngIf="error">
+        <i class="fa fa-exclamation-circle me-2"></i>{{ error }}
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4" *ngIf="statistics">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Total Owners</h5>
+                    <h2 class="mb-0">{{ statistics.totalOwners }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Industries</h5>
+                    <h2 class="mb-0">{{ statistics.ownersByIndustry?.length || 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">SLA Levels</h5>
+                    <h2 class="mb-0">{{ statistics.ownersBySlaLevel?.length || 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Top Owners</h5>
+                    <h2 class="mb-0">{{ statistics.topOwnersByProjects?.length || 0 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Filters</h5>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" [(ngModel)]="filterParams.search"
+                        placeholder="Search owners..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Industry</label>
+                    <select class="form-select" [(ngModel)]="filterParams.industry">
+                        <option value="">All</option>
+                        <option value="Water Treatment">Water Treatment</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">SLA Level</label>
+                    <select class="form-select" [(ngModel)]="filterParams.slaLevel">
+                        <option value="">All</option>
+                        <option value="bronze">Bronze</option>
+                        <option value="silver">Silver</option>
+                        <option value="gold">Gold</option>
+                        <option value="platinum">Platinum</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Has Nodes</label>
+                    <select class="form-select" [(ngModel)]="filterParams.hasNodes">
+                        <option value="">All</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary flex-fill" (click)="applyFilters()" [disabled]="loading">
+                            <i class="fa fa-filter me-2"></i>Apply
+                        </button>
+                        <button class="btn btn-secondary" (click)="resetFilters()" [disabled]="loading">
+                            <i class="fa fa-undo me-2"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owners List -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                Owners List
+                <span class="badge bg-secondary ms-2" *ngIf="!loading">Page {{ currentPage }} / {{ totalPages }}</span>
+            </h5>
+
+            <!-- Loading -->
+            <div class="text-center py-5" *ngIf="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading owners...</p>
+            </div>
+
+            <!-- Owners Table -->
+            <div class="table-responsive" *ngIf="!loading && owners.length > 0">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Industry</th>
+                            <th>Contact Person</th>
+                            <th>SLA Level</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let owner of owners">
+                            <td>
+                                <strong>{{ owner.name }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ owner.industry }}</span>
+                            </td>
+                            <td>{{ owner.contactPerson || '-' }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="{
+                    'bg-warning': owner.slaLevel === 'Bronze',
+                    'bg-secondary': owner.slaLevel === 'Silver',
+                    'bg-primary': owner.slaLevel === 'Gold',
+                    'bg-success': owner.slaLevel === 'Platinum'
+                  }">
+                                    {{ owner.slaLevel || '-' }}
+                                </span>
+                            </td>
+                            <td>{{ owner.createdAt | date:'short' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info me-2" (click)="loadOwnerDetails(owner.idOwner)"
+                                    [disabled]="loading">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" (click)="deleteOwner(owner.idOwner)"
+                                    [disabled]="loading">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div class="text-center py-5" *ngIf="!loading && owners.length === 0">
+                <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No owners found</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!loading && owners.length > 0">
+                <div>
+                    Showing page {{ currentPage }} of {{ totalPages }}
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary" (click)="goToPage(currentPage - 1)"
+                        [disabled]="currentPage === 1">
+                        <i class="fa fa-chevron-left"></i> Previous
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" (click)="goToPage(currentPage + 1)"
+                        [disabled]="currentPage === totalPages">
+                        Next <i class="fa fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Details Modal -->
+    <div class="modal d-block" *ngIf="selectedOwner" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Owner Details</h5>
+                    <button type="button" class="btn-close" (click)="closeDetails()"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Name:</th>
+                                    <td>{{ selectedOwner.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Industry:</th>
+                                    <td>{{ selectedOwner.industry }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Contact:</th>
+                                    <td>{{ selectedOwner.contactPerson || '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>SLA Level:</th>
+                                    <td>{{ selectedOwner.slaLevel || '-' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Statistics</h6>
+                            <table class="table table-sm" *ngIf="selectedOwner.statistics">
+                                <tr>
+                                    <th>Projects:</th>
+                                    <td>{{ selectedOwner.statistics.totalProjects }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Nodes:</th>
+                                    <td>{{ selectedOwner.statistics.totalNodes }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Active Sensors:</th>
+                                    <td>{{ selectedOwner.statistics.activeSensors }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Active Alerts:</th>
+                                    <td>{{ selectedOwner.statistics.activeAlerts }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mt-3" *ngIf="selectedOwner.projects && selectedOwner.projects.length > 0">
+                        <h6>Projects ({{ selectedOwner.projects.length }})</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between"
+                                *ngFor="let project of selectedOwner.projects">
+                                <span>{{ project.name }}</span>
+                                <span>
+                                    <span class="badge bg-info me-2">{{ project.status }}</span>
+                                    <span class="badge bg-secondary">{{ project.nodeCount }} nodes</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="closeDetails()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -36,7 +36,7 @@ AlertRule N ── 1 Sensor   |   AlertEvent N ── 1 AlertRule
 ```
 - **Cardinality kunci**: Owner→Project (1:N), Project→Node (1:N), Node→Sensor (1:N), Sensor→SensorLog (1:N).
 - **Node Assignment** menjaga riwayat jika Node dipindah antar project/owner.
-- **Node Model/Sensor Type** memisahkan metadata (merek, protokol, satuan).
+- **Node Model/Sensor Type** memisahkan metadata (merek, protokol, toolchain, satuan) sehingga pipeline firmware & OTA bisa dipilih otomatis.
 - **Alert Rule/Event** opsional untuk dashboard status dan notifikasi.
 
 ### 5. Definisi Entitas & Atribut
@@ -46,12 +46,12 @@ AlertRule N ── 1 Sensor   |   AlertEvent N ── 1 AlertRule
 | Project | id, owner_id, name, area_type, geofence (GeoJSON), status | Area_type: plant/pipeline/farm |
 | LocationSegment | id, project_id, label, centroid | Membantu grouping Node di UI |
 | Node | id, project_id, node_model_id, code, serial_number, dev_eui, ip_address, install_date, firmware_version, battery_type, telemetry_interval_sec, connectivity_status, last_seen_at, current_location_id | `code` ditampilkan di UI & QR; `telemetry_interval_sec` menentukan jadwal kirim data |
-| NodeModel | id, vendor, model_name, protocol, communication_band, power_type, hardware_revision, default_firmware | Reusable antar owner |
+| NodeModel | id, model_code, vendor, model_name, protocol, communication_band, power_type, hardware_class, hardware_revision, toolchain, build_agent, firmware_repo, flash_protocol, supports_codegen, default_firmware | Reusable antar owner serta menyimpan metadata platform/toolchain tiap model |
 | NodeAssignment | id, node_id, project_id, owner_id, node_location_id, start_at, end_at, reason | History pemindahan + alasan |
 | NodeLocation | id, project_id, type (segment/manual), location_segment_id, coordinates (POINT), elevation, address | Menyimpan koordinat presisi; bisa refer ke segment atau koordinat bebas |
-| Sensor | id, node_id, sensor_catalog_id, sensor_type_id, label, protocol_channel, calibration_factor, sampling_rate, install_date, calibration_due_at | Abstraksi perangkat; bisa memuat multi parameter |
+| Sensor | id, node_id, sensor_catalog_id, label, protocol_channel, calibration_factor, sampling_rate, install_date, calibration_due_at | Abstraksi perangkat; bisa memuat multi parameter |
 | SensorCatalog | id, vendor, model_name, icon_asset, icon_color, datasheet_url, firmware, calibration_interval_days, default_channels_json, default_thresholds_json | Master referensi untuk ikon & template channel |
-| SensorChannel | id, sensor_id, metric_code (pressure/voltage), unit, min_threshold, max_threshold, multiplier, offset, register_address | Mewakili masing-masing parameter/registrasi (contoh RS485) |
+| SensorChannel | id, sensor_id, sensor_type_id, metric_code (pressure/voltage), unit, min_threshold, max_threshold, multiplier, offset, register_address | Mewakili masing-masing parameter/registrasi (contoh RS485) dan menjaga konsistensi tipe metrik |
 | SensorType | id, category (pressure/flow/etc), default_unit, precision | Membantu template UI |
 | SensorLog | id, sensor_channel_id, ts, value_raw, value_engineered, quality_flag, ingestion_source | Time-series utama |
 | AlertRule | id, sensor_channel_id, rule_type (threshold, derivative), severity, params_json | Param fleksibel (JSON schema) |
@@ -200,7 +200,7 @@ AlertRule N ── 1 Sensor   |   AlertEvent N ── 1 AlertRule
 - Tema & akses: manfaatkan variable SCSS bawaan HUD untuk membedakan tenant/owner (warna ikon SensorCatalog) dan aktifkan guard/route-level loader agar role Ops vs Client memiliki layout serta menu yang relevan.
 
 ### 10. Arsitektur Teknologi & Infrastruktur
-- **Ingestion Layer**: Node IoT (LoRaWAN/WiFi/4G/Ethernet) publish telemetry via MQTT menuju Mosquitto broker (port 1883/9001) dengan autentikasi devEui+password dan ACL per topik (`iot/{owner}/{project}/{node}/telemetry`) agar isolasi multi-tenant terjaga.
+- **Ingestion Layer**: Node IoT (LoRaWAN/WiFi/4G/Ethernet) publish telemetry via MQTT menuju Mosquitto broker (port 1883/9001) dengan autentikasi devEui+password dan ACL per topik (`iot/{owner}/{project}/{node}/telemetry`) agar isolasi multi-tenant terjaga. Metadata NodeModel (toolchain/build_agent) menentukan agen build (Arduino IDE, PlatformIO, Teltonika Configurator) yang harus selesai sebelum device diizinkan push data.
 - **Processing Layer**: PM2 mengelola tiga proses utama:
   - `iot-api` (cluster 4 workers, NestJS) menyediakan REST+WebSocket, JWT auth, dan integrasi Postgres/Redis.
   - `iot-mqtt-worker` (cluster 2) subscribe ke topic telemetry, melakukan validasi schema, batching, lalu menulis ke TimescaleDB/Influx (field `value_raw/value_engineered`) serta cache ringkasan ke Redis.
@@ -217,3 +217,9 @@ AlertRule N ── 1 Sensor   |   AlertEvent N ── 1 AlertRule
 - Scope awal: import layout utama (`app.component`, sidebar/top-nav), buat modul halaman `dashboard-iot` yang merender data dummy dari bagian 6 (ringkasan owner, detail node, grafik channel) dengan komponen card/grafik bawaan template.
 - Alur kerja: 1) sinkronkan dependency Angular dengan template HUD (Node 22 + `npm install --legacy-peer-deps`), 2) scaffold service mock (`OwnerMockService`, `TelemetryMockService`) yang membaca JSON lokal, 3) binding data ke widget analytics, tabel alarm, dan chart apex.
 - Deliverable: preview dashboard yang sudah menunjukkan KPI utama (jumlah node online, alert aktif, grafik sensor multi-parameter) sebagai dasar validasi UI bersama tim Ops/Client sebelum backend siap.
+
+### 12. IoT Config Module & Generator Roadmap
+- Page `#/iot/config` menampilkan master `sensor_types`, `sensor_catalogs`, `sensor_channels`, serta **node_models** (lengkap dengan info toolchain) agar tim firmware bisa mengelompokkan device (ESP32, STM32, Arduino, Teltonika FMB130, dsb.).
+- Field NodeModel tambahan (`toolchain`, `build_agent`, `firmware_repo`, `flash_protocol`, `supports_codegen`) menjadi referensi utama saat Node dideploy atau diperbarui.
+- Tahap berikutnya (Q1 2026): service `FirmwarePipelineService` membaca Node→NodeModel untuk menjalankan agen generator (compile sketch, PlatformIO build, Teltonika template) sebelum push firmware/konfigurasi.
+- UI Node detail akan menampilkan badge platform + tombol “Generate Firmware” sehingga teknisi cukup memilih Node lalu agen yang relevan otomatis berjalan.
