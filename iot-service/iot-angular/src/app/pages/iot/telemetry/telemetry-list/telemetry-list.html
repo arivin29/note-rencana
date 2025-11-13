@@ -101,24 +101,46 @@
           <div class="text-muted small">Telemetry contributors</div>
         </div>
       </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+          <div class="text-muted text-uppercase small mb-1">Data Quality</div>
+          <div class="d-flex gap-3">
+            <div>
+              <div class="fw-bold text-success">{{ qualitySummary.good }}</div>
+              <div class="text-muted small">Healthy</div>
+            </div>
+            <div>
+              <div class="fw-bold text-warning">{{ qualitySummary.warning }}</div>
+              <div class="text-muted small">Warning</div>
+            </div>
+            <div>
+              <div class="fw-bold text-danger">{{ qualitySummary.critical }}</div>
+              <div class="text-muted small">Critical</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
-      <div class="d-flex flex-wrap gap-3 align-items-center">
-        <div>
+      <div class="row g-3 align-items-center">
+        <div class="col-md-4">
           <div class="text-muted text-uppercase small">Aggregation Window</div>
           <div class="fw-semibold">{{ selectedAggregationLabel }}</div>
+          <div class="text-muted small" *ngIf="windowRange">
+            {{ windowRange.start | date: 'dd MMM, HH:mm' }} – {{ windowRange.end | date: 'HH:mm' }} WIB
+          </div>
+          <div class="text-muted small" *ngIf="!windowRange">Tidak ada data untuk filter ini</div>
         </div>
-        <div>
-          <div class="text-muted text-uppercase small">Owner Filter</div>
-          <div class="fw-semibold">{{ filters.owner }}</div>
+        <div class="col-md-4">
+          <div class="text-muted text-uppercase small">Filters</div>
+          <div class="fw-semibold">Owner · {{ filters.owner }}</div>
+          <div class="fw-semibold">Project · {{ filters.project }}</div>
         </div>
-        <div>
-          <div class="text-muted text-uppercase small">Project Filter</div>
-          <div class="fw-semibold">{{ filters.project }}</div>
-        </div>
-        <div class="ms-auto text-muted small">
-          {{ totalChannels }} channel logs ditampilkan
+        <div class="col-md-4 text-md-end">
+          <div class="text-muted small">Channels ditampilkan</div>
+          <div class="fw-semibold fs-4">{{ totalChannels }}</div>
+          <div class="text-muted small">({{ totalPoints | number }} data points)</div>
         </div>
       </div>
     </div>
@@ -128,27 +150,31 @@
         <thead class="text-uppercase text-muted small">
           <tr>
             <th class="pt-0 pb-2">Channel</th>
-            <th class="pt-0 pb-2">Node / Unit</th>
             <th class="pt-0 pb-2">Project / Owner</th>
-            <th class="pt-0 pb-2">Range ({{ selectedAggregationLabel }})</th>
-            <th class="pt-0 pb-2 text-end">Data Points</th>
+            <th class="pt-0 pb-2">Node</th>
+            <th class="pt-0 pb-2">Window Stats</th>
+            <th class="pt-0 pb-2">Latest & Trend</th>
+            <th class="pt-0 pb-2 text-end">Quality / Points</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of filteredTelemetry">
             <td>
-              <div class="fw-semibold text-inverse">{{ row.idSensorChannel }}</div>
-              <div class="text-muted small">Sensor {{ row.idSensor }}</div>
-            </td>
-            <td>
-              <div class="fw-semibold">{{ row.idNode }}</div>
-              <div class="badge bg-dark bg-opacity-25 text-uppercase">{{ row.unit }}</div>
+              <div class="fw-semibold text-inverse">{{ row.channelLabel }}</div>
+              <div class="text-muted small">{{ row.idSensorChannel }} · {{ row.sensorType }}</div>
             </td>
             <td>
               <div class="fw-semibold">{{ row.project }}</div>
-              <div class="text-muted small">{{ row.owner }}</div>
+              <div class="text-muted small">{{ row.projectCode }} · {{ row.owner }} ({{ row.ownerCode }})</div>
             </td>
             <td>
+              <div class="fw-semibold">{{ row.nodeName }}</div>
+              <div class="text-muted small">{{ row.idNode }}</div>
+              <div class="badge bg-dark bg-opacity-25 text-uppercase">{{ row.unit }}</div>
+            </td>
+            <td>
+              <div class="text-muted small">{{ row.windowStart | date: 'HH:mm' }} - {{ row.windowEnd | date: 'HH:mm' }} WIB
+              </div>
               <div class="d-flex justify-content-between text-muted small">
                 <span>Min</span>
                 <span class="text-success fw-semibold">{{ row.min | number: '1.2-2' }}</span>
@@ -162,8 +188,18 @@
                 <span class="text-danger fw-semibold">{{ row.max | number: '1.2-2' }}</span>
               </div>
             </td>
+            <td>
+              <div class="fw-semibold">{{ row.latest | number: '1.2-2' }} {{ row.unit }}</div>
+              <div class="text-muted small">
+                <i class="fa" [ngClass]="trendIcon(row.trend)"></i>
+                vs avg {{ ((row.latest - row.avg) / row.avg) * 100 | number: '1.0-1' }}%
+              </div>
+              <div class="text-muted small">Sensor {{ row.idSensor }}</div>
+            </td>
             <td class="text-end">
-              <div class="fw-bold">{{ row.points }} pts</div>
+              <span class="badge d-inline-flex justify-content-end w-100"
+                [ngClass]="qualityBadge(row.quality)">{{ row.quality | titlecase }}</span>
+              <div class="fw-bold mt-2">{{ row.points }} pts</div>
               <div class="text-muted small">Per {{ selectedAggregationLabel }}</div>
             </td>
           </tr>

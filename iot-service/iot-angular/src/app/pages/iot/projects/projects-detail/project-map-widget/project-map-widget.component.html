@@ -1,0 +1,17 @@
+<card class="shadow-sm">
+  <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
+    Deployment Map
+    <span class="badge bg-body text-muted border">OpenLayers preview</span>
+    <div class="ms-auto text-muted small">Dummy coordinates for {{ nodes.length }} nodes</div>
+  </card-header>
+  <card-body>
+    <div class="project-map" #mapRef></div>
+    <div class="row g-3 pt-3 text-muted small">
+      <div class="col-md-4" *ngFor="let node of nodes">
+        <div class="fw-semibold text-inverse">{{ node.name }}</div>
+        <div>ID {{ node.id }}</div>
+        <div>{{ node.coords[1] | number: '1.3-3' }}, {{ node.coords[0] | number: '1.3-3' }}</div>
+      </div>
+    </div>
+  </card-body>
+</card>

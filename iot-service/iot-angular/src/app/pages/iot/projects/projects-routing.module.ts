@@ -8,6 +8,7 @@ import { ProjectsDetailPage } from './projects-detail/projects-detail';
 const routes: Routes = [
   { path: '', component: ProjectsListPage },
   { path: 'new', component: ProjectsAddPage },
+  { path: ':projectId/edit', component: ProjectsAddPage },  // Edit mode - same component
   { path: ':projectId', component: ProjectsDetailPage }
 ];
 

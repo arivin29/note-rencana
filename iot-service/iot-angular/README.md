@@ -118,6 +118,7 @@ src/
 4. **Having issues?** → Check [docs/SDK-GENERATION-FAQ.md](./docs/SDK-GENERATION-FAQ.md)
 
 ---
+ng-openapi-gen --input http://localhost:3000/api-json --output src/sdk/core
 
 ## 🔧 Configuration
 

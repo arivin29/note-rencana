@@ -23,6 +23,10 @@
             <i class="fa fa-pen fa-fw me-1"></i>
             Edit Channel
         </button>
+        <button class="btn btn-outline-danger btn-sm" (click)="deleteChannel()">
+            <i class="fa fa-trash fa-fw me-1"></i>
+            Delete Channel
+        </button>
         <button class="btn btn-theme btn-sm" (click)="exportToCSV()">
             <i class="fa fa-download fa-fw me-1"></i>
             Export CSV
@@ -279,10 +283,9 @@
 <app-node-detail-add-channel-drawer
     [isOpen]="isChannelDrawerOpen"
     [sensorId]="channelMeta.sensorId"
+    [channelId]="channelId"
     [sensorLabel]="channelMeta.channelId"
-    [sensorTypeOptions]="sensorTypeOptions"
     [mode]="channelDrawerMode"
-    [initialValue]="channelFormValue"
     (close)="handleChannelDrawerClose()"
     (save)="handleChannelSave($event)">
 </app-node-detail-add-channel-drawer>

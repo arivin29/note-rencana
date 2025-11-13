@@ -1,55 +1,119 @@
 <div class="config-drawer-backdrop" *ngIf="isOpen" (click)="handleBackdropClick()"></div>
 <div class="config-drawer" [class.open]="isOpen">
-  <div class="config-drawer-header d-flex align-items-center justify-content-between">
-    <div>
-      <div class="text-muted text-uppercase small">New Sensor</div>
-      <h5 class="mb-0">Add Sensor To Node</h5>
+    <div class="config-drawer-header d-flex align-items-center justify-content-between">
+        <div>
+            <div class="text-muted text-uppercase small">{{ sensorId ? 'Edit Sensor' : 'New Sensor' }}</div>
+            <h5 class="mb-0">{{ sensorId ? 'Edit Sensor Configuration' : 'Add Sensor To Node' }}</h5>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
+            <i class="fa fa-times"></i>
+        </button>
     </div>
-    <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
-      <i class="fa fa-times"></i>
-    </button>
-  </div>
-  <div class="config-drawer-body">
-    <form #addSensorForm="ngForm" (ngSubmit)="handleSubmit(addSensorForm.valid ?? false)">
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Sensor Code</label>
-        <input class="form-control" name="sensorCode" [(ngModel)]="formModel.sensorCode" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Sensor Label</label>
-        <input class="form-control" name="label" [(ngModel)]="formModel.label" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Sensor Catalog</label>
-        <select class="form-select" name="sensorCatalogId" [(ngModel)]="formModel.sensorCatalogId" required>
-          <option *ngFor="let option of catalogOptions" [ngValue]="option.id">{{ option.label }}</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Location / Mounting</label>
-        <input class="form-control" name="location" [(ngModel)]="formModel.location">
-      </div>
-      <div class="mb-4">
-        <label class="form-label text-muted text-uppercase small">Health Status</label>
-        <select class="form-select" name="health" [(ngModel)]="formModel.health">
-          <option value="online">Online</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="offline">Offline</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Protocol Channel</label>
-        <input class="form-control" name="protocolChannel" [(ngModel)]="formModel.protocolChannel">
-      </div>
-      <div class="mb-4">
-        <label class="form-label text-muted text-uppercase small">Sampling Rate (sec)</label>
-        <input type="number" class="form-control" name="samplingRate" [(ngModel)]="formModel.samplingRate" min="1">
-      </div>
+    <div class="config-drawer-body">
+        <!-- Loading State -->
+        <div *ngIf="loading || loadingSensor" class="text-center py-5">
+            <div class="spinner-border text-theme mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="text-muted">{{ loadingSensor ? 'Loading sensor data...' : 'Loading catalog options...' }}</div>
+        </div>
 
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
-        <button type="submit" class="btn btn-theme flex-fill" [disabled]="addSensorForm.invalid">Save Sensor</button>
-      </div>
-    </form>
-  </div>
+        <!-- Form -->
+        <form *ngIf="!loading && !loadingSensor" [formGroup]="sensorForm" (ngSubmit)="handleSubmit()">
+            <div class="mb-3">
+                <label class="form-label text-muted text-uppercase small">Sensor Code *</label>
+                <input class="form-control" formControlName="sensorCode" 
+                       [class.is-invalid]="isFieldInvalid('sensorCode')"
+                       placeholder="e.g., SENSOR-001">
+                <div class="invalid-feedback" *ngIf="hasError('sensorCode', 'required')">
+                    Sensor code is required
+                </div>
+                <div class="form-text" *ngIf="!isFieldInvalid('sensorCode')">
+                    Unique identifier for this sensor
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted text-uppercase small">Sensor Label *</label>
+                <input class="form-control" formControlName="label"
+                       [class.is-invalid]="isFieldInvalid('label')"
+                       placeholder="e.g., Inlet Pressure Sensor">
+                <div class="invalid-feedback" *ngIf="hasError('label', 'required')">
+                    Sensor label is required
+                </div>
+                <div class="form-text" *ngIf="!isFieldInvalid('label')">
+                    Display name for this sensor
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted text-uppercase small">Sensor Catalog *</label>
+                <select class="form-select" formControlName="idSensorCatalog"
+                        [class.is-invalid]="isFieldInvalid('idSensorCatalog')">
+                    <option value="">Select catalog...</option>
+                    <option *ngFor="let catalog of catalogOptions" [value]="catalog.idSensorCatalog">
+                        {{ catalog.vendor }} - {{ catalog.modelName }}
+                    </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="hasError('idSensorCatalog', 'required')">
+                    Sensor catalog is required
+                </div>
+                <div class="form-text" *ngIf="!isFieldInvalid('idSensorCatalog')">
+                    Sensor model/catalog type
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted text-uppercase small">Location / Mounting</label>
+                <input class="form-control" formControlName="location"
+                       placeholder="e.g., Inlet Pipe Section A">
+                <div class="form-text">Physical installation location</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label text-muted text-uppercase small">Status *</label>
+                <select class="form-select" formControlName="status">
+                    <option value="active">Active</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+                <div class="form-text">Current operational status</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted text-uppercase small">Protocol Channel</label>
+                <input class="form-control" formControlName="protocolChannel"
+                       placeholder="e.g., CH1, A0, Pin 12">
+                <div class="form-text">Communication channel or port number</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label text-muted text-uppercase small">Sampling Rate (seconds)</label>
+                <input type="number" class="form-control" formControlName="samplingRate"
+                       [class.is-invalid]="isFieldInvalid('samplingRate')"
+                       min="1" placeholder="e.g., 30">
+                <div class="invalid-feedback" *ngIf="hasError('samplingRate', 'min')">
+                    Sampling rate must be at least 1 second
+                </div>
+                <div class="form-text" *ngIf="!isFieldInvalid('samplingRate')">
+                    How often to read sensor data (in seconds)
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary flex-fill" 
+                        (click)="close.emit()" [disabled]="saving">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-theme flex-fill" 
+                        [disabled]="sensorForm.invalid || saving">
+                    <span *ngIf="!saving">{{ sensorId ? 'Update Sensor' : 'Save Sensor' }}</span>
+                    <span *ngIf="saving">
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                        Saving...
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
 </div>

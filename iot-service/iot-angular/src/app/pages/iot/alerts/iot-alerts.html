@@ -1,39 +1,209 @@
-<div class="container">
-  <div class="card border-0 shadow-sm">
-    <div class="card-header border-0 bg-white d-flex align-items-center">
-      <div>
-        <div class="text-muted small">Alert Center</div>
-        <div class="card-title mb-0">Real-time alert queue</div>
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item active">Alerts</li>
+    </ul>
+    <h1 class="page-header mb-0">Alert Center</h1>
+    <div class="text-muted text-opacity-75 small">Realtime queue monitoring & acknowledgement workflow</div>
+  </div>
+  <div class="ms-auto d-flex flex-wrap gap-2">
+    <button class="btn btn-outline-default btn-sm">
+      <i class="fa fa-file-excel me-1"></i>
+      Export
+    </button>
+    <button class="btn btn-outline-theme btn-sm">
+      <i class="fa fa-bell me-1"></i>
+      Escalation Policy
+    </button>
+    <button class="btn btn-theme btn-sm">
+      <i class="fa fa-plus me-1"></i>
+      New Rule
+    </button>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-sm-6 col-xl-3">
+    <div class="border rounded-3 p-3 shadow-sm bg-white h-100">
+      <div class="text-muted text-uppercase small">Open Alerts</div>
+      <div class="fs-2 fw-bold text-danger">{{ openCount }}</div>
+      <div class="text-muted small">Need attention now</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="border rounded-3 p-3 shadow-sm bg-white h-100">
+      <div class="text-muted text-uppercase small">Acknowledged</div>
+      <div class="fs-2 fw-bold text-warning">{{ acknowledgedCount }}</div>
+      <div class="text-muted small">Owned by on-call</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="border rounded-3 p-3 shadow-sm bg-white h-100">
+      <div class="text-muted text-uppercase small">Silenced Windows</div>
+      <div class="fs-2 fw-bold text-muted">{{ silencedCount }}</div>
+      <div class="text-muted small">Maintenance overrides</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="border rounded-3 p-3 shadow-sm bg-white h-100">
+      <div class="text-muted text-uppercase small">Critical Severity</div>
+      <div class="fs-2 fw-bold text-danger">{{ criticalCount }}</div>
+      <div class="text-muted small">Across all owners</div>
+    </div>
+  </div>
+</div>
+
+<card class="shadow-sm mb-4">
+  <card-body>
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="text-muted text-uppercase small mb-1">Owner</label>
+        <div class="dropdown w-100">
+          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" data-bs-toggle="dropdown">
+            {{ filters.owner }}
+          </button>
+          <div class="dropdown-menu w-100">
+            <button class="dropdown-item" *ngFor="let option of ownerOptions" (click)="setFilter('owner', option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="ms-auto">
-        <button class="btn btn-theme" type="button">Create Rule</button>
+      <div class="col-md-3">
+        <label class="text-muted text-uppercase small mb-1">Severity</label>
+        <div class="dropdown w-100">
+          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" data-bs-toggle="dropdown">
+            {{ filters.severity }}
+          </button>
+          <div class="dropdown-menu w-100">
+            <button class="dropdown-item" *ngFor="let option of severityOptions" (click)="setFilter('severity', option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="text-muted text-uppercase small mb-1">Status</label>
+        <div class="dropdown w-100">
+          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" data-bs-toggle="dropdown">
+            {{ filters.status }}
+          </button>
+          <div class="dropdown-menu w-100">
+            <button class="dropdown-item" *ngFor="let option of statusOptions" (click)="setFilter('status', option)">
+              {{ option }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="text-muted text-uppercase small mb-1">Search</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Cari alert / channel / owner"
+            [(ngModel)]="searchTerm" />
+        </div>
       </div>
     </div>
-    <div class="table-responsive">
-      <table class="table align-middle mb-0">
-        <thead class="text-uppercase text-muted small">
-          <tr>
-            <th>ID</th>
-            <th>Channel</th>
-            <th>Project</th>
-            <th>Severity</th>
-            <th>Status</th>
-            <th>Value</th>
-            <th class="text-end">Triggered</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let alert of alerts">
-            <td class="fw-semibold">{{ alert.id }}</td>
-            <td>{{ alert.channel }}</td>
-            <td>{{ alert.project }}</td>
-            <td><span [class]="severityClass(alert.severity)">{{ alert.severity | titlecase }}</span></td>
-            <td><span [class]="statusClass(alert.status)">{{ alert.status | titlecase }}</span></td>
-            <td>{{ alert.value }}</td>
-            <td class="text-end text-muted">{{ alert.triggeredAt }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="d-flex flex-wrap gap-3 mt-3 text-muted small">
+      <div>Showing <strong>{{ filteredAlerts.length }}</strong> records</div>
+      <div>Active filters · Owner <strong>{{ filters.owner }}</strong> · Severity <strong>{{ filters.severity }}</strong>
+      </div>
     </div>
+  </card-body>
+</card>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <card class="shadow-sm h-100">
+      <card-header class="bg-inverse bg-opacity-10 d-flex align-items-center">
+        Alert Queue
+        <span class="badge bg-body text-muted border ms-2">Realtime feed</span>
+      </card-header>
+      <card-body class="p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="text-uppercase text-muted small">
+              <tr>
+                <th>Alert</th>
+                <th>Project / Owner</th>
+                <th>Threshold & Assignment</th>
+                <th class="text-end">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let alert of filteredAlerts">
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <span [class]="severityClass(alert.severity)">{{ alert.severity | titlecase }}</span>
+                    <div>
+                      <div class="fw-semibold">{{ alert.channelLabel }}</div>
+                      <div class="text-muted small">{{ alert.channel }} · Node {{ alert.node }}</div>
+                      <div class="text-muted small">{{ alert.summary }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="fw-semibold">{{ alert.project }}</div>
+                  <div class="text-muted small">{{ alert.owner }}</div>
+                  <div class="text-muted small">ID {{ alert.id }}</div>
+                </td>
+                <td>
+                  <div class="text-muted small">Value {{ alert.value }} {{ alert.unit }}</div>
+                  <div class="text-muted small">Threshold {{ alert.threshold }}</div>
+                  <div class="text-muted small">Assigned to {{ alert.assignedTo }}</div>
+                  <div class="text-muted small">Last notified {{ alert.lastNotified }}</div>
+                </td>
+                <td class="text-end">
+                  <div [class]="statusClass(alert.status)">{{ alert.status | titlecase }}</div>
+                  <div class="fw-semibold mt-2">{{ alert.duration }}</div>
+                  <div class="text-muted small">{{ alert.triggeredAt | date: 'dd MMM · HH:mm' }} WIB</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-center text-muted py-5 border-top" *ngIf="!filteredAlerts.length">
+          Tidak ada alert untuk filter ini.
+        </div>
+      </card-body>
+    </card>
+  </div>
+
+  <div class="col-xl-4">
+    <card class="shadow-sm mb-3">
+      <card-header class="bg-inverse bg-opacity-10">Active Assignment Snapshot</card-header>
+      <card-body class="p-0">
+        <div class="list-group list-group-flush">
+          <div class="list-group-item" *ngFor="let alert of filteredAlerts | slice:0:4">
+            <div class="d-flex align-items-center mb-1">
+              <div class="fw-semibold flex-grow-1">{{ alert.channelLabel }}</div>
+              <span [class]="severityClass(alert.severity)">{{ alert.severity | titlecase }}</span>
+            </div>
+            <div class="text-muted small">Assigned to {{ alert.assignedTo }}</div>
+            <div class="text-muted small">Status {{ alert.status | titlecase }} · {{ alert.duration }}</div>
+          </div>
+          <div class="list-group-item text-muted small text-center" *ngIf="!(filteredAlerts | slice:0:4).length">
+            Semua alert clear.
+          </div>
+        </div>
+      </card-body>
+    </card>
+
+    <card class="shadow-sm">
+      <card-header class="bg-inverse bg-opacity-10 d-flex align-items-center">
+        Recent Activity
+        <span class="badge bg-body border text-muted ms-2">Automation & manual</span>
+      </card-header>
+      <card-body>
+        <div class="timeline">
+          <div class="timeline-item pb-3 mb-3 border-bottom" *ngFor="let log of activities">
+            <div class="fw-semibold">{{ log.action }}</div>
+            <div class="text-muted small">{{ log.time }} · {{ log.actor }}</div>
+            <div class="text-muted small" *ngIf="log.note">{{ log.note }}</div>
+          </div>
+        </div>
+      </card-body>
+    </card>
   </div>
 </div>

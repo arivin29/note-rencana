@@ -1,6 +1,6 @@
 import { Owner, ReportOwner } from './report-owner';
 
-export type ProjectAreaType = 'plant' | 'pipeline' | 'farm' | 'other';
+export type ProjectAreaType = 'plant' | 'pipeline' | 'farm' | 'industrial' | 'other';
 
 export interface Project {
   idProject: string;

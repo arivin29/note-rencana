@@ -11,21 +11,36 @@
     </button>
   </div>
   <div class="config-drawer-body">
-    <form #addChannelForm="ngForm" (ngSubmit)="handleSubmit(addChannelForm.valid ?? false)">
+    <!-- Loading State -->
+    <div *ngIf="loading || loadingChannel" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-2">
+        {{ loadingChannel ? 'Loading channel data...' : 'Loading sensor types...' }}
+      </p>
+    </div>
+
+    <form #addChannelForm="ngForm" (ngSubmit)="handleSubmit(addChannelForm.valid ?? false)" *ngIf="!loading && !loadingChannel">
       <input type="hidden" name="sensorId" [(ngModel)]="formModel.sensorId">
       <div class="mb-3">
         <label class="form-label text-muted text-uppercase small">Channel ID</label>
         <input class="form-control" name="channelId" [(ngModel)]="formModel.channelId" required>
+        <small class="text-muted">Unique identifier for this channel</small>
       </div>
       <div class="mb-3">
         <label class="form-label text-muted text-uppercase small">Metric Code</label>
         <input class="form-control" name="metricCode" [(ngModel)]="formModel.metricCode" required>
+        <small class="text-muted">e.g., current_1, voltage_2, temperature</small>
       </div>
       <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Sensor Type</label>
-        <select class="form-select" name="sensorTypeId" [(ngModel)]="formModel.sensorTypeId" required>
+        <label class="form-label text-muted text-uppercase small">Sensor Type (Category)</label>
+        <select class="form-select" name="sensorTypeId" [(ngModel)]="formModel.sensorTypeId" 
+                (ngModelChange)="onSensorTypeChange()" required>
+          <option value="" disabled>Select sensor type</option>
           <option *ngFor="let option of sensorTypeOptions" [ngValue]="option.id">{{ option.label }}</option>
         </select>
+        <small class="text-muted">Unit and precision will be auto-filled based on type</small>
       </div>
       <div class="row">
         <div class="col-md-6">
@@ -57,8 +72,16 @@
         </div>
       </div>
       <div class="d-flex gap-2">
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
-        <button type="submit" class="btn btn-theme flex-fill" [disabled]="addChannelForm.invalid">Save Channel</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()" [disabled]="saving">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="addChannelForm.invalid || saving">
+          <span *ngIf="!saving">{{ mode === 'edit' ? 'Update' : 'Save' }} Channel</span>
+          <span *ngIf="saving">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Saving...
+          </span>
+        </button>
       </div>
     </form>
   </div>

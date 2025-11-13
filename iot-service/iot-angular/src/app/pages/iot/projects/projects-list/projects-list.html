@@ -45,7 +45,7 @@
     <ul class="nav nav-tabs nav-tabs-v2 px-4">
         <li class="nav-item me-3" *ngFor="let option of statusOptions">
             <a href="javascript:;" class="nav-link px-2" [class.active]="filters.status === option"
-                (click)="setFilter('status', option)">
+                (click)="setStatusFilter(option)">
                 {{ option === 'All Status' ? 'All' : (option | titlecase) }}
                 <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border ms-1">{{ statusCount(option)
                     }}</span>
@@ -59,12 +59,12 @@
                 <div class="dropdown w-100">
                     <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
                         data-bs-toggle="dropdown">
-                        {{ filters.owner }}
+                        {{ filters.ownerLabel }}
                     </button>
                     <div class="dropdown-menu w-100">
                         <button type="button" class="dropdown-item" *ngFor="let option of ownerOptions"
-                            (click)="setFilter('owner', option)">
-                            {{ option }}
+                            (click)="setOwnerFilter(option)">
+                            {{ option.label }}
                         </button>
                     </div>
                 </div>
@@ -75,13 +75,14 @@
                     <span class="input-group-text bg-transparent border-end-0 text-muted"><i
                             class="fa fa-search opacity-50"></i></span>
                     <input type="text" class="form-control border-start-0 ps-0"
-                        placeholder="Cari nama project / ID / lokasi" [(ngModel)]="searchTerm">
+                        placeholder="Cari nama project / ID / lokasi"
+                        [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)">
                 </div>
             </div>
         </div>
 
         <div class="row g-3">
-            <div class="col-xl-4 col-md-6" *ngFor="let project of filteredProjects">
+            <div class="col-xl-4 col-md-6" *ngFor="let project of projects">
                 <card>
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body d-flex flex-column">
@@ -116,6 +117,8 @@
                                 <i class="fa fa-map-marker-alt fa-fw me-1"></i> {{ project.location }}
                             </div>
                             <div class="mt-auto d-flex gap-2">
+                                <a [routerLink]="['/iot/projects', project.idProject]"
+                                    class="btn btn-sm btn-theme flex-fill">Project Detail</a>
                                 <a [routerLink]="['/iot/nodes']" class="btn btn-sm btn-outline-theme flex-fill">View
                                     Nodes</a>
                                 <a [routerLink]="['/iot/telemetry']"
@@ -125,8 +128,11 @@
                     </div>
                 </card>
             </div>
-            <div *ngIf="!filteredProjects.length" class="text-center text-muted py-5">
+            <div *ngIf="!projects.length && !loading" class="text-center text-muted py-5">
                 Tidak ada project sesuai filter.
+            </div>
+            <div *ngIf="loading" class="text-center text-muted py-5">
+                Loading projects...
             </div>
         </div>
 

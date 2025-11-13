@@ -1,4 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { OwnersService } from '../../../../../sdk/core/services/owners.service';
+import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
+import { NodeModelsService } from '../../../../../sdk/core/services/node-models.service';
+import { SensorCatalogsService } from '../../../../../sdk/core/services/sensor-catalogs.service';
 
 interface OwnerOption {
   id: string;
@@ -15,6 +19,11 @@ interface NodeModelOption {
   id: string;
   vendor: string;
   model: string;
+}
+
+interface SensorCatalogOption {
+  id: string;
+  label: string;
 }
 
 interface SensorChannelDraft {
@@ -40,41 +49,20 @@ interface SensorDraft {
   styleUrls: ['./nodes-add.scss'],
   standalone: false
 })
-export class NodesAddPage {
-  ownerOptions: OwnerOption[] = [
-    { id: 'owner-abc', name: 'PT ABC' },
-    { id: 'owner-xyz', name: 'PT XYZ' },
-    { id: 'owner-delta', name: 'PT Delta' }
-  ];
-
-  projectOptionsAll: ProjectOption[] = [
-    { id: 'project-area-a', name: 'Area A', ownerId: 'owner-abc' },
-    { id: 'project-plant-south', name: 'Plant South', ownerId: 'owner-xyz' },
-    { id: 'project-booster-west', name: 'Booster West', ownerId: 'owner-xyz' },
-    { id: 'project-reservoir-b', name: 'Reservoir B', ownerId: 'owner-delta' },
-    { id: 'project-pipeline-north', name: 'Pipeline North', ownerId: 'owner-abc' }
-  ];
-
-  nodeModels: NodeModelOption[] = [
-    { id: 'model-vx-200', vendor: 'VendorX', model: 'VX-200' },
-    { id: 'model-hw-550', vendor: 'HydroWorks', model: 'HW-550' },
-    { id: 'model-rv-12', vendor: 'RiverTech', model: 'RV-12' }
-  ];
-
-  sensorCatalogs = [
-    { id: 'catalog-3051', label: 'Rosemount 3051 (Pressure)' },
-    { id: 'catalog-flow-rs485', label: 'Siemens FM Mag 6000 (Flow)' },
-    { id: 'catalog-energy', label: 'Schneider PowerTag (Energy Meter)' }
-  ];
+export class NodesAddPage implements OnInit {
+  ownerOptions: OwnerOption[] = [];
+  projectOptionsAll: ProjectOption[] = [];
+  nodeModels: NodeModelOption[] = [];
+  sensorCatalogs: SensorCatalogOption[] = [];
 
   telemetryModes: Array<'push' | 'pull'> = ['push', 'pull'];
   batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains'];
   protocolChannels = ['4-20mA', 'RS485-Modbus', 'Pulse', 'Digital'];
 
   form = {
-    ownerId: this.ownerOptions[0].id,
-    projectId: 'project-area-a',
-    nodeModelId: this.nodeModels[0].id,
+    ownerId: '',
+    projectId: '',
+    nodeModelId: '',
     code: '',
     serialNumber: '',
     installDate: '',
@@ -91,25 +79,21 @@ export class NodesAddPage {
     address: ''
   };
 
-  sensors: SensorDraft[] = [
-    {
-      catalogId: 'catalog-3051',
-      label: 'Inlet Pressure',
-      protocolChannel: '4-20mA',
-      channels: [
-        { metricCode: 'pressure', unit: 'bar', register: 'n/a', minThreshold: 1.2, maxThreshold: 3.5 }
-      ]
-    },
-    {
-      catalogId: 'catalog-flow-rs485',
-      label: 'Main Flow Meter',
-      protocolChannel: 'RS485-Modbus',
-      channels: [
-        { metricCode: 'flow_rate', unit: 'm3/h', register: '30001', minThreshold: 20, maxThreshold: 180 },
-        { metricCode: 'pressure', unit: 'bar', register: '30005', minThreshold: 1.5, maxThreshold: 4.0 }
-      ]
-    }
-  ];
+  sensors: SensorDraft[] = [];
+
+  constructor(
+    private ownersService: OwnersService,
+    private projectsService: ProjectsService,
+    private nodeModelsService: NodeModelsService,
+    private sensorCatalogsService: SensorCatalogsService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadOwnerOptions();
+    this.loadProjectOptions();
+    this.loadNodeModels();
+    this.loadSensorCatalogs();
+  }
 
   onOwnerChange(ownerId: string) {
     this.form.ownerId = ownerId;
@@ -184,5 +168,141 @@ export class NodesAddPage {
         channels: sensor.channels
       }))
     };
+  }
+
+  private loadOwnerOptions() {
+    this.ownersService
+      .ownersControllerFindAll$Response({ page: 1, limit: 100 })
+      .subscribe({
+        next: (response) => {
+          const body = this.parseBody(response.body);
+          const items = this.extractDataArray(body);
+          this.ownerOptions = items
+            .map((owner: any) => ({
+              id: owner?.idOwner || owner?.id || owner?.ownerId || '',
+              name: owner?.name || owner?.companyName || 'Owner'
+            }))
+            .filter((owner: OwnerOption) => owner.id);
+          this.syncFormSelections();
+        },
+        error: (error) => {
+          console.error('Failed to load owners', error);
+        }
+      });
+  }
+
+  private loadProjectOptions() {
+    this.projectsService
+      .projectsControllerFindAll$Response({ page: 1, limit: 200 })
+      .subscribe({
+        next: (response) => {
+          const body = this.parseBody(response.body);
+          const items = this.extractDataArray(body);
+          this.projectOptionsAll = items
+            .map((project: any) => ({
+              id: project?.idProject || project?.id || '',
+              name: project?.name || 'Project',
+              ownerId: project?.idOwner || project?.owner?.idOwner || ''
+            }))
+            .filter((project: ProjectOption) => project.id && project.ownerId);
+          this.syncFormSelections();
+        },
+        error: (error) => {
+          console.error('Failed to load projects', error);
+        }
+      });
+  }
+
+  private loadNodeModels() {
+    this.nodeModelsService
+      .nodeModelsControllerFindAll$Response({ page: 1, limit: 100 })
+      .subscribe({
+        next: (response) => {
+          const body = this.parseBody(response.body);
+          const items = this.extractDataArray(body);
+          this.nodeModels = items
+            .map((model: any) => ({
+              id: model?.idNodeModel || model?.id || '',
+              vendor: model?.vendor || '',
+              model: model?.modelName || model?.model || ''
+            }))
+            .filter((model: NodeModelOption) => model.id);
+          this.syncFormSelections();
+        },
+        error: (error) => {
+          console.error('Failed to load node models', error);
+        }
+      });
+  }
+
+  private loadSensorCatalogs() {
+    this.sensorCatalogsService
+      .sensorCatalogsControllerFindAll$Response({ page: 1, limit: 100 })
+      .subscribe({
+        next: (response) => {
+          const body = this.parseBody(response.body);
+          const items = this.extractDataArray(body);
+          this.sensorCatalogs = items
+            .map((catalog: any) => ({
+              id: catalog?.idSensorCatalog || catalog?.id || '',
+              label: catalog?.modelName
+                ? `${catalog.modelName} (${catalog.vendor || 'Unknown'})`
+                : catalog?.label || 'Sensor Catalog'
+            }))
+            .filter((catalog: SensorCatalogOption) => catalog.id);
+          if (!this.sensors.length) {
+            this.addSensor();
+          }
+        },
+        error: (error) => {
+          console.error('Failed to load sensor catalogs', error);
+        }
+      });
+  }
+
+  private syncFormSelections() {
+    if (!this.form.ownerId && this.ownerOptions.length) {
+      this.form.ownerId = this.ownerOptions[0].id;
+    }
+
+    const availableProjects = this.projectOptions;
+    if (availableProjects.length && !availableProjects.some((project) => project.id === this.form.projectId)) {
+      this.form.projectId = availableProjects[0].id;
+    }
+
+    if (!this.form.nodeModelId && this.nodeModels.length) {
+      this.form.nodeModelId = this.nodeModels[0].id;
+    }
+  }
+
+  private parseBody(body: unknown) {
+    if (!body) {
+      return null;
+    }
+    if (typeof body === 'string') {
+      try {
+        return JSON.parse(body);
+      } catch (error) {
+        console.warn('Failed to parse response body', error);
+        return null;
+      }
+    }
+    return body;
+  }
+
+  private extractDataArray(payload: any): any[] {
+    if (!payload) {
+      return [];
+    }
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+    if (Array.isArray(payload.data)) {
+      return payload.data;
+    }
+    if (Array.isArray(payload.items)) {
+      return payload.items;
+    }
+    return [];
   }
 }

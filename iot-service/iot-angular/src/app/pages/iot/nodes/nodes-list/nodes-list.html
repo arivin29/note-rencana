@@ -54,100 +54,99 @@
     </ul>
     <div class="p-4">
         <div class="row g-3 mb-4">
-                <div class="col-lg-4 col-md-6">
-                    <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
-                    <div class="dropdown w-100">
-                        <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-                            data-bs-toggle="dropdown">
-                            {{ filters.owner }}
-                        </button>
-                        <div class="dropdown-menu w-100">
-                            <button type="button" class="dropdown-item" *ngFor="let option of ownerOptions"
-                                (click)="setFilter('owner', option)">{{ option }}</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6">
-                    <label class="text-muted text-uppercase small d-block mb-1">Project</label>
-                    <div class="dropdown w-100">
-                        <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-                            data-bs-toggle="dropdown">
-                            {{ filters.project }}
-                        </button>
-                        <div class="dropdown-menu w-100">
-                            <button type="button" class="dropdown-item" *ngFor="let option of projectOptions"
-                                (click)="setFilter('project', option)">{{ option }}</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-12">
-                    <label class="text-muted text-uppercase small d-block mb-1">Search</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-transparent border-end-0 text-muted"><i
-                                class="fa fa-search opacity-50"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0"
-                            placeholder="Search node code / project" [ngModel]="searchTerm"
-                            (ngModelChange)="onSearchChange($event)">
+            <div class="col-lg-4 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
+                <div class="dropdown w-100">
+                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
+                        data-bs-toggle="dropdown">
+                        {{ filters.owner }}
+                    </button>
+                    <div class="dropdown-menu w-100">
+                        <button type="button" class="dropdown-item" *ngFor="let option of ownerOptions"
+                            (click)="setFilter('owner', option)">{{ option }}</button>
                     </div>
                 </div>
             </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">Project</label>
+                <div class="dropdown w-100">
+                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
+                        data-bs-toggle="dropdown">
+                        {{ filters.project }}
+                    </button>
+                    <div class="dropdown-menu w-100">
+                        <button type="button" class="dropdown-item" *ngFor="let option of projectOptions"
+                            (click)="setFilter('project', option)">{{ option }}</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i
+                            class="fa fa-search opacity-50"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search node code / project"
+                        [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)">
+                </div>
+            </div>
+        </div>
 
         <div class="table-responsive">
-                <table class="table table-hover text-nowrap align-middle">
-                    <thead class="text-uppercase text-muted small">
-                        <tr>
-                            <th class="pt-0 pb-2 w-10px"></th>
-                            <th class="pt-0 pb-2">Node</th>
-                            <th class="pt-0 pb-2">Owner / Project</th>
-                            <th class="pt-0 pb-2">Status</th>
-                            <th class="pt-0 pb-2">Firmware</th>
-                            <th class="pt-0 pb-2">Telemetry</th>
-                            <th class="pt-0 pb-2 text-end">Last Seen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let node of paginatedNodes">
-                            <td class="w-10px align-middle">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" [id]="'node-' + node.code">
-                                    <label class="form-check-label" [for]="'node-' + node.code"></label>
+            <table class="table table-hover text-nowrap align-middle">
+                <thead class="text-uppercase text-muted small">
+                    <tr>
+                        <th class="pt-0 pb-2 w-10px"></th>
+                        <th class="pt-0 pb-2">Node</th>
+                        <th class="pt-0 pb-2">Owner / Project</th>
+                        <th class="pt-0 pb-2">Status</th>
+                        <th class="pt-0 pb-2">Firmware</th>
+                        <th class="pt-0 pb-2">Telemetry</th>
+                        <th class="pt-0 pb-2 text-end">Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let node of paginatedNodes">
+                        <td class="w-10px align-middle">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" [id]="'node-' + node.code">
+                                <label class="form-check-label" [for]="'node-' + node.code"></label>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div
+                                    class="w-50px h-50px bg-inverse bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="fa fa-microchip text-theme"></i>
                                 </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div
-                                        class="w-50px h-50px bg-inverse bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center">
-                                        <i class="fa fa-microchip text-theme"></i>
-                                    </div>
-                                    <div class="ms-3">
-                                        <a [routerLink]="['/iot/nodes', node.code]"
-                                            class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
-                                            {{ node.code }}
-                                        </a>
-                                        <div class="text-muted small">Telemetry {{ node.telemetryMode }}</div>
-                                    </div>
+                                <div class="ms-3">
+                                    <a [routerLink]="['/iot/nodes', node.idNode]"
+                                        class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
+                                        {{ node.code }}
+                                    </a>
+                                    <div class="text-muted small">Telemetry {{ node.telemetryMode }}</div>
                                 </div>
-                            </td>
-                            <td>
-                                <div class="fw-semibold">{{ node.owner }}</div>
-                                <div class="text-muted small">{{ node.project }}</div>
-                            </td>
-                            <td>
-                                <span [class]="badgeClass(node.status)">{{ node.status | titlecase }}</span>
-                            </td>
-                            <td>
-                                <div class="fw-semibold">{{ node.firmware }}</div>
-                                <div class="text-muted small">Assigned image</div>
-                            </td>
-                            <td class="text-capitalize">
-                                <div class="fw-semibold">{{ node.telemetryMode }}</div>
-                                <div class="text-muted small">Reporting cadence</div>
-                            </td>
-                            <td class="text-end text-muted">{{ node.lastSeen }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ node.owner }}</div>
+                            <div class="text-muted small">{{ node.project }}</div>
+                        </td>
+                        <td>
+                            <span [class]="badgeClass(node.status)">{{ node.status | titlecase }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ node.firmware }}</div>
+                            <div class="text-muted small">Assigned image</div>
+                        </td>
+                        <td class="text-capitalize">
+                            <div class="fw-semibold">{{ node.telemetryMode }}</div>
+                            <div class="text-muted small">Reporting cadence</div>
+                        </td>
+                        <td class="text-end text-muted">{{ node.lastSeen }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <div *ngIf="!filteredNodes.length" class="text-center text-muted py-5 border-top">
             Tidak ada node sesuai filter.

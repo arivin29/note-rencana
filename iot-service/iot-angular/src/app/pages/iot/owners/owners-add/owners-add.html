@@ -3,22 +3,24 @@
     <ul class="breadcrumb mb-1">
       <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
       <li class="breadcrumb-item"><a routerLink="/iot/owners">Owners</a></li>
-      <li class="breadcrumb-item active">Create</li>
+      <li class="breadcrumb-item active">{{ breadcrumbTitle }}</li>
     </ul>
-    <h1 class="page-header mb-0">Create Owner</h1>
+    <h1 class="page-header mb-0">{{ pageTitle }}</h1>
   </div>
   <div class="ms-auto">
     <a routerLink="/iot/owners" class="btn btn-outline-default">Back</a>
   </div>
 </div>
 
-<form (ngSubmit)="submitOwner()" #ownerForm="ngForm">
-  <!-- Success Alert -->
-  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-    <i class="fa fa-check-circle me-2"></i>
-    {{ successMessage }}
+<!-- Loading State -->
+<div *ngIf="loadingData" class="text-center py-5">
+  <div class="spinner-border text-theme" role="status">
+    <span class="visually-hidden">Loading...</span>
   </div>
+  <p class="mt-3 text-muted">Loading owner data...</p>
+</div>
 
+<form [formGroup]="ownerForm" (ngSubmit)="submitOwner()" *ngIf="!loadingData">
   <!-- Error Alert -->
   <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
     <i class="fa fa-exclamation-circle me-2"></i>
@@ -31,68 +33,81 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label">Owner Name <span class="text-danger">*</span></label>
-          <input class="form-control" placeholder="PT ABC" [(ngModel)]="form.name" name="name" required>
+          <input class="form-control" placeholder="PT ABC" formControlName="name"
+            [class.is-invalid]="hasError('name', 'required')">
+          <div class="invalid-feedback" *ngIf="hasError('name', 'required')">
+            Name is required
+          </div>
         </div>
         <div class="col-md-6">
           <label class="form-label">Industry</label>
-          <select class="form-select" [(ngModel)]="form.industry" name="industry">
+          <select class="form-select" formControlName="industry">
             <option *ngFor="let option of industryOptions" [value]="option">{{ option }}</option>
           </select>
         </div>
         <div class="col-md-4">
           <label class="form-label">Contact Person <span class="text-danger">*</span></label>
-          <input class="form-control" [(ngModel)]="form.contactPerson" name="contactPerson" required>
+          <input class="form-control" formControlName="contactPerson"
+            [class.is-invalid]="hasError('contactPerson', 'required')">
+          <div class="invalid-feedback" *ngIf="hasError('contactPerson', 'required')">
+            Contact person is required
+          </div>
         </div>
         <div class="col-md-4">
           <label class="form-label">Contact Email</label>
-          <input type="email" class="form-control" [(ngModel)]="form.contactEmail" name="contactEmail">
+          <input type="email" class="form-control" formControlName="contactEmail"
+            [class.is-invalid]="hasError('contactEmail', 'email')">
+          <div class="invalid-feedback" *ngIf="hasError('contactEmail', 'email')">
+            Invalid email format
+          </div>
         </div>
         <div class="col-md-4">
           <label class="form-label">Contact Phone</label>
-          <input class="form-control" [(ngModel)]="form.contactPhone" name="contactPhone">
+          <input class="form-control" formControlName="contactPhone">
         </div>
         <div class="col-md-4">
           <label class="form-label">SLA Level</label>
-          <select class="form-select" [(ngModel)]="form.slaLevel" name="slaLevel">
-            <option *ngFor="let sla of slaLevels" [value]="sla">{{ sla | titlecase }}</option>
+          <select class="form-select" formControlName="slaLevel">
+            <option *ngFor="let sla of slaLevels" [value]="sla">{{ sla }}</option>
           </select>
         </div>
         <div class="col-12">
           <label class="form-label">Address</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="form.address" name="address"></textarea>
+          <textarea class="form-control" rows="2" formControlName="address"></textarea>
         </div>
         <div class="col-12">
           <label class="form-label">Notes</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="form.notes" name="notes"></textarea>
+          <textarea class="form-control" rows="2" formControlName="notes"></textarea>
         </div>
         
         <!-- Forwarding Settings -->
-        <div class="col-12 mt-4">
-          <h6 class="mb-3">Data Forwarding Settings</h6>
-        </div>
-        <div class="col-md-4">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" [(ngModel)]="form.enableWebhook" name="enableWebhook" id="enableWebhook">
-            <label class="form-check-label" for="enableWebhook">Enable Webhook</label>
+        <ng-container formGroupName="forwarding">
+          <div class="col-12 mt-4">
+            <h6 class="mb-3">Data Forwarding Settings</h6>
           </div>
-        </div>
-        <div class="col-md-8">
-          <label class="form-label">Webhook URL</label>
-          <input class="form-control" placeholder="https://api.example.com/webhook" 
-                 [(ngModel)]="form.webhookUrl" name="webhookUrl"
-                 [disabled]="!form.enableWebhook">
-        </div>
-        <div class="col-md-4">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" [(ngModel)]="form.enableDatabase" name="enableDatabase" id="enableDatabase">
-            <label class="form-check-label" for="enableDatabase">Enable Database Storage</label>
+          <div class="col-md-4">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="enableWebhook" id="enableWebhook">
+              <label class="form-check-label" for="enableWebhook">Enable Webhook</label>
+            </div>
           </div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Batch Size</label>
-          <input type="number" class="form-control" [(ngModel)]="form.batchSize" name="batchSize" min="1" max="1000">
-          <small class="text-muted">Number of records per batch (1-1000)</small>
-        </div>
+          <div class="col-md-8">
+            <label class="form-label">Webhook URL</label>
+            <input class="form-control" placeholder="https://api.example.com/webhook" formControlName="webhookUrl"
+              [disabled]="!forwardingGroup.get('enableWebhook')?.value">
+          </div>
+          <div class="col-md-4">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="enableDatabase" id="enableDatabase">
+              <label class="form-check-label" for="enableDatabase">Enable Database Storage</label>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Batch Size</label>
+            <input type="number" class="form-control" formControlName="batchSize" min="1" max="1000">
+            <small class="text-muted">Number of records per batch (1-1000)</small>
+          </div>
+        </ng-container>
       </div>
     </card-body>
   </card>
@@ -102,11 +117,11 @@
       <card>
         <card-body>
           <div class="fw-semibold mb-2">Owner Summary</div>
-          <div class="text-muted small">{{ form.name || 'Owner Name' }}</div>
-          <div class="text-muted small">Industry: {{ form.industry }}</div>
-          <div class="text-muted small">Contact: {{ form.contactPerson || '-' }}</div>
-          <div class="text-muted small">Email: {{ form.contactEmail || '-' }}</div>
-          <div class="text-muted small">Phone: {{ form.contactPhone || '-' }}</div>
+          <div class="text-muted small">{{ ownerForm.get('name')?.value || 'Owner Name' }}</div>
+          <div class="text-muted small">Industry: {{ ownerForm.get('industry')?.value }}</div>
+          <div class="text-muted small">Contact: {{ ownerForm.get('contactPerson')?.value || '-' }}</div>
+          <div class="text-muted small">Email: {{ ownerForm.get('contactEmail')?.value || '-' }}</div>
+          <div class="text-muted small">Phone: {{ ownerForm.get('contactPhone')?.value || '-' }}</div>
         </card-body>
       </card>
     </div>
@@ -124,9 +139,10 @@
   </div>
 
   <div class="d-flex justify-content-end mt-3">
-    <button type="submit" class="btn btn-theme" [disabled]="!ownerForm.form.valid">
+    <button type="submit" class="btn btn-theme" [disabled]="ownerForm.invalid || loading">
       <i class="fa fa-save fa-fw me-1"></i>
-      Save Owner
+      <span *ngIf="!loading">{{ submitButtonText }}</span>
+      <span *ngIf="loading">{{ isEditMode ? 'Updating...' : 'Saving...' }}</span>
     </button>
   </div>
 </form>

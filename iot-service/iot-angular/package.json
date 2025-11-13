@@ -83,6 +83,7 @@
     "ngx-masonry": "^14.0.1",
     "ngx-quill": "28.0.1",
     "ngx-scrollbar": "^18.0.0",
+    "ol": "^9.2.4",
     "parchment": "^3.0.0",
     "protractor": "~7.0.0",
     "quill": "^2.0.3",

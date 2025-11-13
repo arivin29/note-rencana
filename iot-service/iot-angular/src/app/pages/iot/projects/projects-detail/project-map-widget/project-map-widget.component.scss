@@ -1,0 +1,12 @@
+@import 'ol/ol.css';
+
+.project-map {
+  width: 100%;
+  height: 360px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+
+  .ol-viewport {
+    border-radius: inherit;
+  }
+}

@@ -1,5 +1,18 @@
-import { Component } from '@angular/core';
-import { ReportNodeListRow } from '../../../../models/iot';
+import { Component, OnInit } from '@angular/core';
+import { NodesService } from '../../../../../sdk/core/services/nodes.service';
+
+interface NodeListRow {
+  idNode: string;
+  code: string;
+  project: string;
+  projectId: string;
+  owner?: string;
+  status: 'online' | 'degraded' | 'offline';
+  firmware?: string;
+  telemetryMode: 'push' | 'pull';
+  lastSeen?: string;
+  serialNumber?: string;
+}
 
 @Component({
   selector: 'nodes-list',
@@ -7,7 +20,7 @@ import { ReportNodeListRow } from '../../../../models/iot';
   styleUrls: ['./nodes-list.scss'],
   standalone: false
 })
-export class NodesListPage {
+export class NodesListPage implements OnInit {
   filters = {
     owner: 'All Owners',
     project: 'All Projects',
@@ -19,11 +32,98 @@ export class NodesListPage {
   pageSize = 10;
   currentPage = 1;
 
-  nodes: ReportNodeListRow[] = this.generateDemoNodes();
+  nodes: NodeListRow[] = [];
+  loading = false;
+  error: string | null = null;
+  
+  // Statistics from backend
+  totalNodes = 0;
+  onlineNodes = 0;
+  offlineNodes = 0;
+  degradedNodes = 0;
 
   statusOptions = ['All Status', 'online', 'degraded', 'offline'];
-  ownerOptions = ['All Owners', 'PT ABC', 'PT XYZ', 'PT Delta', 'PT Citra', 'PT Mandiri'];
-  projectOptions = ['All Projects', 'Area A', 'Plant South', 'Booster West', 'Reservoir B', 'Pipeline North', 'Kebun Timur'];
+  ownerOptions = ['All Owners'];
+  projectOptions = ['All Projects'];
+
+  constructor(private nodesService: NodesService) {}
+
+  ngOnInit() {
+    this.loadStatistics();
+    this.loadNodes();
+  }
+
+  loadStatistics() {
+    this.nodesService.nodesControllerGetStatistics$Response().subscribe({
+      next: (httpResponse) => {
+        let stats: any = httpResponse.body;
+        
+        // If response is string, parse it
+        if (typeof stats === 'string') {
+          stats = JSON.parse(stats);
+        }
+        
+        this.totalNodes = stats.totalNodes || 0;
+        this.onlineNodes = stats.onlineNodes || 0;
+        this.offlineNodes = stats.offlineNodes || 0;
+        this.degradedNodes = stats.degradedNodes || 0;
+      },
+      error: (err) => {
+        console.error('Failed to load statistics:', err);
+      }
+    });
+  }
+
+  loadNodes() {
+    this.loading = true;
+    this.error = null;
+    
+    this.nodesService.nodesControllerFindAll$Response({
+      page: this.currentPage,
+      limit: 100, // Load more for client-side filtering
+      search: this.searchTerm || undefined,
+    }).subscribe({
+      next: (httpResponse) => {
+        // Get response body and parse if it's a string
+        let response: any = httpResponse.body;
+        
+        // If response is string, parse it
+        if (typeof response === 'string') {
+          response = JSON.parse(response);
+        }
+        
+        console.log('Parsed response:', response);
+        
+        // Transform backend data to component format
+        this.nodes = (response.data || []).map((node: any) => ({
+          idNode: node.idNode,
+          code: node.code,
+          project: node.project?.name || 'Unknown Project',
+          projectId: node.idProject,
+          owner: node.project?.owner?.companyName || 'Unknown Owner',
+          status: this.mapConnectivityStatus(node.connectivityStatus),
+          firmware: node.firmwareVersion || 'N/A',
+          telemetryMode: node.telemetryIntervalSec > 0 ? 'push' : 'pull',
+          lastSeen: node.lastSeenAt ? new Date(node.lastSeenAt).toLocaleString() : 'Never',
+          serialNumber: node.serialNumber,
+        }));
+        
+        console.log('Transformed nodes:', this.nodes);
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to load nodes';
+        this.loading = false;
+        console.error('Error loading nodes:', err);
+      }
+    });
+  }
+
+  private mapConnectivityStatus(status: string): 'online' | 'degraded' | 'offline' {
+    if (status === 'online') return 'online';
+    if (status === 'degraded') return 'degraded';
+    return 'offline';
+  }
 
   setFilter(type: 'owner' | 'project' | 'status', value: string) {
     this.filters[type] = value;
@@ -33,6 +133,7 @@ export class NodesListPage {
   onSearchChange(value: string) {
     this.searchTerm = value;
     this.currentPage = 1;
+    this.loadNodes(); // Reload with new search
   }
 
   changePageSize(size: number | string) {
@@ -94,7 +195,7 @@ export class NodesListPage {
     return this.filteredNodes.length;
   }
 
-  badgeClass(status: ReportNodeListRow['status']) {
+  badgeClass(status: NodeListRow['status']) {
     switch (status) {
       case 'online':
         return 'badge bg-success';
@@ -137,39 +238,8 @@ export class NodesListPage {
         !search ||
         node.code.toLowerCase().includes(search) ||
         node.project.toLowerCase().includes(search) ||
-        node.owner.toLowerCase().includes(search);
+        (node.owner && node.owner.toLowerCase().includes(search));
       return matchOwner && matchProject && matchSearch;
     });
-  }
-
-  private generateDemoNodes(): ReportNodeListRow[] {
-    const owners = ['PT ABC', 'PT XYZ', 'PT Delta', 'PT Citra', 'PT Mandiri'];
-    const projects = ['Area A', 'Plant South', 'Booster West', 'Reservoir B', 'Pipeline North', 'Kebun Timur'];
-    const statuses: ReportNodeListRow['status'][] = ['online', 'degraded', 'offline'];
-    const telemetryModes: ReportNodeListRow['telemetryMode'][] = ['push', 'pull'];
-
-    const nodes: ReportNodeListRow[] = [];
-
-    for (let i = 1; i <= 48; i++) {
-      const owner = owners[i % owners.length];
-      const project = projects[i % projects.length];
-      const status = statuses[i % statuses.length];
-      const telemetryMode = telemetryModes[i % telemetryModes.length];
-      const firmware = `v${1 + (i % 3)}.${(i * 2) % 10}.${(i * 7) % 4}`;
-      const minutes = (i * 3) % 60;
-      const lastSeen = `${(8 + (i % 3)).toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`;
-
-      nodes.push({
-        code: `NODE-${i.toString().padStart(3, '0')}`,
-        project,
-        owner,
-        status,
-        firmware,
-        telemetryMode,
-        lastSeen
-      });
-    }
-
-    return nodes;
   }
 }

@@ -4,3 +4,17 @@
 
 export { AppService } from './services/app.service';
 export { OwnersService } from './services/owners.service';
+export { ProjectsService } from './services/projects.service';
+export { NodeModelsService } from './services/node-models.service';
+export { SensorTypesService } from './services/sensor-types.service';
+export { SensorCatalogsService } from './services/sensor-catalogs.service';
+export { NodeLocationsService } from './services/node-locations.service';
+export { NodesService } from './services/nodes.service';
+export { SensorsService } from './services/sensors.service';
+export { SensorChannelsService } from './services/sensor-channels.service';
+export { AlertRulesService } from './services/alert-rules.service';
+export { AlertEventsService } from './services/alert-events.service';
+export { NodeAssignmentsService } from './services/node-assignments.service';
+export { UserDashboardsService } from './services/user-dashboards.service';
+export { DashboardWidgetsService } from './services/dashboard-widgets.service';
+export { SensorLogsService } from './services/sensor-logs.service';

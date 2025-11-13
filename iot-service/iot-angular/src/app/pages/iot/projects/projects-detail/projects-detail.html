@@ -3,16 +3,363 @@
     <ul class="breadcrumb mb-1">
       <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
       <li class="breadcrumb-item"><a routerLink="/iot/projects">Projects</a></li>
-      <li class="breadcrumb-item active">{{ projectId }}</li>
+      <li class="breadcrumb-item active">{{ project?.name || projectId }}</li>
     </ul>
-    <h1 class="page-header mb-0">Project {{ projectId }}</h1>
+    <h1 class="page-header mb-0">{{ project?.name || 'Loading...' }}</h1>
   </div>
   <div class="ms-auto">
     <a routerLink="/iot/projects" class="btn btn-outline-default">Back</a>
   </div>
 </div>
-<div class="card border-0 shadow-sm">
-  <div class="card-body text-muted">
-    Placeholder detail view.
+<div class="mb-3 d-md-flex fw-bold text-inverse">
+  <div class="mt-md-0 mt-2">
+    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
+      <i class="fa fa-download fa-fw me-1 text-theme"></i>
+      Export Report
+    </a>
+  </div>
+  <div class="ms-md-4 mt-md-0 mt-2">
+    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
+      <i class="fa fa-sync fa-fw me-1 text-theme"></i>
+      Force Sync
+    </a>
+  </div>
+  <div class="ms-md-4 mt-md-0 mt-2 dropdown">
+    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75 dropdown-toggle"
+      data-bs-toggle="dropdown">
+      More Actions
+    </a>
+    <div class="dropdown-menu dropdown-menu-end">
+      <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
+      <a class="dropdown-item" href="javascript:;">Assign Owner Admin</a>
+      <div role="separator" class="dropdown-divider"></div>
+      <a class="dropdown-item" href="javascript:;">Archive Project</a>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+  <div class="spinner-border text-theme" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <div class="mt-3 text-muted">Loading project details...</div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error && !loading" class="alert alert-danger">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  {{ error }}
+</div>
+
+<div class="row g-3 mb-4" *ngIf="!loading && !error && project">
+  <div class="col-xl-8">
+    <card class="shadow-sm h-100">
+      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
+        Project Snapshot
+        <span class="badge text-uppercase" 
+              [class.bg-success-subtle]="project?.status === 'active'"
+              [class.text-success]="project?.status === 'active'"
+              [class.bg-warning-subtle]="project?.status === 'maintenance'"
+              [class.text-warning]="project?.status === 'maintenance'"
+              [class.bg-secondary-subtle]="project?.status !== 'active' && project?.status !== 'maintenance'"
+              [class.text-secondary]="project?.status !== 'active' && project?.status !== 'maintenance'">
+          {{ project?.status || 'Unknown' }}
+        </span>
+        <span class="badge bg-body text-muted border">Last sync {{ lastSyncFormatted }}</span>
+        <span class="badge bg-body text-muted border">
+          <i class="fa fa-map-marker-alt me-1 text-theme"></i> {{ primaryLocation }}
+        </span>
+      </card-header>
+      <card-body>
+        <div class="row g-3 mb-2">
+          <div class="col-md-4">
+            <div class="text-uppercase text-muted small">Owner</div>
+            <div class="fw-semibold">{{ project?.owner?.name || 'Unknown' }}</div>
+            <div class="text-muted small">
+              {{ project?.owner?.industry || 'Unknown Industry' }}
+              <span *ngIf="project?.owner?.email"> · {{ project?.owner?.email }}</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-uppercase text-muted small">Deployment</div>
+            <div class="fw-semibold">Live since {{ deploymentDate }}</div>
+            <div class="text-muted small">{{ project?.areaType || 'Unknown Type' }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-uppercase text-muted small">Data Window</div>
+            <div class="fw-semibold">Streaming · MQTT</div>
+            <div class="text-muted small">Retention 30 days</div>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-3">
+            <a class="stat-link h-100" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
+              <div class="text-uppercase text-muted small">Devices</div>
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ project?.stats?.totalNodes || 0 }}</div>
+              <div class="fw-semibold" [class.text-success]="(project?.stats?.activeNodes || 0) > 0" [class.text-muted]="!((project?.stats?.activeNodes || 0) > 0)">
+                {{ project?.stats?.activeNodes || 0 }} online
+              </div>
+              <div class="stat-meta">View nodes scoped to this project</div>
+            </a>
+          </div>
+          <div class="col-md-3">
+            <a class="stat-link h-100" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
+              <div class="text-uppercase text-muted small">Sensors</div>
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ project?.stats?.totalSensors || 0 }}</div>
+              <div class="text-muted">{{ offlineNodes }} offline</div>
+              <div class="stat-meta">Open sensor explorer</div>
+            </a>
+          </div>
+          <div class="col-md-3">
+            <a class="stat-link h-100" [routerLink]="['/iot/telemetry']" [queryParams]="{ projectId: projectId }">
+              <div class="text-uppercase text-muted small">Locations</div>
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ project?.stats?.totalLocations || 0 }}</div>
+              <div class="text-muted">Deployment sites</div>
+              <div class="stat-meta">Jump to telemetry</div>
+            </a>
+          </div>
+          <div class="col-md-3">
+            <a class="stat-link h-100" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
+              <div class="text-uppercase text-muted small">Alerts</div>
+              <div class="fs-3 fw-bold lh-1 mb-1 text-danger">0</div>
+              <div class="text-muted">No active alerts</div>
+              <div class="stat-meta">Review alert queue</div>
+            </a>
+          </div>
+        </div>
+      </card-body>
+      <card-footer class=" d-flex flex-wrap gap-2 justify-content-between">
+        <div class="text-muted small">Last deployment by Ops · 08 Aug 2024 09:12</div>
+        <div class="ms-auto">
+          <button class="btn btn-outline-default me-2">Deploy Update</button>
+          <a [routerLink]="['/iot/projects', projectId, 'edit']" class="btn btn-theme">
+            <i class="fa fa-edit fa-fw me-1"></i>
+            Edit Project
+          </a>
+        </div>
+      </card-footer>
+    </card>
+  </div>
+  <div class="col-xl-4">
+    <card class="shadow-sm h-100">
+      <card-header class="bg-inverse bg-opacity-10 text-uppercase small text-muted">
+        Operations & Team
+      </card-header>
+      <card-body>
+        <div class="mb-3">
+          <div class="text-muted small">Project Owner</div>
+          <div class="fw-semibold">Arif Pratama</div>
+          <div class="text-muted small">arif@iot.dev · (+62) 812-2222-333</div>
+        </div>
+        <div class="mb-3">
+          <div class="text-muted small">Field Engineer</div>
+          <div class="fw-semibold">Siti Nurhaliza</div>
+          <div class="text-muted small">On site · Last visit 6 Aug</div>
+        </div>
+        <div class="mb-4">
+          <div class="text-muted small">Support Channel</div>
+          <div class="fw-semibold">#proj-water-supply</div>
+          <div class="text-muted small">Slack · Escalation SLO 30m</div>
+        </div>
+        <div class="text-uppercase text-muted small mb-2">Checklist</div>
+        <div class="bg-light rounded-3 p-3">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="chkCalibration" checked />
+            <label class="form-check-label" for="chkCalibration">Calibrate flow sensors</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="chkFirmware" />
+            <label class="form-check-label" for="chkFirmware">Approve firmware batch B</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="chkAlertRules" />
+            <label class="form-check-label" for="chkAlertRules">Review alert escalation rules</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chkDocs" />
+            <label class="form-check-label" for="chkDocs">Upload revised network diagram</label>
+          </div>
+        </div>
+      </card-body>
+      <card-footer class="">
+        <button class="btn btn-sm btn-outline-default w-100">
+          <i class="fa fa-user-plus me-1"></i>
+          Assign Backup PIC
+        </button>
+      </card-footer>
+    </card>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12" *ngIf="mapNodes.length > 0">
+    <iot-project-map-widget [nodes]="mapNodes"></iot-project-map-widget>
+  </div>
+  <div class="col-12" *ngIf="mapNodes.length === 0">
+    <card class="shadow-sm">
+      <card-body class="text-center text-muted py-5">
+        <i class="fa fa-map-marked-alt fa-3x mb-3 opacity-50"></i>
+        <div>No nodes with GPS coordinates available for this project</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col-12">
+    <div class="quick-link-bar">
+      <div class="text-muted text-uppercase small">Deep links</div>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="quick-link" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
+          <i class="bi bi-bar-chart-line"></i> Sensor Explorer
+        </a>
+        <a class="quick-link" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
+          <i class="bi bi-hdd-network"></i> Nodes / Devices
+        </a>
+        <a class="quick-link" [routerLink]="['/iot/telemetry']" [queryParams]="{ projectId: projectId, range: '24h' }">
+          <i class="bi bi-activity"></i> Telemetry Timeline
+        </a>
+        <a class="quick-link" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
+          <i class="bi bi-exclamation-triangle"></i> Alert Center
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-8">
+    <card class="shadow-sm mb-3">
+      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
+        Sensor Overview
+        <span class="badge bg-body text-muted border">Latest telemetry snapshot</span>
+        <div class="ms-auto">
+          <button class="btn btn-sm btn-outline-default">View All Sensors</button>
+        </div>
+      </card-header>
+      <card-body class="p-0">
+        <div class="table-responsive">
+          <table class="table mb-0 align-middle">
+            <thead class="table-light text-muted">
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Type</th>
+                <th scope="col">Last Reading</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-end">Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pump Station 01</td>
+                <td>Flow Meter</td>
+                <td>214 L/min</td>
+                <td><span class="badge bg-success-subtle text-success">Normal</span></td>
+                <td class="text-end text-success">+2.1%</td>
+              </tr>
+              <tr>
+                <td>Reservoir Sensor</td>
+                <td>Pressure</td>
+                <td>5.6 bar</td>
+                <td><span class="badge bg-warning-subtle text-warning">Warning</span></td>
+                <td class="text-end text-danger">-0.7%</td>
+              </tr>
+              <tr>
+                <td>Valve Controller A7</td>
+                <td>Actuator</td>
+                <td>Closed</td>
+                <td><span class="badge bg-secondary-subtle text-secondary">Offline</span></td>
+                <td class="text-end text-muted">n/a</td>
+              </tr>
+              <tr>
+                <td>Warehouse Temp</td>
+                <td>Temperature</td>
+                <td>27.4 °C</td>
+                <td><span class="badge bg-success-subtle text-success">Normal</span></td>
+                <td class="text-end text-success">+0.3%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </card-body>
+    </card>
+
+    <card class="shadow-sm">
+      <card-header class="d-flex flex-wrap gap-2 align-items-center bg-inverse bg-opacity-10 fw-400">
+        Deployment Timeline
+        <span class="badge bg-body text-muted border">Ops log</span>
+        <div class="ms-auto text-muted small">All times WIB</div>
+      </card-header>
+      <card-body>
+        <div class="timeline">
+          <div class="timeline-item mb-4 pb-4 border-bottom">
+            <div class="fw-semibold">v2.3.0 · Firmware rollout</div>
+            <div class="text-muted small">Pushed to 18 devices · 2 pending</div>
+            <p class="mb-0">Improved packet compression and added redundancy for uplink outages.</p>
+          </div>
+          <div class="timeline-item mb-4 pb-4 border-bottom">
+            <div class="fw-semibold">Dashboard preset update</div>
+            <div class="text-muted small">UX Team · 3 days ago</div>
+            <p class="mb-0">Added comparative water usage chart and simplified alert filters.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="fw-semibold">Maintenance window</div>
+            <div class="text-muted small">Next slot · 12 Aug 2024, 01:00-02:00</div>
+            <p class="mb-0">Will re-index sensor metadata and rotate access tokens.</p>
+          </div>
+        </div>
+      </card-body>
+    </card>
+  </div>
+
+  <div class="col-xl-4">
+    <card class="shadow-sm">
+      <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+        Alert Summary
+        <span class="badge bg-danger-subtle text-danger ms-2">5 Open</span>
+        <div class="ms-auto">
+          <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-50 small">View all</a>
+        </div>
+      </card-header>
+      <card-body class="p-0">
+        <div class="list-group list-group-flush">
+          <div class="list-group-item d-flex align-items-start">
+            <div class="badge bg-danger me-3">CRIT</div>
+            <div>
+              <div class="fw-semibold">Reservoir pressure drop</div>
+              <div class="text-muted small">Escalated to field team · 5m ago</div>
+            </div>
+          </div>
+          <div class="list-group-item d-flex align-items-start">
+            <div class="badge bg-warning text-dark me-3">WARN</div>
+            <div>
+              <div class="fw-semibold">Valve Controller A7 offline</div>
+              <div class="text-muted small">Awaiting acknowledgment · 14m ago</div>
+            </div>
+          </div>
+          <div class="list-group-item d-flex align-items-start">
+            <div class="badge bg-warning text-dark me-3">WARN</div>
+            <div>
+              <div class="fw-semibold">Telemetry queue latency</div>
+              <div class="text-muted small">Auto-resolved · 35m ago</div>
+            </div>
+          </div>
+          <div class="list-group-item d-flex align-items-start">
+            <div class="badge bg-info text-dark me-3">INFO</div>
+            <div>
+              <div class="fw-semibold">New firmware ready</div>
+              <div class="text-muted small">QA completed · 2h ago</div>
+            </div>
+          </div>
+          <div class="list-group-item d-flex align-items-start">
+            <div class="badge bg-info text-dark me-3">INFO</div>
+            <div>
+              <div class="fw-semibold">Docs update pending</div>
+              <div class="text-muted small">Awaiting network diagram upload</div>
+            </div>
+          </div>
+        </div>
+      </card-body>
+      <card-footer class=" text-center">
+        <button class="btn btn-sm btn-outline-danger">
+          Acknowledge Critical Alerts
+        </button>
+      </card-footer>
+    </card>
   </div>
 </div>

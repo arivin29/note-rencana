@@ -70,6 +70,7 @@ interface ActivityLog {
 @Component({
   selector: 'iot-dashboard',
   templateUrl: './iot-dashboard.html',
+  styleUrls: ['./iot-dashboard.scss'],
   standalone: false
 })
 export class IotDashboardPage {
@@ -342,5 +343,11 @@ export class IotDashboardPage {
 
   getRangeLabel() {
     return this.timeRangeOptions.find((option) => option.value === this.selectedRange)?.label ?? this.selectedRange;
+  }
+
+  resetFilters() {
+    this.selectedOwner = 'all';
+    this.selectedProject = 'all';
+    this.selectedRange = '24h';
   }
 }

@@ -8,6 +8,20 @@ import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
 import { AppService } from './services/app.service';
 import { OwnersService } from './services/owners.service';
+import { ProjectsService } from './services/projects.service';
+import { NodeModelsService } from './services/node-models.service';
+import { SensorTypesService } from './services/sensor-types.service';
+import { SensorCatalogsService } from './services/sensor-catalogs.service';
+import { NodeLocationsService } from './services/node-locations.service';
+import { NodesService } from './services/nodes.service';
+import { SensorsService } from './services/sensors.service';
+import { SensorChannelsService } from './services/sensor-channels.service';
+import { AlertRulesService } from './services/alert-rules.service';
+import { AlertEventsService } from './services/alert-events.service';
+import { NodeAssignmentsService } from './services/node-assignments.service';
+import { UserDashboardsService } from './services/user-dashboards.service';
+import { DashboardWidgetsService } from './services/dashboard-widgets.service';
+import { SensorLogsService } from './services/sensor-logs.service';
 
 /**
  * Module that provides all services and configuration.
@@ -19,6 +33,20 @@ import { OwnersService } from './services/owners.service';
   providers: [
     AppService,
     OwnersService,
+    ProjectsService,
+    NodeModelsService,
+    SensorTypesService,
+    SensorCatalogsService,
+    NodeLocationsService,
+    NodesService,
+    SensorsService,
+    SensorChannelsService,
+    AlertRulesService,
+    AlertEventsService,
+    NodeAssignmentsService,
+    UserDashboardsService,
+    DashboardWidgetsService,
+    SensorLogsService,
     ApiConfiguration
   ],
 })
