@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,7 +28,13 @@ import {
   OwnerDashboardResponseDto,
   OwnerWidgetsResponseDto,
   OwnerQueryDto,
+  CreateDatabaseDto,
+  UpdateDatabaseDto,
+  ForwardingDatabaseResponseDto,
 } from './dto';
+import { CreateWebhookDto } from './dto/create-webhook.dto';
+import { UpdateWebhookDto } from './dto/update-webhook.dto';
+import { ForwardingWebhookResponseDto } from './dto/forwarding-webhook-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @ApiTags('Owners')
@@ -226,5 +233,163 @@ export class OwnersController {
   })
   async getWidgetsData(): Promise<OwnerWidgetsResponseDto> {
     return this.ownersService.getWidgetsData();
+  }
+
+  // ============================================
+  // WEBHOOK MANAGEMENT
+  // ============================================
+
+  @Post(':id/webhooks')
+  @ApiOperation({ 
+    summary: 'Create webhook configuration',
+    description: 'Creates a new webhook configuration for the owner'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Webhook created successfully',
+    type: ForwardingWebhookResponseDto 
+  })
+  async createWebhook(
+    @Param('id') id: string,
+    @Body() createWebhookDto: CreateWebhookDto,
+  ): Promise<ForwardingWebhookResponseDto> {
+    return this.ownersService.createWebhook(id, createWebhookDto);
+  }
+
+  @Put(':id/webhooks/:webhookId')
+  @ApiOperation({ 
+    summary: 'Update webhook configuration',
+    description: 'Updates an existing webhook configuration'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiParam({ name: 'webhookId', description: 'Webhook ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Webhook updated successfully',
+    type: ForwardingWebhookResponseDto 
+  })
+  async updateWebhook(
+    @Param('id') id: string,
+    @Param('webhookId') webhookId: string,
+    @Body() updateWebhookDto: UpdateWebhookDto,
+  ): Promise<ForwardingWebhookResponseDto> {
+    return this.ownersService.updateWebhook(id, webhookId, updateWebhookDto);
+  }
+
+  @Delete(':id/webhooks/:webhookId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ 
+    summary: 'Delete webhook configuration',
+    description: 'Permanently deletes a webhook configuration'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiParam({ name: 'webhookId', description: 'Webhook ID' })
+  @ApiResponse({ 
+    status: 204, 
+    description: 'Webhook deleted successfully'
+  })
+  async deleteWebhook(
+    @Param('id') id: string,
+    @Param('webhookId') webhookId: string,
+  ): Promise<void> {
+    return this.ownersService.deleteWebhook(id, webhookId);
+  }
+
+  @Post(':id/webhooks/:webhookId/test')
+  @ApiOperation({ 
+    summary: 'Test webhook delivery',
+    description: 'Sends a test payload to the webhook endpoint'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiParam({ name: 'webhookId', description: 'Webhook ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Test delivery result'
+  })
+  async testWebhook(
+    @Param('id') id: string,
+    @Param('webhookId') webhookId: string,
+  ): Promise<{ success: boolean; message: string; duration: number }> {
+    return this.ownersService.testWebhookDelivery(id, webhookId);
+  }
+
+  // ============================================
+  // DATABASE FORWARDING MANAGEMENT
+  // ============================================
+
+  @Post(':id/databases')
+  @ApiOperation({ 
+    summary: 'Create database configuration',
+    description: 'Creates a new database forwarding configuration for the owner'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Database config created successfully',
+    type: ForwardingDatabaseResponseDto 
+  })
+  async createDatabase(
+    @Param('id') id: string,
+    @Body() createDatabaseDto: CreateDatabaseDto,
+  ): Promise<ForwardingDatabaseResponseDto> {
+    return this.ownersService.createDatabase(id, createDatabaseDto);
+  }
+
+  @Put(':id/databases/:databaseId')
+  @ApiOperation({ 
+    summary: 'Update database configuration',
+    description: 'Updates an existing database forwarding configuration'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiParam({ name: 'databaseId', description: 'Database config ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Database config updated successfully',
+    type: ForwardingDatabaseResponseDto 
+  })
+  async updateDatabase(
+    @Param('id') id: string,
+    @Param('databaseId') databaseId: string,
+    @Body() updateDatabaseDto: UpdateDatabaseDto,
+  ): Promise<ForwardingDatabaseResponseDto> {
+    return this.ownersService.updateDatabase(id, databaseId, updateDatabaseDto);
+  }
+
+  @Delete(':id/databases/:databaseId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ 
+    summary: 'Delete database configuration',
+    description: 'Permanently deletes a database forwarding configuration'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiParam({ name: 'databaseId', description: 'Database config ID' })
+  @ApiResponse({ 
+    status: 204, 
+    description: 'Database config deleted successfully'
+  })
+  async deleteDatabase(
+    @Param('id') id: string,
+    @Param('databaseId') databaseId: string,
+  ): Promise<void> {
+    return this.ownersService.deleteDatabase(id, databaseId);
+  }
+
+  @Post(':id/databases/:databaseId/test')
+  @ApiOperation({ 
+    summary: 'Test database connection',
+    description: 'Tests the database connection with the configured credentials'
+  })
+  @ApiParam({ name: 'id', description: 'Owner ID' })
+  @ApiParam({ name: 'databaseId', description: 'Database config ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Connection test result'
+  })
+  async testDatabase(
+    @Param('id') id: string,
+    @Param('databaseId') databaseId: string,
+  ): Promise<{ success: boolean; message: string; duration: number }> {
+    return this.ownersService.testDatabaseConnection(id, databaseId);
   }
 }

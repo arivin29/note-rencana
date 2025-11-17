@@ -1,0 +1,65 @@
+// Pairing Dialog Styles
+
+.modal-header {
+  border-bottom: 1px solid var(--app-component-border-color);
+
+  .modal-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+}
+
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--app-component-border-color);
+}
+
+// Wizard steps
+.rounded-circle {
+  transition: all 0.3s ease;
+}
+
+.border-bottom {
+  transition: all 0.3s ease;
+}
+
+// Form elements
+.form-label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-select,
+.form-control {
+  font-size: 0.875rem;
+}
+
+// Summary table
+.alert-light {
+  background-color: var(--app-component-bg);
+
+  .table {
+    font-size: 0.875rem;
+
+    td {
+      padding: 0.5rem;
+      border-color: var(--app-component-border-color);
+    }
+  }
+}
+
+// Button group
+.btn-group {
+  .btn {
+    &.active {
+      background-color: var(--app-theme);
+      border-color: var(--app-theme);
+      color: var(--app-theme-color);
+    }
+  }
+}

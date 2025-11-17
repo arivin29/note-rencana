@@ -223,3 +223,33 @@ AlertRule N ── 1 Sensor   |   AlertEvent N ── 1 AlertRule
 - Field NodeModel tambahan (`toolchain`, `build_agent`, `firmware_repo`, `flash_protocol`, `supports_codegen`) menjadi referensi utama saat Node dideploy atau diperbarui.
 - Tahap berikutnya (Q1 2026): service `FirmwarePipelineService` membaca Node→NodeModel untuk menjalankan agen generator (compile sketch, PlatformIO build, Teltonika template) sebelum push firmware/konfigurasi.
 - UI Node detail akan menampilkan badge platform + tombol “Generate Firmware” sehingga teknisi cukup memilih Node lalu agen yang relevan otomatis berjalan.
+
+### 13. Arsitektur Autentikasi & Otorisasi SaaS
+- **Flow Login**: `POST /auth/login` menerima email + password, validasi via BCrypt, lalu mengembalikan pasangan token (JWT akses 15 menit + refresh 7 hari). Refresh token disimpan hashed di tabel `refresh_tokens` agar bisa dicabut per perangkat.
+- **Endpoint Kunci**: `/auth/refresh` menghasilkan token baru, `/auth/logout` menandai refresh token revoked, `/auth/register` untuk onboarding self-service (opsional) dengan throttle & email verification.
+- **Guard & Strategy**: `JwtStrategy` untuk akses umum, `RefreshTokenStrategy` khusus endpoint refresh, `RolesGuard` membaca klaim `roles` & `ownerId` agar rute bisa mengatur akses Ops vs Client.
+- **Tabel Relasi**:
+  - `users` (id, owner_id nullable, email, password_hash, full_name, status, last_login_at).
+  - `user_roles` (user_id, role enum: `super_admin`, `ops`, `owner_admin`, `owner_operator`).
+  - `refresh_tokens` (id, user_id, token_hash, device_info, expires_at, revoked_at).
+  - `service_accounts` (opsional untuk integrasi API key).
+- **Multi-factor & Rate Limit**: siapkan hooks untuk OTP/SMS di masa depan dan limiter (Redis) untuk login/refresh agar serangan brute-force tertahan.
+- **Session Context**: setiap JWT memuat `ownerId`, `roles`, `projectScopes`. Middleware global menambahkan kondisi `owner_id = :ownerId` ke query repository sehingga data antar tenant aman secara default.
+
+### 14. Multi-Tenant & Subscription (SaaS)
+- **Owner sebagai Tenant**: Satu Owner dapat memiliki banyak project. Users terikat ke owner tertentu (kecuali Ops) dan mewarisi subscription owner.
+- **Tabel Plan & Subscription**:
+  - `plans` (id, name, price_monthly, max_projects, max_nodes, features_json).
+  - `subscriptions` (id, owner_id, plan_id, status, current_period_start, current_period_end, cancel_at_period_end).
+  - `subscription_events` untuk mendengar webhook payment (Stripe/Midtrans) dan mengubah status (`active`, `past_due`, `canceled`).
+- **Enforce Limit**: middleware sebelum create project/node memeriksa batas `max_projects`, `max_nodes`, `max_telemetry_rate`. Jika terlampaui, kirim error dengan suggestion upgrade.
+- **Enable/Disable**: flag `owners.status` (`active`, `suspended`, `trial`, `pending_payment`). Ketika `suspended`, semua API untuk owner itu mengembalikan 402/403 kecuali endpoint billing.
+- **Project Scoping**: query ke modul Nodes/Sensors menerima parameter `projectId` dan otomatis difilter (`project.owner_id = ownerId`). Quick link dari Project detail sudah mempersiapkan query param `projectId` agar halaman Nodes/Sensors/Telemetry langsung bermode scoped.
+- **Audit & Compliance**: catat semua perubahan status subscription, pergantian plan, dan revoke token ke `audit_log` supaya mudah forensic serta memenuhi kebutuhan SLA.
+
+### 15. Langkah Implementasi Berikutnya
+1. Buat migration `users`, `user_roles`, `plans`, `subscriptions`, `refresh_tokens`.
+2. Scaffold `AuthModule` + `UsersModule` di backend, tambah guard JWT ke modul IoT (Nodes, Sensors, Projects).
+3. Tambah service `BillingWebhookController` untuk menerima event gateway (simulate dummy dulu).
+4. Update front-end: simpan access token di memory/secure storage, refresh token via httpOnly cookie, dan tampilkan status subscription pada header UI.
+5. Siapkan seed dummy (beberapa owner + subscription + project) untuk environment staging sehingga seluruh flow bisa diuji end-to-end.

@@ -1,0 +1,54 @@
+<div class="row mb-3">
+    <div class="col-12">
+        <card>
+            <dk-owner-project-filters (filtersChange)="onFiltersChanged($event)"></dk-owner-project-filters>
+        </card>
+    </div>
+</div>
+
+<!-- Platform Statistics Widget -->
+<div class="row mb-3">
+    <div class="col-12">
+        <dk-platform-statistics
+            [ownerId]="selectedOwnerId"
+            [projectId]="selectedProjectId"
+            [timeRange]="timeRange">
+        </dk-platform-statistics>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <card>
+            <dk-system-overview [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
+                [timeRange]="timeRange"></dk-system-overview>
+        </card>
+    </div>
+    <div class="col-xl-9 col-md-6 mb-3">
+        <card>
+            <dk-nodes-status-trends [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
+                [timeRange]="timeRange"></dk-nodes-status-trends>
+        </card>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-4 mb-3">
+       <card>
+            <dk-top-anomalies [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
+                [timeRange]="timeRange"></dk-top-anomalies>
+        </card>
+    </div>
+    <div class="col-xl-4 mb-3">
+        <card>
+            <dk-ingestion-forwarding [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
+                [timeRange]="timeRange"></dk-ingestion-forwarding>
+        </card>
+    </div>
+    <div class="col-xl-4 mb-3">
+        <card>
+            <dk-recent-activities [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
+                [timeRange]="timeRange"></dk-recent-activities>
+        </card>
+    </div>
+</div>

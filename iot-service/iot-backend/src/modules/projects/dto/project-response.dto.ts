@@ -28,6 +28,20 @@ export class ProjectResponseDto {
 
   @ApiPropertyOptional({ description: 'Owner details' })
   owner?: any;
+
+  @ApiPropertyOptional({ description: 'Aggregated metrics for dashboard cards' })
+  metrics?: {
+    nodes: number;
+    sensors: number;
+    online: number;
+    alerts: number;
+  };
+
+  @ApiPropertyOptional({ description: 'Primary location label / address' })
+  primaryLocation?: string;
+
+  @ApiPropertyOptional({ description: 'Last time any node synced telemetry' })
+  lastSync?: Date | string;
 }
 
 export class ProjectDetailedResponseDto extends ProjectResponseDto {

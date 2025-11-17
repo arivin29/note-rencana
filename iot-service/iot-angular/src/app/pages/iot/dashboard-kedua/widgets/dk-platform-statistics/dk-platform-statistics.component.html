@@ -1,0 +1,57 @@
+<div class="row g-3">
+  <!-- Loading State -->
+  <div class="col-12" *ngIf="loading">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-3 mb-0">Loading platform statistics...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="col-xl-3 col-md-6" *ngFor="let stat of statistics">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <!-- Header -->
+        <div class="d-flex align-items-center mb-3">
+          <div class="flex-shrink-0">
+            <div class="icon-wrapper rounded-circle d-flex align-items-center justify-content-center" [ngClass]="stat.iconBg">
+              <i class="bi fs-3" [ngClass]="stat.icon"></i>
+            </div>
+          </div>
+          <div class="flex-grow-1 ms-3">
+            <div class="text-muted text-uppercase small mb-1">{{ stat.title }}</div>
+            <div class="fs-4 fw-bold mb-0">{{ formatNumber(stat.total) }}</div>
+          </div>
+        </div>
+
+        <!-- Breakdown -->
+        <div class="breakdown">
+          <div class="d-flex justify-content-between align-items-center mb-2" *ngFor="let item of stat.breakdown">
+            <div class="d-flex align-items-center">
+              <span class="badge-dot me-2" [ngClass]="item.class"></span>
+              <span class="small text-muted">{{ item.label }}</span>
+            </div>
+            <div class="text-end">
+              <span class="fw-semibold" [ngClass]="item.class">{{ item.value }}</span>
+              <span class="text-muted small ms-1">({{ item.percentage }}%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress mt-3" style="height: 4px;">
+          <div
+            *ngFor="let item of stat.breakdown; let i = index"
+            class="progress-bar"
+            [ngClass]="getProgressBarClass(item.class)"
+            [style.width.%]="item.percentage">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

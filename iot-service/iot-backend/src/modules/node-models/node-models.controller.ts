@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { NodeModelsService } from './node-models.service';
 import { CreateNodeModelDto } from './dto/create-node-model.dto';
 import { UpdateNodeModelDto } from './dto/update-node-model.dto';
-import { NodeModelResponseDto } from './dto/node-model-response.dto';
+import { NodeModelResponseDto, NodeModelDetailedResponseDto } from './dto/node-model-response.dto';
 
 @ApiTags('Node Models')
 @Controller('node-models')
@@ -50,6 +50,14 @@ export class NodeModelsController {
   @ApiResponse({ status: 404, description: 'Node model not found' })
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<NodeModelResponseDto> {
     return this.nodeModelsService.findOne(id);
+  }
+
+  @Get(':id/detailed')
+  @ApiOperation({ summary: 'Get node model with nodes and usage stats' })
+  @ApiResponse({ status: 200, description: 'Detailed node model information', type: NodeModelDetailedResponseDto })
+  @ApiResponse({ status: 404, description: 'Node model not found' })
+  findOneDetailed(@Param('id', ParseUUIDPipe) id: string): Promise<NodeModelDetailedResponseDto> {
+    return this.nodeModelsService.findOneDetailed(id);
   }
 
   @Patch(':id')

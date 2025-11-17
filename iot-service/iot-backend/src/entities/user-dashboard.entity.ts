@@ -13,13 +13,13 @@ import { Project } from './project.entity';
 import { DashboardWidget } from './dashboard-widget.entity';
 
 @Entity('user_dashboards')
-@Index(['userId', 'idProject'])
+@Index(['idUser', 'idProject'])
 export class UserDashboard {
-  @PrimaryGeneratedColumn('uuid', { name: 'id_user_dashboard' })
-  idUserDashboard: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id_dashboard' })
+  idDashboard: string;
 
-  @Column({ type: 'text', name: 'user_id', nullable: false })
-  userId: string;
+  @Column({ type: 'uuid', name: 'id_user', nullable: false })
+  idUser: string;
 
   @Column({ type: 'uuid', name: 'id_project', nullable: true })
   idProject: string;
@@ -30,11 +30,17 @@ export class UserDashboard {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ type: 'text', name: 'layout_type', default: 'grid' })
+  layoutType: string;
+
+  @Column({ type: 'integer', name: 'grid_cols', default: 4 })
+  gridCols: number;
+
   @Column({ type: 'boolean', name: 'is_default', default: false })
   isDefault: boolean;
 
-  @Column({ type: 'jsonb', nullable: true })
-  layout: Record<string, any>;
+  @Column({ type: 'boolean', name: 'is_public', default: false })
+  isPublic: boolean;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
@@ -43,10 +49,10 @@ export class UserDashboard {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Project, (project) => project.userDashboards, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_project' })
   project: Project;
 
-  @OneToMany(() => DashboardWidget, (widget) => widget.userDashboard)
-  dashboardWidgets: DashboardWidget[];
+  @OneToMany(() => DashboardWidget, (widget) => widget.dashboard)
+  widgets: DashboardWidget[];
 }

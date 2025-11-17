@@ -147,14 +147,18 @@ CREATE TABLE sensors (
   id_sensor          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   id_node            UUID NOT NULL REFERENCES nodes(id_node) ON DELETE CASCADE,
   id_sensor_catalog  UUID REFERENCES sensor_catalogs(id_sensor_catalog),
+  sensor_code        TEXT,
   label              TEXT NOT NULL,
+  location           TEXT,
+  status             TEXT DEFAULT 'active' CHECK (status IN ('active','maintenance','inactive')),
   protocol_channel   TEXT,
   calibration_factor NUMERIC(12,6),
   sampling_rate      INTEGER,
   install_date       DATE,
   calibration_due_at DATE,
   created_at         TIMESTAMPTZ DEFAULT now(),
-  updated_at         TIMESTAMPTZ DEFAULT now()
+  updated_at         TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT unique_sensor_code_per_node UNIQUE (id_node, sensor_code)
 );
 
 CREATE TABLE sensor_channels (
@@ -180,7 +184,12 @@ CREATE TABLE sensor_channels (
 **Keterangan**
 - `sensor_types`: klasifikasi kasar (pressure, flow, voltage) untuk grouping UI/report serta menjaga konsistensi penamaan channel.
 - `sensor_catalogs`: master spesifikasi tiap model sensor; `icon_asset` & `icon_color` dipakai untuk konsistensi visual, sementara `default_channels_json` berisi template register/unit bawaan pabrik.
-- `sensors`: sensor fisik yang terhubung ke node; `protocol_channel` menampung detail layer komunikasi (contoh RS485 slave id, kanal analog).
+- `sensors`: sensor fisik yang terhubung ke node dengan atribut penting:
+  - `sensor_code`: identifier unik per sensor dalam satu node (contoh: SENSOR-001, TEMP-01)
+  - `location`: deskripsi lokasi fisik sensor (contoh: Tank A, Pipe Section 3, Panel Control Room)
+  - `status`: kondisi kesehatan sensor (`active` = operasional, `maintenance` = sedang servis, `inactive` = nonaktif/offline)
+  - `protocol_channel`: detail layer komunikasi (contoh RS485 slave id, kanal analog)
+  - Constraint `unique_sensor_code_per_node` memastikan tidak ada duplikasi kode dalam satu node
 - `sensor_channels`: parameter individual (flow, voltage, temperature) dalam satu sensor; setiap channel membawa `id_sensor_type` untuk memastikan jenis metrik konsisten, sedangkan `register_address` memetakan alamat Modbus/holding register dan `alert_suppression_window` mencegah spam alert berulang.
 
 ### 4. Time-Series & Alerting

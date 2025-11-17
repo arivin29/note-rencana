@@ -71,6 +71,59 @@ Quick navigation to all documentation files in this project.
    - **For**: Creating & using dashboard widgets
    - **Contains**: Widget architecture, available widgets, usage
 
+### 8. **[DASHBOARD-README.md](./DASHBOARD-README.md)**
+   - **What**: Dashboard implementation guide
+   - **For**: Understanding dashboard structure
+   - **Contains**: Dashboard components, data flow, widget integration
+
+### 9. **[DASHBOARD-IMPLEMENTATION-COMPLETE.md](./DASHBOARD-IMPLEMENTATION-COMPLETE.md)**
+   - **What**: Dashboard implementation completion report
+   - **For**: Understanding what's been implemented
+   - **Contains**: Completed features, testing results, next steps
+
+---
+
+## 🔧 Technical Reference
+
+### 10. **[NODE-DETAIL-DATA-MAPPING.md](./NODE-DETAIL-DATA-MAPPING.md)**
+   - **What**: Node detail data mapping guide
+   - **For**: Working with node detail pages
+   - **Contains**: Data structure mappings, field relationships
+
+### 11. **[OWNERS-LIST-IMPLEMENTATION.md](./OWNERS-LIST-IMPLEMENTATION.md)**
+   - **What**: Owners list implementation guide
+   - **For**: Understanding owners module
+   - **Contains**: List implementation, CRUD operations
+
+### 12. **[DASHBOARD-WIDGET-MAPPING.md](./DASHBOARD-WIDGET-MAPPING.md)**
+   - **What**: Widget to component mapping
+   - **For**: Understanding widget configurations
+   - **Contains**: Widget types, component mappings
+
+### 13. **[DTO-HTML-MISMATCH-FIXES.md](./DTO-HTML-MISMATCH-FIXES.md)**
+   - **What**: DTO and HTML field alignment fixes
+   - **For**: Reference for past bug fixes
+   - **Contains**: Fixed mismatches, lessons learned
+
+### 14. **[ORGANIZATION.md](./ORGANIZATION.md)**
+   - **What**: Project organization documentation
+   - **For**: Understanding project structure
+   - **Contains**: Folder structure, naming conventions
+
+---
+
+## 📋 Meta Documentation
+
+### 15. **[CLEANUP-REPORT.md](./CLEANUP-REPORT.md)**
+   - **What**: Documentation cleanup history
+   - **For**: Understanding documentation evolution
+   - **Contains**: Cleanup actions, files removed, improvements
+
+### 16. **[README.md](./README.md)**
+   - **What**: Docs folder overview
+   - **For**: Quick docs folder navigation
+   - **Contains**: Summary of all documentation files
+
 ---
 
 ## 📖 How to Use This Documentation
@@ -107,9 +160,10 @@ Quick navigation to all documentation files in this project.
 
 ---
 
-## 🧹 Documentation Cleanup Done
+## 🧹 Documentation Cleanup History
 
-**Removed obsolete files** (2024-11-11):
+### Cleanup #1 (2024-11-11)
+**Removed obsolete files**:
 - ❌ QUICK-REFERENCE-OLD.md (old backup)
 - ❌ SERVICE-WRAPPER-FAQ.md (team doesn't use wrapper)
 - ❌ SERVICE-WRAPPER-PATTERN.md (obsolete pattern)
@@ -121,9 +175,20 @@ Quick navigation to all documentation files in this project.
 - ❌ generate-service.sh (service wrapper script)
 - ❌ src/app/service/owner.service.ts (service wrapper)
 
-**Result**: Clean, focused documentation with 7 essential files.
+### Cleanup #2 (2025-11-17) ✨ MAJOR CLEANUP
+**Removed from root** (28 files):
+- 7 duplicate files (already exist in docs/)
+- 21 empty/placeholder files (< 10 bytes)
+
+**Files organized**:
+- ✅ Root now contains only README.md
+- ✅ All documentation centralized in docs/ folder
+- ✅ 16 well-organized documentation files in docs/
+
+**Result**: Extremely clean structure with all docs properly organized in docs/ folder.
 
 ---
 
-**Last Updated**: November 11, 2024  
+**Last Updated**: November 17, 2025
+**Total Documentation Files**: 16
 **Maintained**: Active

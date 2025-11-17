@@ -3,9 +3,9 @@
     <ul class="breadcrumb mb-1">
       <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
       <li class="breadcrumb-item"><a routerLink="/iot/projects">Projects</a></li>
-      <li class="breadcrumb-item active">{{ project?.name || projectId }}</li>
+      <li class="breadcrumb-item active">{{ project ? project.name : projectId }}</li>
     </ul>
-    <h1 class="page-header mb-0">{{ project?.name || 'Loading...' }}</h1>
+    <h1 class="page-header mb-0">{{ project ? project.name : 'Loading...' }}</h1>
   </div>
   <div class="ms-auto">
     <a routerLink="/iot/projects" class="btn btn-outline-default">Back</a>
@@ -58,13 +58,13 @@
       <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
         Project Snapshot
         <span class="badge text-uppercase" 
-              [class.bg-success-subtle]="project?.status === 'active'"
-              [class.text-success]="project?.status === 'active'"
-              [class.bg-warning-subtle]="project?.status === 'maintenance'"
-              [class.text-warning]="project?.status === 'maintenance'"
-              [class.bg-secondary-subtle]="project?.status !== 'active' && project?.status !== 'maintenance'"
-              [class.text-secondary]="project?.status !== 'active' && project?.status !== 'maintenance'">
-          {{ project?.status || 'Unknown' }}
+              [class.bg-success-subtle]="project.status === 'active'"
+              [class.text-success]="project.status === 'active'"
+              [class.bg-warning-subtle]="project.status === 'maintenance'"
+              [class.text-warning]="project.status === 'maintenance'"
+              [class.bg-secondary-subtle]="project.status !== 'active' && project.status !== 'maintenance'"
+              [class.text-secondary]="project.status !== 'active' && project.status !== 'maintenance'">
+          {{ project.status || 'Unknown' }}
         </span>
         <span class="badge bg-body text-muted border">Last sync {{ lastSyncFormatted }}</span>
         <span class="badge bg-body text-muted border">
@@ -75,16 +75,16 @@
         <div class="row g-3 mb-2">
           <div class="col-md-4">
             <div class="text-uppercase text-muted small">Owner</div>
-            <div class="fw-semibold">{{ project?.owner?.name || 'Unknown' }}</div>
+            <div class="fw-semibold">{{ project.owner.name || 'Unknown' }}</div>
             <div class="text-muted small">
-              {{ project?.owner?.industry || 'Unknown Industry' }}
-              <span *ngIf="project?.owner?.email"> · {{ project?.owner?.email }}</span>
+              {{ project.owner.industry || 'Unknown Industry' }}
+              <span *ngIf="project.owner.email"> · {{ project.owner.email }}</span>
             </div>
           </div>
           <div class="col-md-4">
             <div class="text-uppercase text-muted small">Deployment</div>
             <div class="fw-semibold">Live since {{ deploymentDate }}</div>
-            <div class="text-muted small">{{ project?.areaType || 'Unknown Type' }}</div>
+            <div class="text-muted small">{{ project.areaType || 'Unknown Type' }}</div>
           </div>
           <div class="col-md-4">
             <div class="text-uppercase text-muted small">Data Window</div>
@@ -94,38 +94,38 @@
         </div>
         <div class="row g-3">
           <div class="col-md-3">
-            <a class="stat-link h-100" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
+            <card class="stat-link h-100" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
               <div class="text-uppercase text-muted small">Devices</div>
-              <div class="fs-3 fw-bold lh-1 mb-1">{{ project?.stats?.totalNodes || 0 }}</div>
-              <div class="fw-semibold" [class.text-success]="(project?.stats?.activeNodes || 0) > 0" [class.text-muted]="!((project?.stats?.activeNodes || 0) > 0)">
-                {{ project?.stats?.activeNodes || 0 }} online
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ project ? project.stats.totalNodes : 0 }}</div>
+              <div class="fw-semibold" [class.text-success]="project && project.stats.activeNodes > 0" [class.text-muted]="!project || !project.stats.activeNodes">
+                {{ project ? project.stats.activeNodes : 0 }} online
               </div>
               <div class="stat-meta">View nodes scoped to this project</div>
-            </a>
+            </card>
           </div>
           <div class="col-md-3">
-            <a class="stat-link h-100" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
+            <card class="stat-link h-100" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
               <div class="text-uppercase text-muted small">Sensors</div>
-              <div class="fs-3 fw-bold lh-1 mb-1">{{ project?.stats?.totalSensors || 0 }}</div>
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ project ? project.stats.totalSensors : 0 }}</div>
               <div class="text-muted">{{ offlineNodes }} offline</div>
               <div class="stat-meta">Open sensor explorer</div>
-            </a>
+            </card>
           </div>
           <div class="col-md-3">
-            <a class="stat-link h-100" [routerLink]="['/iot/telemetry']" [queryParams]="{ projectId: projectId }">
+            <card class="stat-link h-100" [routerLink]="['/iot/telemetry']" [queryParams]="{ projectId: projectId }">
               <div class="text-uppercase text-muted small">Locations</div>
-              <div class="fs-3 fw-bold lh-1 mb-1">{{ project?.stats?.totalLocations || 0 }}</div>
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ project ? project.stats.totalLocations : 0 }}</div>
               <div class="text-muted">Deployment sites</div>
               <div class="stat-meta">Jump to telemetry</div>
-            </a>
+            </card>
           </div>
           <div class="col-md-3">
-            <a class="stat-link h-100" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
+            <card class="stat-link h-100" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
               <div class="text-uppercase text-muted small">Alerts</div>
               <div class="fs-3 fw-bold lh-1 mb-1 text-danger">0</div>
               <div class="text-muted">No active alerts</div>
               <div class="stat-meta">Review alert queue</div>
-            </a>
+            </card>
           </div>
         </div>
       </card-body>
@@ -163,7 +163,7 @@
           <div class="text-muted small">Slack · Escalation SLO 30m</div>
         </div>
         <div class="text-uppercase text-muted small mb-2">Checklist</div>
-        <div class="bg-light rounded-3 p-3">
+        <card class="  rounded-3 p-3">
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" id="chkCalibration" checked />
             <label class="form-check-label" for="chkCalibration">Calibrate flow sensors</label>
@@ -180,7 +180,7 @@
             <input class="form-check-input" type="checkbox" id="chkDocs" />
             <label class="form-check-label" for="chkDocs">Upload revised network diagram</label>
           </div>
-        </div>
+        </card>
       </card-body>
       <card-footer class="">
         <button class="btn btn-sm btn-outline-default w-100">
@@ -229,49 +229,68 @@
         Sensor Overview
         <span class="badge bg-body text-muted border">Latest telemetry snapshot</span>
         <div class="ms-auto">
-          <button class="btn btn-sm btn-outline-default">View All Sensors</button>
+          <button class="btn btn-sm btn-outline-default" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
+            View All Sensors
+          </button>
         </div>
       </card-header>
-      <card-body class="p-0">
+      
+      <!-- Loading State -->
+      <div *ngIf="loadingSensors" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-theme" role="status">
+          <span class="visually-hidden">Loading sensors...</span>
+        </div>
+      </div>
+      
+      <!-- No Sensors State -->
+      <div *ngIf="!loadingSensors && sensors.length === 0" class="text-center py-4 text-muted">
+        <i class="fa fa-microchip fa-2x mb-2 opacity-50"></i>
+        <div>No sensors found for this project</div>
+      </div>
+      
+      <!-- Sensors Table -->
+      <card-body class="p-0" *ngIf="!loadingSensors && sensors.length > 0">
         <div class="table-responsive">
           <table class="table mb-0 align-middle">
             <thead class="table-light text-muted">
               <tr>
                 <th scope="col">Name</th>
                 <th scope="col">Type</th>
-                <th scope="col">Last Reading</th>
+                <th scope="col">Location</th>
                 <th scope="col">Status</th>
-                <th scope="col" class="text-end">Trend</th>
+                <th scope="col" class="text-end">Node</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Pump Station 01</td>
-                <td>Flow Meter</td>
-                <td>214 L/min</td>
-                <td><span class="badge bg-success-subtle text-success">Normal</span></td>
-                <td class="text-end text-success">+2.1%</td>
-              </tr>
-              <tr>
-                <td>Reservoir Sensor</td>
-                <td>Pressure</td>
-                <td>5.6 bar</td>
-                <td><span class="badge bg-warning-subtle text-warning">Warning</span></td>
-                <td class="text-end text-danger">-0.7%</td>
-              </tr>
-              <tr>
-                <td>Valve Controller A7</td>
-                <td>Actuator</td>
-                <td>Closed</td>
-                <td><span class="badge bg-secondary-subtle text-secondary">Offline</span></td>
-                <td class="text-end text-muted">n/a</td>
-              </tr>
-              <tr>
-                <td>Warehouse Temp</td>
-                <td>Temperature</td>
-                <td>27.4 °C</td>
-                <td><span class="badge bg-success-subtle text-success">Normal</span></td>
-                <td class="text-end text-success">+0.3%</td>
+              <tr *ngFor="let sensor of sensors.slice(0, 10)">
+                <td>
+                  <div class="fw-semibold">{{ sensor.label }}</div>
+                  <div class="text-muted small" *ngIf="sensor.sensorCode">{{ sensor.sensorCode }}</div>
+                </td>
+                <td>
+                  <span *ngIf="sensor.sensorCatalog">
+                    {{ sensor.sensorCatalog.vendor }} {{ sensor.sensorCatalog.modelName }}
+                  </span>
+                  <span *ngIf="!sensor.sensorCatalog" class="text-muted">Unknown Type</span>
+                </td>
+                <td>
+                  <span *ngIf="sensor.location">{{ sensor.location }}</span>
+                  <span *ngIf="!sensor.location" class="text-muted">-</span>
+                </td>
+                <td>
+                  <span class="badge" 
+                        [class.bg-success-subtle]="sensor.status === 'active'"
+                        [class.text-success]="sensor.status === 'active'"
+                        [class.bg-warning-subtle]="sensor.status === 'maintenance'"
+                        [class.text-warning]="sensor.status === 'maintenance'"
+                        [class.bg-secondary-subtle]="sensor.status === 'inactive'"
+                        [class.text-secondary]="sensor.status === 'inactive'">
+                    {{ sensor.status || 'Unknown' }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <span *ngIf="sensor.node" class="text-muted small">{{ sensor.node.code }}</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -311,54 +330,65 @@
     <card class="shadow-sm">
       <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
         Alert Summary
-        <span class="badge bg-danger-subtle text-danger ms-2">5 Open</span>
+        <span class="badge ms-2" 
+              [class.bg-danger-subtle]="alerts.length > 0"
+              [class.text-danger]="alerts.length > 0"
+              [class.bg-secondary-subtle]="alerts.length === 0"
+              [class.text-secondary]="alerts.length === 0">
+          {{ alerts.length }} {{ alerts.length === 1 ? 'Alert' : 'Alerts' }}
+        </span>
         <div class="ms-auto">
-          <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-50 small">View all</a>
+          <a [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }" 
+             class="text-decoration-none text-inverse text-opacity-50 small">
+            View all
+          </a>
         </div>
       </card-header>
-      <card-body class="p-0">
+      
+      <!-- Loading State -->
+      <div *ngIf="loadingAlerts" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-theme" role="status">
+          <span class="visually-hidden">Loading alerts...</span>
+        </div>
+      </div>
+      
+      <!-- No Alerts State -->
+      <div *ngIf="!loadingAlerts && alerts.length === 0" class="text-center py-4 text-muted">
+        <i class="fa fa-check-circle fa-2x mb-2 text-success opacity-50"></i>
+        <div>No active alerts</div>
+        <div class="small">All systems operational</div>
+      </div>
+      
+      <!-- Alerts List -->
+      <card-body class="p-0" *ngIf="!loadingAlerts && alerts.length > 0">
         <div class="list-group list-group-flush">
-          <div class="list-group-item d-flex align-items-start">
-            <div class="badge bg-danger me-3">CRIT</div>
-            <div>
-              <div class="fw-semibold">Reservoir pressure drop</div>
-              <div class="text-muted small">Escalated to field team · 5m ago</div>
+          <div class="list-group-item d-flex align-items-start" *ngFor="let alert of alerts.slice(0, 5)">
+            <div class="badge me-3"
+                 [class.bg-danger]="alert.severity === 'critical'"
+                 [class.bg-warning]="alert.severity === 'warning'"
+                 [class.text-dark]="alert.severity === 'warning'"
+                 [class.bg-info]="alert.severity === 'info'"
+                 [class.text-dark]="alert.severity === 'info'">
+              {{ alert.severity === 'critical' ? 'CRIT' : alert.severity === 'warning' ? 'WARN' : 'INFO' }}
             </div>
-          </div>
-          <div class="list-group-item d-flex align-items-start">
-            <div class="badge bg-warning text-dark me-3">WARN</div>
-            <div>
-              <div class="fw-semibold">Valve Controller A7 offline</div>
-              <div class="text-muted small">Awaiting acknowledgment · 14m ago</div>
-            </div>
-          </div>
-          <div class="list-group-item d-flex align-items-start">
-            <div class="badge bg-warning text-dark me-3">WARN</div>
-            <div>
-              <div class="fw-semibold">Telemetry queue latency</div>
-              <div class="text-muted small">Auto-resolved · 35m ago</div>
-            </div>
-          </div>
-          <div class="list-group-item d-flex align-items-start">
-            <div class="badge bg-info text-dark me-3">INFO</div>
-            <div>
-              <div class="fw-semibold">New firmware ready</div>
-              <div class="text-muted small">QA completed · 2h ago</div>
-            </div>
-          </div>
-          <div class="list-group-item d-flex align-items-start">
-            <div class="badge bg-info text-dark me-3">INFO</div>
-            <div>
-              <div class="fw-semibold">Docs update pending</div>
-              <div class="text-muted small">Awaiting network diagram upload</div>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ alert.description || 'Alert triggered' }}</div>
+              <div class="text-muted small">
+                <span *ngIf="alert.status === 'open'">Open</span>
+                <span *ngIf="alert.status === 'acknowledged'">Acknowledged</span>
+                <span *ngIf="alert.status === 'cleared'">Cleared</span>
+                · {{ alert.triggeredAt | date: 'short' }}
+              </div>
             </div>
           </div>
         </div>
       </card-body>
-      <card-footer class=" text-center">
-        <button class="btn btn-sm btn-outline-danger">
-          Acknowledge Critical Alerts
-        </button>
+      
+      <card-footer class="text-center" *ngIf="!loadingAlerts && alerts.length > 0">
+        <a [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }" 
+           class="btn btn-sm btn-outline-default w-100">
+          View All Alerts
+        </a>
       </card-footer>
     </card>
   </div>

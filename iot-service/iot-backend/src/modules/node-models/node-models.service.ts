@@ -4,7 +4,7 @@ import { Repository, FindOptionsWhere, ILike } from 'typeorm';
 import { NodeModel } from '../../entities/node-model.entity';
 import { CreateNodeModelDto } from './dto/create-node-model.dto';
 import { UpdateNodeModelDto } from './dto/update-node-model.dto';
-import { NodeModelResponseDto } from './dto/node-model-response.dto';
+import { NodeModelResponseDto, NodeModelDetailedResponseDto } from './dto/node-model-response.dto';
 
 @Injectable()
 export class NodeModelsService {
@@ -103,6 +103,19 @@ export class NodeModelsService {
     return this.toResponseDto(model);
   }
 
+  async findOneDetailed(id: string): Promise<NodeModelDetailedResponseDto> {
+    const model = await this.nodeModelRepository.findOne({
+      where: { idNodeModel: id },
+      relations: ['nodes'],
+    });
+
+    if (!model) {
+      throw new NotFoundException(`Node model with ID ${id} not found`);
+    }
+
+    return this.toDetailedResponseDto(model);
+  }
+
   async update(id: string, updateDto: UpdateNodeModelDto): Promise<NodeModelResponseDto> {
     const model = await this.nodeModelRepository.findOne({
       where: { idNodeModel: id },
@@ -159,6 +172,20 @@ export class NodeModelsService {
       defaultFirmware: model.defaultFirmware,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
+    };
+  }
+
+  private toDetailedResponseDto(model: NodeModel): NodeModelDetailedResponseDto {
+    const base = this.toResponseDto(model);
+
+    return {
+      ...base,
+      nodes: model.nodes || [],
+      stats: {
+        totalNodes: model.nodes?.length || 0,
+        activeNodes: model.nodes?.filter((n: any) => n.connectivityStatus === 'online').length || 0,
+        offlineNodes: model.nodes?.filter((n: any) => n.connectivityStatus === 'offline').length || 0,
+      },
     };
   }
 }

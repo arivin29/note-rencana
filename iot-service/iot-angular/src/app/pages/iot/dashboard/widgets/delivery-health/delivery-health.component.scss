@@ -1,0 +1,12 @@
+.delivery-section {
+  .delivery-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.02);
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+  }
+}

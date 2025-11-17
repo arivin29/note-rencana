@@ -1,0 +1,87 @@
+<card class="console-panel">
+  <card-header class="d-flex align-items-center">
+    <div class="flex-grow-1">
+      <h6 class="mb-0">ACTIVE ALERTS</h6>
+      <small class="text-muted">Latest system alerts</small>
+    </div>
+    <card-expand-toggler class="icon-button ms-2">
+      <i class="bi bi-fullscreen"></i>
+    </card-expand-toggler>
+  </card-header>
+  
+  <card-body>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="text-muted mt-2">Loading alerts...</div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error }}</div>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadAlertStream()">
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+
+    <!-- Alerts -->
+    <div *ngIf="alertData && !loading && !error">
+      <!-- Summary Stats -->
+      <div class="row g-2 mb-3" *ngIf="alertData.summary">
+        <div class="col-4">
+          <div class="text-center p-2 bg-light rounded">
+            <div class="fs-5 fw-bold">{{ alertData.summary.totalActive }}</div>
+            <small class="text-muted">Total</small>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="text-center p-2 bg-danger-subtle rounded">
+            <div class="fs-5 fw-bold text-danger">{{ alertData.summary.criticalCount }}</div>
+            <small class="text-muted">Critical</small>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="text-center p-2 bg-warning-subtle rounded">
+            <div class="fs-5 fw-bold text-warning">{{ alertData.summary.warningCount }}</div>
+            <small class="text-muted">Warning</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert List -->
+      <div class="alert-list">
+        <div class="alert-item" *ngFor="let alert of alertData.alerts">
+          <div class="d-flex align-items-start">
+            <div class="alert-icon me-2">
+              <i [ngClass]="[getSeverityIcon(alert.severity), getSeverityBadgeClass(alert.severity).replace('badge ', '')]"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <span [ngClass]="getSeverityBadgeClass(alert.severity)">
+                    {{ alert.severity | titlecase }}
+                  </span>
+                  <span class="fw-semibold ms-2">{{ alert.nodeName }}</span>
+                </div>
+                <small class="text-muted">{{ formatTimestamp(alert.timestamp) }}</small>
+              </div>
+              <div class="mt-1">
+                <span class="text-muted">{{ alert.ruleName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!alertData.alerts || alertData.alerts.length === 0" 
+           class="text-center text-muted py-4">
+        <i class="bi bi-check-circle fs-1 text-success"></i>
+        <div class="mt-2">No active alerts - all systems operational</div>
+      </div>
+    </div>
+  </card-body>
+</card>

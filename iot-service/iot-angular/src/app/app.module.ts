@@ -52,81 +52,16 @@ import { ThemePanelComponent } from './components/theme-panel/theme-panel.compon
 // import { SharedComponentsModule } from './shared/shared-components.module';
 import { WidgetsModule } from './components/widgets/widgets-module';
 
-import { DashboardPage } from './pages/dashboard/dashboard';
-import { IotDashboardPage } from './pages/iot/dashboard/iot-dashboard';
 import { IotAlertsPage } from './pages/iot/alerts/iot-alerts'; 
 import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showcase';
 
-import { AnalyticsPage } from './pages/analytics/analytics';
+// IoT Dashboard Module (contains IotDashboardPage + 8 widget components)
+import { IotDashboardModule } from './pages/iot/dashboard/dashboard.module';
 
-import { EmailInboxPage } from './pages/email/inbox/email-inbox';
-import { EmailComposePage } from './pages/email/compose/email-compose';
-import { EmailDetailPage } from './pages/email/detail/email-detail';
+// Dashboard Kedua (Super Admin Dashboard)
+import { DashboardKeduaModule } from './pages/iot/dashboard-kedua/dashboard-kedua.module';
 
-import { WidgetsPage } from './pages/widgets/widgets';
-
-import { AiChatPage } from './pages/ai/chat/ai-chat';
-import { AiImageGeneratorPage } from './pages/ai/image-generator/ai-image-generator';
-
-import { PosCustomerOrderPage } from './pages/pos/customer-order/pos-customer-order';
-import { PosKitchenOrderPage } from './pages/pos/kitchen-order/pos-kitchen-order';
-import { PosCounterCheckoutPage } from './pages/pos/counter-checkout/pos-counter-checkout';
-import { PosTableBookingPage } from './pages/pos/table-booking/pos-table-booking';
-import { PosMenuStockPage } from './pages/pos/menu-stock/pos-menu-stock';
-
-import { UiBootstrapPage } from './pages/ui/bootstrap/ui-bootstrap';
-import { UiButtonsPage } from './pages/ui/buttons/ui-buttons';
-import { UiCardPage } from './pages/ui/card/ui-card';
-import { UiIconsPage } from './pages/ui/icons/ui-icons';
-import { UiModalNotificationsPage } from './pages/ui/modal-notifications/ui-modal-notifications';
-import { UiTypographyPage } from './pages/ui/typography/ui-typography';
-import { UiTabsAccordionsPage } from './pages/ui/tabs-accordions/ui-tabs-accordions';
-
-import { FormElementsPage } from './pages/form/elements/form-elements';
-import { FormPluginsPage } from './pages/form/plugins/form-plugins';
-import { FormWizardsPage } from './pages/form/wizards/form-wizards';
-
-import { TableElementsPage } from './pages/table/elements/table-elements';
-import { TablePluginsPage } from './pages/table/plugins/table-plugins';
-
-import { ChartJsPage } from './pages/chart/js/chart-js';
-import { ChartApexPage } from './pages/chart/apex/chart-apex';
-
-import { MapPage } from './pages/map/map';
-
-import { LayoutStarterPage } from './pages/layout/starter/layout-starter';
-import { LayoutFixedFooterPage } from './pages/layout/fixed-footer/layout-fixed-footer';
-import { LayoutFullHeightPage } from './pages/layout/full-height/layout-full-height';
-import { LayoutFullWidthPage } from './pages/layout/full-width/layout-full-width';
-import { LayoutBoxedLayoutPage } from './pages/layout/boxed-layout/layout-boxed-layout';
-import { LayoutCollapsedSidebarPage } from './pages/layout/collapsed-sidebar/layout-collapsed-sidebar';
-import { LayoutTopNavPage } from './pages/layout/top-nav/layout-top-nav';
-import { LayoutMixedNavPage } from './pages/layout/mixed-nav/layout-mixed-nav';
-import { LayoutMixedNavBoxedLayoutPage } from './pages/layout/mixed-nav-boxed-layout/layout-mixed-nav-boxed-layout';
-
-import { ScrumBoardPage } from './pages/page/scrum-board/page-scrum-board';
-import { ProductsPage } from './pages/page/products/page-products';
-import { ProductDetailsPage } from './pages/page/product-details/page-product-details';
-import { OrdersPage } from './pages/page/orders/page-orders';
-import { OrderDetailsPage } from './pages/page/order-details/page-order-details';
-import { GalleryPage } from './pages/page/gallery/page-gallery';
-import { SearchResultsPage } from './pages/page/search-results/page-search-results';
-import { ComingSoonPage } from './pages/page/coming-soon/page-coming-soon';
-import { ErrorPage } from './pages/page/error/page-error';
-import { LoginPage } from './pages/page/login/page-login';
-import { RegisterPage } from './pages/page/register/page-register';
-import { MessengerPage } from './pages/page/messenger/page-messenger';
-import { DataManagementPage } from './pages/page/data-management/page-data-management';
-import { FileManagerPage } from './pages/page/file-manager/page-file-manager';
-import { PricingPage } from './pages/page/pricing/page-pricing';
-import { LandingPage } from './pages/landing/landing';
-
-import { ProfilePage } from './pages/profile/profile';
-import { CalendarPage } from './pages/calendar/calendar';
-import { SettingsPage } from './pages/settings/settings';
-import { HelperPage } from './pages/helper/helper';
 import { SharedComponentsModule } from './shared/shared-components.module';
-import { OwnerTestComponent } from './pages/owner-test/owner-test.component';
  
 @NgModule({
     declarations: [
@@ -136,83 +71,9 @@ import { OwnerTestComponent } from './pages/owner-test/owner-test.component';
         SidebarComponent,
         SidebarMobileBackdropComponent,
         FooterComponent,
-        ThemePanelComponent, 
-
         ThemePanelComponent,
-        DashboardPage,
-        IotDashboardPage,
         IotAlertsPage, 
-        WidgetsShowcasePage,
-
-        AnalyticsPage,
-
-        EmailInboxPage,
-        EmailComposePage,
-        EmailDetailPage,
-
-        WidgetsPage,
-
-        AiChatPage,
-        AiImageGeneratorPage,
-
-        PosCustomerOrderPage,
-        PosKitchenOrderPage,
-        PosCounterCheckoutPage,
-        PosTableBookingPage,
-        PosMenuStockPage,
-
-        UiBootstrapPage,
-        UiButtonsPage,
-        UiCardPage,
-        UiIconsPage,
-        UiModalNotificationsPage,
-        UiTypographyPage,
-        UiTabsAccordionsPage,
-
-        FormElementsPage,
-        FormPluginsPage,
-        FormWizardsPage,
-
-        TableElementsPage,
-        TablePluginsPage,
-
-        ChartJsPage,
-        ChartApexPage,
-
-        MapPage,
-
-        LayoutStarterPage,
-        LayoutFixedFooterPage,
-        LayoutFullHeightPage,
-        LayoutFullWidthPage,
-        LayoutBoxedLayoutPage,
-        LayoutCollapsedSidebarPage,
-        LayoutTopNavPage,
-        LayoutMixedNavPage,
-        LayoutMixedNavBoxedLayoutPage,
-
-        ScrumBoardPage,
-        ProductsPage,
-        ProductDetailsPage,
-        OrdersPage,
-        OrderDetailsPage,
-        GalleryPage,
-        SearchResultsPage,
-        ComingSoonPage,
-        ErrorPage,
-        LoginPage,
-        RegisterPage,
-        MessengerPage,
-        DataManagementPage,
-        FileManagerPage,
-        PricingPage,
-        LandingPage,
-
-        ProfilePage,
-        CalendarPage,
-        SettingsPage,
-        HelperPage,
-        OwnerTestComponent
+        WidgetsShowcasePage
     ],
     imports: [
         CommonModule,
@@ -225,7 +86,13 @@ import { OwnerTestComponent } from './pages/owner-test/owner-test.component';
         JsonPipe,
         SharedComponentsModule,
         WidgetsModule,
-        
+
+        // IoT Dashboard Module
+        IotDashboardModule,
+
+        // Dashboard Kedua Module (Super Admin)
+        DashboardKeduaModule,
+
         // SDK API Module
         ApiModule.forRoot({ rootUrl: environment.apiUrl }),
 
@@ -268,8 +135,9 @@ export class AppModule {
     constructor(private router: Router, private titleService: Title, private route: ActivatedRoute) {
         router.events.subscribe((e) => {
             if (e instanceof NavigationEnd) {
-                if (this.route.snapshot.firstChild && this.route.snapshot.firstChild.data['title']) {
-                    this.title = 'HUD | ' + this.route.snapshot.firstChild.data['title'];
+                const pageTitle = this.getDeepestTitle(this.route);
+                if (pageTitle) {
+                    this.title = 'HUD | ' + pageTitle;
                 }
                 this.titleService.setTitle(this.title);
 
@@ -280,5 +148,14 @@ export class AppModule {
                 }
             }
         });
+    }
+
+    private getDeepestTitle(route: ActivatedRoute): string | null {
+        let currentRoute: ActivatedRoute | null = route;
+        while (currentRoute && currentRoute.firstChild) {
+            currentRoute = currentRoute.firstChild;
+        }
+
+        return currentRoute?.snapshot.data?.['title'] ?? null;
     }
 }

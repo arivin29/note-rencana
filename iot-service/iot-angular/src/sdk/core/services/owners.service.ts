@@ -11,11 +11,21 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { ForwardingDatabaseResponseDto } from '../models/forwarding-database-response-dto';
+import { ForwardingWebhookResponseDto } from '../models/forwarding-webhook-response-dto';
 import { OwnerDashboardResponseDto } from '../models/owner-dashboard-response-dto';
 import { OwnerDetailResponseDto } from '../models/owner-detail-response-dto';
 import { OwnerResponseDto } from '../models/owner-response-dto';
 import { ownersControllerCreate } from '../fn/owners/owners-controller-create';
 import { OwnersControllerCreate$Params } from '../fn/owners/owners-controller-create';
+import { ownersControllerCreateDatabase } from '../fn/owners/owners-controller-create-database';
+import { OwnersControllerCreateDatabase$Params } from '../fn/owners/owners-controller-create-database';
+import { ownersControllerCreateWebhook } from '../fn/owners/owners-controller-create-webhook';
+import { OwnersControllerCreateWebhook$Params } from '../fn/owners/owners-controller-create-webhook';
+import { ownersControllerDeleteDatabase } from '../fn/owners/owners-controller-delete-database';
+import { OwnersControllerDeleteDatabase$Params } from '../fn/owners/owners-controller-delete-database';
+import { ownersControllerDeleteWebhook } from '../fn/owners/owners-controller-delete-webhook';
+import { OwnersControllerDeleteWebhook$Params } from '../fn/owners/owners-controller-delete-webhook';
 import { ownersControllerFindAll } from '../fn/owners/owners-controller-find-all';
 import { OwnersControllerFindAll$Params } from '../fn/owners/owners-controller-find-all';
 import { ownersControllerFindOne } from '../fn/owners/owners-controller-find-one';
@@ -36,8 +46,16 @@ import { ownersControllerGetWidgetsData } from '../fn/owners/owners-controller-g
 import { OwnersControllerGetWidgetsData$Params } from '../fn/owners/owners-controller-get-widgets-data';
 import { ownersControllerRemove } from '../fn/owners/owners-controller-remove';
 import { OwnersControllerRemove$Params } from '../fn/owners/owners-controller-remove';
+import { ownersControllerTestDatabase } from '../fn/owners/owners-controller-test-database';
+import { OwnersControllerTestDatabase$Params } from '../fn/owners/owners-controller-test-database';
+import { ownersControllerTestWebhook } from '../fn/owners/owners-controller-test-webhook';
+import { OwnersControllerTestWebhook$Params } from '../fn/owners/owners-controller-test-webhook';
 import { ownersControllerUpdate } from '../fn/owners/owners-controller-update';
 import { OwnersControllerUpdate$Params } from '../fn/owners/owners-controller-update';
+import { ownersControllerUpdateDatabase } from '../fn/owners/owners-controller-update-database';
+import { OwnersControllerUpdateDatabase$Params } from '../fn/owners/owners-controller-update-database';
+import { ownersControllerUpdateWebhook } from '../fn/owners/owners-controller-update-webhook';
+import { OwnersControllerUpdateWebhook$Params } from '../fn/owners/owners-controller-update-webhook';
 import { OwnerStatisticsResponseDto } from '../models/owner-statistics-response-dto';
 import { OwnerWidgetsResponseDto } from '../models/owner-widgets-response-dto';
 import { PaginatedResponseDto } from '../models/paginated-response-dto';
@@ -445,6 +463,270 @@ export class OwnersService extends BaseService {
   ownersControllerGetWidgetsData(params?: OwnersControllerGetWidgetsData$Params, context?: HttpContext): Observable<OwnerWidgetsResponseDto> {
     return this.ownersControllerGetWidgetsData$Response(params, context).pipe(
       map((r: StrictHttpResponse<OwnerWidgetsResponseDto>): OwnerWidgetsResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerCreateWebhook()` */
+  static readonly OwnersControllerCreateWebhookPath = '/api/owners/{id}/webhooks';
+
+  /**
+   * Create webhook configuration.
+   *
+   * Creates a new webhook configuration for the owner
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerCreateWebhook()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerCreateWebhook$Response(params: OwnersControllerCreateWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<ForwardingWebhookResponseDto>> {
+    return ownersControllerCreateWebhook(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Create webhook configuration.
+   *
+   * Creates a new webhook configuration for the owner
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerCreateWebhook$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerCreateWebhook(params: OwnersControllerCreateWebhook$Params, context?: HttpContext): Observable<ForwardingWebhookResponseDto> {
+    return this.ownersControllerCreateWebhook$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ForwardingWebhookResponseDto>): ForwardingWebhookResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerUpdateWebhook()` */
+  static readonly OwnersControllerUpdateWebhookPath = '/api/owners/{id}/webhooks/{webhookId}';
+
+  /**
+   * Update webhook configuration.
+   *
+   * Updates an existing webhook configuration
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerUpdateWebhook()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerUpdateWebhook$Response(params: OwnersControllerUpdateWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<ForwardingWebhookResponseDto>> {
+    return ownersControllerUpdateWebhook(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Update webhook configuration.
+   *
+   * Updates an existing webhook configuration
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerUpdateWebhook$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerUpdateWebhook(params: OwnersControllerUpdateWebhook$Params, context?: HttpContext): Observable<ForwardingWebhookResponseDto> {
+    return this.ownersControllerUpdateWebhook$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ForwardingWebhookResponseDto>): ForwardingWebhookResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerDeleteWebhook()` */
+  static readonly OwnersControllerDeleteWebhookPath = '/api/owners/{id}/webhooks/{webhookId}';
+
+  /**
+   * Delete webhook configuration.
+   *
+   * Permanently deletes a webhook configuration
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerDeleteWebhook()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerDeleteWebhook$Response(params: OwnersControllerDeleteWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return ownersControllerDeleteWebhook(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Delete webhook configuration.
+   *
+   * Permanently deletes a webhook configuration
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerDeleteWebhook$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerDeleteWebhook(params: OwnersControllerDeleteWebhook$Params, context?: HttpContext): Observable<void> {
+    return this.ownersControllerDeleteWebhook$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerTestWebhook()` */
+  static readonly OwnersControllerTestWebhookPath = '/api/owners/{id}/webhooks/{webhookId}/test';
+
+  /**
+   * Test webhook delivery.
+   *
+   * Sends a test payload to the webhook endpoint
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerTestWebhook()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerTestWebhook$Response(params: OwnersControllerTestWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return ownersControllerTestWebhook(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Test webhook delivery.
+   *
+   * Sends a test payload to the webhook endpoint
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerTestWebhook$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerTestWebhook(params: OwnersControllerTestWebhook$Params, context?: HttpContext): Observable<void> {
+    return this.ownersControllerTestWebhook$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerCreateDatabase()` */
+  static readonly OwnersControllerCreateDatabasePath = '/api/owners/{id}/databases';
+
+  /**
+   * Create database configuration.
+   *
+   * Creates a new database forwarding configuration for the owner
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerCreateDatabase()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerCreateDatabase$Response(params: OwnersControllerCreateDatabase$Params, context?: HttpContext): Observable<StrictHttpResponse<ForwardingDatabaseResponseDto>> {
+    return ownersControllerCreateDatabase(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Create database configuration.
+   *
+   * Creates a new database forwarding configuration for the owner
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerCreateDatabase$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerCreateDatabase(params: OwnersControllerCreateDatabase$Params, context?: HttpContext): Observable<ForwardingDatabaseResponseDto> {
+    return this.ownersControllerCreateDatabase$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ForwardingDatabaseResponseDto>): ForwardingDatabaseResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerUpdateDatabase()` */
+  static readonly OwnersControllerUpdateDatabasePath = '/api/owners/{id}/databases/{databaseId}';
+
+  /**
+   * Update database configuration.
+   *
+   * Updates an existing database forwarding configuration
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerUpdateDatabase()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerUpdateDatabase$Response(params: OwnersControllerUpdateDatabase$Params, context?: HttpContext): Observable<StrictHttpResponse<ForwardingDatabaseResponseDto>> {
+    return ownersControllerUpdateDatabase(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Update database configuration.
+   *
+   * Updates an existing database forwarding configuration
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerUpdateDatabase$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ownersControllerUpdateDatabase(params: OwnersControllerUpdateDatabase$Params, context?: HttpContext): Observable<ForwardingDatabaseResponseDto> {
+    return this.ownersControllerUpdateDatabase$Response(params, context).pipe(
+      map((r: StrictHttpResponse<ForwardingDatabaseResponseDto>): ForwardingDatabaseResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerDeleteDatabase()` */
+  static readonly OwnersControllerDeleteDatabasePath = '/api/owners/{id}/databases/{databaseId}';
+
+  /**
+   * Delete database configuration.
+   *
+   * Permanently deletes a database forwarding configuration
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerDeleteDatabase()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerDeleteDatabase$Response(params: OwnersControllerDeleteDatabase$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return ownersControllerDeleteDatabase(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Delete database configuration.
+   *
+   * Permanently deletes a database forwarding configuration
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerDeleteDatabase$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerDeleteDatabase(params: OwnersControllerDeleteDatabase$Params, context?: HttpContext): Observable<void> {
+    return this.ownersControllerDeleteDatabase$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `ownersControllerTestDatabase()` */
+  static readonly OwnersControllerTestDatabasePath = '/api/owners/{id}/databases/{databaseId}/test';
+
+  /**
+   * Test database connection.
+   *
+   * Tests the database connection with the configured credentials
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ownersControllerTestDatabase()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerTestDatabase$Response(params: OwnersControllerTestDatabase$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return ownersControllerTestDatabase(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Test database connection.
+   *
+   * Tests the database connection with the configured credentials
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ownersControllerTestDatabase$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ownersControllerTestDatabase(params: OwnersControllerTestDatabase$Params, context?: HttpContext): Observable<void> {
+    return this.ownersControllerTestDatabase$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

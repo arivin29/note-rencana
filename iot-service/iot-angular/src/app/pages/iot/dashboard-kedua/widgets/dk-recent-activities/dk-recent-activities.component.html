@@ -1,0 +1,21 @@
+<div class="card h-100">
+  <div class="card-body">
+    <div class="d-flex justify-content-between mb-3">
+      <div>
+        <div class="text-muted text-uppercase small">Recent Activities</div>
+        <div class="fw-semibold">Operational timeline</div>
+      </div>
+      <span class="badge bg-light text-theme">{{ timeRange }}</span>
+    </div>
+    <ul class="timeline">
+      <li *ngFor="let activity of activities">
+        <span class="timeline-badge" [ngClass]="badgeClass(activity.type)"></span>
+        <div class="timeline-panel">
+          <div class="fw-semibold">{{ activity.title }}</div>
+          <div class="text-muted small">{{ activity.description }}</div>
+          <div class="small text-muted">{{ activity.timestamp }}</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>

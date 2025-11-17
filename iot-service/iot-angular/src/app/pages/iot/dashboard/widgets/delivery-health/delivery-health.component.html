@@ -1,0 +1,101 @@
+<card class="console-panel">
+  <card-header class="d-flex align-items-center">
+    <div class="flex-grow-1">
+      <h6 class="mb-0">DELIVERY HEALTH</h6>
+      <small class="text-muted">Webhook & Database forwarding status</small>
+    </div>
+    <card-expand-toggler class="icon-button ms-2">
+      <i class="bi bi-fullscreen"></i>
+    </card-expand-toggler>
+  </card-header>
+  
+  <card-body>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="text-muted mt-2">Loading delivery status...</div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error }}</div>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadDeliveryHealth()">
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+
+    <!-- Delivery Status -->
+    <div *ngIf="deliveryData && !loading && !error">
+      <!-- Webhook Forwarding -->
+      <div class="delivery-section mb-4">
+        <h6 class="text-muted mb-3">
+          <i class="bi bi-globe me-1"></i> Webhook Forwarding
+        </h6>
+        <div class="delivery-item" *ngFor="let webhook of deliveryData.webhooks">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <div>
+              <span class="fw-semibold">{{ webhook.name }}</span>
+              <span [ngClass]="getStatusBadgeClass(webhook.status)" class="ms-2">
+                {{ webhook.status | titlecase }}
+              </span>
+            </div>
+            <span class="fw-bold" [ngClass]="getProgressBarClass(webhook.successRate)">
+              {{ webhook.successRate }}%
+            </span>
+          </div>
+          <div class="progress mb-1" style="height: 6px;">
+            <div class="progress-bar" 
+                 [ngClass]="getProgressBarClass(webhook.successRate)"
+                 [style.width.%]="webhook.successRate">
+            </div>
+          </div>
+          <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+            <small>{{ webhook.endpoint }}</small>
+            <small>Last: {{ formatTimestamp(webhook.lastSuccess) }}</small>
+          </div>
+        </div>
+        <div *ngIf="!deliveryData.webhooks || deliveryData.webhooks.length === 0" 
+             class="text-center text-muted py-2">
+          <small>No webhooks configured</small>
+        </div>
+      </div>
+
+      <!-- Database Forwarding -->
+      <div class="delivery-section">
+        <h6 class="text-muted mb-3">
+          <i class="bi bi-database me-1"></i> Database Forwarding
+        </h6>
+        <div class="delivery-item" *ngFor="let db of deliveryData.databases">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <div>
+              <span class="fw-semibold">{{ db.name }}</span>
+              <span [ngClass]="getStatusBadgeClass(db.status)" class="ms-2">
+                {{ db.status | titlecase }}
+              </span>
+            </div>
+            <span class="fw-bold" [ngClass]="getProgressBarClass(db.successRate)">
+              {{ db.successRate }}%
+            </span>
+          </div>
+          <div class="progress mb-1" style="height: 6px;">
+            <div class="progress-bar" 
+                 [ngClass]="getProgressBarClass(db.successRate)"
+                 [style.width.%]="db.successRate">
+            </div>
+          </div>
+          <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+            <small>{{ db.connectionString }}</small>
+            <small>Last: {{ formatTimestamp(db.lastSuccess) }}</small>
+          </div>
+        </div>
+        <div *ngIf="!deliveryData.databases || deliveryData.databases.length === 0" 
+             class="text-center text-muted py-2">
+          <small>No database connections configured</small>
+        </div>
+      </div>
+    </div>
+  </card-body>
+</card>

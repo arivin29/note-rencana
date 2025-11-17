@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { Owner } from '../../entities/owner.entity';
+import { OwnerForwardingWebhook } from '../../entities/owner-forwarding-webhook.entity';
+import { OwnerForwardingDatabase } from '../../entities/owner-forwarding-database.entity';
 import {
   CreateOwnerDto,
   UpdateOwnerDto,
@@ -11,7 +13,13 @@ import {
   OwnerDashboardResponseDto,
   OwnerWidgetsResponseDto,
   OwnerQueryDto,
+  CreateDatabaseDto,
+  UpdateDatabaseDto,
+  ForwardingDatabaseResponseDto,
 } from './dto';
+import { CreateWebhookDto } from './dto/create-webhook.dto';
+import { UpdateWebhookDto } from './dto/update-webhook.dto';
+import { ForwardingWebhookResponseDto } from './dto/forwarding-webhook-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
@@ -19,6 +27,10 @@ export class OwnersService {
   constructor(
     @InjectRepository(Owner)
     private ownersRepository: Repository<Owner>,
+    @InjectRepository(OwnerForwardingWebhook)
+    private webhooksRepository: Repository<OwnerForwardingWebhook>,
+    @InjectRepository(OwnerForwardingDatabase)
+    private databasesRepository: Repository<OwnerForwardingDatabase>,
   ) {}
 
   // ============================================
@@ -275,10 +287,15 @@ export class OwnersService {
   // ============================================
 
   async findOneWithDetails(id: string): Promise<OwnerDetailResponseDto> {
-    // Load owner with projects relation only
+    // Load owner with all relations
     const owner = await this.ownersRepository.findOne({
       where: { idOwner: id },
-      relations: ['projects'],
+      relations: [
+        'projects',
+        'forwardingWebhooks',
+        'forwardingDatabases',
+        'forwardingLogs',
+      ],
     });
 
     if (!owner) {
@@ -303,6 +320,65 @@ export class OwnersService {
       activeAlerts: 0,
     };
 
+    // Map forwarding webhooks
+    const forwardingWebhooks = (owner.forwardingWebhooks || []).map(webhook => ({
+      idOwnerForwardingWebhook: webhook.idOwnerForwardingWebhook,
+      idOwner: webhook.idOwner,
+      label: webhook.label,
+      endpointUrl: webhook.endpointUrl,
+      httpMethod: webhook.httpMethod,
+      headersJson: webhook.headersJson,
+      secretToken: webhook.secretToken ? '***' : undefined, // Mask secret
+      payloadTemplate: webhook.payloadTemplate,
+      maxRetry: webhook.maxRetry,
+      retryBackoffMs: webhook.retryBackoffMs,
+      enabled: webhook.enabled,
+      lastStatus: webhook.lastStatus,
+      lastDeliveryAt: webhook.lastDeliveryAt?.toISOString(),
+      lastError: webhook.lastError,
+      createdAt: webhook.createdAt.toISOString(),
+      updatedAt: webhook.updatedAt.toISOString(),
+    }));
+
+    // Map forwarding databases
+    const forwardingDatabases = (owner.forwardingDatabases || []).map(db => ({
+      idOwnerForwardingDb: db.idOwnerForwardingDb,
+      idOwner: db.idOwner,
+      label: db.label,
+      dbType: db.dbType,
+      host: db.host,
+      port: db.port,
+      databaseName: db.databaseName,
+      username: db.username,
+      passwordCipher: '********', // Always mask password
+      targetSchema: db.targetSchema,
+      targetTable: db.targetTable,
+      writeMode: db.writeMode,
+      batchSize: db.batchSize,
+      enabled: db.enabled,
+      lastStatus: db.lastStatus,
+      lastDeliveryAt: db.lastDeliveryAt?.toISOString(),
+      lastError: db.lastError,
+      createdAt: db.createdAt.toISOString(),
+      updatedAt: db.updatedAt.toISOString(),
+    }));
+
+    // Map forwarding logs (limit to last 20)
+    const forwardingLogs = (owner.forwardingLogs || [])
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 20)
+      .map(log => ({
+        idOwnerForwardingLog: log.idOwnerForwardingLog,
+        idOwner: log.idOwner,
+        configType: log.configType,
+        configId: log.configId,
+        status: log.status,
+        attempts: log.attempts,
+        errorMessage: log.errorMessage,
+        durationMs: log.durationMs,
+        createdAt: log.createdAt.toISOString(),
+      }));
+
     return {
       idOwner: owner.idOwner,
       name: owner.name,
@@ -313,6 +389,9 @@ export class OwnersService {
       projects: projectsSummary,
       nodeAssignments: nodeAssignmentsSummary,
       statistics,
+      forwardingWebhooks,
+      forwardingDatabases,
+      forwardingLogs,
       createdAt: owner.createdAt,
       updatedAt: owner.updatedAt,
     };
@@ -514,6 +593,281 @@ export class OwnersService {
       forwardingSettings: owner.forwardingSettings,
       createdAt: owner.createdAt,
       updatedAt: owner.updatedAt,
+    };
+  }
+
+  // ============================================
+  // WEBHOOK MANAGEMENT
+  // ============================================
+
+  async createWebhook(
+    ownerId: string,
+    createWebhookDto: CreateWebhookDto,
+  ): Promise<ForwardingWebhookResponseDto> {
+    // Verify owner exists
+    const owner = await this.ownersRepository.findOne({
+      where: { idOwner: ownerId },
+    });
+
+    if (!owner) {
+      throw new NotFoundException(`Owner with ID ${ownerId} not found`);
+    }
+
+    const webhook = this.webhooksRepository.create({
+      idOwner: ownerId,
+      ...createWebhookDto,
+    });
+
+    const saved = await this.webhooksRepository.save(webhook);
+    return this.toWebhookResponseDto(saved);
+  }
+
+  async updateWebhook(
+    ownerId: string,
+    webhookId: string,
+    updateWebhookDto: UpdateWebhookDto,
+  ): Promise<ForwardingWebhookResponseDto> {
+    const webhook = await this.webhooksRepository.findOne({
+      where: { 
+        idOwnerForwardingWebhook: webhookId,
+        idOwner: ownerId,
+      },
+    });
+
+    if (!webhook) {
+      throw new NotFoundException(
+        `Webhook with ID ${webhookId} not found for owner ${ownerId}`,
+      );
+    }
+
+    Object.assign(webhook, updateWebhookDto);
+    const updated = await this.webhooksRepository.save(webhook);
+    return this.toWebhookResponseDto(updated);
+  }
+
+  async deleteWebhook(ownerId: string, webhookId: string): Promise<void> {
+    const result = await this.webhooksRepository.delete({
+      idOwnerForwardingWebhook: webhookId,
+      idOwner: ownerId,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `Webhook with ID ${webhookId} not found for owner ${ownerId}`,
+      );
+    }
+  }
+
+  async testWebhookDelivery(
+    ownerId: string,
+    webhookId: string,
+  ): Promise<{ success: boolean; message: string; duration: number }> {
+    const webhook = await this.webhooksRepository.findOne({
+      where: { 
+        idOwnerForwardingWebhook: webhookId,
+        idOwner: ownerId,
+      },
+    });
+
+    if (!webhook) {
+      throw new NotFoundException(
+        `Webhook with ID ${webhookId} not found for owner ${ownerId}`,
+      );
+    }
+
+    const startTime = Date.now();
+    
+    try {
+      // TODO: Implement actual HTTP request to webhook endpoint
+      // For now, simulate a test
+      const duration = Date.now() - startTime;
+
+      // Update last delivery status
+      webhook.lastStatus = 'Healthy';
+      webhook.lastDeliveryAt = new Date();
+      await this.webhooksRepository.save(webhook);
+
+      return {
+        success: true,
+        message: 'Test delivery succeeded (simulated)',
+        duration,
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      webhook.lastStatus = 'Failed';
+      webhook.lastError = error.message;
+      await this.webhooksRepository.save(webhook);
+
+      return {
+        success: false,
+        message: `Test delivery failed: ${error.message}`,
+        duration,
+      };
+    }
+  }
+
+  // ============================================
+  // DATABASE FORWARDING MANAGEMENT
+  // ============================================
+
+  async createDatabase(
+    ownerId: string,
+    createDatabaseDto: CreateDatabaseDto,
+  ): Promise<ForwardingDatabaseResponseDto> {
+    // Verify owner exists
+    const owner = await this.ownersRepository.findOne({
+      where: { idOwner: ownerId },
+    });
+
+    if (!owner) {
+      throw new NotFoundException(`Owner with ID ${ownerId} not found`);
+    }
+
+    const database = this.databasesRepository.create({
+      idOwner: ownerId,
+      ...createDatabaseDto,
+    });
+
+    const saved = await this.databasesRepository.save(database);
+    return this.toDatabaseResponseDto(saved);
+  }
+
+  async updateDatabase(
+    ownerId: string,
+    databaseId: string,
+    updateDatabaseDto: UpdateDatabaseDto,
+  ): Promise<ForwardingDatabaseResponseDto> {
+    const database = await this.databasesRepository.findOne({
+      where: {
+        idOwnerForwardingDb: databaseId,
+        idOwner: ownerId,
+      },
+    });
+
+    if (!database) {
+      throw new NotFoundException(
+        `Database config with ID ${databaseId} not found for owner ${ownerId}`,
+      );
+    }
+
+    Object.assign(database, updateDatabaseDto);
+    const updated = await this.databasesRepository.save(database);
+    return this.toDatabaseResponseDto(updated);
+  }
+
+  async deleteDatabase(ownerId: string, databaseId: string): Promise<void> {
+    const database = await this.databasesRepository.findOne({
+      where: {
+        idOwnerForwardingDb: databaseId,
+        idOwner: ownerId,
+      },
+    });
+
+    if (!database) {
+      throw new NotFoundException(
+        `Database config with ID ${databaseId} not found for owner ${ownerId}`,
+      );
+    }
+
+    await this.databasesRepository.remove(database);
+  }
+
+  async testDatabaseConnection(
+    ownerId: string,
+    databaseId: string,
+  ): Promise<{ success: boolean; message: string; duration: number }> {
+    const database = await this.databasesRepository.findOne({
+      where: {
+        idOwnerForwardingDb: databaseId,
+        idOwner: ownerId,
+      },
+    });
+
+    if (!database) {
+      throw new NotFoundException(
+        `Database config with ID ${databaseId} not found for owner ${ownerId}`,
+      );
+    }
+
+    const startTime = Date.now();
+
+    try {
+      // TODO: Implement actual database connection test
+      // For now, simulate a test
+      const duration = Date.now() - startTime + 150;
+
+      // Update last delivery status
+      database.lastStatus = 'Connected';
+      database.lastDeliveryAt = new Date();
+      await this.databasesRepository.save(database);
+
+      return {
+        success: true,
+        message: 'Database connection test succeeded (simulated)',
+        duration,
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      database.lastStatus = 'Failed';
+      database.lastError = error.message;
+      await this.databasesRepository.save(database);
+
+      return {
+        success: false,
+        message: `Connection test failed: ${error.message}`,
+        duration,
+      };
+    }
+  }
+
+  private toWebhookResponseDto(
+    webhook: OwnerForwardingWebhook,
+  ): ForwardingWebhookResponseDto {
+    return {
+      idOwnerForwardingWebhook: webhook.idOwnerForwardingWebhook,
+      idOwner: webhook.idOwner,
+      label: webhook.label,
+      endpointUrl: webhook.endpointUrl,
+      httpMethod: webhook.httpMethod,
+      headersJson: webhook.headersJson,
+      secretToken: webhook.secretToken ? '***' : undefined,
+      payloadTemplate: webhook.payloadTemplate,
+      maxRetry: webhook.maxRetry,
+      retryBackoffMs: webhook.retryBackoffMs,
+      enabled: webhook.enabled,
+      lastStatus: webhook.lastStatus,
+      lastDeliveryAt: webhook.lastDeliveryAt?.toISOString(),
+      lastError: webhook.lastError,
+      createdAt: webhook.createdAt.toISOString(),
+      updatedAt: webhook.updatedAt.toISOString(),
+    };
+  }
+
+  private toDatabaseResponseDto(
+    database: OwnerForwardingDatabase,
+  ): ForwardingDatabaseResponseDto {
+    return {
+      idOwnerForwardingDb: database.idOwnerForwardingDb,
+      idOwner: database.idOwner,
+      label: database.label,
+      dbType: database.dbType,
+      host: database.host,
+      port: database.port,
+      databaseName: database.databaseName,
+      username: database.username,
+      passwordCipher: '********', // Always mask password
+      targetSchema: database.targetSchema,
+      targetTable: database.targetTable,
+      writeMode: database.writeMode,
+      batchSize: database.batchSize,
+      enabled: database.enabled,
+      lastStatus: database.lastStatus,
+      lastDeliveryAt: database.lastDeliveryAt?.toISOString(),
+      lastError: database.lastError,
+      createdAt: database.createdAt.toISOString(),
+      updatedAt: database.updatedAt.toISOString(),
     };
   }
 }

@@ -1,0 +1,71 @@
+<card class="console-panel">
+  <card-header class="d-flex align-items-center">
+    <div class="flex-grow-1">
+      <h6 class="mb-0">TELEMETRY STREAMS</h6>
+      <small class="text-muted">Hourly ingestion rate</small>
+    </div>
+    <card-expand-toggler class="icon-button ms-2">
+      <i class="bi bi-fullscreen"></i>
+    </card-expand-toggler>
+  </card-header>
+  
+  <card-body>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="text-muted mt-2">Loading telemetry data...</div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error }}</div>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadTelemetryStreams()">
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+
+    <!-- Chart & Stats -->
+    <div *ngIf="telemetryData && !loading && !error">
+      <!-- Stats Cards -->
+      <div class="row g-2 mb-3">
+        <div class="col-4">
+          <div class="stat-mini text-center p-2 rounded bg-primary-subtle">
+            <div class="fw-bold text-primary">{{ formatNumber(telemetryData.stats.totalIngested) }}</div>
+            <small class="text-muted">Total Ingested</small>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-mini text-center p-2 rounded bg-success-subtle">
+            <div class="fw-bold text-success">{{ formatNumber(telemetryData.stats.totalForwarded) }}</div>
+            <small class="text-muted">Forwarded</small>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-mini text-center p-2 rounded bg-info-subtle">
+            <div class="fw-bold text-info">{{ telemetryData.stats.successRate }}%</div>
+            <small class="text-muted">Success Rate</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- ApexChart -->
+      <div class="chart-container">
+        <apx-chart
+          [series]="chartOptions.series"
+          [chart]="chartOptions.chart"
+          [xaxis]="chartOptions.xaxis"
+          [yaxis]="chartOptions.yaxis"
+          [dataLabels]="chartOptions.dataLabels"
+          [stroke]="chartOptions.stroke"
+          [colors]="chartOptions.colors"
+          [fill]="chartOptions.fill"
+          [legend]="chartOptions.legend"
+          [grid]="chartOptions.grid"
+        ></apx-chart>
+      </div>
+    </div>
+  </card-body>
+</card>

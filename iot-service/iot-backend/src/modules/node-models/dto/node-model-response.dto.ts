@@ -53,3 +53,15 @@ export class NodeModelResponseDto {
   @ApiProperty()
   updatedAt: Date;
 }
+
+export class NodeModelDetailedResponseDto extends NodeModelResponseDto {
+  @ApiPropertyOptional({ description: 'Nodes using this model', isArray: true })
+  nodes?: any[];
+
+  @ApiPropertyOptional({ description: 'Usage statistics' })
+  stats?: {
+    totalNodes: number;
+    activeNodes: number;
+    offlineNodes: number;
+  };
+}

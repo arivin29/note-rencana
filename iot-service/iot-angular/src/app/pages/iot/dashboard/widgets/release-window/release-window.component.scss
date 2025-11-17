@@ -1,0 +1,27 @@
+.release-card {
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+
+  .release-icon {
+    opacity: 0.8;
+  }
+
+  .release-date {
+    h5 {
+      font-weight: 600;
+    }
+  }
+
+  .release-countdown {
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

@@ -58,14 +58,14 @@ export class ProjectsService {
 
     const [items, total] = await this.projectRepository.findAndCount({
       where,
-      relations: ['owner'],
+      relations: ['owner', 'nodes', 'nodes.sensors', 'nodeLocations'],
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
     });
 
     return {
-      data: items.map((item) => this.toResponseDto(item)),
+      data: items.map((item) => this.toResponseDtoWithStats(item)),
       total,
       page,
       limit,
@@ -125,6 +125,50 @@ export class ProjectsService {
     await this.projectRepository.remove(project);
   }
 
+  async getStatistics() {
+    const totalProjects = await this.projectRepository.count();
+
+    // Group by area type
+    const projectsByAreaType = await this.projectRepository
+      .createQueryBuilder('project')
+      .select('project.areaType', 'areaType')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('project.areaType')
+      .getRawMany();
+
+    const areaTypeStats = projectsByAreaType.map(item => ({
+      areaType: item.areaType,
+      count: parseInt(item.count, 10),
+      percentage: ((parseInt(item.count, 10) / totalProjects) * 100).toFixed(1)
+    }));
+
+    // Group by status
+    const projectsByStatus = await this.projectRepository
+      .createQueryBuilder('project')
+      .select('project.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('project.status')
+      .getRawMany();
+
+    const statusStats = projectsByStatus.map(item => ({
+      status: item.status,
+      count: parseInt(item.count, 10),
+      percentage: ((parseInt(item.count, 10) / totalProjects) * 100).toFixed(1)
+    }));
+
+    // Count active vs inactive
+    const activeProjects = await this.projectRepository.count({ where: { status: 'active' } });
+    const inactiveProjects = totalProjects - activeProjects;
+
+    return {
+      totalProjects,
+      activeProjects,
+      inactiveProjects,
+      projectsByAreaType: areaTypeStats,
+      projectsByStatus: statusStats,
+    };
+  }
+
   private toResponseDto(project: Project): ProjectResponseDto {
     return {
       idProject: project.idProject,
@@ -146,16 +190,61 @@ export class ProjectsService {
   private toDetailedResponseDto(project: Project): ProjectDetailedResponseDto {
     const base = this.toResponseDto(project);
     
+    const nodes = project.nodes || [];
+    const totalSensors = nodes.reduce((sum, node: any) => {
+      return sum + (node.sensors?.length || 0);
+    }, 0);
+    
     return {
       ...base,
-      nodes: project.nodes || [],
+      nodes: nodes,
       locations: project.nodeLocations || [],
       stats: {
-        totalNodes: project.nodes?.length || 0,
-        activeNodes: project.nodes?.filter((n: any) => n.connectivityStatus === 'online').length || 0,
-        totalSensors: 0, // Will be calculated when sensors are added
+        totalNodes: nodes.length,
+        activeNodes: nodes.filter((n: any) => n.connectivityStatus === 'online').length || 0,
+        totalSensors: totalSensors,
         totalLocations: project.nodeLocations?.length || 0,
       },
+    };
+  }
+
+  private toResponseDtoWithStats(project: Project): any {
+    const base = this.toResponseDto(project);
+    
+    const nodes = project.nodes || [];
+    const totalSensors = nodes.reduce((sum, node: any) => {
+      return sum + (node.sensors?.length || 0);
+    }, 0);
+    
+    const onlineNodes = nodes.filter((n: any) => n.connectivityStatus === 'online').length;
+    
+    // Get most recent lastSeenAt from all nodes
+    const lastSeenDates = nodes
+      .map((n: any) => n.lastSeenAt)
+      .filter(date => date != null)
+      .map(date => new Date(date).getTime());
+    
+    const lastSync = lastSeenDates.length > 0 
+      ? new Date(Math.max(...lastSeenDates)).toISOString()
+      : undefined;
+    
+    // Get primary location if available
+    const primaryLocation = project.nodeLocations?.[0];
+    const location = primaryLocation?.address || undefined;
+    const metrics = {
+      nodes: nodes.length,
+      sensors: totalSensors,
+      online: onlineNodes,
+      alerts: 0,
+    };
+
+    return {
+      ...base,
+      metrics,
+      stats: metrics,
+      primaryLocation: location,
+      location,
+      lastSync,
     };
   }
 }

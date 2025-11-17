@@ -6,4 +6,7 @@ export { OwnerStatisticsResponseDto, IndustryStatDto, SlaStatDto, TopOwnerDto, R
 export { OwnerDashboardResponseDto } from './owner-dashboard-response.dto';
 export { OwnerWidgetsResponseDto } from './owner-widgets-response.dto';
 export { OwnerQueryDto } from './owner-query.dto';
+export { CreateDatabaseDto } from './create-database.dto';
+export { UpdateDatabaseDto } from './update-database.dto';
+export { ForwardingDatabaseResponseDto } from './forwarding-database-response.dto';
 

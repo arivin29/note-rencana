@@ -22,7 +22,8 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:generate": "npm run typeorm -- migration:generate",
-    "db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts"
+    "db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts",
+    "seed:unpaired": "ts-node -r tsconfig-paths/register src/database/seeds/seed-unpaired-devices.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

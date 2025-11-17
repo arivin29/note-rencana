@@ -11,20 +11,16 @@ import { Owner } from './owner.entity';
 
 @Entity('owner_forwarding_databases')
 export class OwnerForwardingDatabase {
-  @PrimaryGeneratedColumn('uuid', { name: 'id_forwarding_database' })
-  idForwardingDatabase: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id_owner_forwarding_db' })
+  idOwnerForwardingDb: string;
 
   @Column({ type: 'uuid', name: 'id_owner', nullable: false })
   idOwner: string;
 
   @Column({ type: 'text', nullable: false })
-  name: string;
+  label: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['postgresql', 'mysql', 'mongodb', 'influxdb', 'timescaledb'],
-    nullable: false,
-  })
+  @Column({ type: 'text', name: 'db_type', nullable: false })
   dbType: string;
 
   @Column({ type: 'text', nullable: false })
@@ -33,23 +29,38 @@ export class OwnerForwardingDatabase {
   @Column({ type: 'int', nullable: false })
   port: number;
 
-  @Column({ type: 'text', nullable: false })
-  database: string;
+  @Column({ type: 'text', name: 'database_name', nullable: false })
+  databaseName: string;
 
   @Column({ type: 'text', nullable: false })
   username: string;
 
-  @Column({ type: 'text', nullable: false })
-  password: string;
+  @Column({ type: 'text', name: 'password_cipher', nullable: false })
+  passwordCipher: string;
 
-  @Column({ type: 'text', nullable: true })
-  tableName: string;
+  @Column({ type: 'text', name: 'target_schema', nullable: true })
+  targetSchema: string;
 
-  @Column({ type: 'boolean', name: 'is_active', default: true })
-  isActive: boolean;
+  @Column({ type: 'text', name: 'target_table', nullable: false })
+  targetTable: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  connectionOptions: Record<string, any>;
+  @Column({ type: 'text', name: 'write_mode', default: 'append' })
+  writeMode: string;
+
+  @Column({ type: 'int', name: 'batch_size', default: 100 })
+  batchSize: number;
+
+  @Column({ type: 'boolean', default: true })
+  enabled: boolean;
+
+  @Column({ type: 'text', name: 'last_status', nullable: true })
+  lastStatus: string;
+
+  @Column({ type: 'timestamptz', name: 'last_delivery_at', nullable: true })
+  lastDeliveryAt: Date;
+
+  @Column({ type: 'text', name: 'last_error', nullable: true })
+  lastError: string;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;

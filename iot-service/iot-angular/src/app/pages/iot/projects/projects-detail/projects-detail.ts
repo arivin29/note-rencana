@@ -1,7 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ProjectMapNode } from './project-map-widget/project-map-widget.component';
 import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
+import { NodesService } from '../../../../../sdk/core/services/nodes.service';
+import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
+import { AlertEventsService } from '../../../../../sdk/core/services/alert-events.service';
 
 interface ProjectDetail {
   idProject: string;
@@ -41,23 +45,43 @@ export class ProjectsDetailPage implements OnInit {
   // Project data from backend
   project: ProjectDetail | null = null;
   
+  // Additional data from separate endpoints
+  nodes: any[] = [];
+  sensors: any[] = [];
+  alerts: any[] = [];
+  
+  // Loading states for each section
+  loadingNodes = false;
+  loadingSensors = false;
+  loadingAlerts = false;
+  
   // Map nodes for widget
   mapNodes: ProjectMapNode[] = [];
 
   constructor(
     private route: ActivatedRoute,
-    private projectsService: ProjectsService
+    private projectsService: ProjectsService,
+    private nodesService: NodesService,
+    private sensorsService: SensorsService,
+    private alertEventsService: AlertEventsService
   ) {
     this.route.paramMap.subscribe((params) => {
       this.projectId = params.get('projectId') ?? '';
       if (this.projectId) {
-        this.loadProjectDetail();
+        this.loadAllData();
       }
     });
   }
 
   ngOnInit(): void {
     // Data will be loaded from route subscription
+  }
+
+  loadAllData() {
+    // Load project detail first, then load related data in parallel
+    this.loadProjectDetail();
+    this.loadNodes();  // Will automatically load sensors after nodes loaded
+    this.loadAlerts();
   }
 
   loadProjectDetail() {
@@ -122,6 +146,112 @@ export class ProjectsDetailPage implements OnInit {
           console.error('Error loading project detail:', err);
         }
       });
+  }
+
+  loadNodes() {
+    this.loadingNodes = true;
+    
+    // ✅ Backend supports idProject filter for nodes
+    this.nodesService.nodesControllerFindAll$Response({
+      idProject: this.projectId,
+      page: 1,
+      limit: 100
+    }).subscribe({
+      next: (httpResponse) => {
+        let data: any = httpResponse.body;
+        if (typeof data === 'string') {
+          data = JSON.parse(data);
+        }
+        
+        console.log('Nodes data:', data);
+        
+        this.nodes = data?.data || [];
+        this.loadingNodes = false;
+        
+        // After nodes loaded, load sensors for these nodes
+        if (this.nodes.length > 0) {
+          this.loadSensorsForNodes();
+        } else {
+          this.sensors = [];
+          this.loadingSensors = false;
+        }
+      },
+      error: (err) => {
+        console.error('Error loading nodes:', err);
+        this.loadingNodes = false;
+        this.loadingSensors = false;
+      }
+    });
+  }
+
+  loadSensorsForNodes() {
+    if (this.nodes.length === 0) {
+      this.sensors = [];
+      this.loadingSensors = false;
+      return;
+    }
+    
+    this.loadingSensors = true;
+    
+    // Load sensors for first few nodes (or all if not too many)
+    const nodeIds = this.nodes.slice(0, 10).map(n => n.idNode);
+    const sensorRequests = nodeIds.map(nodeId => 
+      this.sensorsService.sensorsControllerFindAll$Response({
+        idNode: nodeId,
+        page: 1,
+        limit: 50
+      })
+    );
+    
+    // Load sensors from all nodes in parallel
+    forkJoin(sensorRequests).subscribe({
+      next: (responses) => {
+        this.sensors = [];
+        responses.forEach(httpResponse => {
+          let data: any = httpResponse.body;
+          if (typeof data === 'string') {
+            data = JSON.parse(data);
+          }
+          this.sensors.push(...(data?.data || []));
+        });
+        
+        console.log('Sensors data:', this.sensors);
+        this.loadingSensors = false;
+      },
+      error: (err) => {
+        console.error('Error loading sensors:', err);
+        this.loadingSensors = false;
+      }
+    });
+  }
+
+  loadAlerts() {
+    this.loadingAlerts = true;
+    
+    // Load recent alerts without project filter
+    // Backend doesn't support idProject filter for alerts
+    this.alertEventsService.alertEventsControllerFindAll$Response({
+      page: 1,
+      limit: 20
+    }).subscribe({
+      next: (httpResponse) => {
+        let data: any = httpResponse.body;
+        if (typeof data === 'string') {
+          data = JSON.parse(data);
+        }
+        
+        console.log('Alerts data (all):', data);
+        
+        // Filter alerts client-side if needed (or use all alerts)
+        // For now, show all recent alerts
+        this.alerts = data?.data || [];
+        this.loadingAlerts = false;
+      },
+      error: (err) => {
+        console.error('Error loading alerts:', err);
+        this.loadingAlerts = false;
+      }
+    });
   }
 
   get offlineNodes(): number {

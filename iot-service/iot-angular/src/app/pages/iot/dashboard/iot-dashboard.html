@@ -63,264 +63,70 @@
         </card-body>
     </card>
 
-    <div class="row g-3 console-metrics">
-        <div class="col-xxl-3 col-lg-6" *ngFor="let stat of kpis">
-            <card class="console-panel metric-panel h-100">
-                <card-body>
-                    <div class="metric-head">
-                        <div class="metric-title">{{ stat.label }}</div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="metric-body">
-                        <div>
-                            <div class="metric-value">{{ stat.value }}</div>
-                            <div class="metric-delta"
-                                [ngClass]="{'text-success': stat.trend === 'up', 'text-danger': stat.trend === 'down'}">
-                                {{ stat.delta }}
-                            </div>
-                        </div>
-                        <div class="metric-chart">
-                            <apx-chart [series]="stat.chart.series" [chart]="stat.chart.options.chart"
-                                [colors]="stat.chart.options.colors" [plotOptions]="stat.chart.options.plotOptions"
-                                [stroke]="stat.chart.options.stroke" [fill]="stat.chart.options.fill"></apx-chart>
-                        </div>
-                    </div>
-                    <ul class="metric-meta">
-                        <li *ngFor="let info of stat.info">
-                            <i [ngClass]="info.icon"></i> {{ info.text }}
-                        </li>
-                    </ul>
-                </card-body>
-            </card>
-        </div>
-    </div>
+    <!-- KPI Cards Widget -->
+    <dashboard-kpi-cards 
+        [ownerId]="dashboardFilters.ownerId"
+        [projectId]="dashboardFilters.projectId"
+        [timeRange]="dashboardFilters.timeRange">
+    </dashboard-kpi-cards>
 
  
     <div class="row g-3 mt-1">
+        <!-- Node Health Widget -->
         <div class="col-md-6">
-            <card class="console-panel h-100">
-                <card-body>
-                    <div class="panel-head">
-                        <div>
-                            <div class="panel-label">Node Health Snapshot</div>
-                            <div class="panel-hint text-muted">Top impacted endpoints</div>
-                        </div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="table-responsive console-table">
-                        <table class="table align-middle text-nowrap mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Node</th>
-                                    <th>Project</th>
-                                    <th>Status</th>
-                                    <th>Last Seen</th>
-                                    <th class="text-end">Battery</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let node of nodeHealthTable">
-                                    <td class="fw-semibold">{{ node.code }}</td>
-                                    <td>{{ node.project }}</td>
-                                    <td><span [class]="getStatusBadgeClass(node.status)">{{ node.status | titlecase
-                                            }}</span></td>
-                                    <td>{{ node.lastSeen }}</td>
-                                    <td class="text-end">{{ node.battery }}%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </card-body>
-            </card>
+            <dashboard-node-health 
+                [ownerId]="dashboardFilters.ownerId"
+                [projectId]="dashboardFilters.projectId"
+                [timeRange]="dashboardFilters.timeRange"
+                [limit]="5">
+            </dashboard-node-health>
         </div>
+
+        <!-- Owner Leaderboard Widget -->
         <div class="col-md-6">
-            <card class="console-panel h-100">
-                <card-body>
-                    <div class="panel-head">
-                        <div>
-                            <div class="panel-label">Owner Leaderboard</div>
-                            <div class="panel-hint text-muted">Telemetry throughput vs alerts</div>
-                        </div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="table-responsive console-table">
-                        <table class="table align-middle text-nowrap mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Owner</th>
-                                    <th>Nodes</th>
-                                    <th>Telemetry</th>
-                                    <th class="text-end">Alerts</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let owner of ownerLeaderboard">
-                                    <td>
-                                        <div class="fw-semibold">{{ owner.owner }}</div>
-                                        <div class="text-muted small">SLA {{ owner.sla | uppercase }}</div>
-                                    </td>
-                                    <td>{{ owner.nodes }}</td>
-                                    <td>{{ owner.telemetryRate }}</td>
-                                    <td class="text-end">
-                                        <span class="badge bg-dark bg-opacity-25">{{ owner.alerts }}</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </card-body>
-            </card>
+            <dashboard-owner-leaderboard 
+                [timeRange]="dashboardFilters.timeRange"
+                [limit]="10">
+            </dashboard-owner-leaderboard>
         </div>
     </div>
 
+    <!-- Activity Log & Release Window Row -->
     <div class="row g-3 mt-1">
         <div class="col-xl-6">
-            <card class="console-panel h-100">
-                <card-body>
-                    <div class="panel-head">
-                        <div>
-                            <div class="panel-label">Activity Log</div>
-                            <div class="panel-hint text-muted">What changed in the last 15 minutes</div>
-                        </div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="table-responsive console-table">
-                        <table class="table table-borderless mb-0 text-nowrap align-middle">
-                            <tbody>
-                                <tr *ngFor="let log of activityLog">
-                                    <td>
-                                        <span class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-circle-fill fs-6px"
-                                                [ngClass]="{ 'text-theme': log.highlight, 'text-muted': !log.highlight }"></i>
-                                            {{ log.title }}
-                                        </span>
-                                    </td>
-                                    <td class="text-muted small">{{ log.time }}</td>
-                                    <td class="text-end">
-                                        <span class="badge rounded-pill px-3"
-                                            [ngClass]="{ 'bg-theme text-theme-900': log.highlight, 'bg-body text-muted': !log.highlight }">
-                                            {{ log.badge }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </card-body>
-            </card>
+            <dashboard-activity-log 
+                [ownerId]="dashboardFilters.ownerId"
+                [projectId]="dashboardFilters.projectId"
+                [timeRange]="dashboardFilters.timeRange"
+                [limit]="10">
+            </dashboard-activity-log>
         </div>
         <div class="col-xl-6">
-            <card class="console-panel h-100">
-                <card-body
-                    class="d-flex flex-column justify-content-center align-items-center text-muted text-center gap-2">
-                    <div class="panel-label">Next Release Window</div>
-                    <div class="display-6 text-white">09:00 — 11:00 WIB</div>
-                    <div class="panel-hint">Firmware batch v2.3.2 · 24 devices</div>
-                    <button class="btn btn-outline-theme btn-sm mt-2">Review Deployment Plan</button>
-                </card-body>
-            </card>
+            <dashboard-release-window></dashboard-release-window>
         </div>
     </div>
 
-    <div class="row g-3 align-items-stretch">
+    <!-- Telemetry Streams & Delivery/Alerts Row -->
+    <div class="row g-3 mt-1 align-items-stretch">
         <div class="col-md-8">
-            <card class="console-panel telemetry-panel h-100">
-                <card-body>
-                    <div class="panel-head">
-                        <div>
-                            <div class="panel-label">Telemetry Streams</div>
-                            <div class="panel-hint text-muted">Flow vs Pressure channels · realtime ingest</div>
-                        </div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="telemetry-chart ratio ratio-21x9 mb-3">
-                        <apx-chart [chart]="telemetryOverview.chart.options.chart" [series]="telemetryOverview.chart.series"
-                            [colors]="telemetryOverview.chart.options.colors"
-                            [xaxis]="telemetryOverview.chart.options.xaxis" [yaxis]="telemetryOverview.chart.options.yaxis"
-                            [fill]="telemetryOverview.chart.options.fill"
-                            [tooltip]="telemetryOverview.chart.options.tooltip"
-                            [dataLabels]="telemetryOverview.chart.options.dataLabels"
-                            [grid]="telemetryOverview.chart.options.grid" [stroke]="telemetryOverview.chart.options.stroke"
-                            [legend]="telemetryOverview.chart.options.legend"></apx-chart>
-                    </div>
-                    <div class="row g-3 telemetry-stats">
-                        <div class="col-md-6" *ngFor="let stat of telemetryOverview.stats">
-                            <div class="telemetry-tile">
-                                <div class="tile-chart">
-                                    <apx-chart [chart]="stat.chart.options.chart" [series]="stat.chart.series"
-                                        [colors]="stat.chart.options.colors" [plotOptions]="stat.chart.options.plotOptions"
-                                        [stroke]="stat.chart.options.stroke"></apx-chart>
-                                </div>
-                                <div class="tile-content">
-                                    <div class="tile-label">{{ stat.name }}</div>
-                                    <div class="tile-value">{{ stat.total }}</div>
-                                    <div class="progress progress-xs mb-2">
-                                        <div class="progress-bar bg-theme" [ngStyle]="{ width: stat.progress }"></div>
-                                    </div>
-                                    <div class="tile-meta text-muted">{{ stat.time }}</div>
-                                    <div class="tile-info" *ngFor="let info of stat.info">
-                                        <span class="dot" [ngClass]="info.class"></span>
-                                        <span class="flex-grow-1">{{ info.title }}</span>
-                                        <span>{{ info.value }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </card-body>
-            </card>
+            <dashboard-telemetry-streams 
+                [ownerId]="dashboardFilters.ownerId"
+                [projectId]="dashboardFilters.projectId"
+                [timeRange]="dashboardFilters.timeRange">
+            </dashboard-telemetry-streams>
         </div>
         <div class="col-md-4">
-            <card class="console-panel h-100 mb-3">
-                <card-body>
-                    <div class="panel-head">
-                        <div>
-                            <div class="panel-label">Data Delivery Health</div>
-                            <div class="panel-hint text-muted">Forwarding targets & success rate</div>
-                        </div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="delivery-list">
-                        <div class="delivery-item" *ngFor="let delivery of deliveryHealth">
-                            <div>
-                                <div class="fw-semibold">{{ delivery.target }}</div>
-                                <div class="text-muted small">{{ delivery.type }}</div>
-                            </div>
-                            <div class="text-end small text-muted">
-                                <div>Success {{ delivery.successRate }}</div>
-                                <div>Last sync {{ delivery.lastSync }}</div>
-                            </div>
-                            <div class="text-end">
-                                <span [class]="getDeliveryStatusBadge(delivery.status)">{{ delivery.status | titlecase
-                                    }}</span>
-                                <div class="text-muted small">{{ delivery.enabled ? 'Enabled' : 'Disabled' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </card-body>
-            </card>
+            <dashboard-delivery-health 
+                [ownerId]="dashboardFilters.ownerId"
+                [timeRange]="dashboardFilters.timeRange"
+                class="d-block mb-3">
+            </dashboard-delivery-health>
     
-            <card class="console-panel">
-                <card-body>
-                    <div class="panel-head">
-                        <div>
-                            <div class="panel-label">Alert Stream</div>
-                            <div class="panel-hint text-muted">Latest escalations</div>
-                        </div>
-                        <card-expand-toggler class="icon-button"><i class="bi bi-fullscreen"></i></card-expand-toggler>
-                    </div>
-                    <div class="alert-list">
-                        <div class="alert-item" *ngFor="let alert of alertSummary">
-                            <span [class]="getAlertBadgeClass(alert.severity)">{{ alert.severity | uppercase }}</span>
-                            <div class="flex-grow-1 px-2">
-                                <div class="fw-semibold">{{ alert.channel }}</div>
-                                <div class="text-muted small">{{ alert.message }}</div>
-                            </div>
-                            <div class="text-muted small">{{ alert.ts }}</div>
-                        </div>
-                    </div>
-                </card-body>
-            </card>
+            <dashboard-alert-stream 
+                [ownerId]="dashboardFilters.ownerId"
+                [projectId]="dashboardFilters.projectId"
+                [limit]="10">
+            </dashboard-alert-stream>
         </div>
     </div>
 

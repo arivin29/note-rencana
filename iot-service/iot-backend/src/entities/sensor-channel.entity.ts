@@ -5,11 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Sensor } from './sensor.entity';
-import { SensorLog } from './sensor-log.entity';
+import { SensorType } from './sensor-type.entity';
 
 @Entity('sensor_channels')
 export class SensorChannel {
@@ -19,26 +18,38 @@ export class SensorChannel {
   @Column({ type: 'uuid', name: 'id_sensor', nullable: false })
   idSensor: string;
 
-  @Column({ type: 'text', nullable: false })
-  channelName: string;
+  @Column({ type: 'uuid', name: 'id_sensor_type', nullable: false })
+  idSensorType: string;
 
-  @Column({ type: 'text', nullable: false })
-  channelCode: string;
+  @Column({ type: 'text', nullable: false, name: 'metric_code' })
+  metricCode: string;
 
   @Column({ type: 'text', nullable: true })
   unit: string;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'numeric', nullable: true, name: 'min_threshold' })
+  minThreshold: number;
+
+  @Column({ type: 'numeric', nullable: true, name: 'max_threshold' })
+  maxThreshold: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 6, nullable: true })
+  multiplier: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 6, nullable: true, name: 'offset_value' })
+  offsetValue: number;
+
+  @Column({ type: 'integer', nullable: true, name: 'register_address' })
+  registerAddress: number;
+
+  @Column({ type: 'numeric', precision: 6, scale: 3, nullable: true })
   precision: number;
 
-  @Column({ type: 'numeric', nullable: true })
-  minValue: number;
+  @Column({ type: 'text', nullable: true })
+  aggregation: string;
 
-  @Column({ type: 'numeric', nullable: true })
-  maxValue: number;
-
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  @Column({ type: 'integer', nullable: true, name: 'alert_suppression_window' })
+  alertSuppressionWindow: number;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
@@ -51,6 +62,12 @@ export class SensorChannel {
   @JoinColumn({ name: 'id_sensor' })
   sensor: Sensor;
 
-  @OneToMany(() => SensorLog, (log) => log.sensorChannel)
-  sensorLogs: SensorLog[];
+  @ManyToOne(() => SensorType)
+  @JoinColumn({ name: 'id_sensor_type' })
+  sensorType: SensorType;
+
+  // Removed: sensorLogs (will query separately for performance)
+  // @OneToMany(() => SensorLog, (log) => log.sensorChannel)
+  // sensorLogs: SensorLog[];
 }
+

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 
 interface NodeListRow {
@@ -27,6 +28,9 @@ export class NodesListPage implements OnInit {
     status: 'All Status'
   };
   searchTerm = '';
+  
+  // Query params filter
+  projectIdFilter: string | null = null;
 
   pageSizeOptions = [10, 20, 50];
   pageSize = 10;
@@ -46,11 +50,23 @@ export class NodesListPage implements OnInit {
   ownerOptions = ['All Owners'];
   projectOptions = ['All Projects'];
 
-  constructor(private nodesService: NodesService) {}
+  constructor(
+    private nodesService: NodesService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit() {
-    this.loadStatistics();
-    this.loadNodes();
+    // Read query params for projectId filter
+    this.route.queryParams.subscribe(params => {
+      this.projectIdFilter = params['projectId'] || null;
+      
+      if (this.projectIdFilter) {
+        console.log('Filtering nodes by projectId:', this.projectIdFilter);
+      }
+      
+      this.loadStatistics();
+      this.loadNodes();
+    });
   }
 
   loadStatistics() {
@@ -78,11 +94,19 @@ export class NodesListPage implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.nodesService.nodesControllerFindAll$Response({
+    // Build query params
+    const params: any = {
       page: this.currentPage,
       limit: 100, // Load more for client-side filtering
       search: this.searchTerm || undefined,
-    }).subscribe({
+    };
+    
+    // Add projectId filter if present
+    if (this.projectIdFilter) {
+      params.idProject = this.projectIdFilter;
+    }
+    
+    this.nodesService.nodesControllerFindAll$Response(params).subscribe({
       next: (httpResponse) => {
         // Get response body and parse if it's a string
         let response: any = httpResponse.body;

@@ -2,6 +2,8 @@
 
 Welcome to the IoT Backend API documentation. This documentation is organized by topics and modules for easy navigation.
 
+**🔍 Quick Navigation**: See **[DOC-INDEX.md](./DOC-INDEX.md)** for complete documentation index and navigation guide.
+
 ---
 
 ## 📁 Documentation Structure

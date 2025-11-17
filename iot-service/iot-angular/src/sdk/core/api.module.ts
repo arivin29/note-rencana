@@ -22,6 +22,8 @@ import { NodeAssignmentsService } from './services/node-assignments.service';
 import { UserDashboardsService } from './services/user-dashboards.service';
 import { DashboardWidgetsService } from './services/dashboard-widgets.service';
 import { SensorLogsService } from './services/sensor-logs.service';
+import { DashboardService } from './services/dashboard.service';
+import { UnpairedDevicesService } from './services/unpaired-devices.service';
 
 /**
  * Module that provides all services and configuration.
@@ -47,6 +49,8 @@ import { SensorLogsService } from './services/sensor-logs.service';
     UserDashboardsService,
     DashboardWidgetsService,
     SensorLogsService,
+    DashboardService,
+    UnpairedDevicesService,
     ApiConfiguration
   ],
 })

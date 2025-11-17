@@ -1,0 +1,119 @@
+<card class="console-panel">
+  <card-header class="d-flex align-items-center">
+    <div class="flex-grow-1">
+      <h6 class="mb-0">NODE HEALTH SNAPSHOT</h6>
+      <small class="text-muted">Top {{ limit }} impacted nodes</small>
+    </div>
+    <card-expand-toggler class="icon-button ms-2">
+      <i class="bi bi-fullscreen"></i>
+    </card-expand-toggler>
+  </card-header>
+  
+  <card-body>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="text-muted mt-2">Loading node health...</div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error }}</div>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadNodeHealth()">
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+
+    <!-- Data Table -->
+    <div *ngIf="nodeHealthData && !loading && !error">
+      <!-- Summary Stats -->
+      <div class="row g-2 mb-3" *ngIf="nodeHealthData.summary">
+        <div class="col-3">
+          <div class="text-center p-2 bg-light rounded">
+            <div class="fs-5 fw-bold">{{ nodeHealthData.summary.totalNodes }}</div>
+            <small class="text-muted">Total</small>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="text-center p-2 bg-success-subtle rounded">
+            <div class="fs-5 fw-bold text-success">{{ nodeHealthData.summary.onlineCount }}</div>
+            <small class="text-muted">Online</small>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="text-center p-2 bg-warning-subtle rounded">
+            <div class="fs-5 fw-bold text-warning">{{ nodeHealthData.summary.degradedCount }}</div>
+            <small class="text-muted">Degraded</small>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="text-center p-2 bg-danger-subtle rounded">
+            <div class="fs-5 fw-bold text-danger">{{ nodeHealthData.summary.offlineCount }}</div>
+            <small class="text-muted">Offline</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Node Table -->
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Node</th>
+              <th>Project</th>
+              <th>Status</th>
+              <th>Last Seen</th>
+              <th class="text-center">Battery</th>
+              <th class="text-center">Signal</th>
+              <th class="text-center">Alerts</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let node of nodeHealthData.nodes">
+              <td>
+                <span class="fw-semibold">{{ node.code }}</span>
+              </td>
+              <td>
+                <small class="text-muted">{{ node.projectName }}</small>
+              </td>
+              <td>
+                <span [ngClass]="getStatusBadgeClass(node.status)">
+                  {{ node.status | titlecase }}
+                </span>
+              </td>
+              <td>
+                <small class="text-muted">{{ formatLastSeen(node.lastSeen) }}</small>
+              </td>
+              <td class="text-center">
+                <span [ngClass]="getBatteryClass(node.battery)">
+                  <i class="bi bi-battery-half"></i> {{ node.battery }}%
+                </span>
+              </td>
+              <td class="text-center">
+                <span [ngClass]="getSignalClass(node.signalStrength || 0)">
+                  <i class="bi bi-reception-3"></i> {{ node.signalStrength || 0 }} dBm
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge rounded-pill" 
+                      [ngClass]="node.alertCount > 0 ? 'bg-danger' : 'bg-secondary'">
+                  {{ node.alertCount }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!nodeHealthData.nodes || nodeHealthData.nodes.length === 0" 
+           class="text-center text-muted py-4">
+        <i class="bi bi-check-circle fs-1"></i>
+        <div class="mt-2">All nodes are healthy - no impacted nodes found</div>
+      </div>
+    </div>
+  </card-body>
+</card>

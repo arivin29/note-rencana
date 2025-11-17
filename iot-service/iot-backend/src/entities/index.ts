@@ -17,3 +17,5 @@ export { DashboardWidget } from './dashboard-widget.entity';
 export { OwnerForwardingWebhook } from './owner-forwarding-webhook.entity';
 export { OwnerForwardingDatabase } from './owner-forwarding-database.entity';
 export { OwnerForwardingLog } from './owner-forwarding-log.entity';
+export { NodeUnpairedDevice } from './node-unpaired-device.entity';
+export { NodeProfile } from './node-profile.entity';

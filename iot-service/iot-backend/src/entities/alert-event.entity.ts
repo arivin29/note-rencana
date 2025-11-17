@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
@@ -19,27 +20,32 @@ export class AlertEvent {
   @Column({ type: 'timestamptz', name: 'triggered_at', nullable: false })
   triggeredAt: Date;
 
+  @Column({ type: 'double precision', nullable: true })
+  value: number;
+
+  @Column({ type: 'text', default: 'open' })
+  status: string;
+
+  @Column({ type: 'uuid', name: 'acknowledged_by', nullable: true })
+  acknowledgedBy: string;
+
   @Column({ type: 'timestamptz', name: 'acknowledged_at', nullable: true })
   acknowledgedAt: Date;
 
-  @Column({ type: 'timestamptz', name: 'resolved_at', nullable: true })
-  resolvedAt: Date;
+  @Column({ type: 'uuid', name: 'cleared_by', nullable: true })
+  clearedBy: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['triggered', 'acknowledged', 'resolved', 'dismissed'],
-    default: 'triggered',
-  })
-  status: string;
+  @Column({ type: 'timestamptz', name: 'cleared_at', nullable: true })
+  clearedAt: Date;
 
   @Column({ type: 'text', nullable: true })
-  message: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  data: Record<string, any>;
+  note: string;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => AlertRule, (rule) => rule.alertEvents, { onDelete: 'CASCADE' })

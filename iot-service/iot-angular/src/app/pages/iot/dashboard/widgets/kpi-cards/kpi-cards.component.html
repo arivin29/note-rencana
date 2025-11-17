@@ -1,0 +1,62 @@
+<div class="row g-3 console-metrics">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="col-12 text-center py-5">
+    <div class="spinner-border text-theme" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="text-muted mt-2">Loading KPI statistics...</div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="col-12">
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error }}</div>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadKpiStats()">
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="col-xxl-3 col-lg-6" *ngFor="let card of kpiCards">
+    <card class="console-panel metric-panel h-100">
+      <card-body>
+        <div class="metric-head">
+          <div class="metric-title">{{ card.title }}</div>
+          <card-expand-toggler class="icon-button">
+            <i class="bi bi-fullscreen"></i>
+          </card-expand-toggler>
+        </div>
+        <div class="metric-body">
+          <div>
+            <div class="metric-value">{{ card.value }}</div>
+            <div class="metric-delta"
+                 [ngClass]="{
+                   'text-success': card.trend === 'up',
+                   'text-danger': card.trend === 'down',
+                   'text-muted': card.trend === 'flat'
+                 }">
+              {{ card.delta }}
+            </div>
+          </div>
+          <div class="metric-chart">
+            <apx-chart 
+              [series]="card.chart.series" 
+              [chart]="card.chart.options.chart"
+              [colors]="card.chart.options.colors" 
+              [plotOptions]="card.chart.options.plotOptions"
+              [stroke]="card.chart.options.stroke"
+              [fill]="card.chart.options.fill">
+            </apx-chart>
+          </div>
+        </div>
+        <ul class="metric-meta">
+          <li *ngFor="let info of card.info">
+            <i [ngClass]="info.icon"></i> {{ info.text }}
+          </li>
+        </ul>
+      </card-body>
+    </card>
+  </div>
+</div>

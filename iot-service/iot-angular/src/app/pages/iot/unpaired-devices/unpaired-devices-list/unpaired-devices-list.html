@@ -1,0 +1,252 @@
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+            <li class="breadcrumb-item active">Unpaired Devices</li>
+        </ul>
+        <h1 class="page-header mb-0">
+            Unpaired Devices
+            <span class="badge bg-warning ms-2">{{ totalUnpaired }}</span>
+        </h1>
+    </div>
+    <div class="ms-auto">
+        <a href="javascript:;" class="btn btn-outline-theme" (click)="loadDevices()">
+            <i class="fa fa-sync fa-fw me-1"></i>
+            Refresh
+        </a>
+    </div>
+</div>
+
+<div class="mb-sm-4 mb-3 d-sm-flex">
+    <div class="mt-sm-0 mt-2">
+        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
+            <i class="fa fa-download fa-fw me-1 text-theme"></i>
+            Export List
+        </a>
+    </div>
+    <div class="ms-sm-4 mt-sm-0 mt-2">
+        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
+            <i class="fa fa-trash fa-fw me-1 text-theme"></i>
+            Bulk Delete
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-lg-6" *ngFor="let stat of [
+        { label: 'Total Unpaired', value: totalUnpaired, info: 'Queue', desc: 'Devices waiting pairing', icon: 'fa-inbox', accent: 'theme' },
+        { label: 'Active Today', value: activeToday, info: 'Live', desc: 'Seen in last 24h', icon: 'fa-broadcast-tower', accent: 'success' },
+        { label: 'With Suggestions', value: withSuggestion, info: 'Guided', desc: 'Have owner/project hints', icon: 'fa-lightbulb', accent: 'warning' },
+        { label: 'Avg. Seen Count', value: avgSeenCount, info: 'Traffic', desc: 'Mean messages per device', icon: 'fa-chart-line', accent: 'info' }
+    ]">
+        <card class="h-100 p-4 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="text-uppercase small text-muted fw-semibold">{{ stat.label }}</div>
+                <span class="badge bg-body border text-muted">{{ stat.info }}</span>
+            </div>
+            <div class="d-flex align-items-end justify-content-between">
+                <div>
+                    <div class="display-6 fw-bold text-{{ stat.accent }}">{{ stat.value }}</div>
+                    <div class="text-muted small">{{ stat.desc }}</div>
+                </div>
+                <div class="rounded-3 bg-{{ stat.accent }} bg-opacity-10 text-{{ stat.accent }} p-3">
+                    <i class="fa {{ stat.icon }} fs-2"></i>
+                </div>
+            </div>
+        </card>
+    </div>
+</div>
+
+<card class=" ">
+    <ul class="nav nav-pills nav-pills-v2 px-4 pt-3 pb-2 flex-nowrap overflow-auto text-nowrap">
+        <li class="nav-item me-3" *ngFor="let option of statusOptions">
+            <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+                [class.active]="filters.status === option" (click)="setFilter('status', option)">
+                <span>{{ option }}</span>
+                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
+                    {{ statusCount(option) }}
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="p-4   border-top">
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">Node Model</label>
+                <div class="dropdown w-100">
+                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
+                        data-bs-toggle="dropdown">
+                        {{ filters.nodeModel }}
+                    </button>
+                    <div class="dropdown-menu w-100">
+                        <button type="button" class="dropdown-item" *ngFor="let option of nodeModelOptions"
+                            (click)="setFilter('nodeModel', option)">{{ option }}</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted">
+                        <i class="fa fa-search opacity-50"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0"
+                        placeholder="Search hardware ID, topic..."
+                        [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)"
+                        (keyup.enter)="reloadFromSearch()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="text-center py-5">
+            <div class="spinner-border text-theme" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-3">Loading unpaired devices...</p>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="error && !loading" class="alert alert-danger">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            {{ error }}
+        </div>
+
+        <!-- Data Table -->
+        <div *ngIf="!loading && !error" class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Hardware ID</th>
+                        <th>Node Model</th>
+                        <th class="text-center">
+                            <button class="btn btn-link btn-link-sort" (click)="sortData('seenCount')">
+                                Seen <i [class]="sortIcon('seenCount')"></i>
+                            </button>
+                        </th>
+                        <th>
+                            <button class="btn btn-link btn-link-sort" (click)="sortData('firstSeenAt')">
+                                First Seen <i [class]="sortIcon('firstSeenAt')"></i>
+                            </button>
+                        </th>
+                        <th>
+                            <button class="btn btn-link btn-link-sort" (click)="sortData('lastSeenAt')">
+                                Last Seen <i [class]="sortIcon('lastSeenAt')"></i>
+                            </button>
+                        </th>
+                        <th>Suggestion</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let device of paginatedDevices">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-microchip fs-4 text-muted me-2"></i>
+                                <div>
+                                    <div class="fw-bold">{{ device.hardwareId }}</div>
+                                    <small class="text-muted" *ngIf="device.lastTopic">
+                                        <i class="fa fa-wifi me-1"></i>{{ device.lastTopic }}
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span *ngIf="device.nodeModelName" class="badge bg-secondary">
+                                {{ device.nodeModelName }}
+                            </span>
+                            <span *ngIf="!device.nodeModelName" class="text-muted">Unknown</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge" [class.bg-success]="device.seenCount > 20"
+                                [class.bg-warning]="device.seenCount > 5 && device.seenCount <= 20"
+                                [class.bg-info]="device.seenCount <= 5">
+                                {{ device.seenCount }}
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ device.firstSeenAt | date:'dd MMM yyyy HH:mm' }}
+                            </small>
+                        </td>
+                        <td>
+                            <div>
+                                <small class="text-muted d-block">
+                                    {{ device.lastSeenAt | date:'dd MMM HH:mm' }}
+                                </small>
+                                <small class="text-success">
+                                    {{ getTimeSince(device.lastSeenAt) }}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <div *ngIf="device.suggestedOwner || device.suggestedProject">
+                                <small class="text-muted d-block" *ngIf="device.suggestedOwner">
+                                    <i class="fa fa-briefcase me-1"></i>{{ device.suggestedOwner }}
+                                </small>
+                                <small class="text-muted d-block" *ngIf="device.suggestedProject">
+                                    <i class="fa fa-diagram-project me-1"></i>{{ device.suggestedProject }}
+                                </small>
+                            </div>
+                            <small class="text-muted" *ngIf="!device.suggestedOwner && !device.suggestedProject">
+                                No suggestion
+                            </small>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success" (click)="openPairingDialog(device)" title="Pair Device">
+                                    <i class="fa fa-link"></i>
+                                </button>
+                                <button class="btn btn-outline-theme" (click)="viewPayload(device)" title="View Payload">
+                                    <i class="fa fa-code"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" (click)="deleteUnpairedDevice(device)" title="Delete">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Empty State -->
+                    <tr *ngIf="totalEntries === 0">
+                        <td colspan="7" class="text-center py-5">
+                            <i class="fa fa-inbox fs-1 text-muted"></i>
+                            <p class="text-muted mt-3 mb-0">No unpaired devices found</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="text-center text-muted py-4" *ngIf="!loading && !error && totalEntries === 0">
+            Tidak ada perangkat belum terpasang sesuai filter.
+        </div>
+
+        <div *ngIf="totalEntries > 0" class="d-md-flex align-items-center mt-3">
+            <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+                Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalEntries }} devices
+            </div>
+            <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
+                <span class="text-muted small me-2 text-uppercase">Rows</span>
+                <select class="form-select form-select-sm w-auto" [ngModel]="pageSize"
+                    (ngModelChange)="changePageSize($event)">
+                    <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+                </select>
+            </div>
+            <ul class="pagination mb-0 justify-content-center">
+                <li class="page-item" [class.disabled]="currentPage === 1">
+                    <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
+                </li>
+                <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+                    <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+                </li>
+                <li class="page-item" [class.disabled]="currentPage === totalPages">
+                    <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</card>

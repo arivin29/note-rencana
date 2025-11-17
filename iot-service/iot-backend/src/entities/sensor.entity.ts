@@ -11,8 +11,6 @@ import {
 import { Node } from './node.entity';
 import { SensorCatalog } from './sensor-catalog.entity';
 import { SensorChannel } from './sensor-channel.entity';
-import { AlertRule } from './alert-rule.entity';
-import { DashboardWidget } from './dashboard-widget.entity';
 
 @Entity('sensors')
 export class Sensor {
@@ -25,24 +23,36 @@ export class Sensor {
   @Column({ type: 'uuid', name: 'id_sensor_catalog', nullable: true })
   idSensorCatalog: string;
 
+  @Column({ type: 'text', nullable: true, name: 'sensor_code' })
+  sensorCode: string;
+
   @Column({ type: 'text', nullable: false })
-  name: string;
-
-  @Column({ type: 'text', unique: true, nullable: false })
-  identifier: string;
-
-  @Column({
-    type: 'enum',
-    enum: ['active', 'inactive', 'maintenance', 'error'],
-    default: 'active',
-  })
-  status: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  calibration: Record<string, any>;
+  label: string;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  location: string;
+
+  @Column({ 
+    type: 'text', 
+    nullable: true, 
+    default: 'active'
+  })
+  status: 'active' | 'maintenance' | 'inactive';
+
+  @Column({ type: 'text', nullable: true, name: 'protocol_channel' })
+  protocolChannel: string;
+
+  @Column({ type: 'numeric', precision: 12, scale: 6, nullable: true, name: 'calibration_factor' })
+  calibrationFactor: number;
+
+  @Column({ type: 'integer', nullable: true, name: 'sampling_rate' })
+  samplingRate: number;
+
+  @Column({ type: 'date', nullable: true, name: 'install_date' })
+  installDate: Date;
+
+  @Column({ type: 'date', nullable: true, name: 'calibration_due_at' })
+  calibrationDueAt: Date;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
@@ -62,9 +72,12 @@ export class Sensor {
   @OneToMany(() => SensorChannel, (channel) => channel.sensor)
   sensorChannels: SensorChannel[];
 
-  @OneToMany(() => AlertRule, (alertRule) => alertRule.sensor)
-  alertRules: AlertRule[];
+  // Removed: alertRules (moved to sensor-channels)
+  // @OneToMany(() => AlertRule, (alertRule) => alertRule.sensor)
+  // alertRules: AlertRule[];
 
-  @OneToMany(() => DashboardWidget, (widget) => widget.sensor)
-  dashboardWidgets: DashboardWidget[];
+  // Removed: dashboardWidgets (not in schema)
+  // @OneToMany(() => DashboardWidget, (widget) => widget.sensor)
+  // dashboardWidgets: DashboardWidget[];
 }
+

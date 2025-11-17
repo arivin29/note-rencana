@@ -21,6 +21,8 @@ import { projectsControllerFindOne } from '../fn/projects/projects-controller-fi
 import { ProjectsControllerFindOne$Params } from '../fn/projects/projects-controller-find-one';
 import { projectsControllerFindOneDetailed } from '../fn/projects/projects-controller-find-one-detailed';
 import { ProjectsControllerFindOneDetailed$Params } from '../fn/projects/projects-controller-find-one-detailed';
+import { projectsControllerGetStatistics } from '../fn/projects/projects-controller-get-statistics';
+import { ProjectsControllerGetStatistics$Params } from '../fn/projects/projects-controller-get-statistics';
 import { projectsControllerRemove } from '../fn/projects/projects-controller-remove';
 import { ProjectsControllerRemove$Params } from '../fn/projects/projects-controller-remove';
 import { projectsControllerUpdate } from '../fn/projects/projects-controller-update';
@@ -99,6 +101,39 @@ export class ProjectsService extends BaseService {
   projectsControllerCreate(params: ProjectsControllerCreate$Params, context?: HttpContext): Observable<ProjectResponseDto> {
     return this.projectsControllerCreate$Response(params, context).pipe(
       map((r: StrictHttpResponse<ProjectResponseDto>): ProjectResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `projectsControllerGetStatistics()` */
+  static readonly ProjectsControllerGetStatisticsPath = '/api/projects/statistics/overview';
+
+  /**
+   * Get projects statistics overview.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `projectsControllerGetStatistics()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  projectsControllerGetStatistics$Response(params?: ProjectsControllerGetStatistics$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return projectsControllerGetStatistics(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get projects statistics overview.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `projectsControllerGetStatistics$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  projectsControllerGetStatistics(params?: ProjectsControllerGetStatistics$Params, context?: HttpContext): Observable<void> {
+    return this.projectsControllerGetStatistics$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

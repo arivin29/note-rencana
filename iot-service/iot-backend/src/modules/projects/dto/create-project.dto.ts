@@ -5,6 +5,7 @@ export enum AreaType {
   PLANT = 'plant',
   PIPELINE = 'pipeline',
   FARM = 'farm',
+  INDUSTRIAL = 'industrial',
   OTHER = 'other',
 }
 

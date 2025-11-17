@@ -44,6 +44,13 @@ export class ProjectsController {
     });
   }
 
+  @Get('statistics/overview')
+  @ApiOperation({ summary: 'Get projects statistics overview' })
+  @ApiResponse({ status: 200, description: 'Aggregated statistics' })
+  async getStatistics() {
+    return this.projectsService.getStatistics();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get project by ID' })
   @ApiResponse({ status: 200, description: 'Project found', type: ProjectResponseDto })

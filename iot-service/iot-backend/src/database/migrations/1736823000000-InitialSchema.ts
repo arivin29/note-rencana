@@ -45,6 +45,7 @@ export class InitialSchema1736823000000 implements MigrationInterface {
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       );
+      COMMENT ON COLUMN node_locations.coordinates IS 'PostgreSQL POINT type (x,y) where x=longitude, y=latitude';
     `);
 
     await queryRunner.query(`

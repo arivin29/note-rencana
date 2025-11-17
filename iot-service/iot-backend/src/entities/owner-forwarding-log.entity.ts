@@ -10,43 +10,29 @@ import { Owner } from './owner.entity';
 
 @Entity('owner_forwarding_logs')
 export class OwnerForwardingLog {
-  @PrimaryGeneratedColumn('uuid', { name: 'id_forwarding_log' })
-  idForwardingLog: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id_owner_forwarding_log' })
+  idOwnerForwardingLog: string;
 
   @Column({ type: 'uuid', name: 'id_owner', nullable: false })
   idOwner: string;
 
-  @Column({ type: 'uuid', name: 'forwarding_id', nullable: false })
-  forwardingId: string;
+  @Column({ type: 'text', name: 'config_type', nullable: false })
+  configType: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['webhook', 'database'],
-    nullable: false,
-  })
-  forwardingType: string;
+  @Column({ type: 'uuid', name: 'config_id', nullable: false })
+  configId: string;
 
-  @Column({ type: 'timestamptz', name: 'attempted_at', nullable: false })
-  attemptedAt: Date;
-
-  @Column({
-    type: 'enum',
-    enum: ['success', 'failed', 'retrying'],
-    nullable: false,
-  })
+  @Column({ type: 'text', nullable: false })
   status: string;
 
-  @Column({ type: 'int', name: 'attempt_number', default: 1 })
-  attemptNumber: number;
+  @Column({ type: 'int', default: 1 })
+  attempts: number;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', name: 'error_message', nullable: true })
   errorMessage: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  requestData: Record<string, any>;
-
-  @Column({ type: 'jsonb', nullable: true })
-  responseData: Record<string, any>;
+  @Column({ type: 'int', name: 'duration_ms', nullable: true })
+  durationMs: number;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;

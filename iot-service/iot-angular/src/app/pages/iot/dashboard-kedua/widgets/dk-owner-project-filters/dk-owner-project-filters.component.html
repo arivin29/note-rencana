@@ -1,0 +1,34 @@
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label text-muted text-uppercase small">Owner</label>
+                <select class="form-select" [(ngModel)]="ownerId" (change)="onOwnerChange()" [disabled]="loadingOwners">
+                    <option [ngValue]="undefined">All Owners</option>
+                    <option *ngFor="let owner of ownerOptions" [ngValue]="owner.value">{{ owner.label }}</option>
+                </select>
+                <small *ngIf="loadingOwners" class="text-muted">Loading owners...</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted text-uppercase small">Project</label>
+                <select class="form-select" [(ngModel)]="projectId" (change)="onProjectChange()" [disabled]="loadingProjects">
+                    <option [ngValue]="undefined">All Projects</option>
+                    <option *ngFor="let project of projectOptions" [ngValue]="project.value">{{ project.label }}
+                    </option>
+                </select>
+                <small *ngIf="loadingProjects" class="text-muted">Loading projects...</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted text-uppercase small">Time Range</label>
+                <div class="btn-group w-100">
+                    <button type="button" class="btn btn-outline-theme" [class.active]="timeRange==='24h'"
+                        (click)="setTimeRange('24h')">24 Jam</button>
+                    <button type="button" class="btn btn-outline-theme" [class.active]="timeRange==='7d'"
+                        (click)="setTimeRange('7d')">7 Hari</button>
+                    <button type="button" class="btn btn-outline-theme" [class.active]="timeRange==='30d'"
+                        (click)="setTimeRange('30d')">30 Hari</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

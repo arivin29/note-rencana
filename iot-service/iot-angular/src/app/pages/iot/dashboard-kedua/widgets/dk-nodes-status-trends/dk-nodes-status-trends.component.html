@@ -1,0 +1,26 @@
+<div class="card h-100">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <div class="text-muted text-uppercase small">Node Health Trends</div>
+        <div class="fw-semibold">{{ ownerId ? 'Tenant View' : 'Global View' }}</div>
+      </div>
+      <span class="badge bg-light text-theme">{{ timeRange }}</span>
+    </div>
+    <apx-chart
+      #chart
+      [series]="chartOptions.series"
+      [chart]="chartOptions.chart"
+      [dataLabels]="chartOptions.dataLabels"
+      [stroke]="chartOptions.stroke"
+      [xaxis]="chartOptions.xaxis"
+      [legend]="chartOptions.legend"
+    ></apx-chart>
+    <div class="row text-center mt-3">
+      <div class="col" *ngFor="let summary of statusSummary">
+        <div class="text-muted text-uppercase small">{{ summary.label }}</div>
+        <div class="fw-bold" [ngClass]="summary.class">{{ summary.value }}</div>
+      </div>
+    </div>
+  </div>
+</div>

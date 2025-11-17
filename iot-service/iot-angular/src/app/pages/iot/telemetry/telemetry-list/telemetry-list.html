@@ -4,12 +4,24 @@
       <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
       <li class="breadcrumb-item active">Telemetry</li>
     </ul>
-    <h1 class="page-header mb-0">Telemetry Aggregates</h1>
+    <h1 class="page-header mb-0">
+      Telemetry Aggregates
+      <span *ngIf="projectIdFilter" class="badge bg-theme ms-2">
+        <i class="fa fa-filter me-1"></i>
+        Filtered by Project
+      </span>
+    </h1>
     <div class="text-muted text-opacity-75 small">
       Monitoring hasil agregasi sensor channel per window {{ selectedAggregationLabel }}
     </div>
   </div>
   <div class="ms-auto d-flex flex-wrap gap-2">
+    <a *ngIf="projectIdFilter" 
+       routerLink="/iot/telemetry" 
+       class="btn btn-outline-secondary btn-sm">
+      <i class="fa fa-times fa-fw me-1"></i>
+      Clear Filter
+    </a>
     <button class="btn btn-outline-theme btn-sm">
       <i class="fa fa-sync fa-fw me-1"></i>
       Sync Aggregation
@@ -18,10 +30,25 @@
       <i class="fa fa-bell fa-fw me-1"></i>
       Configure Alerts
     </button>
-    <button class="btn btn-theme btn-sm">
-      <i class="fa fa-file-export fa-fw me-1"></i>
-      Export CSV
-    </button>
+    <div class="btn-group btn-group-sm">
+      <button class="btn btn-theme dropdown-toggle" type="button" data-bs-toggle="dropdown"
+        aria-expanded="false" [disabled]="exporting || loading">
+        <i class="fa fa-file-export fa-fw me-1"></i>
+        <span *ngIf="!exporting">Export CSV</span>
+        <span *ngIf="exporting">Exporting...</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><button class="dropdown-item" type="button" (click)="exportCsv('raw')" [disabled]="exporting">
+          Keseluruhan
+        </button></li>
+        <li><button class="dropdown-item" type="button" (click)="exportCsv('5m')" [disabled]="exporting">
+          Per 5 Menit
+        </button></li>
+        <li><button class="dropdown-item" type="button" (click)="exportCsv('1h')" [disabled]="exporting">
+          Per 1 Jam
+        </button></li>
+      </ul>
+    </div>
   </div>
 </div>
 
@@ -30,7 +57,7 @@
     <li class="nav-item me-3" *ngFor="let agg of aggregations">
       <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
         [class.active]="selectedAggregation === agg"
-        (click)="selectedAggregation = agg">
+        (click)="onAggregationChange(agg)">
         <span>{{ agg }}</span>
         <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
           {{ aggregationLabels[agg] || agg }}
@@ -82,23 +109,23 @@
     <div class="row g-3 mb-4">
       <div class="col-lg-4 col-md-6">
         <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-          <div class="text-muted text-uppercase small mb-1">Total Channels</div>
-          <div class="fs-3 fw-bold text-theme">{{ totalChannels }}</div>
-          <div class="text-muted small">Matching {{ selectedAggregationLabel }} window</div>
+          <div class="text-muted text-uppercase small mb-1">Total Records</div>
+          <div class="fs-3 fw-bold text-theme">{{ totalChannels | number }}</div>
+          <div class="text-muted small">In selected time range</div>
         </div>
       </div>
       <div class="col-lg-4 col-md-6">
         <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
           <div class="text-muted text-uppercase small mb-1">Total Data Points</div>
           <div class="fs-3 fw-bold">{{ totalPoints | number }}</div>
-          <div class="text-muted small">Accumulated across filtered channels</div>
+          <div class="text-muted small">Global count (all pages)</div>
         </div>
       </div>
       <div class="col-lg-4 col-md-6">
         <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
           <div class="text-muted text-uppercase small mb-1">Unique Nodes</div>
           <div class="fs-3 fw-bold">{{ uniqueNodesCount }}</div>
-          <div class="text-muted small">Telemetry contributors</div>
+          <div class="text-muted small">On current page</div>
         </div>
       </div>
       <div class="col-lg-4 col-md-6">
@@ -118,6 +145,7 @@
               <div class="text-muted small">Critical</div>
             </div>
           </div>
+          <div class="text-muted small mt-2">Current page only</div>
         </div>
       </div>
     </div>
@@ -125,12 +153,11 @@
     <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
       <div class="row g-3 align-items-center">
         <div class="col-md-4">
-          <div class="text-muted text-uppercase small">Aggregation Window</div>
-          <div class="fw-semibold">{{ selectedAggregationLabel }}</div>
-          <div class="text-muted small" *ngIf="windowRange">
-            {{ windowRange.start | date: 'dd MMM, HH:mm' }} – {{ windowRange.end | date: 'HH:mm' }} WIB
+          <div class="text-muted text-uppercase small">Time Range</div>
+          <div class="fw-semibold">Last {{ selectedAggregationLabel }}</div>
+          <div class="text-muted small">
+            Real-time sensor readings
           </div>
-          <div class="text-muted small" *ngIf="!windowRange">Tidak ada data untuk filter ini</div>
         </div>
         <div class="col-md-4">
           <div class="text-muted text-uppercase small">Filters</div>
@@ -138,7 +165,7 @@
           <div class="fw-semibold">Project · {{ filters.project }}</div>
         </div>
         <div class="col-md-4 text-md-end">
-          <div class="text-muted small">Channels ditampilkan</div>
+          <div class="text-muted small">Records displayed</div>
           <div class="fw-semibold fs-4">{{ totalChannels }}</div>
           <div class="text-muted small">({{ totalPoints | number }} data points)</div>
         </div>
@@ -146,69 +173,94 @@
     </div>
 
     <div class="table-responsive">
-      <table class="table table-hover text-nowrap align-middle mb-0">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-theme" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading telemetry data...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="!loading && error" class="alert alert-danger" role="alert">
+        <i class="fa fa-exclamation-triangle me-2"></i>
+        {{ error }}
+      </div>
+
+      <!-- Data Table -->
+      <table *ngIf="!loading && !error" class="table table-hover text-nowrap align-middle mb-0">
         <thead class="text-uppercase text-muted small">
           <tr>
-            <th class="pt-0 pb-2">Channel</th>
-            <th class="pt-0 pb-2">Project / Owner</th>
+            <th class="pt-0 pb-2">Channel / Sensor</th>
             <th class="pt-0 pb-2">Node</th>
-            <th class="pt-0 pb-2">Window Stats</th>
-            <th class="pt-0 pb-2">Latest & Trend</th>
-            <th class="pt-0 pb-2 text-end">Quality / Points</th>
+            <th class="pt-0 pb-2">Project / Owner</th>
+            <th class="pt-0 pb-2 text-end">Latest Value</th>
+            <th class="pt-0 pb-2 text-center">Quality</th>
+            <th class="pt-0 pb-2">Timestamp</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of filteredTelemetry">
             <td>
               <div class="fw-semibold text-inverse">{{ row.channelLabel }}</div>
-              <div class="text-muted small">{{ row.idSensorChannel }} · {{ row.sensorType }}</div>
-            </td>
-            <td>
-              <div class="fw-semibold">{{ row.project }}</div>
-              <div class="text-muted small">{{ row.projectCode }} · {{ row.owner }} ({{ row.ownerCode }})</div>
+              <div class="text-muted small">
+                <span *ngIf="row.sensorType" class="badge bg-primary bg-opacity-10 text-primary">{{ row.sensorType }}</span>
+              </div>
             </td>
             <td>
               <div class="fw-semibold">{{ row.nodeName }}</div>
-              <div class="text-muted small">{{ row.idNode }}</div>
-              <div class="badge bg-dark bg-opacity-25 text-uppercase">{{ row.unit }}</div>
+              <div class="text-muted small" *ngIf="row.nodeSerialNumber">SN: {{ row.nodeSerialNumber }}</div>
             </td>
             <td>
-              <div class="text-muted small">{{ row.windowStart | date: 'HH:mm' }} - {{ row.windowEnd | date: 'HH:mm' }} WIB
-              </div>
-              <div class="d-flex justify-content-between text-muted small">
-                <span>Min</span>
-                <span class="text-success fw-semibold">{{ row.min | number: '1.2-2' }}</span>
-              </div>
-              <div class="d-flex justify-content-between text-muted small">
-                <span>Avg</span>
-                <span class="text-info fw-semibold">{{ row.avg | number: '1.2-2' }}</span>
-              </div>
-              <div class="d-flex justify-content-between text-muted small">
-                <span>Max</span>
-                <span class="text-danger fw-semibold">{{ row.max | number: '1.2-2' }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="fw-semibold">{{ row.latest | number: '1.2-2' }} {{ row.unit }}</div>
-              <div class="text-muted small">
-                <i class="fa" [ngClass]="trendIcon(row.trend)"></i>
-                vs avg {{ ((row.latest - row.avg) / row.avg) * 100 | number: '1.0-1' }}%
-              </div>
-              <div class="text-muted small">Sensor {{ row.idSensor }}</div>
+              <div class="fw-semibold">{{ row.project }}</div>
+              <div class="text-muted small">{{ row.owner }}</div>
             </td>
             <td class="text-end">
-              <span class="badge d-inline-flex justify-content-end w-100"
-                [ngClass]="qualityBadge(row.quality)">{{ row.quality | titlecase }}</span>
-              <div class="fw-bold mt-2">{{ row.points }} pts</div>
-              <div class="text-muted small">Per {{ selectedAggregationLabel }}</div>
+              <div class="fw-bold fs-5">{{ row.latest | number: '1.2-2' }}</div>
+              <div class="text-muted small">{{ row.unit || '-' }}</div>
+            </td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="qualityBadge(row.quality)">
+                {{ row.quality | titlecase }}
+              </span>
+            </td>
+            <td>
+              <div class="text-muted small">{{ row.windowStart | date: 'dd MMM yyyy' }}</div>
+              <div class="fw-semibold">{{ row.windowStart | date: 'HH:mm:ss' }}</div>
             </td>
           </tr>
         </tbody>
       </table>
-    </div>
 
-    <div class="text-center text-muted py-5 border-top" *ngIf="!filteredTelemetry.length">
-      Tidak ada log telemetry untuk filter ini.
+      <!-- Empty State -->
+      <div class="text-center text-muted py-5 border-top" *ngIf="!loading && !error && !filteredTelemetry.length">
+        <i class="fa fa-inbox fs-1"></i>
+        <p class="mt-2">Tidak ada log telemetry untuk filter ini.</p>
+      </div>
+      
+      <!-- Pagination -->
+      <div *ngIf="!loading && !error && totalRecords > pageSize" class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <div class="text-muted small">
+          Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalRecords | number }} records
+        </div>
+        <nav aria-label="Telemetry pagination">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <a class="page-link" href="javascript:;" (click)="previousPage()">
+                <i class="fa fa-chevron-left"></i>
+              </a>
+            </li>
+            <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+              <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <a class="page-link" href="javascript:;" (click)="nextPage()">
+                <i class="fa fa-chevron-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 </card>

@@ -1,12 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { DashboardPage } from './pages/dashboard/dashboard';
 import { IotDashboardPage } from './pages/iot/dashboard/iot-dashboard';
+import { IotDashboardKeduaPage } from './pages/iot/dashboard-kedua/iot-dashboard-kedua';
 import { IotAlertsPage } from './pages/iot/alerts/iot-alerts';
 import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showcase';
-
-import { AnalyticsPage } from './pages/analytics/analytics';
 
 // import { EmailInboxPage } from './pages/email/inbox/email-inbox';
 // import { EmailComposePage } from './pages/email/compose/email-compose';
@@ -61,7 +59,6 @@ import { AnalyticsPage } from './pages/analytics/analytics';
 // import { GalleryPage } from './pages/page/gallery/page-gallery';
 // import { SearchResultsPage } from './pages/page/search-results/page-search-results';
 // import { ComingSoonPage } from './pages/page/coming-soon/page-coming-soon';
-import { ErrorPage } from './pages/page/error/page-error';
 // import { LoginPage } from './pages/page/login/page-login';
 // import { RegisterPage } from './pages/page/register/page-register';
 // import { MessengerPage } from './pages/page/messenger/page-messenger';
@@ -70,18 +67,11 @@ import { ErrorPage } from './pages/page/error/page-error';
 // import { PricingPage } from './pages/page/pricing/page-pricing';
 // import { LandingPage } from './pages/landing/landing';
 
-import { ProfilePage } from './pages/profile/profile';
-import { CalendarPage } from './pages/calendar/calendar';
-import { SettingsPage } from './pages/settings/settings';
-import { HelperPage } from './pages/helper/helper';
-import { OwnerTestComponent } from './pages/owner-test/owner-test.component';
-
 const routes: Routes = [
-    { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-
-    { path: 'dashboard', component: DashboardPage, data: { title: 'Dashboard' } },
+    { path: '', redirectTo: '/iot/dashboard', pathMatch: 'full' },
 
     { path: 'iot/dashboard', component: IotDashboardPage, data: { title: 'IoT Dashboard' } },
+    { path: 'iot/dashboard-admin', component: IotDashboardKeduaPage, data: { title: 'Super Admin Dashboard' } },
     {
         path: 'iot/nodes',
         loadChildren: () => import('./pages/iot/nodes/nodes.module').then((m) => m.NodesModule)
@@ -96,6 +86,11 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/iot-config/iot-config-module').then((m) => m.IotConfigModule)
     },
     {
+        path: 'iot/unpaired-devices',
+        loadChildren: () => import('./pages/iot/unpaired-devices/unpaired-devices.module').then((m) => m.UnpairedDevicesModule),
+        data: { title: 'Unpaired Devices' }
+    },
+    {
         path: 'iot/owners',
         loadChildren: () => import('./pages/iot/owners/owners.module').then((m) => m.OwnersModule)
     },
@@ -104,8 +99,6 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/telemetry/telemetry.module').then((m) => m.TelemetryModule)
     },
     { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
-
-    { path: 'analytics', component: AnalyticsPage, data: { title: 'Analytics' } },
 
     // { path: 'email/inbox', component: EmailInboxPage, data: { title: 'Email Inbox' } },
     // { path: 'email/compose', component: EmailComposePage, data: { title: 'Email Compose' } },
@@ -169,13 +162,12 @@ const routes: Routes = [
     // { path: 'page/pricing', component: PricingPage, data: { title: 'Pricing Page' } },
     // { path: 'landing', component: LandingPage, data: { title: 'Landing Page' } },
 
-    { path: 'profile', component: ProfilePage, data: { title: 'Profile' } },
-    { path: 'calendar', component: CalendarPage, data: { title: 'Calendar' } },
-    { path: 'settings', component: SettingsPage, data: { title: 'Settings' } },
-    { path: 'helper', component: HelperPage, data: { title: 'Helper' } },
-    { path: 'owner-test', component: OwnerTestComponent, data: { title: 'Owner API Test' } },
+    // {
+    //     path: 'template',
+    //     loadChildren: () => import('./template/template.module').then((m) => m.TemplateModule)
+    // },
 
-    { path: '**', pathMatch: 'full', component: ErrorPage, data: { title: 'Error Page' } },
+    { path: '**', redirectTo: 'iot/dashboard' },
 ];
 
 @NgModule({

@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.timeline {
+  list-style: none;
+  padding-left: 0;
+  position: relative;
+  margin: 0;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 9px;
+  width: 2px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.timeline li {
+  position: relative;
+  margin-bottom: 1.25rem;
+  padding-left: 2rem;
+}
+
+.timeline-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  position: absolute;
+  left: 0;
+  top: 3px;
+}
+
+.timeline-panel {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: .5rem;
+  padding: .75rem 1rem;
+}

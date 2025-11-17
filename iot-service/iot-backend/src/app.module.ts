@@ -9,6 +9,17 @@ import { NodeModelsModule } from './modules/node-models/node-models.module';
 import { SensorTypesModule } from './modules/sensor-types/sensor-types.module';
 import { SensorCatalogsModule } from './modules/sensor-catalogs/sensor-catalogs.module';
 import { NodeLocationsModule } from './modules/node-locations/node-locations.module';
+import { NodesModule } from './modules/nodes/nodes.module';
+import { SensorsModule } from './modules/sensors/sensors.module';
+import { SensorChannelsModule } from './modules/sensor-channels/sensor-channels.module';
+import { AlertRulesModule } from './modules/alert-rules/alert-rules.module';
+import { AlertEventsModule } from './modules/alert-events/alert-events.module';
+import { NodeAssignmentsModule } from './modules/node-assignments/node-assignments.module';
+import { UserDashboardsModule } from './modules/user-dashboards/user-dashboards.module';
+import { DashboardWidgetsModule } from './modules/dashboard-widgets/dashboard-widgets.module';
+import { SensorLogsModule } from './modules/sensor-logs/sensor-logs.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { UnpairedDevicesModule } from './modules/unpaired-devices/unpaired-devices.module';
 import * as entities from './entities'; 
 
 @Module({
@@ -47,6 +58,17 @@ import * as entities from './entities';
     SensorTypesModule,
     SensorCatalogsModule,
     NodeLocationsModule,
+    NodesModule,
+    SensorsModule,
+    SensorChannelsModule,
+    AlertRulesModule,
+    AlertEventsModule,
+    NodeAssignmentsModule,
+    UserDashboardsModule,
+    DashboardWidgetsModule,
+    SensorLogsModule,
+    DashboardModule,
+    UnpairedDevicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

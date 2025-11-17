@@ -3,9 +3,9 @@
         <ul class="breadcrumb mb-1">
             <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
             <li class="breadcrumb-item"><a routerLink="/iot/owners">Owners</a></li>
-            <li class="breadcrumb-item active">{{ ownerProfile.name }}</li>
+            <li class="breadcrumb-item active">{{ ownerProfile.name || 'Loading...' }}</li>
         </ul>
-        <h1 class="page-header mb-0">Owner {{ ownerProfile.name }}</h1>
+        <h1 class="page-header mb-0">Owner {{ ownerProfile.name || 'Loading...' }}</h1>
         <div class="text-muted small text-opacity-75">
             {{ ownerProfile.industry }} • PIC {{ ownerProfile.contactPerson }}
         </div>
@@ -19,7 +19,25 @@
     </div>
 </div>
 
-<div class="row g-3 mb-4">
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="mt-3 text-muted">Loading owner details...</div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error && !loading" class="alert alert-danger">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    {{ error }}
+    <button class="btn btn-sm btn-danger ms-3" (click)="loadOwnerDetail()">
+        <i class="fa fa-refresh me-1"></i> Retry
+    </button>
+</div>
+
+<!-- Content -->
+<div *ngIf="!loading && !error"  class="row g-3 mb-4">
     <div class="col-lg-4">
         <card class="shadow-sm h-100">
             <card-header class=" text-uppercase small text-muted">
@@ -84,8 +102,8 @@
                             <h5 class="mb-0">{{ webhookConfig.label }}</h5>
                         </div>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="webhookToggle"
-                                [(ngModel)]="webhookConfig.enabled" (change)="toggleWebhookEnabled()">
+          <input class="form-check-input" type="checkbox" id="webhookToggle"
+                                [(ngModel)]="webhookConfig.enabled" (change)="onWebhookToggle($event.target.checked)">
                             <label class="form-check-label" for="webhookToggle">
                                 {{ webhookConfig.enabled ? 'Enabled' : 'Disabled' }}
                             </label>
@@ -159,7 +177,7 @@
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-2 mt-4">
-                        <button class="btn btn-outline-theme" (click)="testWebhookDelivery()">
+                        <button class="btn btn-outline-theme" (click)="testWebhookDelivery()" [disabled]="!webhookId">
                             <i class="fa fa-bolt me-1"></i>
                             Test Delivery
                         </button>
@@ -167,9 +185,19 @@
                             <i class="fa fa-save me-1"></i>
                             Save Webhook Config
                         </button>
-                        <div class="text-muted small align-self-center" *ngIf="webhookTestMessage">
-                            {{ webhookTestMessage }}
-                        </div>
+                    </div>
+                    <div class="alert mt-3" *ngIf="webhookTestMessage" 
+                         [ngClass]="{
+                           'alert-success': webhookTestMessage.includes('success') || webhookTestMessage.includes('saved') || webhookTestMessage.includes('created') || webhookTestMessage.includes('succeeded'),
+                           'alert-danger': webhookTestMessage.includes('Error') || webhookTestMessage.includes('failed'),
+                           'alert-info': !webhookTestMessage.includes('success') && !webhookTestMessage.includes('Error') && !webhookTestMessage.includes('failed')
+                         }">
+                        <i class="fa me-2" [ngClass]="{
+                          'fa-check-circle': webhookTestMessage.includes('success') || webhookTestMessage.includes('succeeded'),
+                          'fa-exclamation-triangle': webhookTestMessage.includes('Error') || webhookTestMessage.includes('failed'),
+                          'fa-info-circle': !webhookTestMessage.includes('success') && !webhookTestMessage.includes('Error')
+                        }"></i>
+                        {{ webhookTestMessage }}
                     </div>
                 </div>
 
@@ -187,7 +215,7 @@
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox"
                                                 [id]="'dbToggle' + config.id" [(ngModel)]="config.enabled"
-                                                (change)="toggleDatabaseEnabled(config)">
+                                                (change)="toggleDatabaseEnabled(config, $event.target.checked)">
                                             <label class="form-check-label" [for]="'dbToggle' + config.id">
                                                 {{ config.enabled ? 'Enabled' : 'Disabled' }}
                                             </label>
@@ -263,9 +291,34 @@
                                             <i class="fa fa-save me-1"></i>
                                             Save Config
                                         </button>
-                                        <div class="text-muted small align-self-center" *ngIf="config.lastError">
-                                            Last error: {{ config.lastError }}
-                                        </div>
+                                    </div>
+                                    <!-- Test/Save Message for MySQL -->
+                                    <div class="alert mt-3" *ngIf="config.type === 'mysql' && mysqlTestMessage" 
+                                         [ngClass]="{
+                                           'alert-success': mysqlTestMessage.includes('success') || mysqlTestMessage.includes('saved') || mysqlTestMessage.includes('created') || mysqlTestMessage.includes('succeeded'),
+                                           'alert-danger': mysqlTestMessage.includes('Error') || mysqlTestMessage.includes('failed'),
+                                           'alert-info': !mysqlTestMessage.includes('success') && !mysqlTestMessage.includes('Error') && !mysqlTestMessage.includes('failed')
+                                         }">
+                                        <i class="fa me-2" [ngClass]="{
+                                          'fa-check-circle': mysqlTestMessage.includes('success') || mysqlTestMessage.includes('succeeded'),
+                                          'fa-exclamation-triangle': mysqlTestMessage.includes('Error') || mysqlTestMessage.includes('failed'),
+                                          'fa-info-circle': !mysqlTestMessage.includes('success') && !mysqlTestMessage.includes('Error')
+                                        }"></i>
+                                        {{ mysqlTestMessage }}
+                                    </div>
+                                    <!-- Test/Save Message for PostgreSQL -->
+                                    <div class="alert mt-3" *ngIf="config.type === 'postgres' && postgresTestMessage" 
+                                         [ngClass]="{
+                                           'alert-success': postgresTestMessage.includes('success') || postgresTestMessage.includes('saved') || postgresTestMessage.includes('created') || postgresTestMessage.includes('succeeded'),
+                                           'alert-danger': postgresTestMessage.includes('Error') || postgresTestMessage.includes('failed'),
+                                           'alert-info': !postgresTestMessage.includes('success') && !postgresTestMessage.includes('Error') && !postgresTestMessage.includes('failed')
+                                         }">
+                                        <i class="fa me-2" [ngClass]="{
+                                          'fa-check-circle': postgresTestMessage.includes('success') || postgresTestMessage.includes('succeeded'),
+                                          'fa-exclamation-triangle': postgresTestMessage.includes('Error') || postgresTestMessage.includes('failed'),
+                                          'fa-info-circle': !postgresTestMessage.includes('success') && !postgresTestMessage.includes('Error')
+                                        }"></i>
+                                        {{ postgresTestMessage }}
                                     </div>
                                 </card-body>
                             </card>
@@ -320,3 +373,4 @@
         </div>
     </card-body>
 </card>
+<!-- End of ngIf content wrapper -->

@@ -1,0 +1,96 @@
+<card class="console-panel">
+  <card-header class="d-flex align-items-center">
+    <div class="flex-grow-1">
+      <h6 class="mb-0">OWNER LEADERBOARD</h6>
+      <small class="text-muted">Top performers by telemetry throughput</small>
+    </div>
+    <card-expand-toggler class="icon-button ms-2">
+      <i class="bi bi-fullscreen"></i>
+    </card-expand-toggler>
+  </card-header>
+  
+  <card-body>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="text-muted mt-2">Loading leaderboard...</div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error }}</div>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadLeaderboard()">
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div *ngIf="leaderboardData && !loading && !error">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead>
+            <tr>
+              <th class="text-center">#</th>
+              <th>Owner</th>
+              <th class="text-center">SLA</th>
+              <th class="text-center">Nodes</th>
+              <th class="text-center">Sensors</th>
+              <th class="text-end">Telemetry/min</th>
+              <th class="text-center">Alerts</th>
+              <th class="text-center">Health</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let owner of leaderboardData.owners; let i = index">
+              <td class="text-center">
+                <span class="badge rounded-pill" 
+                      [ngClass]="i === 0 ? 'bg-warning text-dark' : i === 1 ? 'bg-secondary' : 'bg-light text-dark'">
+                  {{ i + 1 }}
+                </span>
+              </td>
+              <td>
+                <div class="fw-semibold">{{ owner.name }}</div>
+              </td>
+              <td class="text-center">
+                <span [ngClass]="getSlaClass(owner.slaLevel)">
+                  {{ owner.slaLevel }}
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-info">{{ owner.nodeCount }}</span>
+              </td>
+              <td class="text-center">
+                <small class="text-muted">{{ owner.activeSensorCount }}</small>
+              </td>
+              <td class="text-end">
+                <span class="fw-bold text-theme">{{ getTelemetryRateFormatted(owner.telemetryRate) }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge rounded-pill" 
+                      [ngClass]="owner.criticalAlerts > 0 ? 'bg-danger' : owner.alertCount > 0 ? 'bg-warning text-dark' : 'bg-success'">
+                  {{ owner.alertCount }}
+                  <span *ngIf="owner.criticalAlerts > 0" class="ms-1">
+                    (<i class="bi bi-exclamation-triangle-fill"></i>{{ owner.criticalAlerts }})
+                  </span>
+                </span>
+              </td>
+              <td class="text-center">
+                <i [ngClass]="[getHealthIcon(owner.health), getHealthClass(owner.health)]"></i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!leaderboardData.owners || leaderboardData.owners.length === 0" 
+           class="text-center text-muted py-4">
+        <i class="bi bi-people fs-1"></i>
+        <div class="mt-2">No owner data available</div>
+      </div>
+    </div>
+  </card-body>
+</card>

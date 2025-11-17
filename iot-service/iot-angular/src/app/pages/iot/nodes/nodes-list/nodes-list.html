@@ -4,9 +4,21 @@
             <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
             <li class="breadcrumb-item active">Nodes</li>
         </ul>
-        <h1 class="page-header mb-0">IoT Nodes</h1>
+        <h1 class="page-header mb-0">
+            IoT Nodes
+            <span *ngIf="projectIdFilter" class="badge bg-theme ms-2">
+                <i class="fa fa-filter me-1"></i>
+                Filtered by Project
+            </span>
+        </h1>
     </div>
     <div class="ms-auto">
+        <a *ngIf="projectIdFilter" 
+           routerLink="/iot/nodes" 
+           class="btn btn-outline-secondary me-2">
+            <i class="fa fa-times me-1"></i>
+            Clear Filter
+        </a>
         <a routerLink="/iot/nodes/new" class="btn btn-outline-theme">
             <i class="fa fa-plus-circle fa-fw me-1"></i>
             Deploy Node
