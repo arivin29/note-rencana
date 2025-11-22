@@ -480,21 +480,21 @@ mosquitto_sub -h localhost -p 1883 \
 
 **Turn relay ON:**
 ```bash
-curl -X POST http://localhost:3000/relay-command/DEMO1-00D42390A994/on \
+curl -X POST http://localhost:4000/relay-command/DEMO1-00D42390A994/on \
   -H "Content-Type: application/json" \
   -d '{"target":"out1"}'
 ```
 
 **Turn relay OFF:**
 ```bash
-curl -X POST http://localhost:3000/relay-command/DEMO1-00D42390A994/off \
+curl -X POST http://localhost:4000/relay-command/DEMO1-00D42390A994/off \
   -H "Content-Type: application/json" \
   -d '{"target":"out1"}'
 ```
 
 **Pulse relay:**
 ```bash
-curl -X POST http://localhost:3000/relay-command/DEMO1-00D42390A994/pulse \
+curl -X POST http://localhost:4000/relay-command/DEMO1-00D42390A994/pulse \
   -H "Content-Type: application/json" \
   -d '{"target":"out1","duration_ms":5000}'
 ```
