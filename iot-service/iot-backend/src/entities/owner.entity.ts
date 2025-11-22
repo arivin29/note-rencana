@@ -17,6 +17,9 @@ export class Owner {
   @PrimaryGeneratedColumn('uuid', { name: 'id_owner' })
   idOwner: string;
 
+  @Column({ type: 'varchar', length: 5, unique: true, nullable: false, name: 'owner_code' })
+  ownerCode: string;
+
   @Column({ type: 'text', nullable: false })
   name: string;
 
@@ -25,6 +28,15 @@ export class Owner {
 
   @Column({ type: 'text', nullable: true, name: 'contact_person' })
   contactPerson: string;
+
+  @Column({ type: 'text', nullable: true })
+  email: string;
+
+  @Column({ type: 'text', nullable: true })
+  phone: string;
+
+  @Column({ type: 'text', nullable: true })
+  address: string;
 
   @Column({ type: 'text', nullable: true, name: 'sla_level' })
   slaLevel: string;
