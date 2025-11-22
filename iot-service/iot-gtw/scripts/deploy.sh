@@ -85,7 +85,11 @@ echo ""
 
 # Start with PM2
 echo -e "${YELLOW}→${NC} Starting service with PM2..."
-pm2 start ecosystem.config.js --env $ENVIRONMENT
+if [ "$ENVIRONMENT" = "production" ]; then
+    pm2 start ecosystem.config.js --env production
+else
+    pm2 start ecosystem.config.js --env $ENVIRONMENT
+fi
 echo -e "${GREEN}✓${NC} Service started"
 echo ""
 

@@ -468,7 +468,7 @@ export class TelemetryProcessorService {
 
     // Look up owner by code
     const owner = await this.ownerRepository.findOne({
-      where: { code: ownerCode },
+      where: { ownerCode: ownerCode },
     });
 
     if (!owner) {
