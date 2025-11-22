@@ -9,6 +9,6 @@ export default registerAs('database', () => ({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   synchronize: false,
-  logging: process.env.NODE_ENV === 'development',
+  logging: process.env.DB_LOGGING === 'true' ? ['error', 'warn'] : false, // Minimal logging
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 }));

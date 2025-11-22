@@ -74,14 +74,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('message', (topic, message) => {
-        // 🔍 DEBUG: Log RAW message IMMEDIATELY when received
-        this.logger.log(`🔔 RAW MQTT MESSAGE RECEIVED!`);
-        this.logger.log(`   📍 Topic: ${topic}`);
-        this.logger.log(`   📦 Message (raw): ${message.toString()}`);
-        this.logger.log(`   📏 Length: ${message.length} bytes`);
-        this.logger.log(`   ⏰ Timestamp: ${new Date().toISOString()}`);
-        
-        // Process message
+        // Process message silently
         this.handleMessage(topic, message);
       });
 
@@ -121,38 +114,27 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private async handleMessage(topic: string, message: Buffer): Promise<void> {
     try {
       const messageStr = message.toString();
-      
-      // ✅ Changed from debug to log so it's always visible
-      this.logger.log(`📨 Received MQTT message from topic '${topic}': ${messageStr}`);
 
       // Try to parse as JSON
       let payload: Record<string, any>;
       try {
         payload = JSON.parse(messageStr);
-        this.logger.log(`📦 Parsed as JSON: ${JSON.stringify(payload)}`);
       } catch (parseError) {
         // If not JSON, wrap in object
         payload = {
           raw: messageStr,
           type: 'non-json',
         };
-        this.logger.warn(`⚠️  Received non-JSON message from topic '${topic}': ${messageStr}`);
+        this.logger.warn(`⚠️  Non-JSON message from '${topic}'`);
       }
 
       // Auto-detect label from payload
       const label = this.iotLogService.detectLabel(payload);
-      this.logger.log(`🏷️  Detected label: ${label}`);
 
       // Extract device ID from payload
       const deviceId = this.iotLogService.extractDeviceId(payload);
-      if (deviceId) {
-        this.logger.log(`🔌 Detected device ID: ${deviceId}`);
-      } else {
-        this.logger.log(`🔌 No device ID found in payload`);
-      }
 
       // Save to database
-      this.logger.log(`💾 Saving to database...`);
       const savedLog = await this.iotLogService.create({
         label,
         topic,
@@ -161,7 +143,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date(),
       });
 
-      this.logger.log(`✅ Successfully saved to database with ID: ${savedLog.id} [${label}] from topic '${topic}'`);
+      this.logger.log(`✅ Saved [${label}] ${deviceId || 'no-id'} → ${savedLog.id}`);
 
     } catch (error) {
       this.logger.error(

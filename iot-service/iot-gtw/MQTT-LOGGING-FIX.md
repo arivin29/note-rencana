@@ -1,6 +1,54 @@
 # MQTT Logging Troubleshooting - Fix Applied ✅
 
-## Masalah yang Ditemukan
+## 🔥 CRITICAL FIX - Nov 22, 2025 @ 12:10 PM
+
+### ❌ ROOT CAUSE IDENTIFIED:
+**Label Detection Bug** - Data disimpan dengan `label='log'` tapi processor cari `label='telemetry'`!
+
+#### Problem:
+```typescript
+// Payload structure dari ESP32:
+{
+  "device_id": "DEMO1-00D42390A994",
+  "sensors": {...},    // ← NOT DETECTED (hanya cek "sensor" singular)
+  "signal": {...},     // ← NOT DETECTED
+  "system": {...}      // ← NOT DETECTED
+}
+
+// Old detectLabel() function:
+if (payload.sensor !== undefined) { ... }  // ❌ Cuma cek "sensor", bukan "sensors"
+```
+
+#### Impact:
+- ✅ Data masuk database
+- ❌ Label = `'log'` (salah!)
+- ❌ Processor cari `label='telemetry'` → tidak ketemu
+- ❌ Data tidak diproses
+- ❌ Tidak masuk unpaired devices
+
+### ✅ SOLUTION APPLIED:
+Updated `iot-log.service.ts` - `detectLabel()` function:
+```typescript
+// Check for telemetry data (sensor readings, measurements)
+if (payload.sensors !== undefined ||  // ← NEW: Support plural
+    payload.signal !== undefined ||   // ← NEW: Support signal data  
+    payload.system !== undefined ||   // ← NEW: Support system data
+    payload.sensor !== undefined ||   // ← Keep singular
+    payload.temperature !== undefined ||
+    payload.humidity !== undefined) {
+  return LogLabel.TELEMETRY;
+}
+```
+
+### 📊 Expected Result:
+- ✅ Label akan jadi `'telemetry'`
+- ✅ Scheduler akan proses setiap 30 detik
+- ✅ Device ID akan dicek
+- ✅ Masuk ke `node_unpaired_devices` jika belum paired
+
+---
+
+## Masalah yang Ditemukan Sebelumnya
 
 1. **Log Level `debug` tidak terlihat**: Di `mqtt.service.ts`, message yang diterima menggunakan `logger.debug()` yang tidak muncul secara default
 2. **Kurang detail logging**: Tidak ada tracking detail untuk setiap step (parse, detect label, save to DB)

@@ -19,21 +19,12 @@ export class IotLogService {
    */
   async create(createIotLogDto: CreateIotLogDto): Promise<IotLog> {
     try {
-      this.logger.log(`🔵 Creating IoT log entry...`);
-      this.logger.log(`   Label: ${createIotLogDto.label}`);
-      this.logger.log(`   Topic: ${createIotLogDto.topic}`);
-      this.logger.log(`   Device ID: ${createIotLogDto.deviceId || 'N/A'}`);
-      this.logger.log(`   Payload: ${JSON.stringify(createIotLogDto.payload)}`);
-      
       const iotLog = this.iotLogRepository.create({
         ...createIotLogDto,
         timestamp: createIotLogDto.timestamp || new Date(),
       });
 
-      this.logger.log(`🔵 Saving to database...`);
       const savedLog = await this.iotLogRepository.save(iotLog);
-      this.logger.log(`✅ IoT log created successfully: ${savedLog.id} [${savedLog.label}]`);
-
       return savedLog;
     } catch (error) {
       this.logger.error(`❌ Failed to create IoT log: ${error.message}`, error.stack);
@@ -159,8 +150,11 @@ export class IotLogService {
     if (payload.temperature !== undefined ||
         payload.humidity !== undefined ||
         payload.sensor !== undefined ||
+        payload.sensors !== undefined ||  // ← Added: Support for "sensors" (plural)
         payload.value !== undefined ||
-        payload.reading !== undefined) {
+        payload.reading !== undefined ||
+        payload.signal !== undefined ||   // ← Added: Support for signal data
+        payload.system !== undefined) {   // ← Added: Support for system data
       return LogLabel.TELEMETRY;
     }
 
