@@ -30,6 +30,8 @@ IoT Backend API - A comprehensive NestJS backend for IoT sensor monitoring and m
 - ✅ Advanced filtering (18+ parameters per module)
 - ✅ Nested data retrieval with relations
 - ✅ Aggregations and statistics endpoints
+- ✅ **Device Commands API** - Send relay control commands via MQTT
+- ✅ **MQTT Integration** - Publish commands to IoT devices
 - ✅ Swagger/OpenAPI documentation
 - ✅ TypeORM with PostgreSQL + TimescaleDB
 - ✅ Comprehensive validation and error handling
@@ -40,12 +42,41 @@ IoT Backend API - A comprehensive NestJS backend for IoT sensor monitoring and m
 **Quick Links:**
 - [📖 Documentation Index](./docs/README.md)
 - [🏗️ API Architecture Guide](./docs/architecture/API-ARCHITECTURE-GUIDE.md)
+- [🎮 **Device Commands API**](./docs/DEVICE-COMMANDS-API.md) - **NEW!** Control relays via REST → MQTT
+- [⚡ Device Commands Quick Ref](./DEVICE-COMMANDS-QUICK-REF.md)
 - [📦 Owners Module](./docs/modules/owners/) - ✅ Complete (13 endpoints)
 - [🔍 Filtering Guide](./docs/modules/owners/filtering-guide.md)
-- [⚡ Quick Reference](./docs/modules/owners/filtering-quick-reference.md)
 
 ### 🚀 Swagger UI
 Access interactive API documentation: **http://localhost:3000/api**
+
+### 🎮 Device Commands API
+
+Send relay control commands to IoT devices via MQTT:
+
+**Endpoints:**
+- `POST /api/device-commands/relay` - Send relay command (ON/OFF/PULSE)
+- `GET /api/device-commands/status` - Check MQTT connection status
+
+**Example:**
+```bash
+# Turn ON relay 1
+curl -X POST http://localhost:3000/api/device-commands/relay \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"A1B2C3D4E5F6","action":"on","target":"out1"}'
+
+# Pulse relay 2 for 5 seconds
+curl -X POST http://localhost:3000/api/device-commands/relay \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"A1B2C3D4E5F6","action":"pulse","target":"out2","duration":5000}'
+```
+
+**Test:**
+```bash
+./test-device-commands.sh
+```
+
+📖 [Full Documentation](./docs/DEVICE-COMMANDS-API.md)
 
 ## Project setup
 

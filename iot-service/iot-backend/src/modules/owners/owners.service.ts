@@ -4,6 +4,7 @@ import { Repository, Brackets } from 'typeorm';
 import { Owner } from '../../entities/owner.entity';
 import { OwnerForwardingWebhook } from '../../entities/owner-forwarding-webhook.entity';
 import { OwnerForwardingDatabase } from '../../entities/owner-forwarding-database.entity';
+import { generateUniqueOwnerCode } from '../../utils/code-generator.util';
 import {
   CreateOwnerDto,
   UpdateOwnerDto,
@@ -38,7 +39,18 @@ export class OwnersService {
   // ============================================
 
   async create(createOwnerDto: CreateOwnerDto): Promise<OwnerResponseDto> {
-    const owner = this.ownersRepository.create(createOwnerDto);
+    // Generate unique owner code
+    const ownerCode = await generateUniqueOwnerCode(async (code) => {
+      const existing = await this.ownersRepository.findOne({
+        where: { ownerCode: code },
+      });
+      return !!existing;
+    });
+
+    const owner = this.ownersRepository.create({
+      ...createOwnerDto,
+      ownerCode,
+    });
     const saved = await this.ownersRepository.save(owner);
     return this.toResponseDto(saved);
   }
@@ -586,9 +598,13 @@ export class OwnersService {
   private toResponseDto(owner: Owner): OwnerResponseDto {
     return {
       idOwner: owner.idOwner,
+      ownerCode: owner.ownerCode,
       name: owner.name,
       industry: owner.industry,
       contactPerson: owner.contactPerson,
+      email: owner.email,
+      phone: owner.phone,
+      address: owner.address,
       slaLevel: owner.slaLevel,
       forwardingSettings: owner.forwardingSettings,
       createdAt: owner.createdAt,
