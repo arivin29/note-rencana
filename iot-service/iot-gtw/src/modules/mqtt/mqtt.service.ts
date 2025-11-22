@@ -1,8 +1,12 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as mqtt from 'mqtt';
 import { IotLogService } from '../iot-log/iot-log.service';
 import { LogLabel } from '../../common/enums';
+import { Node, NodeUnpairedDevice } from '../../entities/existing';
+import { Owner } from '../../entities/existing/owner.entity';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
@@ -15,6 +19,12 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly configService: ConfigService,
     private readonly iotLogService: IotLogService,
+    @InjectRepository(Node)
+    private readonly nodeRepository: Repository<Node>,
+    @InjectRepository(NodeUnpairedDevice)
+    private readonly unpairedDeviceRepository: Repository<NodeUnpairedDevice>,
+    @InjectRepository(Owner)
+    private readonly ownerRepository: Repository<Owner>,
   ) {}
 
   async onModuleInit() {
@@ -138,7 +148,32 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       // Extract device ID from payload
       const deviceId = this.iotLogService.extractDeviceId(payload);
 
-      // Save to database
+      if (!deviceId) {
+        this.logger.warn(`⚠️  No device_id found in payload from '${topic}'`);
+        // Still save to iot_log for debugging
+        await this.iotLogService.create({
+          label,
+          topic,
+          payload,
+          timestamp: new Date(),
+        });
+        return;
+      }
+
+      // Check if device is paired
+      const isPaired = await this.isDevicePaired(deviceId);
+
+      if (!isPaired) {
+        // Device is unpaired - track in unpaired_devices table
+        this.logger.warn(`🔴 Unpaired device detected: ${deviceId}`);
+        await this.trackUnpairedDevice(deviceId, topic, payload);
+        
+        // Don't save to iot_log for unpaired devices
+        this.logger.log(`📍 Device ${deviceId} tracked in unpaired_devices (not saved to iot_log)`);
+        return;
+      }
+
+      // Device is paired - save to iot_log
       const savedLog = await this.iotLogService.create({
         label,
         topic,
@@ -147,7 +182,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date(),
       });
 
-      this.logger.log(`✅ Saved [${label}] ${deviceId || 'no-id'} → ${savedLog.id}`);
+      this.logger.log(`✅ Saved [${label}] ${deviceId} → ${savedLog.id}`);
 
     } catch (error) {
       this.logger.error(
@@ -219,5 +254,115 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       connected: this.isConnected,
       reconnectAttempts: this.reconnectAttempts,
     };
+  }
+
+  /**
+   * Extract owner code from device_id
+   * Format: {OWNER_CODE}-{MAC}
+   * Example: DEMO1-00D42390A994 → DEMO1
+   */
+  private extractOwnerCode(deviceId: string): string | null {
+    if (!deviceId || typeof deviceId !== 'string') {
+      return null;
+    }
+
+    const parts = deviceId.split('-');
+    if (parts.length >= 2) {
+      return parts[0]; // Return owner code (before first hyphen)
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if device is paired (exists in nodes table)
+   */
+  private async isDevicePaired(deviceId: string): Promise<boolean> {
+    if (!deviceId) {
+      return false;
+    }
+
+    // Check by serial_number or dev_eui or code
+    const node = await this.nodeRepository.findOne({
+      where: [
+        { serialNumber: deviceId },
+        { devEui: deviceId },
+        { code: deviceId },
+      ],
+    });
+
+    return !!node;
+  }
+
+  /**
+   * Track unpaired device
+   */
+  private async trackUnpairedDevice(
+    deviceId: string,
+    topic: string,
+    payload: Record<string, any>,
+  ): Promise<void> {
+    try {
+      // Extract owner code from device_id
+      const ownerCode = this.extractOwnerCode(deviceId);
+      
+      let suggestedOwner: string | null = null;
+
+      // Lookup owner by owner_code
+      if (ownerCode) {
+        const owner = await this.ownerRepository.findOne({
+          where: { ownerCode },
+        });
+
+        if (owner) {
+          suggestedOwner = owner.idOwner;
+          this.logger.log(`✅ Found owner for code '${ownerCode}': ${owner.name}`);
+        } else {
+          this.logger.warn(`⚠️  Owner code '${ownerCode}' not found in database`);
+        }
+      }
+
+      // Check if device already tracked
+      const existing = await this.unpairedDeviceRepository.findOne({
+        where: { hardwareId: deviceId },
+      });
+
+      if (existing) {
+        // Update existing record
+        existing.lastSeenAt = new Date();
+        existing.lastPayload = payload;
+        existing.lastTopic = topic;
+        existing.seenCount += 1;
+        
+        // Update suggested owner if found
+        if (suggestedOwner) {
+          existing.suggestedOwner = suggestedOwner;
+        }
+
+        await this.unpairedDeviceRepository.save(existing);
+        this.logger.log(`📝 Updated unpaired device: ${deviceId} (seen ${existing.seenCount} times)`);
+      } else {
+        // Create new record
+        const unpaired = this.unpairedDeviceRepository.create({
+          hardwareId: deviceId,
+          firstSeenAt: new Date(),
+          lastSeenAt: new Date(),
+          lastPayload: payload,
+          lastTopic: topic,
+          seenCount: 1,
+          suggestedOwner,
+          status: 'pending',
+        });
+
+        await this.unpairedDeviceRepository.save(unpaired);
+        this.logger.log(`🆕 Tracked new unpaired device: ${deviceId}`);
+        
+        if (suggestedOwner) {
+          this.logger.log(`   → Suggested owner: ${ownerCode}`);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`❌ Failed to track unpaired device: ${error.message}`);
+    }
   }
 }

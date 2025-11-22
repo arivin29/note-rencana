@@ -4,6 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import databaseConfig from './config/database.config';
 import mqttConfig from './config/mqtt.config';
 import { IotLog } from './entities';
+import { 
+  Node, 
+  NodeModel, 
+  NodeProfile, 
+  NodeUnpairedDevice, 
+  Owner, 
+  Project, 
+  Sensor, 
+  SensorChannel, 
+  SensorLog 
+} from './entities/existing';
 import { IotLogModule } from './modules/iot-log/iot-log.module';
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { HealthModule } from './modules/health/health.module';
@@ -29,7 +40,18 @@ import { HealthModule } from './modules/health/health.module';
         username: configService.get('database.username'),
         password: configService.get('database.password'),
         database: configService.get('database.database'),
-        entities: [IotLog],
+        entities: [
+          IotLog,
+          Node,
+          NodeModel,
+          NodeProfile,
+          NodeUnpairedDevice,
+          Owner,
+          Project,
+          Sensor,
+          SensorChannel,
+          SensorLog,
+        ],
         synchronize: false, // Use migrations instead
         logging: configService.get('database.logging'),
         ssl: configService.get('database.ssl'),
