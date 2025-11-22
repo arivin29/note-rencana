@@ -1,0 +1,65 @@
+#ifndef MQTT_MANAGER_H
+#define MQTT_MANAGER_H
+
+#include <Arduino.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include "lte_manager.h"
+
+// ============================================================================
+// MQTT MANAGER
+// ============================================================================
+
+class MQTTManager {
+public:
+    MQTTManager(LTEManager& lte);
+
+    // Initialize MQTT client
+    bool begin(const char* broker, uint16_t port, const char* clientId);
+
+    // Connect to MQTT broker
+    bool connect();
+
+    // Disconnect from broker
+    bool disconnect();
+
+    // Check if connected
+    bool isConnected();
+
+    // Publish message
+    bool publish(const char* topic, const char* payload, bool retained = false);
+    bool publish(const char* topic, JsonDocument& doc, bool retained = false);
+
+    // Subscribe to topic
+    bool subscribe(const char* topic);
+
+    // Set callback for incoming messages
+    void setCallback(void (*callback)(char*, uint8_t*, unsigned int));
+
+    // Update (call in loop)
+    void loop();
+
+    // Get statistics
+    unsigned long getPublishCount() { return publishCount; }
+    unsigned long getFailedCount() { return failedCount; }
+
+    // Print status
+    void printStatus();
+
+private:
+    PubSubClient* mqttClient;
+    LTEManager* lteManager;
+
+    const char* broker;
+    uint16_t port;
+    String clientId;
+
+    unsigned long lastReconnectAttempt;
+    unsigned long publishCount;
+    unsigned long failedCount;
+
+    // Auto-reconnect
+    bool reconnect();
+};
+
+#endif // MQTT_MANAGER_H

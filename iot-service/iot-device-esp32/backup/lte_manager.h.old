@@ -1,0 +1,115 @@
+#ifndef LTE_MANAGER_H
+#define LTE_MANAGER_H
+
+#include <Arduino.h>
+
+// ============================================================================
+// 4G LTE MANAGER - SIM7600E Module (OPTIMIZED & ANTI-STUCK)
+// ============================================================================
+// This module handles 4G LTE connectivity using the SIM7600E module
+// Provides: Internet connection, MQTT over LTE, signal quality monitoring
+// 
+// IMPROVEMENTS:
+// - Watchdog-safe delays (yield() support)
+// - Auto-recovery with hard reset on failure
+// - Connection health monitoring with ping test
+// - Buffer management to prevent overflow
+// - Retry limits to prevent infinite loops
+
+#define TINY_GSM_MODEM_SIM7600
+
+#include <TinyGsmClient.h>
+#include <StreamDebugger.h>
+
+// ============================================================================
+// LTE CONFIGURATION
+// ============================================================================
+
+// Connection Health Check
+#define LTE_HEALTH_CHECK_INTERVAL   10000   // Check every 10 seconds (was 30s)
+#define LTE_PING_TIMEOUT            5000    // Ping timeout 5 seconds
+#define LTE_MAX_RECONNECT_ATTEMPTS  3       // Max reconnect attempts before hard reset
+
+// Timeouts (watchdog-safe)
+#define LTE_NETWORK_TIMEOUT         30000   // Network registration timeout (30s, was 60s)
+#define LTE_GPRS_CONNECT_TIMEOUT    20000   // GPRS connection timeout (20s)
+#define LTE_AT_COMMAND_TIMEOUT      2000    // AT command timeout (2s)
+
+// Power Management
+#define LTE_POWER_ON_DELAY          3000    // Delay after power on (watchdog-safe)
+#define LTE_INIT_RETRY_DELAY        5000    // Delay before retry init
+
+// Serial Buffer
+#define LTE_SERIAL_BUFFER_SIZE      1024    // Serial buffer size
+
+// ============================================================================
+// LTE MANAGER CLASS
+// ============================================================================
+
+class LTEManager {
+public:
+    LTEManager();
+    ~LTEManager(); // Destructor for cleanup
+
+    // Initialize LTE module
+    bool begin();
+
+    // Power management
+    bool powerOn();
+    bool powerOff();
+    bool hardReset();       // NEW: Hard reset modem (power cycle)
+
+    // Connection management
+    bool connect(const char* apn, const char* user = "", const char* pass = "");
+    bool disconnect();
+    bool reconnect();
+
+    // Connection status
+    bool isConnected();
+    bool isHealthy();       // NEW: Check if connection is truly working (ping test)
+
+    // Network info
+    int getSignalQuality();
+    String getOperator();
+    String getLocalIP();
+
+    // Modem info
+    String getModemInfo();
+    String getIMEI();
+    String getIMSI();
+    String getCCID();
+
+    // Client access
+    TinyGsmClient& getClient();
+    TinyGsm& getModem();
+
+    // Maintenance (call in loop)
+    void update();          // IMPROVED: Smarter health monitoring
+
+    // Diagnostics
+    void printStatus();
+    void clearSerialBuffer();  // NEW: Clear serial buffer
+
+private:
+    TinyGsm* modem;
+    TinyGsmClient* client;
+    HardwareSerial* serialModem;
+
+    bool initialized;
+    bool connected;
+    unsigned long lastHealthCheck;
+    int reconnectAttempts;
+
+    // Store last APN settings for reconnection
+    String lastAPN;
+    String lastUser;
+    String lastPass;
+
+    // Helper functions
+    bool waitForNetwork(unsigned long timeout = LTE_NETWORK_TIMEOUT);
+    bool sendATCommand(const char* cmd, const char* expectedResponse, unsigned long timeout = LTE_AT_COMMAND_TIMEOUT);
+    bool testConnection();  // NEW: Test connection with ping
+    void yieldDelay(unsigned long ms); // NEW: Watchdog-safe delay
+};
+
+#endif // LTE_MANAGER_H

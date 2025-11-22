@@ -1,0 +1,861 @@
+#include "lte_manager.h"
+#include "config.h"
+
+// ============================================================================
+// CONSTRUCTOR & DESTRUCTOR
+// ============================================================================
+
+LTEManager::LTEManager() {
+    initialized = false;
+    connected = false;
+    lastHealthCheck = 0;
+    reconnectAttempts = 0;
+    serialModem = nullptr;
+    modem = nullptr;
+    client = nullptr;
+}
+
+LTEManager::~LTEManager() {
+    // Clean up dynamically allocated objects
+    if (client) {
+        delete client;
+        client = nullptr;
+    }
+    if (modem) {
+        delete modem;
+        modem = nullptr;
+    }
+}
+
+// ============================================================================
+// INITIALIZE LTE MODULE
+// ============================================================================
+
+bool LTEManager::begin() {
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Initializing SIM7600E module..."));
+    #endif
+
+    // Initialize hardware serial for SIM7600
+    // Using Serial1 with correct pins: GPIO6 (TX) and GPIO7 (RX)
+    serialModem = &Serial1;
+    serialModem->begin(115200, SERIAL_8N1, SIM7600_RX_PIN, SIM7600_TX_PIN);
+
+    // Setup control pins BEFORE creating modem instance
+    pinMode(SIM7600_PWRKEY_PIN, OUTPUT);
+    pinMode(SIM7600_RESET_PIN, OUTPUT);
+    
+    // DTR pin (optional, only if used)
+    #if SIM7600_DTR_PIN >= 0
+    pinMode(SIM7600_DTR_PIN, OUTPUT);
+    digitalWrite(SIM7600_DTR_PIN, LOW); // Active mode
+    #endif
+
+    // Initial pin state
+    digitalWrite(SIM7600_PWRKEY_PIN, LOW);
+    digitalWrite(SIM7600_RESET_PIN, HIGH);
+
+    delay(300);
+
+    // Power on the module using PWRKEY pulse (1.2 seconds - sama seperti test yang berhasil)
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Powering on module (PWRKEY pulse)..."));
+    #endif
+    
+    digitalWrite(SIM7600_PWRKEY_PIN, HIGH);
+    delay(1200);  // 1.2 second pulse (sama seperti test code yang berhasil)
+    digitalWrite(SIM7600_PWRKEY_PIN, LOW);
+    
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Booting..."));
+    #endif
+    delay(12000);  // tunggu full boot (sama seperti test code yang berhasil)
+
+    // Create modem instance AFTER power on dan boot complete
+    modem = new TinyGsm(*serialModem);
+    client = new TinyGsmClient(*modem);
+
+    // Test modem communication with retry
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Testing modem communication..."));
+    #endif
+    
+    bool responseOK = false;
+    
+    // Try multiple times (AT commands might take time after boot)
+    for (int attempt = 0; attempt < 5; attempt++) {
+        #if DEBUG_LTE
+        Serial.print(F("[LTE] AT test attempt "));
+        Serial.print(attempt + 1);
+        Serial.println(F("/5..."));
+        #endif
+        
+        // Clear any garbage in buffer
+        while (serialModem->available()) {
+            serialModem->read();
+        }
+        
+        // Send AT command
+        serialModem->println("AT");
+        delay(1000);
+        
+        // Check response
+        unsigned long start = millis();
+        while (millis() - start < 2000) {
+            if (serialModem->available()) {
+                String response = serialModem->readString();
+                #if DEBUG_LTE
+                Serial.print(F("[LTE] Response: "));
+                Serial.println(response);
+                #endif
+                if (response.indexOf("OK") >= 0) {
+                    responseOK = true;
+                    break;
+                }
+            }
+        }
+        
+        if (responseOK) {
+            #if DEBUG_LTE
+            Serial.println(F("[LTE] Modem responded!"));
+            #endif
+            break;
+        }
+        
+        delay(2000);  // Wait before retry
+    }
+    
+    if (!responseOK) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] ❌ No response from modem after 5 attempts!"));
+        Serial.println(F("[LTE] Check: 1) Power supply, 2) Wiring, 3) LED status"));
+        #endif
+        return false;
+    }
+
+    // Initialize modem with TinyGSM
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Initializing modem with TinyGSM..."));
+    #endif
+
+    if (!modem->init()) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] Failed to initialize modem!"));
+        #endif
+        return false;
+    }
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Modem initialized successfully"));
+    printStatus();
+    #endif
+
+    initialized = true;
+    return true;
+}
+
+// ============================================================================
+// POWER ON MODULE (Watchdog-safe)
+// ============================================================================
+
+bool LTEManager::powerOn() {
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Powering on module..."));
+    #endif
+
+    // Clear serial buffer before power on
+    clearSerialBuffer();
+
+    // Pull PWRKEY low for 1 second to power on
+    digitalWrite(SIM7600_PWRKEY_PIN, LOW);
+    yieldDelay(1000);  // Watchdog-safe
+    digitalWrite(SIM7600_PWRKEY_PIN, HIGH);
+
+    // Wait for module to boot (watchdog-safe)
+    #if DEBUG_LTE
+    Serial.print(F("[LTE] Waiting for module boot"));
+    #endif
+    
+    yieldDelay(LTE_POWER_ON_DELAY);  // Watchdog-safe delay
+
+    #if DEBUG_LTE
+    Serial.println(F(" Done!"));
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// POWER OFF MODULE (Watchdog-safe)
+// ============================================================================
+
+bool LTEManager::powerOff() {
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Powering off module..."));
+    #endif
+
+    if (modem) {
+        modem->poweroff();
+    }
+
+    // Pull PWRKEY low for 3 seconds to power off
+    digitalWrite(SIM7600_PWRKEY_PIN, LOW);
+    yieldDelay(3000);  // Watchdog-safe
+    digitalWrite(SIM7600_PWRKEY_PIN, HIGH);
+
+    connected = false;
+    reconnectAttempts = 0;
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Module powered off"));
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// HARD RESET MODULE (Power Cycle)
+// ============================================================================
+
+bool LTEManager::hardReset() {
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] 🔄 Performing HARD RESET..."));
+    #endif
+
+    // Use hardware reset pin
+    digitalWrite(SIM7600_RESET_PIN, LOW);
+    yieldDelay(500);
+    digitalWrite(SIM7600_RESET_PIN, HIGH);
+    
+    // Wait for module to stabilize
+    yieldDelay(LTE_POWER_ON_DELAY);
+
+    // Clear state
+    connected = false;
+    reconnectAttempts = 0;
+    
+    // Clear serial buffer
+    clearSerialBuffer();
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Hard reset complete"));
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// CONNECT TO NETWORK (With Timeout Protection)
+// ============================================================================
+
+bool LTEManager::connect(const char* apn, const char* user, const char* pass) {
+    if (!initialized) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] Module not initialized!"));
+        #endif
+        return false;
+    }
+
+    // Store APN settings for later reconnection
+    lastAPN = String(apn);
+    lastUser = String(user);
+    lastPass = String(pass);
+
+    #if DEBUG_LTE
+    Serial.print(F("[LTE] Connecting to APN: "));
+    Serial.println(apn);
+    #endif
+
+    // Clear serial buffer before connecting
+    clearSerialBuffer();
+
+    // Set network mode to LTE only (AT+CNMP=38)
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Setting LTE-only mode..."));
+    #endif
+    modem->sendAT("+CNMP=38");  // 38 = LTE only
+    modem->waitResponse();
+
+    // Wait for network registration (with timeout)
+    if (!waitForNetwork(LTE_NETWORK_TIMEOUT)) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] ❌ Network registration timeout!"));
+        #endif
+        return false;
+    }
+
+    // Configure PDP context
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Configuring PDP context..."));
+    #endif
+    
+    // Set APN
+    String pdpCmd = String("+CGDCONT=1,\"IP\",\"") + apn + "\"";
+    modem->sendAT(pdpCmd.c_str());
+    if (modem->waitResponse() != 1) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] Failed to set APN"));
+        #endif
+        return false;
+    }
+
+    // Attach to GPRS
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Attaching to GPRS..."));
+    #endif
+    modem->sendAT("+CGATT=1");
+    modem->waitResponse(10000);  // Wait up to 10 seconds
+    
+    // Check attachment
+    modem->sendAT("+CGATT?");
+    if (modem->waitResponse("+CGATT:") != 1) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] GPRS attach failed"));
+        #endif
+        return false;
+    }
+
+    // Activate network
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Activating PDP context..."));
+    #endif
+    modem->sendAT("+NETOPEN");
+    if (modem->waitResponse(10000, "+NETOPEN:") != 1) {
+        // Check if already open
+        modem->sendAT("+NETOPEN?");
+        String response = "";
+        if (modem->waitResponse(1000, response) == 1) {
+            if (response.indexOf("+NETOPEN: 1") < 0) {
+                #if DEBUG_LTE
+                Serial.println(F("[LTE] Failed to activate network"));
+                #endif
+                return false;
+            }
+        }
+    }
+
+    // Get IP address to verify connection
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Checking IP address..."));
+    #endif
+    modem->sendAT("+IPADDR");
+    String ipResponse = "";
+    if (modem->waitResponse(1000, ipResponse) == 1) {
+        #if DEBUG_LTE
+        Serial.print(F("[LTE] IP: "));
+        Serial.println(ipResponse);
+        #endif
+    }
+
+    // Connect to GPRS using TinyGSM (for compatibility)
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Finalizing GPRS connection..."));
+    #endif
+
+    unsigned long startTime = millis();
+    bool gprsConnected = false;
+
+    // Try GPRS connection with timeout
+    while (millis() - startTime < LTE_GPRS_CONNECT_TIMEOUT) {
+        if (modem->isGprsConnected()) {
+            gprsConnected = true;
+            break;
+        }
+        // Try to connect
+        if (modem->gprsConnect(apn, user, pass)) {
+            gprsConnected = true;
+            break;
+        }
+        yieldDelay(500);  // Small delay before retry
+    }
+
+    if (!gprsConnected) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] ❌ GPRS connection timeout!"));
+        #endif
+        return false;
+    }
+
+    // Verify connection (ping test optional - some operators block it)
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Testing connection..."));
+    #endif
+    if (!testConnection()) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] ⚠️ Ping test failed (may be normal if operator blocks ICMP)"));
+        #endif
+        // Continue anyway - connection might still work for MQTT
+    }
+
+    connected = true;
+    reconnectAttempts = 0;  // Reset counter on success
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] ✅ Connected to GPRS!"));
+    Serial.print(F("[LTE] Local IP: "));
+    Serial.println(getLocalIP());
+    Serial.print(F("[LTE] Signal Quality: "));
+    Serial.print(getSignalQuality());
+    Serial.println(F(" dBm"));
+    Serial.print(F("[LTE] Operator: "));
+    Serial.println(getOperator());
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// DISCONNECT FROM NETWORK
+// ============================================================================
+
+bool LTEManager::disconnect() {
+    if (!modem) {
+        return false;
+    }
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Disconnecting from GPRS..."));
+    #endif
+
+    modem->gprsDisconnect();
+    connected = false;
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Disconnected"));
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// RECONNECT TO NETWORK (With Hard Reset on Failure)
+// ============================================================================
+
+bool LTEManager::reconnect() {
+    if (!initialized) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] Module not initialized!"));
+        #endif
+        return false;
+    }
+
+    if (lastAPN.length() == 0) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] No APN settings stored for reconnection!"));
+        #endif
+        return false;
+    }
+
+    reconnectAttempts++;
+
+    #if DEBUG_LTE
+    Serial.print(F("[LTE] Reconnecting to APN: "));
+    Serial.print(lastAPN);
+    Serial.print(F(" (Attempt "));
+    Serial.print(reconnectAttempts);
+    Serial.print(F("/"));
+    Serial.print(LTE_MAX_RECONNECT_ATTEMPTS);
+    Serial.println(F(")"));
+    #endif
+
+    // If max attempts reached, do hard reset
+    if (reconnectAttempts >= LTE_MAX_RECONNECT_ATTEMPTS) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] 🔄 Max reconnect attempts reached, performing HARD RESET..."));
+        #endif
+        
+        hardReset();
+        
+        // Re-initialize modem
+        yieldDelay(2000);
+        if (!modem->init()) {
+            #if DEBUG_LTE
+            Serial.println(F("[LTE] ❌ Modem re-init after hard reset failed!"));
+            #endif
+            return false;
+        }
+    }
+
+    // Disconnect first
+    if (connected) {
+        modem->gprsDisconnect();
+        yieldDelay(1000);
+    }
+
+    // Clear serial buffer
+    clearSerialBuffer();
+
+    // Wait for network registration (with timeout)
+    if (!waitForNetwork(LTE_NETWORK_TIMEOUT)) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] ❌ Network registration failed!"));
+        #endif
+        return false;
+    }
+
+    // Reconnect to GPRS with stored settings (with timeout)
+    unsigned long startTime = millis();
+    bool gprsConnected = false;
+
+    while (millis() - startTime < LTE_GPRS_CONNECT_TIMEOUT) {
+        if (modem->gprsConnect(lastAPN.c_str(), lastUser.c_str(), lastPass.c_str())) {
+            gprsConnected = true;
+            break;
+        }
+        yieldDelay(500);
+    }
+
+    if (!gprsConnected) {
+        #if DEBUG_LTE
+        Serial.println(F("[LTE] ❌ GPRS reconnection timeout!"));
+        #endif
+        return false;
+    }
+
+    connected = true;
+    reconnectAttempts = 0;  // Reset counter on success
+
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] ✅ Reconnected to GPRS!"));
+    Serial.print(F("[LTE] Local IP: "));
+    Serial.println(getLocalIP());
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// CHECK IF CONNECTED
+// ============================================================================
+
+bool LTEManager::isConnected() {
+    if (!modem || !connected) {
+        return false;
+    }
+
+    return modem->isGprsConnected();
+}
+
+// ============================================================================
+// CHECK CONNECTION HEALTH (Ping Test)
+// ============================================================================
+
+bool LTEManager::isHealthy() {
+    if (!isConnected()) {
+        return false;
+    }
+
+    return testConnection();
+}
+
+// ============================================================================
+// GET SIGNAL QUALITY
+// ============================================================================
+
+int LTEManager::getSignalQuality() {
+    if (!modem) {
+        return -999;
+    }
+
+    // Get CSQ value (0-31)
+    int csq = modem->getSignalQuality();
+
+    // Convert to dBm: RSSI (dBm) = -113 + (2 * CSQ)
+    // CSQ 0 = -113 dBm, CSQ 31 = -51 dBm
+    int rssi = -113 + (2 * csq);
+
+    return rssi;
+}
+
+// ============================================================================
+// GET OPERATOR NAME
+// ============================================================================
+
+String LTEManager::getOperator() {
+    if (!modem) {
+        return "Unknown";
+    }
+
+    return modem->getOperator();
+}
+
+// ============================================================================
+// GET LOCAL IP
+// ============================================================================
+
+String LTEManager::getLocalIP() {
+    if (!modem || !connected) {
+        return "0.0.0.0";
+    }
+
+    return modem->getLocalIP();
+}
+
+// ============================================================================
+// GET MODEM INFO
+// ============================================================================
+
+String LTEManager::getModemInfo() {
+    if (!modem) {
+        return "Unknown";
+    }
+
+    return modem->getModemInfo();
+}
+
+String LTEManager::getIMEI() {
+    if (!modem) {
+        return "Unknown";
+    }
+
+    return modem->getIMEI();
+}
+
+String LTEManager::getIMSI() {
+    if (!modem) {
+        return "Unknown";
+    }
+
+    return modem->getIMSI();
+}
+
+String LTEManager::getCCID() {
+    if (!modem) {
+        return "Unknown";
+    }
+
+    return modem->getSimCCID();
+}
+
+// ============================================================================
+// GET TINYGGSM CLIENT
+// ============================================================================
+
+TinyGsmClient& LTEManager::getClient() {
+    return *client;
+}
+
+// ============================================================================
+// GET RAW MODEM
+// ============================================================================
+
+TinyGsm& LTEManager::getModem() {
+    return *modem;
+}
+
+// ============================================================================
+// UPDATE (Improved Health Monitoring - Call in Loop)
+// ============================================================================
+
+void LTEManager::update() {
+    unsigned long currentMillis = millis();
+
+    // Health check every 10 seconds (was 30s)
+    if (currentMillis - lastHealthCheck >= LTE_HEALTH_CHECK_INTERVAL) {
+        lastHealthCheck = currentMillis;
+
+        // Check if connection lost
+        if (connected && !isConnected()) {
+            #if DEBUG_LTE
+            Serial.println(F("[LTE] ❌ Connection lost! Attempting to reconnect..."));
+            #endif
+
+            connected = false;
+
+            // Attempt reconnection
+            if (reconnect()) {
+                #if DEBUG_LTE
+                Serial.println(F("[LTE] ✅ Reconnected successfully!"));
+                #endif
+                connected = true;
+            } else {
+                #if DEBUG_LTE
+                Serial.print(F("[LTE] ❌ Reconnection failed (attempt "));
+                Serial.print(reconnectAttempts);
+                Serial.print(F("/"));
+                Serial.print(LTE_MAX_RECONNECT_ATTEMPTS);
+                Serial.println(F("), will retry..."));
+                #endif
+            }
+        }
+        // If connected, verify with ping test occasionally (every 3rd check)
+        else if (connected && (currentMillis % 30000 < LTE_HEALTH_CHECK_INTERVAL)) {
+            if (!testConnection()) {
+                #if DEBUG_LTE
+                Serial.println(F("[LTE] ⚠️ Ping test failed but GPRS shows connected"));
+                Serial.println(F("[LTE] Connection might be stale, forcing reconnect..."));
+                #endif
+                connected = false;  // Force reconnect on next check
+            }
+        }
+    }
+}
+
+// ============================================================================
+// PRINT STATUS
+// ============================================================================
+
+void LTEManager::printStatus() {
+    Serial.println(F("\n========== LTE MODULE STATUS =========="));
+    Serial.print(F("Modem Info: "));
+    Serial.println(getModemInfo());
+    Serial.print(F("IMEI: "));
+    Serial.println(getIMEI());
+    Serial.print(F("IMSI: "));
+    Serial.println(getIMSI());
+    Serial.print(F("CCID: "));
+    Serial.println(getCCID());
+    Serial.print(F("Operator: "));
+    Serial.println(getOperator());
+    Serial.print(F("Signal Quality: "));
+    Serial.print(getSignalQuality());
+    Serial.println(F(" dBm"));
+    Serial.print(F("Network Status: "));
+    Serial.println(connected ? "Connected" : "Disconnected");
+    Serial.print(F("Local IP: "));
+    Serial.println(getLocalIP());
+    Serial.println(F("======================================\n"));
+}
+
+// ============================================================================
+// WAIT FOR NETWORK REGISTRATION (Watchdog-Safe)
+// ============================================================================
+
+bool LTEManager::waitForNetwork(unsigned long timeout) {
+    #if DEBUG_LTE
+    Serial.println(F("[LTE] Waiting for network registration..."));
+    #endif
+
+    unsigned long startTime = millis();
+    int dotCount = 0;
+
+    while (millis() - startTime < timeout) {
+        if (modem->isNetworkConnected()) {
+            #if DEBUG_LTE
+            Serial.println(F(" OK!"));
+            Serial.println(F("[LTE] ✅ Network registered!"));
+            #endif
+            return true;
+        }
+
+        yieldDelay(500);  // Watchdog-safe delay
+
+        #if DEBUG_LTE
+        Serial.print(F("."));
+        dotCount++;
+        if (dotCount >= 60) {  // New line every 30 seconds
+            Serial.println();
+            dotCount = 0;
+        }
+        #endif
+    }
+
+    #if DEBUG_LTE
+    Serial.println();
+    Serial.println(F("[LTE] ❌ Network registration timeout!"));
+    #endif
+
+    return false;
+}
+
+// ============================================================================
+// SEND AT COMMAND (Advanced - Watchdog Safe)
+// ============================================================================
+
+bool LTEManager::sendATCommand(const char* cmd, const char* expectedResponse, unsigned long timeout) {
+    if (!serialModem) {
+        return false;
+    }
+
+    // Clear input buffer
+    clearSerialBuffer();
+
+    // Send command
+    serialModem->println(cmd);
+
+    // Wait for response (watchdog-safe)
+    unsigned long startTime = millis();
+    String response = "";
+    response.reserve(256);  // Pre-allocate to avoid fragmentation
+
+    while (millis() - startTime < timeout) {
+        if (serialModem->available()) {
+            char c = serialModem->read();
+            response += c;
+
+            if (response.indexOf(expectedResponse) >= 0) {
+                return true;
+            }
+
+            // Prevent buffer overflow
+            if (response.length() > 512) {
+                response.remove(0, 256);  // Keep last 256 chars
+            }
+        }
+        yield();  // Feed watchdog
+    }
+
+    return false;
+}
+
+// ============================================================================
+// TEST CONNECTION (Ping Test for Real Connectivity)
+// ============================================================================
+
+bool LTEManager::testConnection() {
+    if (!modem) {
+        return false;
+    }
+
+    // Try to ping Google DNS (8.8.8.8)
+    // Note: SIM7600 supports AT+CPING command
+    
+    #if DEBUG_LTE
+    Serial.print(F("[LTE] Testing connection (ping 8.8.8.8)..."));
+    #endif
+
+    // Send ping command
+    if (sendATCommand("AT+CPING=\"8.8.8.8\",1,4,64,1000", "OK", LTE_PING_TIMEOUT)) {
+        #if DEBUG_LTE
+        Serial.println(F(" OK!"));
+        #endif
+        return true;
+    }
+
+    #if DEBUG_LTE
+    Serial.println(F(" FAILED!"));
+    #endif
+    
+    return false;
+}
+
+// ============================================================================
+// CLEAR SERIAL BUFFER (Prevent Overflow)
+// ============================================================================
+
+void LTEManager::clearSerialBuffer() {
+    if (!serialModem) {
+        return;
+    }
+
+    while (serialModem->available()) {
+        serialModem->read();
+        yield();  // Feed watchdog
+    }
+
+    #if DEBUG_LTE
+    // Serial.println(F("[LTE] Serial buffer cleared"));
+    #endif
+}
+
+// ============================================================================
+// WATCHDOG-SAFE DELAY
+// ============================================================================
+
+void LTEManager::yieldDelay(unsigned long ms) {
+    unsigned long startTime = millis();
+    while (millis() - startTime < ms) {
+        yield();  // Feed watchdog
+        delay(10);  // Small actual delay
+    }
+}

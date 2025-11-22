@@ -1,0 +1,237 @@
+#include "mqtt_manager.h"
+#include "config.h"
+
+// ============================================================================
+// CONSTRUCTOR
+// ============================================================================
+
+MQTTManager::MQTTManager(LTEManager& lte) {
+    lteManager = &lte;
+    mqttClient = new PubSubClient(lte.getClient());
+
+    lastReconnectAttempt = 0;
+    publishCount = 0;
+    failedCount = 0;
+}
+
+// ============================================================================
+// INITIALIZE
+// ============================================================================
+
+bool MQTTManager::begin(const char* brokerAddr, uint16_t brokerPort, const char* clientIdStr) {
+    broker = brokerAddr;
+    port = brokerPort;
+    clientId = String(clientIdStr);
+
+    // Add timestamp to make client ID unique
+    clientId += "-";
+    clientId += String(millis());
+
+    mqttClient->setServer(broker, port);
+    mqttClient->setKeepAlive(MQTT_KEEP_ALIVE);
+
+    #if DEBUG_MQTT
+    Serial.print(F("[MQTT] Initialized with broker: "));
+    Serial.print(broker);
+    Serial.print(F(":"));
+    Serial.println(port);
+    Serial.print(F("[MQTT] Client ID: "));
+    Serial.println(clientId);
+    #endif
+
+    return true;
+}
+
+// ============================================================================
+// CONNECT
+// ============================================================================
+
+bool MQTTManager::connect() {
+    if (!lteManager->isConnected()) {
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] LTE not connected!"));
+        #endif
+        return false;
+    }
+
+    #if DEBUG_MQTT
+    Serial.print(F("[MQTT] Connecting to broker..."));
+    #endif
+
+    // Attempt connection (no username/password for now)
+    if (mqttClient->connect(clientId.c_str())) {
+        #if DEBUG_MQTT
+        Serial.println(F(" Connected!"));
+        #endif
+        return true;
+    }
+
+    #if DEBUG_MQTT
+    Serial.print(F(" Failed! RC="));
+    Serial.println(mqttClient->state());
+    #endif
+
+    return false;
+}
+
+// ============================================================================
+// DISCONNECT
+// ============================================================================
+
+bool MQTTManager::disconnect() {
+    if (mqttClient->connected()) {
+        mqttClient->disconnect();
+
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] Disconnected"));
+        #endif
+    }
+
+    return true;
+}
+
+// ============================================================================
+// IS CONNECTED
+// ============================================================================
+
+bool MQTTManager::isConnected() {
+    return mqttClient->connected();
+}
+
+// ============================================================================
+// PUBLISH (String payload)
+// ============================================================================
+
+bool MQTTManager::publish(const char* topic, const char* payload, bool retained) {
+    if (!mqttClient->connected()) {
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] Not connected, cannot publish!"));
+        #endif
+        failedCount++;
+        return false;
+    }
+
+    #if DEBUG_MQTT
+    Serial.print(F("[MQTT] Publishing to "));
+    Serial.print(topic);
+    Serial.print(F(": "));
+    Serial.println(payload);
+    #endif
+
+    bool result = mqttClient->publish(topic, payload, retained);
+
+    if (result) {
+        publishCount++;
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] Publish success"));
+        #endif
+    } else {
+        failedCount++;
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] Publish failed!"));
+        #endif
+    }
+
+    return result;
+}
+
+// ============================================================================
+// PUBLISH (JSON Document)
+// ============================================================================
+
+bool MQTTManager::publish(const char* topic, JsonDocument& doc, bool retained) {
+    String payload;
+    serializeJson(doc, payload);
+
+    return publish(topic, payload.c_str(), retained);
+}
+
+// ============================================================================
+// SUBSCRIBE
+// ============================================================================
+
+bool MQTTManager::subscribe(const char* topic) {
+    if (!mqttClient->connected()) {
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] Not connected, cannot subscribe!"));
+        #endif
+        return false;
+    }
+
+    #if DEBUG_MQTT
+    Serial.print(F("[MQTT] Subscribing to: "));
+    Serial.println(topic);
+    #endif
+
+    return mqttClient->subscribe(topic, MQTT_QOS);
+}
+
+// ============================================================================
+// SET CALLBACK
+// ============================================================================
+
+void MQTTManager::setCallback(void (*callback)(char*, uint8_t*, unsigned int)) {
+    mqttClient->setCallback(callback);
+}
+
+// ============================================================================
+// LOOP (must be called regularly)
+// ============================================================================
+
+void MQTTManager::loop() {
+    if (!mqttClient->connected()) {
+        unsigned long now = millis();
+
+        // Try to reconnect every 5 seconds
+        if (now - lastReconnectAttempt > MQTT_RECONNECT_DELAY) {
+            lastReconnectAttempt = now;
+
+            #if DEBUG_MQTT
+            Serial.println(F("[MQTT] Reconnecting..."));
+            #endif
+
+            if (reconnect()) {
+                lastReconnectAttempt = 0;
+            }
+        }
+    } else {
+        // Process incoming messages
+        mqttClient->loop();
+    }
+}
+
+// ============================================================================
+// PRINT STATUS
+// ============================================================================
+
+void MQTTManager::printStatus() {
+    Serial.println(F("\n========== MQTT STATUS =========="));
+    Serial.print(F("Broker: "));
+    Serial.print(broker);
+    Serial.print(F(":"));
+    Serial.println(port);
+    Serial.print(F("Client ID: "));
+    Serial.println(clientId);
+    Serial.print(F("Status: "));
+    Serial.println(mqttClient->connected() ? "Connected" : "Disconnected");
+    Serial.print(F("Published: "));
+    Serial.println(publishCount);
+    Serial.print(F("Failed: "));
+    Serial.println(failedCount);
+    Serial.println(F("=================================\n"));
+}
+
+// ============================================================================
+// RECONNECT (internal)
+// ============================================================================
+
+bool MQTTManager::reconnect() {
+    if (!lteManager->isConnected()) {
+        #if DEBUG_MQTT
+        Serial.println(F("[MQTT] LTE not connected!"));
+        #endif
+        return false;
+    }
+
+    return connect();
+}

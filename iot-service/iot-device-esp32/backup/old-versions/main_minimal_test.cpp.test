@@ -1,0 +1,46 @@
+#include <Arduino.h>
+
+// Minimal test firmware to diagnose boot loop
+// This does NOTHING except blink LED and print to serial
+
+void setup() {
+    // Initialize serial
+    Serial.begin(115200);
+    delay(3000);
+    
+    Serial.println("\n\n===================");
+    Serial.println("MINIMAL TEST FIRMWARE");
+    Serial.println("===================");
+    Serial.println("If you see this, the ESP32 is working!");
+    Serial.println("Blinking LED every second...");
+    
+    // Setup LED (if available)
+    #ifdef LED_BUILTIN
+    pinMode(LED_BUILTIN, OUTPUT);
+    #endif
+}
+
+void loop() {
+    static unsigned long lastPrint = 0;
+    static int counter = 0;
+    
+    unsigned long now = millis();
+    
+    // Print every second
+    if (now - lastPrint >= 1000) {
+        lastPrint = now;
+        counter++;
+        
+        Serial.print("Alive: ");
+        Serial.print(counter);
+        Serial.print(" seconds, Free heap: ");
+        Serial.println(ESP.getFreeHeap());
+        
+        // Blink LED
+        #ifdef LED_BUILTIN
+        digitalWrite(LED_BUILTIN, counter % 2);
+        #endif
+    }
+    
+    delay(10);
+}
