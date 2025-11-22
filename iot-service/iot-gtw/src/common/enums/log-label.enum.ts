@@ -8,4 +8,5 @@ export enum LogLabel {
   TELEMETRY = 'telemetry',
   COMMAND = 'command',
   RESPONSE = 'response',
+  EVENT = 'event',  // Device events/feedback (e.g., relay_ack, relay_error)
 }

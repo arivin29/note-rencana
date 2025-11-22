@@ -40,11 +40,83 @@ if (payload.sensors !== undefined ||  // ← NEW: Support plural
 }
 ```
 
-### 📊 Expected Result:
-- ✅ Label akan jadi `'telemetry'`
+### 📊 Result:
+- ✅ Label sekarang jadi `'telemetry'`
 - ✅ Scheduler akan proses setiap 30 detik
 - ✅ Device ID akan dicek
 - ✅ Masuk ke `node_unpaired_devices` jika belum paired
+
+---
+
+## 🎨 LOGGING OPTIMIZATION - Nov 22, 2025 @ 12:45 PM
+
+### Problem: Too Verbose!
+Before: **17 log lines** per message! 🤯
+
+### Solution: Minimal Logging
+After: **1 log line** per message! ✨
+
+#### Changes:
+1. ✅ `mqtt.service.ts` - Single line summary
+2. ✅ `iot-log.service.ts` - Silent operation
+3. ✅ `database.config.ts` - Disable query logging by default
+
+#### New Format:
+```
+✅ Saved [telemetry] DEMO1-00D42390A994 → 18e4807c-4238-4a07-9f71-e25ea0209cb2
+```
+
+See: **[MINIMAL-LOGGING.md](./MINIMAL-LOGGING.md)** for details
+
+---
+
+## 📚 Documentation Created
+
+1. **[MINIMAL-LOGGING.md](./MINIMAL-LOGGING.md)** - Complete logging optimization guide
+2. **[LOGGING-QUICK-REF.md](./LOGGING-QUICK-REF.md)** - Quick reference for toggling logging modes
+
+---
+
+## 🚀 How to Restart
+
+```bash
+cd /Users/arivin29macmini/Documents/DEVETEK/pra-project/iot-service/iot-gtw
+npm run start:dev
+```
+
+---
+
+## ✅ Verification Checklist
+
+After restart, check:
+- [ ] MQTT messages received (1 line per message)
+- [ ] Label = 'telemetry' (not 'log')
+- [ ] No SQL query logs (unless DB_LOGGING=true)
+- [ ] Scheduler runs every 30 seconds
+- [ ] Unpaired devices tracked
+
+---
+
+## 🔍 Next Steps
+
+1. Restart service
+2. Wait for new MQTT messages
+3. Check scheduler processes them:
+   ```bash
+   tail -f logs/app.log | grep "TelemetryScheduler"
+   ```
+4. Verify unpaired devices table:
+   ```sql
+   SELECT * FROM node_unpaired_devices ORDER BY last_seen_at DESC LIMIT 5;
+   ```
+
+---
+
+**Status:** ✅ **READY TO TEST**
+
+---
+
+## Previous Documentation (Below)
 
 ---
 

@@ -92,9 +92,13 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     const topicConfig = this.configService.get<string>('mqtt.topic');
     const topics = topicConfig.split(',').map(t => t.trim());
 
-    this.logger.log(`🔍 DEBUG: Attempting to subscribe to ${topics.length} topic(s): ${topics.join(', ')}`);
+    // Add default event topic for device feedback
+    const eventTopics = topics.map(t => t.replace('/telemetry', '/event'));
+    const allTopics = [...topics, ...eventTopics];
 
-    topics.forEach(topic => {
+    this.logger.log(`🔍 DEBUG: Attempting to subscribe to ${allTopics.length} topic(s): ${allTopics.join(', ')}`);
+
+    allTopics.forEach(topic => {
       this.client.subscribe(topic, { qos: 1 }, (error) => {
         if (error) {
           this.logger.error(`❌ Failed to subscribe to topic '${topic}': ${error.message}`);
@@ -105,7 +109,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
     });
 
-    this.logger.log(`💡 TIP: Publish to any of these topics: ${topics.join(', ')}`);
+    this.logger.log(`💡 TIP: Publish to any of these topics: ${allTopics.join(', ')}`);
   }
 
   /**

@@ -121,6 +121,11 @@ export class IotLogService {
    * This is a smart function to determine the label based on payload content
    */
   detectLabel(payload: Record<string, any>): LogLabel {
+    // Check for device events (relay feedback, etc.) - HIGHEST PRIORITY
+    if (payload.event || payload.event_type) {
+      return LogLabel.EVENT;
+    }
+
     // Check for pairing-related keywords
     if (payload.action === 'pair' || payload.type === 'pairing' || payload.pairing) {
       return LogLabel.PAIRING;
