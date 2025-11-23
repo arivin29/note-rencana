@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  color: #1f2937;
+}
+
+.pairing-wizard-container {
+  padding: 1.5rem;
+}
+
+.wizard-header {
+  margin-bottom: 1.5rem;
+}
+
+.step-content {
+  min-height: 540px;
+  margin-bottom: 2rem;
+}
+
+.wizard-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding: 1.5rem 0;
+}
+
+@media (max-width: 768px) {
+  .wizard-navigation {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wizard-navigation .btn {
+    width: 100%;
+  }
+}

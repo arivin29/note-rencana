@@ -20,3 +20,5 @@ export { DashboardWidgetsService } from './services/dashboard-widgets.service';
 export { SensorLogsService } from './services/sensor-logs.service';
 export { DashboardService } from './services/dashboard.service';
 export { UnpairedDevicesService } from './services/unpaired-devices.service';
+export { NodeProfilesService } from './services/node-profiles.service';
+export { DeviceCommandsService } from './services/device-commands.service';

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NodeModelResponseDto, UnpairedDeviceResponseDto, UnpairedDeviceStatsDto } from 'src/sdk/core/models';
 import { NodeModelsService, UnpairedDevicesService } from 'src/sdk/core/services';
@@ -42,6 +43,7 @@ export class UnpairedDevicesListPage implements OnInit {
     sortOrder: SortOrder = 'desc';
 
     constructor(
+        private router: Router,
         private modalService: NgbModal,
         private unpairedDevicesService: UnpairedDevicesService,
         private nodeModelsService: NodeModelsService,
@@ -166,21 +168,8 @@ export class UnpairedDevicesListPage implements OnInit {
     }
 
     openPairingDialog(device: UnpairedDeviceResponseDto): void {
-        import('../pairing-dialog/pairing-dialog').then((m) => {
-            const modalRef = this.modalService.open(m.PairingDialogComponent, {
-                size: 'lg',
-                backdrop: 'static',
-            });
-            modalRef.componentInstance.device = device;
-            modalRef.result.then(
-                (result) => {
-                    if (result && result.success) {
-                        this.loadDevices();
-                    }
-                },
-                () => undefined,
-            );
-        });
+        // Navigate to pairing workspace with hardwareId
+        this.router.navigate(['/iot/unpaired-devices', device.hardwareId]);
     }
 
     viewPayload(device: UnpairedDeviceResponseDto): void {

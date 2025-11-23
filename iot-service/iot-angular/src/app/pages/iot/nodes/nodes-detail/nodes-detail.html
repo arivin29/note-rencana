@@ -12,9 +12,8 @@
             <i class="fa fa-pen fa-fw me-1"></i>
             Edit Node
         </a>
-        <button class="btn btn-outline-danger" (click)="deleteNode()" 
-                [disabled]="sensors.length > 0"
-                [title]="sensors.length > 0 ? 'Cannot delete node with sensors. Delete all sensors first.' : 'Delete node'">
+        <button class="btn btn-outline-danger" (click)="deleteNode()" [disabled]="sensors.length > 0"
+            [title]="sensors.length > 0 ? 'Cannot delete node with sensors. Delete all sensors first.' : 'Delete node'">
             <i class="fa fa-trash fa-fw me-1"></i>
             Delete Node
         </button>
@@ -55,7 +54,8 @@
             <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
                 Node Information
                 <span class="badge bg-success-subtle text-success ms-3">Uptime {{ nodeMeta.uptime }}</span>
-                <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="nodeMeta.alertsActive > 0">{{ nodeMeta.alertsActive }} Alerts Active</span>
+                <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="nodeMeta.alertsActive > 0">{{
+                    nodeMeta.alertsActive }} Alerts Active</span>
             </card-header>
             <card-body class="text-inverse">
                 <div class="row g-4">
@@ -113,26 +113,29 @@
                                 ID {{ sensor.id }} · Catalog {{ sensor.sensorCatalogLabel }}
                             </div>
                             <div class="text-muted small">
-                                {{ sensor.location }} · {{ sensor.protocolChannel || 'Channel N/A' }} · Sampling {{ sensor.samplingRate || '—' }}s
+                                {{ sensor.location }} · {{ sensor.protocolChannel || 'Channel N/A' }} · Sampling {{
+                                sensor.samplingRate || '—' }}s
                             </div>
                         </div>
-                        <button class="btn btn-outline-theme btn-sm" type="button" (click)="openAddChannelDrawer(sensor)">
+                        <button class="btn btn-outline-theme btn-sm" type="button"
+                            (click)="openAddChannelDrawer(sensor)">
                             <i class="fa fa-plus me-1"></i>
                             Add Channel
                         </button>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" (click)="openEditSensorDrawer(sensor)"
-                                title="Edit sensor configuration">
+                        <button class="btn btn-outline-secondary btn-sm" type="button"
+                            (click)="openEditSensorDrawer(sensor)" title="Edit sensor configuration">
                             <i class="fa fa-pen me-1"></i>
                             Edit
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" type="button" (click)="deleteSensor(sensor)" 
-                                [disabled]="sensor.channels.length > 0"
-                                [title]="sensor.channels.length > 0 ? 'Cannot delete sensor with channels' : 'Delete sensor'">
+                        <button class="btn btn-outline-danger btn-sm" type="button" (click)="deleteSensor(sensor)"
+                            [disabled]="sensor.channels.length > 0"
+                            [title]="sensor.channels.length > 0 ? 'Cannot delete sensor with channels' : 'Delete sensor'">
                             <i class="fa fa-trash me-1"></i>
                             Delete
                         </button>
                         <span [class]="sensorHealthBadge(sensor.health)">{{ sensor.health | titlecase }}</span>
-                        <div class="text-muted small">{{ sensor.channels.length }} channel{{ sensor.channels.length > 1 ? 's' : '' }}</div>
+                        <div class="text-muted small">{{ sensor.channels.length }} channel{{ sensor.channels.length > 1
+                            ? 's' : '' }}</div>
                     </div>
                     <div class="table-responsive mt-3">
                         <table class="table table-sm align-middle mb-0">
@@ -149,8 +152,8 @@
                             <tbody>
                                 <tr *ngFor="let channel of sensor.channels">
                                     <td class="fw-semibold">
-                                        <a [routerLink]="['/iot/nodes', nodeUuid, 'sensor', channel.id]" 
-                                           class="text-decoration-none text-theme">
+                                        <a [routerLink]="['/iot/nodes', nodeUuid, 'sensor', channel.id]"
+                                            class="text-decoration-none text-theme">
                                             <i class="fa fa-chart-line me-1"></i>
                                             {{ channel.sensorTypeLabel }}
                                         </a>
@@ -161,7 +164,8 @@
                                     </td>
                                     <td class="text-muted small">{{ channel.id }}</td>
                                     <td class="text-end fw-semibold">{{ channel.latest }} {{ channel.unit }}</td>
-                                    <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase }}</span>
+                                    <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase
+                                            }}</span>
                                     </td>
                                     <td class="text-capitalize">{{ channel.trend }}</td>
                                 </tr>
@@ -221,7 +225,7 @@
         </card>
     </div>
 
-    
+
 
     <div class="col-lg-4">
         <card class="mb-4">
@@ -263,7 +267,8 @@
                 <div class="mb-3">
                     <div class="text-muted small text-uppercase">Location</div>
                     <div class="fw-semibold">{{ nodeMeta.location }}</div>
-                    <div class="text-muted small"><i class="fa fa-clock me-1"></i>Installed: {{ nodeMeta.lastMaintenance }}</div>
+                    <div class="text-muted small"><i class="fa fa-clock me-1"></i>Installed: {{ nodeMeta.lastMaintenance
+                        }}</div>
                 </div>
                 <div>
                     <div class="text-muted small text-uppercase">Telemetry Configuration</div>
@@ -272,6 +277,12 @@
                 </div>
             </card-body>
         </card>
+
+        <!-- Relay Control Component -->
+        <div class="mb-4">
+            <app-node-relay-control [deviceId]="nodeId" [nodeCode]="nodeId">
+            </app-node-relay-control>
+        </div>
 
         <card class="mb-4">
             <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
@@ -290,17 +301,11 @@
         </card>
     </div>
 </div>
-<app-node-detail-add-sensor-drawer 
-    [isOpen]="sensorDrawerState.isOpen"
-    [nodeId]="nodeUuid"
-    [sensorId]="sensorDrawerState.sensorId"
-    (close)="handleAddSensorDrawerClose()"
-    (save)="handleAddSensorSave($event)">
+<app-node-detail-add-sensor-drawer [isOpen]="sensorDrawerState.isOpen" [nodeId]="nodeUuid"
+    [sensorId]="sensorDrawerState.sensorId" (close)="handleAddSensorDrawerClose()" (save)="handleAddSensorSave($event)">
 </app-node-detail-add-sensor-drawer>
 
-<app-node-detail-add-channel-drawer [isOpen]="channelDrawerState.isOpen"
-    [sensorId]="channelDrawerState.sensorId"
-    [sensorLabel]="channelDrawerState.sensorLabel"
-    (close)="handleAddChannelDrawerClose()"
+<app-node-detail-add-channel-drawer [isOpen]="channelDrawerState.isOpen" [sensorId]="channelDrawerState.sensorId"
+    [sensorLabel]="channelDrawerState.sensorLabel" (close)="handleAddChannelDrawerClose()"
     (save)="handleAddChannelSave($event)">
 </app-node-detail-add-channel-drawer>

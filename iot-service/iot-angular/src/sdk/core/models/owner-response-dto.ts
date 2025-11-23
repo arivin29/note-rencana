@@ -5,6 +5,11 @@
 export interface OwnerResponseDto {
 
   /**
+   * Physical address
+   */
+  address?: string;
+
+  /**
    * Contact person
    */
   contactPerson?: string;
@@ -13,6 +18,11 @@ export interface OwnerResponseDto {
    * Created timestamp
    */
   createdAt: string;
+
+  /**
+   * Email address
+   */
+  email?: string;
 
   /**
    * Forwarding settings
@@ -34,6 +44,16 @@ export interface OwnerResponseDto {
    * Owner name
    */
   name: string;
+
+  /**
+   * Owner unique 5-digit code
+   */
+  ownerCode: string;
+
+  /**
+   * Phone number
+   */
+  phone?: string;
 
   /**
    * SLA level

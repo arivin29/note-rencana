@@ -5,9 +5,19 @@
 export interface CreateOwnerDto {
 
   /**
+   * Physical address
+   */
+  address?: string;
+
+  /**
    * Contact person name
    */
   contactPerson?: string;
+
+  /**
+   * Email address
+   */
+  email?: string;
 
   /**
    * Forwarding settings (JSONB)
@@ -24,6 +34,11 @@ export interface CreateOwnerDto {
    * Owner name
    */
   name: string;
+
+  /**
+   * Phone number
+   */
+  phone?: string;
 
   /**
    * SLA level
