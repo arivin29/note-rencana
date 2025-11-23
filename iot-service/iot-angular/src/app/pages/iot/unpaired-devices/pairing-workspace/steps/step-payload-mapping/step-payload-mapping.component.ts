@@ -13,12 +13,16 @@ interface ProfileMappingMetadata {
 
 interface ProfileChannelMapping {
     channelCode: string;
+    idSensorChannel?: string;
+    idChannelTemplate?: string;
     payloadPath: string;
     unit?: string;
 }
 
 interface ProfileSensorMapping {
     label?: string;
+    idSensor?: string;
+    idSensorCatalog?: string;
     catalogId?: string;
     channels?: ProfileChannelMapping[];
 }
@@ -530,13 +534,17 @@ export class StepPayloadMappingComponent implements OnInit, OnChanges {
                 .filter((channel) => channel.enabled && channel.mappedField)
                 .map((channel) => ({
                     channelCode: channel.template.channelCode,
+                    idSensorChannel: channel.templateId, // Will be populated after sensor/channel creation
+                    idChannelTemplate: channel.templateId, // From sensor catalog channel template
                     payloadPath: channel.mappedField!.path,
                     unit: channel.template.unit
                 }));
             if (channels.length) {
                 mappingJson.sensors!.push({
                     label: sensor.label,
-                    catalogId: sensor.catalogId,
+                    idSensor: sensor.tempId, // Will be populated after sensor creation
+                    idSensorCatalog: sensor.catalogId, // From sensor catalog
+                    catalogId: sensor.catalogId, // Keep for backward compatibility
                     channels
                 });
             }

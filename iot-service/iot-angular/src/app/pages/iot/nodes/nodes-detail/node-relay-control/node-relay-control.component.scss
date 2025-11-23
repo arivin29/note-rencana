@@ -3,7 +3,7 @@
 
     .relay-card {
         padding: 1.5rem;
-        border-radius: 0.5rem;
+        border-radius: 0rem;
         transition: all 0.3s ease;
         min-height: 200px;
         display: flex;
@@ -204,7 +204,7 @@
         .input-group-text {
             font-size: 0.875rem;
             font-weight: 500;
-            background-color: #e9ecef;
+            // background-color: #e9ecef;
         }
     }
 }

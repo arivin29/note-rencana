@@ -147,6 +147,7 @@
                                     <th class="text-end">Latest</th>
                                     <th>Status</th>
                                     <th>Trend</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -168,6 +169,49 @@
                                             }}</span>
                                     </td>
                                     <td class="text-capitalize">{{ channel.trend }}</td>
+                                    <td class="text-center">
+                                        <div class="dropdown">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-default"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+                                                <i class="fa fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <button class="dropdown-item" type="button"
+                                                            (click)="openEditChannelDrawer(sensor, channel)">
+                                                        <i class="fa fa-pen fa-fw me-2"></i>
+                                                        Edit Channel
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                       [routerLink]="['/iot/telemetry']"
+                                                       [queryParams]="{
+                                                           idOwner: nodeMeta.ownerId,
+                                                           idProject: nodeMeta.projectId,
+                                                           idNode: nodeUuid,
+                                                           idSensor: sensor.id,
+                                                           idSensorChannel: channel.id
+                                                       }"
+                                                       target="_blank">
+                                                        <i class="fa fa-chart-area fa-fw me-2"></i>
+                                                        View Telemetry
+                                                        <i class="fa fa-external-link-alt fa-xs ms-1"></i>
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <button class="dropdown-item text-danger" type="button"
+                                                            (click)="deleteChannel(sensor, channel)">
+                                                        <i class="fa fa-trash fa-fw me-2"></i>
+                                                        Delete Channel
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -223,6 +267,13 @@
                 </table>
             </card-body>
         </card>
+
+        <!-- Relay Control Component -->
+         
+            <app-node-relay-control [deviceId]="nodeId" [nodeCode]="nodeId">
+            </app-node-relay-control>
+         
+
     </div>
 
 
@@ -278,11 +329,7 @@
             </card-body>
         </card>
 
-        <!-- Relay Control Component -->
-        <div class="mb-4">
-            <app-node-relay-control [deviceId]="nodeId" [nodeCode]="nodeId">
-            </app-node-relay-control>
-        </div>
+        
 
         <card class="mb-4">
             <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
@@ -306,6 +353,7 @@
 </app-node-detail-add-sensor-drawer>
 
 <app-node-detail-add-channel-drawer [isOpen]="channelDrawerState.isOpen" [sensorId]="channelDrawerState.sensorId"
-    [sensorLabel]="channelDrawerState.sensorLabel" (close)="handleAddChannelDrawerClose()"
+    [sensorLabel]="channelDrawerState.sensorLabel" [channelId]="channelDrawerState.channelId"
+    [mode]="channelDrawerState.mode" (close)="handleAddChannelDrawerClose()"
     (save)="handleAddChannelSave($event)">
 </app-node-detail-add-channel-drawer>

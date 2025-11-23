@@ -22,3 +22,4 @@ export { DashboardService } from './services/dashboard.service';
 export { UnpairedDevicesService } from './services/unpaired-devices.service';
 export { NodeProfilesService } from './services/node-profiles.service';
 export { DeviceCommandsService } from './services/device-commands.service';
+export { IoTLogsService } from './services/io-t-logs.service';

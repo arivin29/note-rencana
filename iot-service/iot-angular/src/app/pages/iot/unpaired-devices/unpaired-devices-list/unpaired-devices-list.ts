@@ -72,6 +72,7 @@ export class UnpairedDevicesListPage implements OnInit {
             };
             params.status = statusMap[this.filters.status] || 'pending';
         }
+        params.status = 'pending'
 
         // Add node model filter
         const nodeModelId = this.getNodeModelIdForFilter();

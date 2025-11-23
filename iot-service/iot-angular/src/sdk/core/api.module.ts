@@ -26,6 +26,7 @@ import { DashboardService } from './services/dashboard.service';
 import { UnpairedDevicesService } from './services/unpaired-devices.service';
 import { NodeProfilesService } from './services/node-profiles.service';
 import { DeviceCommandsService } from './services/device-commands.service';
+import { IoTLogsService } from './services/io-t-logs.service';
 
 /**
  * Module that provides all services and configuration.
@@ -55,6 +56,7 @@ import { DeviceCommandsService } from './services/device-commands.service';
     UnpairedDevicesService,
     NodeProfilesService,
     DeviceCommandsService,
+    IoTLogsService,
     ApiConfiguration
   ],
 })

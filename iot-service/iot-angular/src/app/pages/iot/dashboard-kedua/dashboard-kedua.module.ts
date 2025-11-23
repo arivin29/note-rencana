@@ -17,6 +17,7 @@ import { DkTopAnomaliesComponent } from './widgets/dk-top-anomalies/dk-top-anoma
 import { DkIngestionForwardingComponent } from './widgets/dk-ingestion-forwarding/dk-ingestion-forwarding.component';
 import { DkRecentActivitiesComponent } from './widgets/dk-recent-activities/dk-recent-activities.component';
 import { DkPlatformStatisticsComponent } from './widgets/dk-platform-statistics/dk-platform-statistics.component';
+import { DkIotLogsStatsComponent } from './widgets/dk-iot-logs-stats/dk-iot-logs-stats.component';
 
 @NgModule({
   declarations: [
@@ -28,6 +29,7 @@ import { DkPlatformStatisticsComponent } from './widgets/dk-platform-statistics/
     DkIngestionForwardingComponent,
     DkRecentActivitiesComponent,
     DkPlatformStatisticsComponent,
+    DkIotLogsStatsComponent,
   ],
   imports: [
     CommonModule,

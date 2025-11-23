@@ -83,6 +83,7 @@ export interface AddedSensor {
   label: string;
   protocolChannel: string;
   channels: AddedChannel[];
+  idSensor?: string; // Actual database sensor ID (populated when sensor exists)
 }
 
 export interface AddedChannel {
@@ -91,4 +92,5 @@ export interface AddedChannel {
   template: SensorChannelTemplate;
   enabled: boolean;
   mappedField?: PayloadField;
+  idSensorChannel?: string; // Actual database channel ID (populated when channel exists)
 }

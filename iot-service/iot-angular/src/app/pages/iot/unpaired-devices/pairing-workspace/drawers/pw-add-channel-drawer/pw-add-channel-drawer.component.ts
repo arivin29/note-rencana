@@ -166,15 +166,24 @@ export class PwAddChannelDrawerComponent implements OnInit, OnChanges {
 
     private loadSensorTypes(): void {
         this.loading = true;
+        console.log('PW: Loading sensor types...');
+        
         this.sensorTypesService.sensorTypesControllerFindAll({ limit: 100 }).subscribe({
-            next: (response: any) => {
-                const data = this.parseResponse(response);
-                this.sensorTypeOptions = (data?.data || []).map((type: any) => ({
+            next: (data: any) => {
+                // SDK returns array directly, not wrapped in {data: [...]}
+                console.log('PW: Received sensor types response:', data);
+                
+                const types = Array.isArray(data) ? data : [];
+                console.log('PW: Parsed sensor types count:', types.length);
+                
+                this.sensorTypeOptions = types.map((type: any) => ({
                     id: type.idSensorType,
                     label: type.category,
                     unit: type.defaultUnit || '',
                     precision: type.precision || 0.01
                 }));
+
+                console.log('PW: Mapped sensor type options:', this.sensorTypeOptions.length);
 
                 if (this.mode === 'add' && !this.formModel.sensorTypeId && this.sensorTypeOptions.length > 0) {
                     this.formModel.sensorTypeId = this.sensorTypeOptions[0].id;
@@ -184,7 +193,7 @@ export class PwAddChannelDrawerComponent implements OnInit, OnChanges {
                 this.loading = false;
             },
             error: (err) => {
-                console.error('Error loading sensor types:', err);
+                console.error('PW: Error loading sensor types:', err);
                 this.loading = false;
             }
         });

@@ -10,6 +10,11 @@ export interface CreateSensorTypeDto {
   category: string;
 
   /**
+   * Conversion formula using JavaScript expression with "x" as raw value variable
+   */
+  conversionFormula?: string;
+
+  /**
    * Default unit of measurement
    */
   defaultUnit?: string;

@@ -207,6 +207,7 @@ export class PairingWorkspacePage implements OnInit {
     }
 
     onSensorsChange(sensors: AddedSensor[]): void {
+        console.log('Added sensors updated:', sensors);
         this.addedSensors = sensors;
     }
 

@@ -44,6 +44,7 @@ export { ForwardingStats } from './models/forwarding-stats';
 export { ForwardingWebhookResponseDto } from './models/forwarding-webhook-response-dto';
 export { IndustryStatDto } from './models/industry-stat-dto';
 export { IngestionStats } from './models/ingestion-stats';
+export { IotLogStatsDto } from './models/iot-log-stats-dto';
 export { KpiStatsResponseDto } from './models/kpi-stats-response-dto';
 export { NodeAssignmentResponseDto } from './models/node-assignment-response-dto';
 export { NodeAssignmentSummaryDto } from './models/node-assignment-summary-dto';

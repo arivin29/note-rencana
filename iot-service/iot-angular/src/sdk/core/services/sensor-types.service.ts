@@ -42,7 +42,7 @@ export class SensorTypesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  sensorTypesControllerFindAll$Response(params?: SensorTypesControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  sensorTypesControllerFindAll$Response(params?: SensorTypesControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SensorTypeResponseDto>>> {
     return sensorTypesControllerFindAll(this.http, this.rootUrl, params, context);
   }
 
@@ -56,9 +56,9 @@ export class SensorTypesService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  sensorTypesControllerFindAll(params?: SensorTypesControllerFindAll$Params, context?: HttpContext): Observable<void> {
+  sensorTypesControllerFindAll(params?: SensorTypesControllerFindAll$Params, context?: HttpContext): Observable<Array<SensorTypeResponseDto>> {
     return this.sensorTypesControllerFindAll$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<Array<SensorTypeResponseDto>>): Array<SensorTypeResponseDto> => r.body)
     );
   }
 

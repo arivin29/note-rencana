@@ -1,0 +1,100 @@
+<div class="card h-100">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <div class="text-muted text-uppercase small">IoT Logs Statistics</div>
+        <div class="fw-semibold text-theme">{{ subtitle }}</div>
+      </div>
+      <span class="badge bg-light text-theme">{{ timeRange }}</span>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div *ngIf="!loading && stats" class="row g-3 mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase small">Total Logs</div>
+            <div class="fs-3 fw-bold text-primary">{{ formatNumber(stats.total) }}</div>
+          </div>
+          <div class="text-end">
+            <div class="small text-muted">Last {{ timeRange }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-6">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <div class="text-muted text-uppercase small">Processed</div>
+            <div class="fs-5 fw-semibold text-success">{{ formatNumber(stats.processed) }}</div>
+            <div class="small text-muted">{{ processedPercentage }}%</div>
+          </div>
+          <div class="text-success fs-1">
+            <i class="bi bi-check-circle"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <div class="text-muted text-uppercase small">Unprocessed</div>
+            <div class="fs-5 fw-semibold text-warning">{{ formatNumber(stats.unprocessed) }}</div>
+            <div class="small text-muted">{{ unprocessedPercentage }}%</div>
+          </div>
+          <div class="text-warning fs-1">
+            <i class="bi bi-clock-history"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div *ngIf="!loading && stats" class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small text-muted">Processing Status</span>
+        <span class="small fw-semibold">{{ processedPercentage }}% Complete</span>
+      </div>
+      <div class="progress" style="height: 8px;">
+        <div class="progress-bar bg-success" role="progressbar" [style.width.%]="processedPercentage"></div>
+        <div class="progress-bar bg-warning" role="progressbar" [style.width.%]="unprocessedPercentage"></div>
+      </div>
+    </div>
+
+    <!-- Log Label Breakdown -->
+    <div *ngIf="!loading && labelMetrics.length > 0">
+      <div class="text-muted text-uppercase small mb-3">Top Log Categories</div>
+      <div class="row g-2">
+        <div class="col-12" *ngFor="let metric of labelMetrics">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge" [style.background-color]="metric.color">{{ metric.label }}</span>
+              <span class="small">{{ formatNumber(metric.count) }}</span>
+            </div>
+            <span class="small text-muted">{{ metric.percentage }}%</span>
+          </div>
+          <div class="progress progress-xs">
+            <div class="progress-bar" 
+                 role="progressbar" 
+                 [style.width.%]="metric.percentage"
+                 [style.background-color]="metric.color">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Data State -->
+    <div *ngIf="!loading && stats && stats.total === 0" class="text-center py-4">
+      <i class="bi bi-inbox fs-1 text-muted"></i>
+      <div class="text-muted mt-2">No logs found for this period</div>
+    </div>
+  </div>
+</div>
