@@ -25,7 +25,7 @@ bool MQTTManager::begin(const char* brokerAddr, uint16_t port, const char* clien
 
     mqttClient.setServer(brokerHost.c_str(), brokerPort);
     mqttClient.setKeepAlive(MQTT_KEEP_ALIVE);
-    mqttClient.setBufferSize(1024);  // allow payloads >256B
+    mqttClient.setBufferSize(2000);  // Support large payloads (sensors object format)
 
     #if DEBUG_MQTT
     Serial.print(F("[MQTT] Initialized for "));
@@ -121,11 +121,8 @@ bool MQTTManager::publish(const char* topic, const char* payload, bool retained)
     Serial.println(F(" bytes)"));
     #endif
 
-    bool ok = mqttClient.publish(
-        topic,
-        reinterpret_cast<const uint8_t*>(payload),
-        strlen(payload),
-        retained);
+    // Try publish with explicit parameters (QoS 0, no retain by default)
+    bool ok = mqttClient.publish(topic, payload, retained);
 
     if (ok) {
         publishCount++;

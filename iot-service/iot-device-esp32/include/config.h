@@ -13,9 +13,9 @@
 // ============================================================================
 
 // --- RS485 Modbus (Terminal Block KF301) ---
-#define RS485_RX_PIN            18      // UART1 RX (was GPIO16)
-#define RS485_TX_PIN            17      // UART1 TX (was GPIO17)
-#define RS485_DE_RE_PIN         4       // Driver Enable / Receiver Enable (same pin)
+#define RS485_RX_PIN            16      // UART2 RX -> MAX485 RO (B-)
+#define RS485_TX_PIN            15      // UART2 TX -> MAX485 DI (A+)
+#define RS485_DE_RE_PIN         -1      // Driver Enable (not used - auto-direction)
 
 // --- Analog Current Inputs 4-20mA (Terminal Block KF350) ---
 // Board has built-in 100Ω shunt resistor: 4mA=0.4V, 20mA=2.0V
@@ -84,8 +84,8 @@
 #define PRESSURE_MAX_BAR        10.0    // Maximum pressure (bar) - ADJUST to your sensor
 
 // --- RS485 Modbus Configuration ---
-#define MODBUS_SERIAL           Serial1 // Hardware serial for RS485 (UART1)
-#define MODBUS_BAUDRATE         9600    // Default baudrate (adjust for TUF2000M)
+#define MODBUS_SERIAL           Serial2 // Hardware serial for RS485 (UART2)
+#define MODBUS_BAUDRATE         9600    // Default baudrate (TUF-2000M: 9600 8N1)
 #define MODBUS_TIMEOUT_MS       1000    // Modbus response timeout
 
 // --- INA219 Configuration ---

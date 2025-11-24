@@ -4,34 +4,164 @@
 #include <Adafruit_ADS1X15.h>
 
 // Global Modbus instance
-
-// NOTE: ModbusMaster library removed - RS485 now uses raw Modbus RTU in main.cpp
+// ModbusMaster disabled - using raw Modbus
 
 // ============================================================================
-// RS485 SCANNER STUB (disabled - using raw Modbus in main.cpp)
+// RS485 SCANNER IMPLEMENTATION
 // ============================================================================
 
 RS485Scanner::RS485Scanner() {
+    modbus = &modbusNode;
     activeCount = 0;
     regStartAddr = 0;
-    regEndAddr = 100;
-    functionCode = 4;
+    regEndAddr = 100;          // Default: scan registers 0-100
+    functionCode = 4;          // Default: Input Registers (0x04)
 }
 
 bool RS485Scanner::begin() {
-    Serial.println(F("[RS485] Using raw Modbus (library disabled)"));
+    #if DEBUG_MODBUS
+    Serial.println(F("[RS485] Initializing scanner..."));
+    #endif
+
+    // Modbus already initialized in main.cpp (setupModbus)
     return true;
 }
 
-uint8_t RS485Scanner::scanSlaves(uint8_t, uint8_t) { return 0; }
-bool RS485Scanner::pingSlaveId(uint8_t) { return false; }
-bool RS485Scanner::readAllSlaves(JsonArray&) { return false; }
-bool RS485Scanner::readSlaveRegisters(uint8_t, uint16_t, uint8_t, JsonObject&) { return false; }
+uint8_t RS485Scanner::scanSlaves(uint8_t startId, uint8_t endId) {
+    #if DEBUG_MODBUS
+    Serial.print(F("[RS485] Scanning slave IDs "));
+    Serial.print(startId);
+    Serial.print(F("-"));
+    Serial.print(endId);
+    Serial.println(F("..."));
+    Serial.println(F("[RS485] This will take a while, please wait..."));
+    #endif
+
+    activeCount = 0;
+
+    for (uint8_t slaveId = startId; slaveId <= endId; slaveId++) {
+        // Print progress every 10 IDs
+        if ((slaveId % 10) == 0) {
+            Serial.print(F("[RS485] Scanning ID "));
+            Serial.print(slaveId);
+            Serial.println(F("..."));
+        }
+        
+        if (pingSlaveId(slaveId)) {
+            activeSlaves[activeCount++] = slaveId;
+
+            #if DEBUG_MODBUS
+            Serial.print(F("  [✓] Slave ID "));
+            Serial.print(slaveId);
+            Serial.println(F(" detected"));
+            #else
+            Serial.print(F("[RS485] ✅ Found slave at ID "));
+            Serial.println(slaveId);
+            #endif
+        }
+
+        delay(100); // Longer delay between pings for stability
+    }
+
+    #if DEBUG_MODBUS
+    Serial.print(F("[RS485] Found "));
+    Serial.print(activeCount);
+    Serial.println(F(" active slaves"));
+    #else
+    Serial.print(F("[RS485] Scan complete. Found "));
+    Serial.print(activeCount);
+    Serial.println(F(" devices."));
+    #endif
+
+    return activeCount;
+}
+
+bool RS485Scanner::pingSlaveId(uint8_t slaveId) {
+    modbus->begin(slaveId, MODBUS_SERIAL);
+    
+    // Add delay before attempting communication
+    delay(50);
+
+    // Try to read 1 register from address 0
+    uint8_t result = modbus->readHoldingRegisters(0, 1);
+    
+    // Add delay after communication
+    delay(50);
+
+    // If success or illegal data address (device responds but register not available)
+    return (result == modbus->ku8MBSuccess || result == 0x02);
+}
+
+bool RS485Scanner::readAllSlaves(JsonArray& output) {
+    if (activeCount == 0) {
+        #if DEBUG_MODBUS
+        Serial.println(F("[RS485] No active slaves to read"));
+        #endif
+        return false;
+    }
+
+    for (uint8_t i = 0; i < activeCount; i++) {
+        uint8_t slaveId = activeSlaves[i];
+
+        JsonObject slaveData = output.add<JsonObject>();
+        slaveData["slave_id"] = slaveId;
+
+        JsonArray registers = slaveData["registers"].to<JsonArray>();
+
+        readSlaveRegisters(slaveId, regStartAddr, regEndAddr - regStartAddr, slaveData);
+    }
+
+    return true;
+}
+
+bool RS485Scanner::readSlaveRegisters(uint8_t slaveId, uint16_t startAddr, uint8_t count, JsonObject& output) {
+    modbus->begin(slaveId, MODBUS_SERIAL);
+
+    JsonArray registers = output["registers"].to<JsonArray>();
+
+    // Read in chunks (max 125 registers per read)
+    uint8_t chunkSize = 10;  // Read 10 registers at a time (configurable)
+
+    for (uint16_t addr = startAddr; addr < startAddr + count; addr += chunkSize) {
+        uint8_t readCount = min(chunkSize, (uint8_t)(startAddr + count - addr));
+
+        uint8_t result;
+        if (functionCode == 3) {
+            result = modbus->readHoldingRegisters(addr, readCount);
+        } else {
+            result = modbus->readInputRegisters(addr, readCount);
+        }
+
+        if (result == modbus->ku8MBSuccess) {
+            for (uint8_t i = 0; i < readCount; i++) {
+                uint16_t value = modbus->getResponseBuffer(i);
+
+                // Only add non-zero values to save space (optional)
+                if (value != 0) {
+                    JsonObject reg = registers.add<JsonObject>();
+                    reg["addr"] = addr + i;
+                    reg["val"] = value;
+                }
+            }
+        }
+
+        delay(50); // Delay between chunk reads
+    }
+
+    return true;
+}
+
 void RS485Scanner::setRegisterRange(uint16_t start, uint16_t end) {
     regStartAddr = start;
     regEndAddr = end;
-}
 
+    #if DEBUG_MODBUS
+    Serial.print(F("[RS485] Register range set to "));
+    Serial.print(start);
+    Serial.print(F("-"));
+    Serial.println(end);
+    #endif
+}
 
 // ============================================================================
 // ANALOG INPUT READER IMPLEMENTATION
