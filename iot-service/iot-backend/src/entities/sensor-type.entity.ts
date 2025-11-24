@@ -19,6 +19,9 @@ export class SensorType {
   @Column({ type: 'text', nullable: true, name: 'default_unit' })
   defaultUnit: string;
 
+  @Column({ type: 'text', nullable: true, name: 'conversion_formula' })
+  conversionFormula: string;
+
   @Column({ type: 'numeric', precision: 6, scale: 3, nullable: true })
   precision: number;
 

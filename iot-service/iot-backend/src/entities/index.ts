@@ -19,3 +19,4 @@ export { OwnerForwardingDatabase } from './owner-forwarding-database.entity';
 export { OwnerForwardingLog } from './owner-forwarding-log.entity';
 export { NodeUnpairedDevice } from './node-unpaired-device.entity';
 export { NodeProfile } from './node-profile.entity';
+export { IotLog } from './iot-log.entity';

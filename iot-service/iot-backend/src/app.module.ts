@@ -20,8 +20,10 @@ import { DashboardWidgetsModule } from './modules/dashboard-widgets/dashboard-wi
 import { SensorLogsModule } from './modules/sensor-logs/sensor-logs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UnpairedDevicesModule } from './modules/unpaired-devices/unpaired-devices.module';
+import { NodeProfilesModule } from './modules/node-profiles/node-profiles.module';
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { DeviceCommandsModule } from './modules/device-commands/device-commands.module';
+import { IotLogsModule } from './modules/iot-logs/iot-logs.module';
 import * as entities from './entities'; 
 
 @Module({
@@ -71,8 +73,10 @@ import * as entities from './entities';
     SensorLogsModule,
     DashboardModule,
     UnpairedDevicesModule,
+    NodeProfilesModule,
     MqttModule,
     DeviceCommandsModule,
+    IotLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

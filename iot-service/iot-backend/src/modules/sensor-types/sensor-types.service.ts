@@ -91,6 +91,7 @@ export class SensorTypesService {
       idSensorType: sensorType.idSensorType,
       category: sensorType.category,
       defaultUnit: sensorType.defaultUnit,
+      conversionFormula: sensorType.conversionFormula,
       precision: sensorType.precision,
       createdAt: sensorType.createdAt,
       updatedAt: sensorType.updatedAt,

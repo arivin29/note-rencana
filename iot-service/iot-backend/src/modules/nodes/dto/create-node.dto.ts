@@ -61,4 +61,9 @@ export class CreateNodeDto {
   @IsUUID()
   @IsOptional()
   idCurrentLocation?: string;
+
+  @ApiPropertyOptional({ description: 'Node Profile ID for payload parsing' })
+  @IsUUID()
+  @IsOptional()
+  idNodeProfile?: string;
 }

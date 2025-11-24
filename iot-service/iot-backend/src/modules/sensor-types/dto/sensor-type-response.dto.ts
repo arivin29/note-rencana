@@ -10,6 +10,9 @@ export class SensorTypeResponseDto {
   @ApiPropertyOptional()
   defaultUnit?: string;
 
+  @ApiPropertyOptional({ description: 'Conversion formula using "x" as variable', example: '(x - 0.5) * 2.5' })
+  conversionFormula?: string;
+
   @ApiPropertyOptional()
   precision?: number;
 
