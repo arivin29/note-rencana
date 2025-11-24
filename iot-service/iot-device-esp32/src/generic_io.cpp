@@ -420,7 +420,7 @@ void GenericIOManager::generateRawTelemetry(JsonDocument& doc) {
 }
 
 void GenericIOManager::readDigitalInputs(JsonObject& output) {
-    // Read pump status from GPIO14
+    // Read pump status from GPIO38 (IO_DIGITAL_IN_1_PIN)
     bool pumpStatus = digitalRead(IO_DIGITAL_IN_1_PIN);
     output["pump_status"] = pumpStatus;  // true=ON, false=OFF
     output["pump_pin"] = IO_DIGITAL_IN_1_PIN;

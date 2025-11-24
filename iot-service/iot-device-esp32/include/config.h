@@ -43,8 +43,11 @@
 #define RELAY_PIN               15      // GPIO15 - Digital Output for Relay (active LOW)
 #define IO_DIGITAL_OUT_1_PIN    15      // Same as relay - for hard restart
 
-// Digital Input 1: Pump Status Monitor
-#define IO_DIGITAL_IN_1_PIN     14      // GPIO14 - Digital Input for pump status (HIGH=ON, LOW=OFF)
+// NE555 Relay Module (GPIO14) - Controlled via MQTT
+#define RELAY_NE555_PIN         14      // GPIO14 - NE555 Relay Module (active LOW)
+
+// Digital Input 1: Pump Status Monitor (Changed to GPIO38)
+#define IO_DIGITAL_IN_1_PIN     38      // GPIO38 - Digital Input for pump status (HIGH=ON, LOW=OFF)
 
 // --- 4G LTE Module SIM7600E (Internal) ---
 #define SIM7600_TX_PIN          6       // TX3 on board (ESP32 GPIO6 -> SIM7600 RX)

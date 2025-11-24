@@ -51,6 +51,52 @@ unsigned long lastRS485Scan = 0;
 bool bootNotificationSent = false;
 
 // ============================================================================
+// RELAY CONTROL FUNCTIONS
+// ============================================================================
+
+/**
+ * Control relay state
+ * @param target "out1" for NE555 relay on GPIO14
+ * @param state "on", "off", "restart"
+ * 
+ * Logic (Active LOW relay):
+ * - "on"  = GPIO LOW  = No current = Relay de-energized
+ * - "off" = GPIO HIGH = Current flowing = Relay energized
+ * - "restart" = OFF → delay → ON (hard restart sequence)
+ */
+void controlRelay(const String& target, const String& state) {
+    if (target != "out1") {
+        Serial.printf("[Relay] ❌ Unknown target: %s\n", target.c_str());
+        return;
+    }
+    
+    if (state == "on") {
+        digitalWrite(RELAY_NE555_PIN, LOW);  // Active LOW = ON
+        Serial.println("[Relay] ✅ OUT1 → ON (GPIO14 = LOW)");
+        
+    } else if (state == "off") {
+        digitalWrite(RELAY_NE555_PIN, HIGH);  // Active LOW = OFF
+        Serial.println("[Relay] ✅ OUT1 → OFF (GPIO14 = HIGH)");
+        
+    } else if (state == "restart") {
+        Serial.println("[Relay] 🔄 Restart sequence...");
+        
+        // Phase 1: OFF (energize relay)
+        digitalWrite(RELAY_NE555_PIN, HIGH);
+        Serial.println("[Relay]   → OFF (5 seconds)");
+        delay(5000);
+        
+        // Phase 2: ON (de-energize relay)
+        digitalWrite(RELAY_NE555_PIN, LOW);
+        Serial.println("[Relay]   → ON");
+        Serial.println("[Relay] ✅ Restart completed");
+        
+    } else {
+        Serial.printf("[Relay] ❌ Unknown state: %s\n", state.c_str());
+    }
+}
+
+// ============================================================================
 // MQTT CONFIG CALLBACK
 // ============================================================================
 
@@ -96,6 +142,50 @@ void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
             } else {
                 Serial.println("[Config] ❌ Failed to parse config");
             }
+        }
+    }
+    
+    // Handle sensor/{device_id}/command
+    else if (topicStr.indexOf("/command") >= 0) {
+        Serial.println("[Command] Received command from server");
+        Serial.print("[Command] Payload: ");
+        Serial.println(message);
+        
+        // Parse JSON command
+        DynamicJsonDocument doc(256);
+        DeserializationError error = deserializeJson(doc, message);
+        
+        if (error) {
+            Serial.print("[Command] ❌ JSON parse failed: ");
+            Serial.println(error.c_str());
+            return;
+        }
+        
+        String action = doc["action"] | "";
+        
+        if (action == "relay") {
+            String target = doc["target"] | "";
+            String state = doc["state"] | "";
+            
+            Serial.printf("[Command] Relay control: target=%s, state=%s\n", 
+                         target.c_str(), state.c_str());
+            
+            controlRelay(target, state);
+            
+            // Send status feedback
+            DynamicJsonDocument statusDoc(128);
+            statusDoc["target"] = target;
+            statusDoc["state"] = state;
+            statusDoc["success"] = true;
+            
+            String statusPayload;
+            serializeJson(statusDoc, statusPayload);
+            
+            String statusTopic = "sensor/" + DEVICE_ID + "/relay_status";
+            mqttManager.publish(statusTopic.c_str(), statusPayload.c_str());
+            
+        } else {
+            Serial.printf("[Command] ❌ Unknown action: %s\n", action.c_str());
         }
     }
 }
@@ -292,6 +382,14 @@ void setup() {
     Serial.println("\n[3/6] Initializing Generic I/O...");
     ioManager.begin();
 
+    // Initialize GPIO pins
+    pinMode(RELAY_NE555_PIN, OUTPUT);
+    digitalWrite(RELAY_NE555_PIN, LOW);  // Relay OFF (active LOW)
+    Serial.println("[Relay] NE555 module initialized on GPIO14");
+    
+    pinMode(IO_DIGITAL_IN_1_PIN, INPUT);  // Pump status input
+    Serial.println("[Digital Input] GPIO38 initialized for pump status");
+
     Serial.println("\n[4/6] Powering LTE stack...");
     bool lteReady = lteManager.begin();
     Serial.println(lteReady ? "[LTE] ✅ Ready" : "[LTE] ❌ Failed (auto-retry active)");
@@ -368,6 +466,8 @@ void requestRS485Config() {
 void loop() {
     connectionManager.loop();
 
+    unsigned long now = millis();
+
     if (connectionManager.isFullyConnected()) {
         // Send boot notification and request config
         if (!bootNotificationSent) {
@@ -378,7 +478,6 @@ void loop() {
         }
 
         // Periodic telemetry
-        unsigned long now = millis();
         if (now - lastTelemetrySent >= TELEMETRY_INTERVAL_MS) {
             lastTelemetrySent = now;
             sendFullTelemetry();

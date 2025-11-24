@@ -338,6 +338,18 @@ void sendBootNotification() {
 
     if (ok) {
         Serial.println("[Boot] ✅ Notification sent");
+        
+        // Subscribe to command topic for relay control
+        String cmdTopic = String(MQTT_TOPIC) + "/" + DEVICE_ID + "/command";
+        Serial.print("[Boot] Subscribing to ");
+        Serial.println(cmdTopic);
+        
+        if (mqttManager.subscribe(cmdTopic.c_str())) {
+            Serial.println("[Boot] ✅ Subscribed to command topic");
+        } else {
+            Serial.println("[Boot] ❌ Failed to subscribe");
+        }
+        
     } else {
         Serial.println("[Boot] ❌ Failed to send notification");
     }
