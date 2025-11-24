@@ -121,6 +121,9 @@
 #define TELEMETRY_INTERVAL_MS   30000   // Send data every 30 seconds
 #define MAX_OFFLINE_RECORDS     1000    // Max records to store when offline
 
+// --- RS485 Device Monitoring ---
+#define RS485_SCAN_INTERVAL_MS  120000  // Scan RS485 devices every 2 minutes (120 seconds)
+
 // --- Watchdog ---
 #define WATCHDOG_TIMEOUT_MS     300000  // 5 minutes - restart if no MQTT connection
 #define HARD_RESTART_TIMEOUT_MS 600000  // 10 minutes - hard restart via relay

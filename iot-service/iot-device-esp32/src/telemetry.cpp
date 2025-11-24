@@ -5,6 +5,7 @@
 #include "connection_manager.h"
 #include "time_manager.h"
 #include "generic_io.h"
+#include "rs485_config_manager.h"
 #include <ArduinoJson.h>
 #include <TinyGsmClient.h>
 
@@ -19,6 +20,7 @@ extern GenericIOManager ioManager;
 // RS485 functions from main.cpp
 extern bool readRS485Register(uint8_t slaveId, uint16_t regAddr, uint16_t count, uint16_t* output);
 extern float readRS485Float32(uint8_t slaveId, uint16_t regAddr);
+extern uint32_t readRS485Uint32(uint8_t slaveId, uint16_t regAddr);
 extern uint32_t readRS485Uint32(uint8_t slaveId, uint16_t regAddr);
 
 // ============================================================================
@@ -136,112 +138,105 @@ static void buildRealSensors(JsonDocument& doc) {
     // Transform to sensors object (key-value format)
     JsonObject sensors = doc["sensors"].to<JsonObject>();
     transformArrayToObject(rawDoc, sensors);
+}
+
+// NEW: Build RS485 data separately
+static void buildRS485Data(JsonDocument& doc) {
+    JsonObject sensors = doc["sensors"].to<JsonObject>();
     
-    // Add RS485 direct reading (TUF-2000M flowmeter at slave ID 1)
-    Serial.println("[RS485] Attempting to read flowmeter...");
-    uint8_t rs485SlaveId = 1;  // TUF-2000M default address
-    
-    // Try to read register 0 to check if device is responding
-    uint16_t testReg;
-    bool deviceResponding = readRS485Register(rs485SlaveId, 0, 1, &testReg);
-    
-    Serial.print("[RS485] Device response: ");
-    Serial.println(deviceResponding ? "YES" : "NO");
-    
-    if (deviceResponding) {
-        Serial.println("[RS485] ✅ Device online, reading data...");
-        
-        // Device is responding! Read key registers
-        JsonObject rs485Obj = sensors["rs485_flowmeter"].to<JsonObject>();
-        rs485Obj["type"] = "rs485_modbus";
-        rs485Obj["slave_id"] = rs485SlaveId;
-        rs485Obj["device"] = "TUF-2000M";
-        
-        // Flow rate (Register 1-2, Float32)
-        Serial.print("[RS485] Reading flow rate... ");
-        float flowRate = readRS485Float32(rs485SlaveId, 0);  // Register 1 = address 0 (0-based)
-        if (!isnan(flowRate)) {
-            rs485Obj["flow_rate_m3h"] = flowRate;
-            Serial.print(flowRate);
-            Serial.println(" m³/h");
-        } else {
-            Serial.println("FAILED");
-        }
-        
-        // Flow velocity (Register 5-6, Float32)
-        Serial.print("[RS485] Reading velocity... ");
-        float flowVelocity = readRS485Float32(rs485SlaveId, 4);  // Register 5 = address 4
-        if (!isnan(flowVelocity)) {
-            rs485Obj["flow_velocity_ms"] = flowVelocity;
-            Serial.print(flowVelocity);
-            Serial.println(" m/s");
-        } else {
-            Serial.println("FAILED");
-        }
-        
-        // Positive totalizer (Register 9-10, Uint32)
-        Serial.print("[RS485] Reading totalizer... ");
-        uint32_t posTotalizer = readRS485Uint32(rs485SlaveId, 8);  // Register 9 = address 8
-        rs485Obj["positive_totalizer_m3"] = posTotalizer;
-        Serial.print(posTotalizer);
-        Serial.println(" m³");
-        
-        // Signal quality (Register 92, Uint16)
-        Serial.print("[RS485] Reading signal quality... ");
-        uint16_t signalQuality;
-        if (readRS485Register(rs485SlaveId, 91, 1, &signalQuality)) {  // Register 92 = address 91
-            rs485Obj["signal_quality_pct"] = signalQuality;
-            Serial.print(signalQuality);
-            Serial.println("%");
-        } else {
-            Serial.println("FAILED");
-        }
-        
-        rs485Obj["status"] = "ok";
-        Serial.println("[RS485] ✅ Data read complete");
+    if (!rs485ConfigMgr.hasConfig()) {
+        // No config loaded - just report status
+        JsonObject rs485Status = sensors["rs485_status"].to<JsonObject>();
+        rs485Status["status"] = "no_config";
+        rs485Status["online_devices"] = rs485ConfigMgr.getOnlineCount();
+        rs485Status["message"] = "Waiting for configuration from server";
+        Serial.println("[RS485] ⚠️ No config - skipping RS485 telemetry");
     } else {
-        Serial.println("[RS485] ⚠️ Device not responding - adding offline status");
+        // Config loaded - read all configured devices
+        Serial.println("[RS485] Reading configured devices...");
         
-        // Device not responding - add stub
-        JsonObject rs485Obj = sensors["rs485_flowmeter"].to<JsonObject>();
-        rs485Obj["type"] = "rs485_modbus";
-        rs485Obj["slave_id"] = rs485SlaveId;
-        rs485Obj["device"] = "TUF-2000M";
-        rs485Obj["status"] = "offline";
+        const auto& devices = rs485ConfigMgr.getDevices();
+        for (const auto& device : devices) {
+            String deviceKey = "rs485_addr_" + String(device.modbus_address);
+            JsonObject deviceObj = sensors[deviceKey].to<JsonObject>();
+            
+            deviceObj["type"] = "rs485_modbus";
+            deviceObj["slave_id"] = device.modbus_address;
+            deviceObj["device_type"] = device.device_type;
+            
+            if (!device.is_online) {
+                deviceObj["status"] = "offline";
+                Serial.printf("[RS485] Device %d: OFFLINE\n", device.modbus_address);
+                continue;
+            }
+            
+            Serial.printf("[RS485] Device %d: Reading %d registers...\n", 
+                         device.modbus_address, device.registers.size());
+            
+            // Read all configured registers
+            JsonObject dataObj = deviceObj["data"].to<JsonObject>();
+            
+            for (const auto& reg : device.registers) {
+                String key = reg.label;
+                key.replace(" ", "_");
+                key.toLowerCase();
+                
+                if (reg.type == "float32") {
+                    float value = readRS485Float32(device.modbus_address, reg.reg - 1);  // Modbus 1-based to 0-based
+                    if (!isnan(value)) {
+                        dataObj[key] = serialized(String(value, 2));
+                        // Skip unit to save space (units known from config)
+                    }
+                    
+                } else if (reg.type == "uint32") {
+                    uint32_t value = readRS485Uint32(device.modbus_address, reg.reg - 1);
+                    dataObj[key] = value;
+                    // Skip unit to save space
+                    
+                } else if (reg.type == "uint16") {
+                    uint16_t value = 0;
+                    if (readRS485Register(device.modbus_address, reg.reg - 1, 1, &value)) {
+                        dataObj[key] = value;
+                        // Skip unit to save space
+                    }
+                    
+                } else if (reg.type == "hex16") {
+                    uint16_t value = 0;
+                    if (readRS485Register(device.modbus_address, reg.reg - 1, 1, &value)) {
+                        char hexStr[8];
+                        sprintf(hexStr, "0x%04X", value);
+                        dataObj[key] = hexStr;
+                    }
+                }
+                
+                delay(10);  // Small delay between reads
+            }
+            
+            deviceObj["status"] = "ok";
+            Serial.printf("[RS485] Device %d: ✅ Complete\n", device.modbus_address);
+        }
     }
 }
 
 static void appendNodeInfo(JsonDocument& doc) {
     JsonObject node = doc["node"].to<JsonObject>();
     
-    // LTE info
+    // LTE info (essential)
     JsonObject lte = node["lte"].to<JsonObject>();
     lte["ip"] = modem.localIP().toString();
     lte["csq"] = modem.getSignalQuality();
     lte["operator"] = modem.getOperator();
     
-    // System info
+    // System info (minimal)
     node["uptime_s"] = millis() / 1000;
     node["free_heap"] = ESP.getFreeHeap();
-    node["reset_reason"] = esp_reset_reason();
     
-    // Connection status
+    // Connection status (condensed - only critical metrics)
     JsonObject conn = node["connection"].to<JsonObject>();
     conn["state"] = connectionManager.getStateString();
     conn["lte_reconnects"] = connectionManager.getLteReconnectAttempts();
-    conn["lte_reboots"] = connectionManager.getLteHardRebootCount();
-    conn["internet_fail"] = connectionManager.getInternetFailCount();
     conn["mqtt_reconnects"] = connectionManager.getMqttReconnectAttempts();
-    conn["mqtt_fail"] = connectionManager.getMqttTotalFailures();
     conn["publish_fail"] = connectionManager.getPublishFailureCount();
-    unsigned long lastOk = connectionManager.getLastPublishSuccess();
-    conn["seconds_since_ok"] = lastOk ? (millis() - lastOk) / 1000 : 0;
-    
-    // MQTT status
-    JsonObject mqtt = node["mqtt"].to<JsonObject>();
-    mqtt["connected"] = mqttManager.isConnected();
-    mqtt["failed"] = connectionManager.getMqttTotalFailures();
-    // Note: publish success count not available in ConnectionManager
 }
 
 // ============================================================================
@@ -249,38 +244,67 @@ static void appendNodeInfo(JsonDocument& doc) {
 // ============================================================================
 
 void sendFullTelemetry() {
-    JsonDocument doc;
-
-    doc["device_id"] = DEVICE_ID;
-    doc["timestamp"] = timeManager.getTimestamp();
-    doc["firmware"] = "esp32s3-multisensor-v2.1";
-
-    // === SENSORS (transformed from arrays to objects) ===
-    buildRealSensors(doc);
-
-    // === NODE INFO (LTE, System, Connection, MQTT) ===
-    appendNodeInfo(doc);
-
-    Serial.println("\n========== REAL I/O TELEMETRY ==========");
-    serializeJsonPretty(doc, Serial);
-    Serial.println();
-
     if (!mqttManager.isConnected()) {
         Serial.println("[Telemetry] MQTT not ready. Skipping publish.");
         return;
     }
 
-    String topic = String(MQTT_TOPIC) + "/" + DEVICE_ID + "/telemetry";
-    Serial.print("[Telemetry] Publishing to ");
-    Serial.println(topic);
+    // ========== MESSAGE 1: BASIC SENSORS + NODE INFO ==========
+    JsonDocument doc1;
+    doc1["device_id"] = DEVICE_ID;
+    doc1["timestamp"] = timeManager.getTimestamp();
+    doc1["firmware"] = "esp32s3-multisensor-v2.1";
 
-    bool publishOk = mqttManager.publish(topic.c_str(), doc);
-    connectionManager.notifyPublishResult(publishOk);
+    // Basic sensors (analog, adc16, i2c, digital)
+    buildRealSensors(doc1);
+    
+    // Node info
+    appendNodeInfo(doc1);
 
-    if (publishOk) {
-        Serial.println("[Telemetry] ✅ Published");
+    Serial.println("\n========== BASIC SENSORS TELEMETRY ==========");
+    serializeJsonPretty(doc1, Serial);
+    Serial.println();
+
+    String topic1 = String(MQTT_TOPIC) + "/" + DEVICE_ID + "/telemetry";
+    Serial.print("[Telemetry] Publishing basic sensors to ");
+    Serial.println(topic1);
+
+    bool publishOk1 = mqttManager.publish(topic1.c_str(), doc1);
+    
+    if (publishOk1) {
+        Serial.println("[Telemetry] ✅ Basic sensors published");
     } else {
-        Serial.println("[Telemetry] ❌ Publish failed");
+        Serial.println("[Telemetry] ❌ Basic sensors publish failed");
+    }
+
+    // ========== MESSAGE 2: RS485 DATA ==========
+    if (rs485ConfigMgr.hasConfig() && rs485ConfigMgr.getOnlineCount() > 0) {
+        JsonDocument doc2;
+        doc2["device_id"] = DEVICE_ID;
+        doc2["timestamp"] = timeManager.getTimestamp();
+        
+        // RS485 data only
+        buildRS485Data(doc2);
+
+        Serial.println("\n========== RS485 TELEMETRY ==========");
+        serializeJsonPretty(doc2, Serial);
+        Serial.println();
+
+        String topic2 = String(MQTT_TOPIC) + "/" + DEVICE_ID + "/rs485";
+        Serial.print("[Telemetry] Publishing RS485 data to ");
+        Serial.println(topic2);
+
+        bool publishOk2 = mqttManager.publish(topic2.c_str(), doc2);
+        connectionManager.notifyPublishResult(publishOk2);  // Only track RS485 publish
+        
+        if (publishOk2) {
+            Serial.println("[Telemetry] ✅ RS485 data published");
+        } else {
+            Serial.println("[Telemetry] ❌ RS485 publish failed");
+        }
+    } else {
+        Serial.println("[RS485] No online devices, skipping RS485 publish");
+        connectionManager.notifyPublishResult(publishOk1);  // Track basic sensors publish instead
     }
 
     Serial.println("======================================\n");

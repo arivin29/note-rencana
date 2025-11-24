@@ -1,7 +1,7 @@
 // ============================================================================
 // ESP32-S3 GENERIC IOT FIRMWARE - FULL VERSION
 // LTE + MQTT + All Sensors (Analog, ADC16, I2C, Digital, RS485)
-// RS485 using proven raw Modbus RTU implementation
+// RS485 Dynamic Configuration System
 // ============================================================================
 
 #define TINY_GSM_MODEM_SIM7600
@@ -16,6 +16,7 @@
 #include "telemetry.h"
 #include "time_manager.h"
 #include "generic_io.h"
+#include "rs485_config_manager.h"
 
 // ============================================================================
 // HARDWARE SERIAL FOR SIM7600
@@ -46,7 +47,58 @@ GenericIOManager ioManager;
 
 String DEVICE_ID;
 unsigned long lastTelemetrySent = 0;
+unsigned long lastRS485Scan = 0;
 bool bootNotificationSent = false;
+
+// ============================================================================
+// MQTT CONFIG CALLBACK
+// ============================================================================
+
+void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
+    Serial.print("[MQTT] Message arrived [");
+    Serial.print(topic);
+    Serial.print("] ");
+    Serial.print(length);
+    Serial.println(" bytes");
+
+    // Convert payload to string
+    String message;
+    for (unsigned int i = 0; i < length; i++) {
+        message += (char)payload[i];
+    }
+
+    String topicStr = String(topic);
+    
+    // Handle stream_config/{device_id}
+    if (topicStr.indexOf("stream_config/") >= 0) {
+        Serial.println("[Config] Received config from server");
+        Serial.println("[Config] Raw payload:");
+        Serial.println("========================================");
+        Serial.println(message);
+        Serial.println("========================================");
+        
+        if (message == "null" || message == "\"null\"") {
+            Serial.println("[Config] ⚠️ No config available (null)");
+            rs485ConfigMgr.clearConfig();
+            
+            // Still scan to report what devices are online
+            Serial.println("[Config] Performing scan to report available devices...");
+            rs485ConfigMgr.scanDevices(1, 10);
+            rs485ConfigMgr.printDeviceStatus();
+        } else {
+            // Parse config JSON
+            if (rs485ConfigMgr.parseConfig(message)) {
+                Serial.println("[Config] ✅ Config loaded successfully");
+                
+                // Scan to update device status
+                rs485ConfigMgr.scanDevices(1, 10);
+                rs485ConfigMgr.printDeviceStatus();
+            } else {
+                Serial.println("[Config] ❌ Failed to parse config");
+            }
+        }
+    }
+}
 
 // ============================================================================
 // RAW MODBUS RTU FUNCTIONS (Proven working from test)
@@ -246,6 +298,7 @@ void setup() {
 
     Serial.println("\n[5/6] Preparing MQTT manager...");
     mqttManager.begin(MQTT_BROKER, MQTT_PORT, DEVICE_ID.c_str());
+    mqttManager.setCallback(mqttCallback);  // Set callback for config messages
 
     Serial.println("\n[6/6] Starting Connection Manager...");
     connectionManager.begin();
@@ -280,6 +333,35 @@ void setup() {
 }
 
 // ============================================================================
+// REQUEST RS485 CONFIG FROM SERVER
+// ============================================================================
+
+void requestRS485Config() {
+    if (!mqttManager.isConnected()) {
+        Serial.println("[Config] ⚠️ Cannot request config - MQTT not connected");
+        return;
+    }
+    
+    String topic = "get_config/" + DEVICE_ID;
+    String payload = "request";
+    
+    Serial.print("[Config] Requesting config from server: ");
+    Serial.println(topic);
+    
+    if (mqttManager.publish(topic.c_str(), payload.c_str())) {
+        Serial.println("[Config] ✅ Config request sent");
+        
+        // Subscribe to stream_config topic
+        String streamTopic = "stream_config/" + DEVICE_ID;
+        mqttManager.subscribe(streamTopic.c_str());
+        Serial.print("[Config] Subscribed to: ");
+        Serial.println(streamTopic);
+    } else {
+        Serial.println("[Config] ❌ Failed to send config request");
+    }
+}
+
+// ============================================================================
 // LOOP
 // ============================================================================
 
@@ -287,15 +369,27 @@ void loop() {
     connectionManager.loop();
 
     if (connectionManager.isFullyConnected()) {
+        // Send boot notification and request config
         if (!bootNotificationSent) {
             sendBootNotification();
+            delay(1000);  // Give server time to process boot event
+            requestRS485Config();
             bootNotificationSent = true;
         }
 
+        // Periodic telemetry
         unsigned long now = millis();
         if (now - lastTelemetrySent >= TELEMETRY_INTERVAL_MS) {
             lastTelemetrySent = now;
             sendFullTelemetry();
+        }
+        
+        // Periodic RS485 scan (configured interval in config.h)
+        if (now - lastRS485Scan >= RS485_SCAN_INTERVAL_MS) {
+            lastRS485Scan = now;
+            Serial.println("\n[Periodic] RS485 device scan...");
+            rs485ConfigMgr.scanDevices(1, 10);
+            rs485ConfigMgr.printDeviceStatus();
         }
     }
 

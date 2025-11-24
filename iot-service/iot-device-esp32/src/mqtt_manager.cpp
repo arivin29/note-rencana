@@ -25,7 +25,8 @@ bool MQTTManager::begin(const char* brokerAddr, uint16_t port, const char* clien
 
     mqttClient.setServer(brokerHost.c_str(), brokerPort);
     mqttClient.setKeepAlive(MQTT_KEEP_ALIVE);
-    mqttClient.setBufferSize(2000);  // Support large payloads (sensors object format)
+    mqttClient.setSocketTimeout(MQTT_SOCKET_TIMEOUT);  // Set via platformio.ini build_flags
+    mqttClient.setBufferSize(MQTT_MAX_PACKET_SIZE);    // Set via platformio.ini build_flags
 
     #if DEBUG_MQTT
     Serial.print(F("[MQTT] Initialized for "));
@@ -34,6 +35,13 @@ bool MQTTManager::begin(const char* brokerAddr, uint16_t port, const char* clien
     Serial.println(brokerPort);
     Serial.print(F("[MQTT] Client ID: "));
     Serial.println(clientId);
+    Serial.print(F("[MQTT] Max packet size: "));
+    Serial.println(MQTT_MAX_PACKET_SIZE);
+    Serial.print(F("[MQTT] Buffer size: "));
+    Serial.println(mqttClient.getBufferSize());
+    Serial.print(F("[MQTT] Socket timeout: "));
+    Serial.print(MQTT_SOCKET_TIMEOUT);
+    Serial.println(F(" seconds"));
     #endif
 
     return true;
@@ -121,17 +129,36 @@ bool MQTTManager::publish(const char* topic, const char* payload, bool retained)
     Serial.println(F(" bytes)"));
     #endif
 
-    // Try publish with explicit parameters (QoS 0, no retain by default)
-    bool ok = mqttClient.publish(topic, payload, retained);
-
-    if (ok) {
-        publishCount++;
-    } else {
+    // Retry mechanism: Try up to 3 times
+    const int maxRetries = 3;
+    bool ok = false;
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        ok = mqttClient.publish(topic, payload, retained);
+        
+        if (ok) {
+            publishCount++;
+            #if DEBUG_MQTT
+            if (attempt > 1) {
+                Serial.printf("[MQTT] ✅ Success on attempt %d\n", attempt);
+            }
+            #endif
+            break;
+        } else {
+            #if DEBUG_MQTT
+            Serial.printf("[MQTT] ❌ Attempt %d/%d failed, state=%d\n", 
+                         attempt, maxRetries, mqttClient.state());
+            #endif
+            
+            if (attempt < maxRetries) {
+                delay(500); // Wait 500ms before retry
+                mqttClient.loop(); // Process any pending MQTT traffic
+            }
+        }
+    }
+    
+    if (!ok) {
         failedCount++;
-        #if DEBUG_MQTT
-        Serial.print(F("[MQTT] Publish failed, state="));
-        Serial.println(mqttClient.state());
-        #endif
     }
 
     return ok;
