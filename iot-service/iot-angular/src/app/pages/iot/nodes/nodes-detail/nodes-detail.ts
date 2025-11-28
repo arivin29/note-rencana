@@ -79,6 +79,7 @@ interface SensorDetail {
 export class NodesDetailPage implements OnInit {
     nodeId = ''; // Node code from route (e.g., "ESP-CS-F03")
     nodeUuid = ''; // Node UUID from database (for API calls)
+    idNodeProfile = ''; // Node Profile UUID
     loading = false;
     error: string | null = null;
     sensorDrawerState = {
@@ -92,7 +93,7 @@ export class NodesDetailPage implements OnInit {
         channelId: null as string | null,
         mode: 'add' as 'add' | 'edit'
     };
-    // sensorTypeOptions removed - now loaded from backend in drawer component
+    mappingUpdateVisible = false;
     sensors: SensorDetail[] = [];
 
     nodeMeta = {
@@ -153,8 +154,8 @@ export class NodesDetailPage implements OnInit {
             next: (httpResponse) => {
                 console.log('Raw httpResponse:', httpResponse);
                 let dashboard: any = httpResponse.body;
-                console.log('Dashboard body type:', typeof dashboard);
-                console.log('Dashboard body:', dashboard);
+                // console.log('Dashboard body type:', typeof dashboard);
+                // console.log('Dashboard body:', dashboard);
 
                 // If response is string, parse it
                 if (typeof dashboard === 'string') {
@@ -170,8 +171,10 @@ export class NodesDetailPage implements OnInit {
 
                 // Store node code for display (nodeUuid already set from route)
                 this.nodeId = node.code || this.nodeUuid;
+                this.idNodeProfile = node.idNodeProfile || ''; // Store node profile ID
                 console.log('Node code for display:', this.nodeId);
                 console.log('Node UUID:', this.nodeUuid);
+                console.log('Node Profile ID:', this.idNodeProfile);
 
                 this.nodeMeta = {
                     ownerId: owner.idOwner || '',
@@ -611,5 +614,31 @@ export class NodesDetailPage implements OnInit {
                 }
             }
         };
+    }
+
+    // Mapping Update Methods
+    openMappingUpdate(): void {
+        console.log('Opening mapping update drawer:', {
+            nodeUuid: this.nodeUuid,
+            idNodeProfile: this.idNodeProfile,
+            mappingUpdateVisible: this.mappingUpdateVisible
+        });
+        
+        if (!this.idNodeProfile) {
+            alert('This node does not have a profile assigned yet.');
+            return;
+        }
+        
+        this.mappingUpdateVisible = true;
+    }
+
+    onMappingUpdated(profileId: string): void {
+        console.log('Mapping updated for profile:', profileId);
+        // Optionally reload node data or show success message
+        this.loadNodeDashboard();
+    }
+
+    onMappingUpdateClose(): void {
+        this.mappingUpdateVisible = false;
     }
 }

@@ -47,14 +47,14 @@ export interface IotLogsControllerFindAll$Params {
   endDate?: string;
 
 /**
- * Items per page (default: 100)
- */
-  limit?: number;
-
-/**
  * Page number (default: 1)
  */
   page?: number;
+
+/**
+ * Items per page (default: 100, max: 100)
+ */
+  limit?: number;
 }
 
 export function iotLogsControllerFindAll(http: HttpClient, rootUrl: string, params?: IotLogsControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -67,8 +67,8 @@ export function iotLogsControllerFindAll(http: HttpClient, rootUrl: string, para
     rb.query('processed', params.processed, {});
     rb.query('startDate', params.startDate, {});
     rb.query('endDate', params.endDate, {});
-    rb.query('limit', params.limit, {});
     rb.query('page', params.page, {});
+    rb.query('limit', params.limit, {});
   }
 
   return http.request(

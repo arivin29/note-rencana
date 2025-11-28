@@ -40,6 +40,11 @@
             More Actions
         </a>
         <div class="dropdown-menu">
+            <a class="dropdown-item" href="javascript:;" (click)="openMappingUpdate()">
+                <i class="fa fa-exchange-alt me-2"></i>
+                Update Payload Mapping
+            </a>
+            <div role="separator" class="dropdown-divider"></div>
             <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
             <a class="dropdown-item" href="javascript:;">Assign Technician</a>
             <div role="separator" class="dropdown-divider"></div>
@@ -47,6 +52,23 @@
         </div>
     </div>
 </div>
+
+<!-- Payload Mapping Section -->
+<card class="mb-4" *ngIf="idNodeProfile && mappingUpdateVisible">
+    <card-header class="d-flex align-items-center bg-primary bg-opacity-10 fw-400">
+        <i class="fa fa-edit me-2"></i>
+        Payload Mapping Configuration
+        <button class="btn btn-sm btn-outline-secondary ms-auto" (click)="onMappingUpdateClose()">
+            <i class="fa fa-times me-1"></i>
+            Close
+        </button>
+    </card-header>
+    <card-body>
+        <app-node-mapping-update [isOpen]="mappingUpdateVisible" [nodeId]="nodeUuid" [idNodeProfile]="idNodeProfile"
+            (close)="onMappingUpdateClose()">
+        </app-node-mapping-update>
+    </card-body>
+</card>
 
 <div class="row gx-4">
     <div class="col-lg-8">
@@ -89,6 +111,8 @@
                 </div>
             </card-body>
         </card>
+
+        
 
         <card class="mb-4">
             <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
@@ -346,6 +370,8 @@
                 </div>
             </card-body>
         </card>
+
+        
     </div>
 </div>
 <app-node-detail-add-sensor-drawer [isOpen]="sensorDrawerState.isOpen" [nodeId]="nodeUuid"

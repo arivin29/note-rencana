@@ -46,6 +46,16 @@ export interface IotLogsControllerGetStats$Params {
  * End date for filtering (ISO 8601 format)
  */
   endDate?: string;
+
+/**
+ * Page number for pagination
+ */
+  page?: number;
+
+/**
+ * Number of items per page
+ */
+  limit?: number;
 }
 
 export function iotLogsControllerGetStats(http: HttpClient, rootUrl: string, params?: IotLogsControllerGetStats$Params, context?: HttpContext): Observable<StrictHttpResponse<IotLogStatsDto>> {
@@ -58,6 +68,8 @@ export function iotLogsControllerGetStats(http: HttpClient, rootUrl: string, par
     rb.query('processed', params.processed, {});
     rb.query('startDate', params.startDate, {});
     rb.query('endDate', params.endDate, {});
+    rb.query('page', params.page, {});
+    rb.query('limit', params.limit, {});
   }
 
   return http.request(
