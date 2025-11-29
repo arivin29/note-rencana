@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "device_type": "3Phase-PowerMeter-V2305",
+  "description": "Generic 3-Phase Power Meter with RS485 Modbus-RTU",
+  "modbus_address": 1,
+  "baud_rate": 9600,
+  "scan_interval_ms": 3000,
+  "registers": [
+    {
+      "reg": 66,
+      "swap": true,
+      "type": "uint32",
+      "unit": "V",
+      "label": "Voltage L1",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L1"
+    },
+    {
+      "reg": 68,
+      "swap": true,
+      "type": "uint32",
+      "unit": "V",
+      "label": "Voltage L2",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L2"
+    },
+    {
+      "reg": 70,
+      "swap": true,
+      "type": "uint32",
+      "unit": "V",
+      "label": "Voltage L3",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L3"
+    },
+    {
+      "reg": 88,
+      "swap": true,
+      "type": "uint32",
+      "unit": "A",
+      "label": "Current L1",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L1"
+    },
+    {
+      "reg": 90,
+      "swap": true,
+      "type": "uint32",
+      "unit": "A",
+      "label": "Current L2",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L2"
+    },
+    {
+      "reg": 92,
+      "swap": true,
+      "type": "uint32",
+      "unit": "A",
+      "label": "Current L3",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L3"
+    },
+    {
+      "reg": 100,
+      "swap": true,
+      "type": "int32",
+      "unit": "kW",
+      "label": "Active Power L1",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L1"
+    },
+    {
+      "reg": 102,
+      "swap": true,
+      "type": "int32",
+      "unit": "kW",
+      "label": "Active Power L2",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L2"
+    },
+    {
+      "reg": 104,
+      "swap": true,
+      "type": "int32",
+      "unit": "kW",
+      "label": "Active Power L3",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "phase_L3"
+    },
+    {
+      "reg": 106,
+      "swap": true,
+      "type": "int32",
+      "unit": "kW",
+      "label": "Total Active Power",
+      "words": 2,
+      "scale": 0.0001,
+      "category": "total"
+    },
+    {
+      "reg": 124,
+      "swap": false,
+      "type": "int16",
+      "unit": "",
+      "label": "Power Factor L1",
+      "words": 1,
+      "scale": 0.001,
+      "category": "phase_L1"
+    },
+    {
+      "reg": 125,
+      "swap": false,
+      "type": "int16",
+      "unit": "",
+      "label": "Power Factor L2",
+      "words": 1,
+      "scale": 0.001,
+      "category": "phase_L2"
+    },
+    {
+      "reg": 126,
+      "swap": false,
+      "type": "int16",
+      "unit": "",
+      "label": "Power Factor L3",
+      "words": 1,
+      "scale": 0.001,
+      "category": "phase_L3"
+    },
+    {
+      "reg": 127,
+      "swap": false,
+      "type": "int16",
+      "unit": "",
+      "label": "Total Power Factor",
+      "words": 1,
+      "scale": 0.001,
+      "category": "total"
+    },
+    {
+      "reg": 128,
+      "swap": false,
+      "type": "uint16",
+      "unit": "Hz",
+      "label": "Frequency",
+      "words": 1,
+      "scale": 0.01,
+      "category": "total"
+    },
+    {
+      "reg": 130,
+      "swap": true,
+      "type": "uint32",
+      "unit": "kWh",
+      "label": "Total Positive Active Energy",
+      "words": 2,
+      "scale": 0.001,
+      "category": "energy"
+    }
+  ]
+}

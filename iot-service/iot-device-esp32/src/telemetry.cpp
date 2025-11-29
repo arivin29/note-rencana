@@ -28,7 +28,7 @@ extern uint32_t readRS485Uint32(uint8_t slaveId, uint16_t regAddr);
 // ============================================================================
 
 static void transformArrayToObject(JsonDocument& rawDoc, JsonObject& sensors) {
-    // Transform analog array to object with keys: analog_A2, analog_A3
+    // Transform analog array to object with keys: analog_gpio1, analog_gpio2
     if (rawDoc.containsKey("analog")) {
         JsonArray analogArray = rawDoc["analog"];
         for (JsonVariant item : analogArray) {
@@ -37,11 +37,9 @@ static void transformArrayToObject(JsonDocument& rawDoc, JsonObject& sensors) {
             String key = "analog_" + channel;
             
             JsonObject sensorObj = sensors[key].to<JsonObject>();
-            sensorObj["type"] = "analog_4_20ma";
+            sensorObj["type"] = "analog_esp32";
             sensorObj["channel"] = channel;
-            sensorObj["raw"] = analogItem["adc"];
-            sensorObj["volt"] = analogItem["volt"];
-            sensorObj["ma"] = analogItem["ma"];
+            sensorObj["raw"] = analogItem["raw"];
             sensorObj["status"] = "ok";
         }
     }

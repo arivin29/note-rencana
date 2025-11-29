@@ -34,19 +34,19 @@ void RS485Scanner::setRegisterRange(uint16_t start, uint16_t end) {
 
 
 // ============================================================================
-// ANALOG INPUT READER IMPLEMENTATION
+// ANALOG INPUT READER IMPLEMENTATION (4-20mA via ESP32 GPIO1/GPIO2)
 // ============================================================================
 
 AnalogInputReader::AnalogInputReader() {
-    channels[0] = ANALOG_CURRENT_A2_PIN;
-    channels[1] = ANALOG_CURRENT_A3_PIN;
-    channelNames[0] = "A2";
-    channelNames[1] = "A3";
+    channels[0] = ANALOG_CURRENT_A2_PIN;  // GPIO1
+    channels[1] = ANALOG_CURRENT_A3_PIN;  // GPIO2
+    channelNames[0] = "gpio1";
+    channelNames[1] = "gpio2";
 }
 
 bool AnalogInputReader::begin() {
     #if DEBUG_SENSORS
-    Serial.println(F("[Analog] Initializing analog inputs..."));
+    Serial.println(F("[Analog] Initializing 4-20mA reader (ESP32 GPIO1/GPIO2)..."));
     #endif
 
     pinMode(ANALOG_CURRENT_A2_PIN, INPUT);
@@ -57,41 +57,17 @@ bool AnalogInputReader::begin() {
 
 void AnalogInputReader::readAllChannels(JsonArray& output) {
     for (uint8_t i = 0; i < 2; i++) {
-        AnalogChannelData data = readChannel(channels[i], channelNames[i].c_str());
-
+        // Read RAW ADC value from ESP32 (12-bit: 0-4095)
+        uint16_t rawValue = analogRead(channels[i]);
+        
+        // DEBUG: Print raw value only
+        Serial.printf("[Analog] %s (GPIO%d): raw=%d\n", 
+                      channelNames[i].c_str(), channels[i], rawValue);
+        
         JsonObject channel = output.add<JsonObject>();
-        channel["ch"] = data.channel;
-        channel["adc"] = data.rawADC;
-        channel["volt"] = data.voltage;
-        channel["ma"] = data.currentMA;
+        channel["ch"] = channelNames[i];
+        channel["raw"] = rawValue;        // RAW 12-bit from ESP32 only
     }
-}
-
-AnalogChannelData AnalogInputReader::readChannel(uint8_t pin, const char* name) {
-    AnalogChannelData data;
-    data.channel = String(name);
-    data.pin = pin;
-
-    // Read ADC (12-bit: 0-4095)
-    data.rawADC = analogRead(pin);
-
-    // Convert to voltage
-    data.voltage = adcToVoltage(data.rawADC);
-
-    // Convert to current (4-20mA with 100Ω shunt)
-    data.currentMA = voltageToCurrent(data.voltage);
-
-    return data;
-}
-
-float AnalogInputReader::adcToVoltage(uint16_t adc) {
-    // ESP32 12-bit ADC: 0-4095 = 0-3.3V
-    return (adc / (float)ADC_MAX_VALUE) * ADC_VREF;
-}
-
-float AnalogInputReader::voltageToCurrent(float voltage) {
-    // With 100Ω shunt: I = V / 100 * 1000 (mA)
-    return (voltage / 100.0) * 1000.0;
 }
 
 // ============================================================================
@@ -139,25 +115,33 @@ void ADC16Reader::readAllChannels(JsonArray& output) {
         return;
     }
 
-    // Read channels A0 and A1
-    for (uint8_t ch = 0; ch < 2; ch++) {
-        ADC16ChannelData data = readChannel(ch);
+    Adafruit_ADS1115 ads;
+    ads.setGain((adsGain_t)currentGain);
+    ads.begin(i2cAddress);
 
+    // Read all 4 channels: A0, A1, A2, A3
+    for (uint8_t ch = 0; ch < 4; ch++) {
+        String channelName = "A" + String(ch);
+        
+        // Read RAW 16-bit signed value directly from ADS1115 chip
+        int16_t rawValue = ads.readADC_SingleEnded(ch);
+        
+        // Calculate voltage based on gain setting
+        // GAIN_TWOTHIRDS = ±6.144V range, LSB = 0.1875mV
+        float voltage = rawValue * 0.0001875;
+        
+        // Simple connection detection
+        bool connected = (abs(rawValue) >= 10 && voltage <= 6.0);
+        
         JsonObject channel = output.add<JsonObject>();
-        channel["ch"] = data.channel;
-        channel["raw"] = data.rawADC;
-        channel["volt"] = data.voltage;
-        channel["connected"] = data.connected;
+        channel["ch"] = channelName;
+        channel["raw"] = rawValue;           // RAW 16-bit signed from ADS1115
+        channel["volt"] = voltage;           // Calculated voltage
+        channel["connected"] = connected;    // Connection status
 
         #if DEBUG_SENSORS
-        Serial.print(F("[ADC16] "));
-        Serial.print(data.channel);
-        Serial.print(F(": raw="));
-        Serial.print(data.rawADC);
-        Serial.print(F(", volt="));
-        Serial.print(data.voltage, 4);
-        Serial.print(F("V, connected="));
-        Serial.println(data.connected ? "YES" : "NO");
+        Serial.printf("[ADC16] %s: %6d raw | %0.4fV\n", 
+                      channelName.c_str(), rawValue, voltage);
         #endif
     }
 }
