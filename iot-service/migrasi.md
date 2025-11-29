@@ -1,353 +1,1242 @@
-## Migrasi Database IoT Dashboard
+create type log_label_enum as enum ('info', 'log', 'pairing', 'error', 'warning', 'debug', 'telemetry', 'command', 'response');
 
-- **Engine**: PostgreSQL 15 + TimescaleDB extension untuk time-series `sensor_logs`.
-- **Konvensi ID**: setiap primary key mengikuti format `id_<nama_tabel>` dan kolom referensi project selalu `id_project`.
-- **UUID**: gunakan `UUID` dengan `DEFAULT gen_random_uuid()`; ganti dengan `BIGINT` bila fungsi UUID belum tersedia.
-- **Timestamps**: `created_at`/`updated_at` menggunakan trigger atau default `now()`.
+alter type log_label_enum owner to postgres;
 
-### 1. Struktur Organisasi & Lokasi
-```sql
-CREATE TABLE owners (
-  id_owner       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name           TEXT NOT NULL,
-  industry       TEXT,
-  contact_person TEXT,
-  sla_level      TEXT,
-  forwarding_settings JSONB, -- optional legacy storage, prefer child tables below
-  created_at     TIMESTAMPTZ DEFAULT now(),
-  updated_at     TIMESTAMPTZ DEFAULT now()
+create table migrations
+(
+    id        serial
+        constraint "PK_8c82d7f526340ab734260ea46be"
+            primary key,
+    timestamp bigint  not null,
+    name      varchar not null
 );
 
-CREATE TABLE projects (
-  id_project   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_owner     UUID NOT NULL REFERENCES owners(id_owner) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  area_type    TEXT CHECK (area_type IN ('plant','pipeline','farm','other')),
-  geofence     JSONB, -- GeoJSON polygon atau multipolygon
-  status       TEXT DEFAULT 'active',
-  created_at   TIMESTAMPTZ DEFAULT now(),
-  updated_at   TIMESTAMPTZ DEFAULT now()
+alter table migrations
+    owner to postgres;
+
+create table owners
+(
+    id_owner            uuid                     default gen_random_uuid() not null
+        primary key,
+    name                text                                               not null,
+    industry            text,
+    contact_person      text,
+    sla_level           text,
+    forwarding_settings jsonb,
+    created_at          timestamp with time zone default now(),
+    updated_at          timestamp with time zone default now(),
+    email               text,
+    phone               text,
+    address             text
 );
 
-CREATE TABLE node_locations (
-  id_node_location UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_project        UUID NOT NULL REFERENCES projects(id_project) ON DELETE CASCADE,
-  type              TEXT CHECK (type IN ('manual','gps','import')) DEFAULT 'manual',
-  coordinates       GEOGRAPHY(POINT, 4326) NOT NULL,
-  elevation         NUMERIC(6,2),
-  address           TEXT,
-  precision_m       NUMERIC(6,2),
-  source            TEXT, -- GPS/manual/import
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  updated_at        TIMESTAMPTZ DEFAULT now()
-);
-```
+comment on column owners.email is 'Owner email address for contact';
 
-**Keterangan**
-- `owners`: master klien/tenant; `sla_level` membantu menentukan prioritas penanganan alert.
-- `projects`: area kerja per owner; `geofence` menyimpan batas area berbentuk GeoJSON untuk peta.
-- `node_locations`: katalog titik koordinat Node; `type` menunjukkan sumber koordinat (manual/GPS/import) dan `precision_m` menjadi indikator akurasi.
-- `owner_forwarding_webhooks / owner_forwarding_databases`: konfigurasi forwarding per tenant. Simpan endpoint, kredensial, serta metadata status untuk fitur data delivery.
-- `owner_forwarding_logs`: histori tiap percobaan forward (berhasil/gagal) sehingga UI dapat menampilkan insight sinkronisasi.
+comment on column owners.phone is 'Owner phone number for contact';
 
-### 2. Node & Model Perangkat
-```sql
-CREATE TABLE node_models (
-  id_node_model      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  model_code         TEXT UNIQUE, -- kode internal untuk generator
-  vendor             TEXT NOT NULL,
-  model_name         TEXT NOT NULL,
-  protocol           TEXT NOT NULL,
-  communication_band TEXT,
-  power_type         TEXT,
-  hardware_class     TEXT CHECK (hardware_class IN ('mcu','gateway','tracker','custom')),
-  hardware_revision  TEXT,
-  toolchain          TEXT, -- Arduino IDE / PlatformIO / Teltonika Configurator
-  build_agent        TEXT, -- runner internal
-  firmware_repo      TEXT,
-  flash_protocol     TEXT,
-  supports_codegen   BOOLEAN DEFAULT false,
-  default_firmware   TEXT,
-  created_at         TIMESTAMPTZ DEFAULT now(),
-  updated_at         TIMESTAMPTZ DEFAULT now()
+comment on column owners.address is 'Owner physical address';
+
+alter table owners
+    owner to postgres;
+
+create index idx_owners_email
+    on owners (email);
+
+create table projects
+(
+    id_project uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner   uuid                                               not null
+        references owners
+            on delete cascade,
+    name       text                                               not null,
+    area_type  text,
+    geofence   jsonb,
+    status     text                     default 'active'::text,
+    created_at timestamp with time zone default now(),
+    updated_at timestamp with time zone default now()
 );
 
-CREATE TABLE nodes (
-  id_node                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_project             UUID NOT NULL REFERENCES projects(id_project) ON DELETE CASCADE,
-  id_node_model          UUID NOT NULL REFERENCES node_models(id_node_model),
-  code                   TEXT NOT NULL,
-  serial_number          TEXT,
-  dev_eui                TEXT,
-  ip_address             INET,
-  install_date           DATE,
-  firmware_version       TEXT,
-  battery_type           TEXT,
-  telemetry_interval_sec INTEGER NOT NULL DEFAULT 300,
-  connectivity_status    TEXT DEFAULT 'offline',
-  last_seen_at           TIMESTAMPTZ,
-  id_current_location    UUID REFERENCES node_locations(id_node_location),
-  created_at             TIMESTAMPTZ DEFAULT now(),
-  updated_at             TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (id_project, code)
+alter table projects
+    owner to postgres;
+
+create table node_locations
+(
+    id_node_location uuid                     default gen_random_uuid() not null
+        primary key,
+    id_project       uuid                                               not null
+        references projects
+            on delete cascade,
+    type             text                     default 'manual'::text
+        constraint node_locations_type_check
+            check (type = ANY (ARRAY ['manual'::text, 'gps'::text, 'import'::text])),
+    coordinates      point                                              not null,
+    elevation        numeric(6, 2),
+    address          text,
+    precision_m      numeric(6, 2),
+    source           text,
+    created_at       timestamp with time zone default now(),
+    updated_at       timestamp with time zone default now()
 );
 
-CREATE TABLE node_assignments (
-  id_node_assignment UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_node            UUID NOT NULL REFERENCES nodes(id_node) ON DELETE CASCADE,
-  id_project         UUID NOT NULL REFERENCES projects(id_project),
-  id_owner           UUID NOT NULL REFERENCES owners(id_owner),
-  id_node_location   UUID REFERENCES node_locations(id_node_location),
-  start_at           TIMESTAMPTZ NOT NULL,
-  end_at             TIMESTAMPTZ,
-  reason             TEXT,
-  assigned_by        UUID, -- user id
-  ticket_ref         TEXT,
-  created_at         TIMESTAMPTZ DEFAULT now(),
-  updated_at         TIMESTAMPTZ DEFAULT now()
-);
-```
+alter table node_locations
+    owner to postgres;
 
-**Keterangan**
-- `node_models`: katalog hardware gateway/perangkat yang sekaligus menyimpan metadata platform/toolchain sehingga atribut vendor/band/firmware tidak diulang di setiap node.
-- Field `toolchain/build_agent/firmware_repo/flash_protocol/supports_codegen` memastikan setiap model punya pipeline OTA/code generator jelas ketika Node dideploy atau diperbarui.
-- `nodes`: representasi perangkat di lapangan. Field penting:
-  - `dev_eui`: identitas LoRa/LPWAN unik.
-  - `telemetry_interval_sec`: jadwal kirim data untuk mendeteksi keterlambatan telemetri.
-  - `id_current_location`: menunjuk titik lokasi terbaru dari tabel `node_locations`.
-- `node_assignments`: riwayat perpindahan Node antar project/owner; `ticket_ref` menautkan ke pekerjaan teknisi dan `assigned_by` mencatat siapa yang memindahkan.
-
-### 3. Sensor Master & Kanal
-```sql
-CREATE TABLE sensor_types (
-  id_sensor_type UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  category       TEXT NOT NULL,
-  default_unit   TEXT,
-  precision      NUMERIC(6,3),
-  created_at     TIMESTAMPTZ DEFAULT now(),
-  updated_at     TIMESTAMPTZ DEFAULT now()
+create table node_models
+(
+    id_node_model      uuid                     default gen_random_uuid() not null
+        primary key,
+    model_code         text
+        unique,
+    vendor             text                                               not null,
+    model_name         text                                               not null,
+    protocol           text                                               not null,
+    communication_band text,
+    power_type         text,
+    hardware_class     text,
+    hardware_revision  text,
+    toolchain          text,
+    build_agent        text,
+    firmware_repo      text,
+    flash_protocol     text,
+    supports_codegen   boolean                  default false,
+    default_firmware   text,
+    created_at         timestamp with time zone default now(),
+    updated_at         timestamp with time zone default now()
 );
 
-CREATE TABLE sensor_catalogs (
-  id_sensor_catalog         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  vendor                    TEXT NOT NULL,
-  model_name                TEXT NOT NULL,
-  icon_asset                TEXT,
-  icon_color                TEXT,
-  datasheet_url             TEXT,
-  firmware                  TEXT,
-  calibration_interval_days INTEGER,
-  default_channels_json     JSONB,
-  default_thresholds_json   JSONB,
-  created_at                TIMESTAMPTZ DEFAULT now(),
-  updated_at                TIMESTAMPTZ DEFAULT now()
+alter table node_models
+    owner to postgres;
+
+create table sensor_types
+(
+    id_sensor_type uuid                     default gen_random_uuid() not null
+        primary key,
+    category       text                                               not null,
+    default_unit   text,
+    precision      numeric(6, 3),
+    created_at     timestamp with time zone default now(),
+    updated_at     timestamp with time zone default now()
 );
 
-CREATE TABLE sensors (
-  id_sensor          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_node            UUID NOT NULL REFERENCES nodes(id_node) ON DELETE CASCADE,
-  id_sensor_catalog  UUID REFERENCES sensor_catalogs(id_sensor_catalog),
-  sensor_code        TEXT,
-  label              TEXT NOT NULL,
-  location           TEXT,
-  status             TEXT DEFAULT 'active' CHECK (status IN ('active','maintenance','inactive')),
-  protocol_channel   TEXT,
-  calibration_factor NUMERIC(12,6),
-  sampling_rate      INTEGER,
-  install_date       DATE,
-  calibration_due_at DATE,
-  created_at         TIMESTAMPTZ DEFAULT now(),
-  updated_at         TIMESTAMPTZ DEFAULT now(),
-  CONSTRAINT unique_sensor_code_per_node UNIQUE (id_node, sensor_code)
+alter table sensor_types
+    owner to postgres;
+
+create table sensor_catalogs
+(
+    id_sensor_catalog         uuid                     default gen_random_uuid() not null
+        primary key,
+    vendor                    text                                               not null,
+    model_name                text                                               not null,
+    icon_asset                text,
+    icon_color                text,
+    datasheet_url             text,
+    firmware                  text,
+    calibration_interval_days integer,
+    default_channels_json     jsonb,
+    default_thresholds_json   jsonb,
+    created_at                timestamp with time zone default now(),
+    updated_at                timestamp with time zone default now()
 );
 
-CREATE TABLE sensor_channels (
-  id_sensor_channel        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_sensor                UUID NOT NULL REFERENCES sensors(id_sensor) ON DELETE CASCADE,
-  id_sensor_type           UUID NOT NULL REFERENCES sensor_types(id_sensor_type),
-  metric_code              TEXT NOT NULL,
-  unit                     TEXT,
-  min_threshold            NUMERIC,
-  max_threshold            NUMERIC,
-  multiplier               NUMERIC(12,6),
-  offset                   NUMERIC(12,6),
-  register_address         INTEGER,
-  precision                NUMERIC(6,3),
-  aggregation              TEXT,
-  alert_suppression_window INTEGER,
-  created_at               TIMESTAMPTZ DEFAULT now(),
-  updated_at               TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (id_sensor, metric_code)
-);
-```
+alter table sensor_catalogs
+    owner to postgres;
 
-**Keterangan**
-- `sensor_types`: klasifikasi kasar (pressure, flow, voltage) untuk grouping UI/report serta menjaga konsistensi penamaan channel.
-- `sensor_catalogs`: master spesifikasi tiap model sensor; `icon_asset` & `icon_color` dipakai untuk konsistensi visual, sementara `default_channels_json` berisi template register/unit bawaan pabrik.
-- `sensors`: sensor fisik yang terhubung ke node dengan atribut penting:
-  - `sensor_code`: identifier unik per sensor dalam satu node (contoh: SENSOR-001, TEMP-01)
-  - `location`: deskripsi lokasi fisik sensor (contoh: Tank A, Pipe Section 3, Panel Control Room)
-  - `status`: kondisi kesehatan sensor (`active` = operasional, `maintenance` = sedang servis, `inactive` = nonaktif/offline)
-  - `protocol_channel`: detail layer komunikasi (contoh RS485 slave id, kanal analog)
-  - Constraint `unique_sensor_code_per_node` memastikan tidak ada duplikasi kode dalam satu node
-- `sensor_channels`: parameter individual (flow, voltage, temperature) dalam satu sensor; setiap channel membawa `id_sensor_type` untuk memastikan jenis metrik konsisten, sedangkan `register_address` memetakan alamat Modbus/holding register dan `alert_suppression_window` mencegah spam alert berulang.
-
-### 4. Time-Series & Alerting
-```sql
-CREATE TABLE sensor_logs (
-  id_sensor_log        BIGSERIAL PRIMARY KEY,
-  id_sensor_channel    UUID NOT NULL REFERENCES sensor_channels(id_sensor_channel) ON DELETE CASCADE,
-  id_sensor            UUID,
-  id_node              UUID,
-  id_project           UUID,
-  id_owner             UUID,
-  ts                   TIMESTAMPTZ NOT NULL,
-  value_raw            DOUBLE PRECISION,
-  value_engineered     DOUBLE PRECISION,
-  quality_flag         TEXT,
-  ingestion_source     TEXT,
-  status_code          INTEGER,
-  ingestion_latency_ms INTEGER,
-  payload_seq          BIGINT,
-  min_threshold        DOUBLE PRECISION,
-  max_threshold        DOUBLE PRECISION
-);
--- Jadikan hypertable: SELECT create_hypertable('sensor_logs','ts');
-
-CREATE INDEX idx_sensor_logs_channel_ts
-  ON sensor_logs (id_sensor_channel, ts DESC);
-
-> Catatan: kolom `id_sensor/id_node/id_project/id_owner` dan `min/max_threshold` bersifat denormalisasi untuk memudahkan query dashboard tanpa join berat. Isi nilai-nilai ini di pipeline ingestion (atau trigger) berdasarkan metadata channel saat log diterima.
-
-CREATE TABLE alert_rules (
-  id_alert_rule      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_sensor_channel  UUID NOT NULL REFERENCES sensor_channels(id_sensor_channel) ON DELETE CASCADE,
-  rule_type          TEXT NOT NULL,
-  severity           TEXT,
-  params_json        JSONB,
-  enabled            BOOLEAN DEFAULT TRUE,
-  created_at         TIMESTAMPTZ DEFAULT now(),
-  updated_at         TIMESTAMPTZ DEFAULT now()
+create table user_dashboards
+(
+    id_dashboard uuid                     default gen_random_uuid() not null
+        primary key,
+    id_user      uuid                                               not null,
+    id_project   uuid
+        references projects
+            on delete cascade,
+    name         text                                               not null,
+    description  text,
+    layout_type  text                     default 'grid'::text,
+    grid_cols    integer                  default 4,
+    is_default   boolean                  default false,
+    is_public    boolean                  default false,
+    created_at   timestamp with time zone default now(),
+    updated_at   timestamp with time zone default now()
 );
 
-CREATE TABLE alert_events (
-  id_alert_event   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_alert_rule    UUID NOT NULL REFERENCES alert_rules(id_alert_rule) ON DELETE CASCADE,
-  triggered_at     TIMESTAMPTZ NOT NULL,
-  value            DOUBLE PRECISION,
-  status           TEXT DEFAULT 'open',
-  acknowledged_by  UUID,
-  acknowledged_at  TIMESTAMPTZ,
-  cleared_by       UUID,
-  cleared_at       TIMESTAMPTZ,
-  note             TEXT,
-  created_at       TIMESTAMPTZ DEFAULT now(),
-  updated_at       TIMESTAMPTZ DEFAULT now()
-);
-```
+alter table user_dashboards
+    owner to postgres;
 
-**Keterangan**
-- `sensor_logs`: penyimpanan time-series bernilai besar; `value_engineered` adalah hasil konversi setelah multiplier/offset, sedangkan `ingestion_latency_ms` membantu memantau keterlambatan pipeline.
-- `alert_rules`: konfigurasi penjagaan tiap channel; `params_json` menyimpan detail aturan (ambang, slope, dsb) agar fleksibel.
-- `alert_events`: histori kejadian; kolom `acknowledged_by/at` dan `cleared_by/at` mendukung workflow tim operasional (acknowledge vs resolve) dan `note` merekam catatan penyelesaian.
+create index idx_user_dashboards_user
+    on user_dashboards (id_user);
 
-### 5. Dashboard & Widget Management
-```sql
-CREATE TABLE user_dashboards (
-  id_dashboard UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_user      UUID NOT NULL,
-  id_project   UUID REFERENCES projects(id_project) ON DELETE CASCADE,
-  name         TEXT NOT NULL,
-  description  TEXT,
-  layout_type  TEXT DEFAULT 'grid' CHECK (layout_type IN ('grid','free')),
-  grid_cols    INTEGER DEFAULT 4,
-  is_default   BOOLEAN DEFAULT FALSE,
-  is_public    BOOLEAN DEFAULT FALSE,
-  created_at   TIMESTAMPTZ DEFAULT now(),
-  updated_at   TIMESTAMPTZ DEFAULT now()
+create index idx_user_dashboards_project
+    on user_dashboards (id_project);
+
+create table owner_forwarding_webhooks
+(
+    id_owner_forwarding_webhook uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner                    uuid                                               not null
+        references owners
+            on delete cascade,
+    label                       text                                               not null,
+    endpoint_url                text                                               not null,
+    http_method                 text                     default 'POST'::text,
+    headers_json                jsonb,
+    secret_token                text,
+    payload_template            jsonb,
+    max_retry                   integer                  default 3,
+    retry_backoff_ms            integer                  default 2000,
+    enabled                     boolean                  default true,
+    last_status                 text,
+    last_delivery_at            timestamp with time zone,
+    last_error                  text,
+    created_at                  timestamp with time zone default now(),
+    updated_at                  timestamp with time zone default now()
 );
 
-CREATE TABLE dashboard_widgets (
-  id_widget_instance UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_dashboard       UUID NOT NULL REFERENCES user_dashboards(id_dashboard) ON DELETE CASCADE,
-  widget_type        TEXT NOT NULL,
-  id_sensor          UUID REFERENCES sensors(id_sensor) ON DELETE CASCADE,
-  id_sensor_channel  UUID REFERENCES sensor_channels(id_sensor_channel) ON DELETE CASCADE,
-  position_x         INTEGER DEFAULT 0,
-  position_y         INTEGER DEFAULT 0,
-  size_width         INTEGER DEFAULT 1,
-  size_height        INTEGER DEFAULT 1,
-  config_json        JSONB,
-  refresh_rate       INTEGER DEFAULT 5,
-  display_order      INTEGER,
-  created_at         TIMESTAMPTZ DEFAULT now(),
-  updated_at         TIMESTAMPTZ DEFAULT now()
+alter table owner_forwarding_webhooks
+    owner to postgres;
+
+create table owner_forwarding_databases
+(
+    id_owner_forwarding_db uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner               uuid                                               not null
+        references owners
+            on delete cascade,
+    label                  text                                               not null,
+    db_type                text                                               not null
+        constraint owner_forwarding_databases_db_type_check
+            check (db_type = ANY (ARRAY ['mysql'::text, 'postgres'::text])),
+    host                   text                                               not null,
+    port                   integer                                            not null,
+    database_name          text                                               not null,
+    username               text                                               not null,
+    password_cipher        text                                               not null,
+    target_schema          text,
+    target_table           text                                               not null,
+    write_mode             text                     default 'append'::text,
+    batch_size             integer                  default 100,
+    enabled                boolean                  default true,
+    last_status            text,
+    last_delivery_at       timestamp with time zone,
+    last_error             text,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now()
 );
 
-CREATE INDEX idx_user_dashboards_user ON user_dashboards(id_user);
-CREATE INDEX idx_user_dashboards_project ON user_dashboards(id_project);
-CREATE INDEX idx_dashboard_widgets_dashboard ON dashboard_widgets(id_dashboard);
-CREATE INDEX idx_dashboard_widgets_sensor ON dashboard_widgets(id_sensor);
-```
+alter table owner_forwarding_databases
+    owner to postgres;
 
-**Keterangan**
-- `user_dashboards`: konfigurasi dashboard custom per user; `layout_type` menentukan grid atau free positioning, `is_default` menandai dashboard utama user, dan `is_public` memungkinkan sharing dashboard antar user.
-- `dashboard_widgets`: instance widget di dashboard; `widget_type` merujuk ke katalog widget (radial-gauge, big-number, dll), `config_json` menyimpan konfigurasi khusus (warna, threshold, time range), dan `refresh_rate` mengatur interval update data (dalam detik).
-- `id_sensor_channel` opsional jika widget perlu spesifik ke satu channel (misal hanya pressure, bukan semua metrics dari sensor).
-
-### 6. Index & Partisi Tambahan
-- Tambahkan indeks tambahan seperti `CREATE INDEX idx_nodes_owner ON nodes(id_project, id_node_model);` sesuai kebutuhan query.
-- Partial index `ON sensor_logs (ts)` dengan filter 30 hari membantu panel realtime.
-- Tabel `users`, `role_assignments`, `api_keys` tidak dicakup di dokumen ini namun gunakan pola `id_user`, `id_role`, dll.
-CREATE TABLE owner_forwarding_webhooks (
-  id_owner_forwarding_webhook UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_owner                    UUID NOT NULL REFERENCES owners(id_owner) ON DELETE CASCADE,
-  label                       TEXT NOT NULL,
-  endpoint_url                TEXT NOT NULL,
-  http_method                 TEXT DEFAULT 'POST',
-  headers_json                JSONB,
-  secret_token                TEXT,
-  payload_template            JSONB,
-  max_retry                   INTEGER DEFAULT 3,
-  retry_backoff_ms            INTEGER DEFAULT 2000,
-  enabled                     BOOLEAN DEFAULT TRUE,
-  last_status                 TEXT,
-  last_delivery_at            TIMESTAMPTZ,
-  last_error                  TEXT,
-  created_at                  TIMESTAMPTZ DEFAULT now(),
-  updated_at                  TIMESTAMPTZ DEFAULT now()
+create table owner_forwarding_logs
+(
+    id_owner_forwarding_log uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner                uuid                                               not null
+        references owners
+            on delete cascade,
+    config_type             text                                               not null
+        constraint owner_forwarding_logs_config_type_check
+            check (config_type = ANY (ARRAY ['webhook'::text, 'database'::text])),
+    config_id               uuid                                               not null,
+    status                  text                                               not null,
+    attempts                integer                  default 1,
+    error_message           text,
+    duration_ms             integer,
+    created_at              timestamp with time zone default now()
 );
 
-CREATE TABLE owner_forwarding_databases (
-  id_owner_forwarding_db UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_owner               UUID NOT NULL REFERENCES owners(id_owner) ON DELETE CASCADE,
-  label                  TEXT NOT NULL,
-  db_type                TEXT CHECK (db_type IN ('mysql','postgres')) NOT NULL,
-  host                   TEXT NOT NULL,
-  port                   INTEGER NOT NULL,
-  database_name          TEXT NOT NULL,
-  username               TEXT NOT NULL,
-  password_cipher        TEXT NOT NULL,
-  target_schema          TEXT,
-  target_table           TEXT NOT NULL,
-  write_mode             TEXT CHECK (write_mode IN ('append','upsert')) DEFAULT 'append',
-  batch_size             INTEGER DEFAULT 100,
-  enabled                BOOLEAN DEFAULT TRUE,
-  last_status            TEXT,
-  last_delivery_at       TIMESTAMPTZ,
-  last_error             TEXT,
-  created_at             TIMESTAMPTZ DEFAULT now(),
-  updated_at             TIMESTAMPTZ DEFAULT now()
+alter table owner_forwarding_logs
+    owner to postgres;
+
+create table node_profiles
+(
+    id_node_profile  uuid                     default gen_random_uuid() not null
+        primary key,
+    id_node_model    uuid                                               not null
+        references node_models
+            on delete cascade,
+    id_project       uuid
+                                                                        references projects
+                                                                            on delete set null,
+    code             text                                               not null,
+    name             text                                               not null,
+    description      text,
+    parser_type      text                                               not null,
+    mapping_json     jsonb                                              not null,
+    transform_script text,
+    enabled          boolean                  default true,
+    created_at       timestamp with time zone default now(),
+    updated_at       timestamp with time zone default now(),
+    unique (id_node_model, code)
 );
 
-CREATE TABLE owner_forwarding_logs (
-  id_owner_forwarding_log UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_owner                UUID NOT NULL REFERENCES owners(id_owner) ON DELETE CASCADE,
-  config_type             TEXT CHECK (config_type IN ('webhook','database')) NOT NULL,
-  config_id               UUID NOT NULL,
-  status                  TEXT NOT NULL,
-  attempts                INTEGER DEFAULT 1,
-  error_message           TEXT,
-  duration_ms             INTEGER,
-  created_at              TIMESTAMPTZ DEFAULT now()
+comment on table node_profiles is 'Payload parsing profiles for different node models';
+
+comment on column node_profiles.parser_type is 'Parser type: json_path, lorawan, modbus, etc.';
+
+comment on column node_profiles.mapping_json is 'JSON mapping configuration for parsing payloads to sensor channels';
+
+alter table node_profiles
+    owner to postgres;
+
+create table nodes
+(
+    id_node                uuid                     default gen_random_uuid() not null
+        primary key,
+    id_project             uuid                                               not null
+        references projects
+            on delete cascade,
+    id_node_model          uuid                                               not null
+        references node_models,
+    code                   text                                               not null,
+    serial_number          text,
+    dev_eui                text,
+    ip_address             inet,
+    install_date           date,
+    firmware_version       text,
+    battery_type           text,
+    telemetry_interval_sec integer                  default 300,
+    connectivity_status    text                     default 'offline'::text,
+    last_seen_at           timestamp with time zone,
+    id_current_location    uuid
+        references node_locations,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now(),
+    id_node_profile        uuid
+                                                                              references node_profiles
+                                                                                  on delete set null,
+    unique (id_project, code)
 );
+
+comment on column nodes.id_node_profile is 'Assigned parsing profile for this node';
+
+alter table nodes
+    owner to postgres;
+
+create index idx_nodes_node_profile
+    on nodes (id_node_profile);
+
+create table node_assignments
+(
+    id_node_assignment uuid                     default gen_random_uuid() not null
+        primary key,
+    id_node            uuid                                               not null
+        references nodes
+            on delete cascade,
+    id_project         uuid                                               not null
+        references projects,
+    id_owner           uuid                                               not null
+        references owners,
+    id_node_location   uuid
+        references node_locations,
+    start_at           timestamp with time zone                           not null,
+    end_at             timestamp with time zone,
+    reason             text,
+    assigned_by        uuid,
+    ticket_ref         text,
+    created_at         timestamp with time zone default now(),
+    updated_at         timestamp with time zone default now()
+);
+
+alter table node_assignments
+    owner to postgres;
+
+create table sensors
+(
+    id_sensor          uuid                     default gen_random_uuid() not null
+        primary key,
+    id_node            uuid                                               not null
+        references nodes
+            on delete cascade,
+    id_sensor_catalog  uuid
+        references sensor_catalogs,
+    label              text                                               not null,
+    protocol_channel   text,
+    calibration_factor numeric(12, 6),
+    sampling_rate      integer,
+    install_date       date,
+    calibration_due_at date,
+    created_at         timestamp with time zone default now(),
+    updated_at         timestamp with time zone default now(),
+    sensor_code        text,
+    location           text,
+    status             text                     default 'active'::text
+        constraint sensors_status_check
+            check (status = ANY (ARRAY ['active'::text, 'maintenance'::text, 'inactive'::text]))
+);
+
+comment on column sensors.sensor_code is 'Unique sensor identifier within a node (e.g., SENSOR-001)';
+
+comment on column sensors.location is 'Physical location description of the sensor (e.g., Tank A, Pipe Section 3)';
+
+comment on column sensors.status is 'Sensor health status: active (operational), maintenance (under service), inactive (offline/disabled)';
+
+alter table sensors
+    owner to postgres;
+
+create unique index idx_sensors_node_code
+    on sensors (id_node, sensor_code)
+    where (sensor_code IS NOT NULL);
+
+create index idx_sensors_status
+    on sensors (status);
+
+create table sensor_channels
+(
+    id_sensor_channel        uuid                     default gen_random_uuid() not null
+        primary key,
+    id_sensor                uuid                                               not null
+        references sensors
+            on delete cascade,
+    id_sensor_type           uuid                                               not null
+        references sensor_types,
+    metric_code              text                                               not null,
+    unit                     text,
+    min_threshold            numeric,
+    max_threshold            numeric,
+    multiplier               numeric(12, 6),
+    offset_value             numeric(12, 6),
+    register_address         integer,
+    precision                numeric(6, 3),
+    aggregation              text,
+    alert_suppression_window integer,
+    created_at               timestamp with time zone default now(),
+    updated_at               timestamp with time zone default now(),
+    unique (id_sensor, metric_code)
+);
+
+alter table sensor_channels
+    owner to postgres;
+
+create table sensor_logs
+(
+    id_sensor_log        bigserial
+        primary key,
+    id_sensor_channel    uuid                     not null
+        references sensor_channels
+            on delete cascade,
+    id_sensor            uuid,
+    id_node              uuid,
+    id_project           uuid,
+    id_owner             uuid,
+    ts                   timestamp with time zone not null,
+    value_raw            double precision,
+    value_engineered     double precision,
+    quality_flag         text,
+    ingestion_source     text,
+    status_code          integer,
+    ingestion_latency_ms integer,
+    payload_seq          bigint,
+    min_threshold        double precision,
+    max_threshold        double precision,
+    created_at           timestamp with time zone default now()
+);
+
+alter table sensor_logs
+    owner to postgres;
+
+create index idx_sensor_logs_channel_ts
+    on sensor_logs (id_sensor_channel asc, ts desc);
+
+create table alert_rules
+(
+    id_alert_rule     uuid                     default gen_random_uuid() not null
+        primary key,
+    id_sensor_channel uuid                                               not null
+        references sensor_channels
+            on delete cascade,
+    rule_type         text                                               not null,
+    severity          text,
+    params_json       jsonb,
+    enabled           boolean                  default true,
+    created_at        timestamp with time zone default now(),
+    updated_at        timestamp with time zone default now()
+);
+
+alter table alert_rules
+    owner to postgres;
+
+create table alert_events
+(
+    id_alert_event  uuid                     default gen_random_uuid() not null
+        primary key,
+    id_alert_rule   uuid                                               not null
+        references alert_rules
+            on delete cascade,
+    triggered_at    timestamp with time zone                           not null,
+    value           double precision,
+    status          text                     default 'open'::text,
+    acknowledged_by uuid,
+    acknowledged_at timestamp with time zone,
+    cleared_by      uuid,
+    cleared_at      timestamp with time zone,
+    note            text,
+    created_at      timestamp with time zone default now(),
+    updated_at      timestamp with time zone default now()
+);
+
+alter table alert_events
+    owner to postgres;
+
+create table dashboard_widgets
+(
+    id_widget_instance uuid                     default gen_random_uuid() not null
+        primary key,
+    id_dashboard       uuid                                               not null
+        references user_dashboards
+            on delete cascade,
+    widget_type        text                                               not null,
+    id_sensor          uuid
+        references sensors
+            on delete cascade,
+    id_sensor_channel  uuid
+        references sensor_channels
+            on delete cascade,
+    position_x         integer                  default 0,
+    position_y         integer                  default 0,
+    size_width         integer                  default 1,
+    size_height        integer                  default 1,
+    config_json        jsonb,
+    refresh_rate       integer                  default 5,
+    display_order      integer,
+    created_at         timestamp with time zone default now(),
+    updated_at         timestamp with time zone default now()
+);
+
+alter table dashboard_widgets
+    owner to postgres;
+
+create index idx_dashboard_widgets_dashboard
+    on dashboard_widgets (id_dashboard);
+
+create index idx_dashboard_widgets_sensor
+    on dashboard_widgets (id_sensor);
+
+create table node_unpaired_devices
+(
+    id_node_unpaired_device uuid                     default gen_random_uuid() not null
+        constraint "PK_730e8a5501e7a0add123574c6dc"
+            primary key,
+    hardware_id             text                                               not null,
+    id_node_model           uuid
+        constraint fk_node_unpaired_node_model
+            references node_models
+            on delete set null,
+    first_seen_at           timestamp with time zone default now()             not null,
+    last_seen_at            timestamp with time zone default now()             not null,
+    last_payload            jsonb,
+    last_topic              text,
+    seen_count              integer                  default 1                 not null,
+    suggested_project       uuid
+        constraint fk_node_unpaired_suggested_project
+            references projects
+            on delete set null,
+    suggested_owner         uuid
+        constraint fk_node_unpaired_suggested_owner
+            references owners
+            on delete set null,
+    paired_node_id          uuid
+        constraint fk_node_unpaired_paired_node
+            references nodes
+            on delete set null,
+    status                  text                     default 'pending'::text   not null
+);
+
+comment on column node_unpaired_devices.hardware_id is 'Unique hardware identifier: IMEI, dev_eui, MAC address, serial number';
+
+comment on column node_unpaired_devices.id_node_model is 'Auto-detected or manually assigned node model';
+
+comment on column node_unpaired_devices.last_payload is 'Last received raw payload from device';
+
+comment on column node_unpaired_devices.last_topic is 'Last MQTT topic where data was received';
+
+comment on column node_unpaired_devices.seen_count is 'Number of times this device has sent data';
+
+comment on column node_unpaired_devices.suggested_project is 'Suggested project for pairing (based on topic/rules)';
+
+comment on column node_unpaired_devices.suggested_owner is 'Suggested owner for pairing';
+
+comment on column node_unpaired_devices.paired_node_id is 'Reference to nodes table after pairing (optional tracking)';
+
+comment on column node_unpaired_devices.status is 'Status: pending, paired, ignored';
+
+alter table node_unpaired_devices
+    owner to postgres;
+
+create unique index idx_node_unpaired_hardware
+    on node_unpaired_devices (hardware_id);
+
+create index idx_node_unpaired_status
+    on node_unpaired_devices (status);
+
+create index idx_node_unpaired_last_seen
+    on node_unpaired_devices (last_seen_at);
+
+create index idx_node_profiles_node_model
+    on node_profiles (id_node_model);
+
+create index idx_node_profiles_project
+    on node_profiles (id_project);
+
+create table iot_log
+(
+    id         uuid           default uuid_generate_v4()    not null
+        constraint "PK_e75a3f71d2554eb0dd763a70f66"
+            primary key,
+    label      log_label_enum default 'log'::log_label_enum not null,
+    topic      varchar(500),
+    payload    jsonb                                        not null,
+    device_id  varchar(255),
+    timestamp  timestamp                                    not null,
+    processed  boolean        default false                 not null,
+    notes      text,
+    created_at timestamp      default CURRENT_TIMESTAMP     not null,
+    updated_at timestamp      default CURRENT_TIMESTAMP     not null
+);
+
+alter table iot_log
+    owner to postgres;
+
+create index "IDX_iot_log_label"
+    on iot_log (label);
+
+create index "IDX_iot_log_device_id"
+    on iot_log (device_id);
+
+create index "IDX_iot_log_processed"
+    on iot_log (processed);
+
+create index "IDX_iot_log_created_at"
+    on iot_log (created_at);
+
+create index "IDX_iot_log_timestamp"
+    on iot_log (timestamp);
+
+create function uuid_nil() returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_nil() owner to postgres;
+
+create function uuid_ns_dns() returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_ns_dns() owner to postgres;
+
+create function uuid_ns_url() returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_ns_url() owner to postgres;
+
+create function uuid_ns_oid() returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_ns_oid() owner to postgres;
+
+create function uuid_ns_x500() returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_ns_x500() owner to postgres;
+
+create function uuid_generate_v1() returns uuid
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_generate_v1() owner to postgres;
+
+create function uuid_generate_v1mc() returns uuid
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_generate_v1mc() owner to postgres;
+
+create function uuid_generate_v3(namespace uuid, name text) returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_generate_v3(uuid, text) owner to postgres;
+
+create function uuid_generate_v4() returns uuid
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_generate_v4() owner to postgres;
+
+create function uuid_generate_v5(namespace uuid, name text) returns uuid
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function uuid_generate_v5(uuid, text) owner to postgres;
+
+create function digest(text, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function digest(text, text) owner to postgres;
+
+create function digest(bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function digest(bytea, text) owner to postgres;
+
+create function hmac(text, text, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function hmac(text, text, text) owner to postgres;
+
+create function hmac(bytea, bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function hmac(bytea, bytea, text) owner to postgres;
+
+create function crypt(text, text) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function crypt(text, text) owner to postgres;
+
+create function gen_salt(text) returns text
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function gen_salt(text) owner to postgres;
+
+create function gen_salt(text, integer) returns text
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function gen_salt(text, integer) owner to postgres;
+
+create function encrypt(bytea, bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function encrypt(bytea, bytea, text) owner to postgres;
+
+create function decrypt(bytea, bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function decrypt(bytea, bytea, text) owner to postgres;
+
+create function encrypt_iv(bytea, bytea, bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function encrypt_iv(bytea, bytea, bytea, text) owner to postgres;
+
+create function decrypt_iv(bytea, bytea, bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function decrypt_iv(bytea, bytea, bytea, text) owner to postgres;
+
+create function gen_random_bytes(integer) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function gen_random_bytes(integer) owner to postgres;
+
+create function gen_random_uuid() returns uuid
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function gen_random_uuid() owner to postgres;
+
+create function pgp_sym_encrypt(text, text) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_encrypt(text, text) owner to postgres;
+
+create function pgp_sym_encrypt_bytea(bytea, text) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_encrypt_bytea(bytea, text) owner to postgres;
+
+create function pgp_sym_encrypt(text, text, text) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_encrypt(text, text, text) owner to postgres;
+
+create function pgp_sym_encrypt_bytea(bytea, text, text) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_encrypt_bytea(bytea, text, text) owner to postgres;
+
+create function pgp_sym_decrypt(bytea, text) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_decrypt(bytea, text) owner to postgres;
+
+create function pgp_sym_decrypt_bytea(bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_decrypt_bytea(bytea, text) owner to postgres;
+
+create function pgp_sym_decrypt(bytea, text, text) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_decrypt(bytea, text, text) owner to postgres;
+
+create function pgp_sym_decrypt_bytea(bytea, text, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_sym_decrypt_bytea(bytea, text, text) owner to postgres;
+
+create function pgp_pub_encrypt(text, bytea) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_encrypt(text, bytea) owner to postgres;
+
+create function pgp_pub_encrypt_bytea(bytea, bytea) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_encrypt_bytea(bytea, bytea) owner to postgres;
+
+create function pgp_pub_encrypt(text, bytea, text) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_encrypt(text, bytea, text) owner to postgres;
+
+create function pgp_pub_encrypt_bytea(bytea, bytea, text) returns bytea
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_encrypt_bytea(bytea, bytea, text) owner to postgres;
+
+create function pgp_pub_decrypt(bytea, bytea) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_decrypt(bytea, bytea) owner to postgres;
+
+create function pgp_pub_decrypt_bytea(bytea, bytea) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_decrypt_bytea(bytea, bytea) owner to postgres;
+
+create function pgp_pub_decrypt(bytea, bytea, text) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_decrypt(bytea, bytea, text) owner to postgres;
+
+create function pgp_pub_decrypt_bytea(bytea, bytea, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_decrypt_bytea(bytea, bytea, text) owner to postgres;
+
+create function pgp_pub_decrypt(bytea, bytea, text, text) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_decrypt(bytea, bytea, text, text) owner to postgres;
+
+create function pgp_pub_decrypt_bytea(bytea, bytea, text, text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_pub_decrypt_bytea(bytea, bytea, text, text) owner to postgres;
+
+create function pgp_key_id(bytea) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function pgp_key_id(bytea) owner to postgres;
+
+create function armor(bytea) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function armor(bytea) owner to postgres;
+
+create function armor(bytea, text[], text[]) returns text
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function armor(bytea, text[], text[]) owner to postgres;
+
+create function dearmor(text) returns bytea
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+$$;
+
+alter function dearmor(text) owner to postgres;
+
+create function pgp_armor_headers(text, out key text, out value text) returns setof setof record
+    immutable
+    strict
+    parallel safe
+    language c
+as
+$$
+begin
+-- missing source code
+end;
+
+$$;
+
+alter function pgp_armor_headers(text, out text, out text) owner to postgres;
+

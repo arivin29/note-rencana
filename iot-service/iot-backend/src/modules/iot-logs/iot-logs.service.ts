@@ -114,14 +114,25 @@ export class IotLogsService {
   private buildBaseQuery(
     filters?: IotLogFilterDto,
   ): SelectQueryBuilder<IotLog> {
-    const queryBuilder = this.iotLogRepository
-      .createQueryBuilder('log')
-      .leftJoin('log.node', 'node')
-      .leftJoin('node.project', 'project')
-      .leftJoin('project.owner', 'owner');
+    const queryBuilder = this.iotLogRepository.createQueryBuilder('log');
 
     if (!filters) {
       return queryBuilder;
+    }
+
+    // Join tables only if needed for filtering
+    const needsNodeJoin = filters.ownerId || filters.projectId;
+    const needsProjectJoin = filters.ownerId || filters.projectId;
+    const needsOwnerJoin = filters.ownerId;
+
+    if (needsNodeJoin) {
+      queryBuilder.leftJoin('log.node', 'node');
+    }
+    if (needsProjectJoin && needsNodeJoin) {
+      queryBuilder.leftJoin('node.project', 'project');
+    }
+    if (needsOwnerJoin && needsProjectJoin) {
+      queryBuilder.leftJoin('project.owner', 'owner');
     }
 
     // Filter by device ID (node code)

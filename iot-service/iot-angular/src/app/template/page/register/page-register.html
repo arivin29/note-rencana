@@ -1,72 +1,94 @@
 <!-- BEGIN register -->
 <div class="register">
-	<!-- BEGIN register-content -->
-	<div class="register-content">
-		<form #f="ngForm" (ngSubmit)="formSubmit(f)">
-			<h1 class="text-center">Sign Up</h1>
-			<p class="text-inverse text-opacity-50 text-center">One Admin ID is all you need to access all the Admin services.</p>
-			<div class="mb-3">
-				<label class="form-label">Name <span class="text-danger">*</span></label>
-				<input type="text" class="form-control form-control-lg bg-inverse bg-opacity-5" placeholder="e.g John Smith" value="">
-			</div>
-			<div class="mb-3">
-				<label class="form-label">Email Address <span class="text-danger">*</span></label>
-				<input type="text" class="form-control form-control-lg bg-inverse bg-opacity-5" placeholder="username&#64;address.com" value="">
-			</div>
-			<div class="mb-3">
-				<label class="form-label">Password <span class="text-danger">*</span></label>
-				<input type="password" class="form-control form-control-lg bg-inverse bg-opacity-5" value="">
-			</div>
-			<div class="mb-3">
-				<label class="form-label">Confirm Password <span class="text-danger">*</span></label>
-				<input type="password" class="form-control form-control-lg bg-inverse bg-opacity-5" value="">
-			</div>
-			<div class="mb-3">
-				<label class="form-label">Country <span class="text-danger">*</span></label>
-				<select class="form-select form-select-lg bg-inverse bg-opacity-5">
-					<option>United States</option>
-				</select>
-			</div>
-			<div class="mb-3">
-				<label class="form-label">Gender <span class="text-danger">*</span></label>
-				<select class="form-select form-select-lg bg-inverse bg-opacity-5">
-					<option>Female</option>
-				</select>
-			</div>
-			<div class="mb-3">
-				<label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-				<div class="row gx-2">
-					<div class="col-6">
-						<select class="form-select form-select-lg bg-inverse bg-opacity-5">
-							<option>Month</option>
-						</select>
-					</div>
-					<div class="col-3">
-						<select class="form-select form-select-lg bg-inverse bg-opacity-5">
-							<option>Day</option>
-						</select>
-					</div>
-					<div class="col-3">
-						<select class="form-select form-select-lg bg-inverse bg-opacity-5">
-							<option>Year</option>
-						</select>
-					</div>
-				</div>
-			</div>
-			<div class="mb-3">
-				<div class="form-check">
-					<input class="form-check-input" type="checkbox" value="" id="customCheck1">
-					<label class="form-check-label" for="customCheck1">I have read and agree to the <a href="javascript:;">Terms of Use</a> and <a href="javascript:;">Privacy Policy</a>.</label>
-				</div>
-			</div>
-			<div class="mb-3">
-				<button type="submit" class="btn btn-outline-theme btn-lg d-block w-100">Sign Up</button>
-			</div>
-			<div class="text-inverse text-opacity-50 text-center">
-				Already have an Admin ID? <a routerLink="/template/page/login">Sign In</a>
-			</div>
-		</form>
-	</div>
-	<!-- END register-content -->
+    <!-- BEGIN register-content -->
+    <div class="register-content">
+        <form #f="ngForm" (ngSubmit)="formSubmit(f)">
+            <h1 class="text-center">Sign Up</h1>
+            <p class="text-inverse text-opacity-50 text-center">Create your account to access the IoT Monitoring System.
+            </p>
+
+            <!-- Success Message -->
+            <div *ngIf="successMessage" class="alert alert-success mb-3" role="alert">
+                <i class="bi bi-check-circle me-2"></i>{{ successMessage }}
+            </div>
+
+            <!-- Error Message -->
+            <div *ngIf="errorMessage" class="alert alert-danger mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" [(ngModel)]="name" #nameInput="ngModel"
+                    class="form-control form-control-lg bg-inverse bg-opacity-5" placeholder="e.g John Smith" required
+                    minlength="3" [disabled]="loading">
+                <div *ngIf="nameInput.invalid && (nameInput.dirty || nameInput.touched)" class="text-danger mt-1">
+                    <small *ngIf="nameInput.errors?.['required']">Name is required</small>
+                    <small *ngIf="nameInput.errors?.['minlength']">Name must be at least 3 characters</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                <input type="email" name="email" [(ngModel)]="email" #emailInput="ngModel"
+                    class="form-control form-control-lg bg-inverse bg-opacity-5" placeholder="username@address.com"
+                    required email [disabled]="loading">
+                <div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" class="text-danger mt-1">
+                    <small *ngIf="emailInput.errors?.['required']">Email is required</small>
+                    <small *ngIf="emailInput.errors?.['email']">Please enter a valid email</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password <span class="text-danger">*</span></label>
+                <input type="password" name="password" [(ngModel)]="password" #passwordInput="ngModel"
+                    class="form-control form-control-lg bg-inverse bg-opacity-5" placeholder="Enter a strong password"
+                    required minlength="6" [disabled]="loading">
+                <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)"
+                    class="text-danger mt-1">
+                    <small *ngIf="passwordInput.errors?.['required']">Password is required</small>
+                    <small *ngIf="passwordInput.errors?.['minlength']">Password must be at least 6 characters</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                <input type="password" name="confirmPassword" [(ngModel)]="confirmPassword"
+                    #confirmPasswordInput="ngModel" class="form-control form-control-lg bg-inverse bg-opacity-5"
+                    placeholder="Re-enter your password" required [disabled]="loading">
+                <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)"
+                    class="text-danger mt-1">
+                    <small *ngIf="confirmPasswordInput.errors?.['required']">Please confirm your password</small>
+                </div>
+                <div *ngIf="password !== confirmPassword && confirmPassword" class="text-danger mt-1">
+                    <small>Passwords do not match</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="agreeTerms" [(ngModel)]="agreeTerms"
+                        id="customCheck1" [disabled]="loading">
+                    <label class="form-check-label" for="customCheck1">
+                        I have read and agree to the <a href="#" class="text-decoration-none">Terms of Use</a> and <a
+                            href="#" class="text-decoration-none">Privacy Policy</a>.
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-outline-theme btn-lg d-block w-100 fw-500 mb-3"
+                [disabled]="loading || f.invalid || !agreeTerms || password !== confirmPassword">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"
+                    aria-hidden="true"></span>
+                <span *ngIf="loading">Creating Account...</span>
+                <span *ngIf="!loading">Sign Up</span>
+            </button>
+
+            <div class="text-center text-inverse text-opacity-50">
+                Already have an account? <a routerLink="/auth/login">Sign In</a>.
+            </div>
+        </form>
+    </div>
+    <!-- END register-content -->
 </div>
 <!-- END register -->

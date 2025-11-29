@@ -1,0 +1,18 @@
+/* Profile Component Styles */
+
+.page-header {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.badge {
+  padding: 0.35rem 0.75rem;
+}
+
+.form-control-plaintext {
+  padding: 0.5rem 0;
+}

@@ -1,3 +1,7 @@
+create type log_label_enum as enum ('info', 'log', 'pairing', 'error', 'warning', 'debug', 'telemetry', 'command', 'response');
+
+alter type log_label_enum owner to postgres;
+
 create table migrations
 (
     id        serial
@@ -20,11 +24,23 @@ create table owners
     sla_level           text,
     forwarding_settings jsonb,
     created_at          timestamp with time zone default now(),
-    updated_at          timestamp with time zone default now()
+    updated_at          timestamp with time zone default now(),
+    email               text,
+    phone               text,
+    address             text
 );
+
+comment on column owners.email is 'Owner email address for contact';
+
+comment on column owners.phone is 'Owner phone number for contact';
+
+comment on column owners.address is 'Owner physical address';
 
 alter table owners
     owner to postgres;
+
+create index idx_owners_email
+    on owners (email);
 
 create table projects
 (
@@ -92,60 +108,6 @@ create table node_models
 alter table node_models
     owner to postgres;
 
-create table nodes
-(
-    id_node                uuid                     default gen_random_uuid() not null
-        primary key,
-    id_project             uuid                                               not null
-        references projects
-            on delete cascade,
-    id_node_model          uuid                                               not null
-        references node_models,
-    code                   text                                               not null,
-    serial_number          text,
-    dev_eui                text,
-    ip_address             inet,
-    install_date           date,
-    firmware_version       text,
-    battery_type           text,
-    telemetry_interval_sec integer                  default 300,
-    connectivity_status    text                     default 'offline'::text,
-    last_seen_at           timestamp with time zone,
-    id_current_location    uuid
-        references node_locations,
-    created_at             timestamp with time zone default now(),
-    updated_at             timestamp with time zone default now(),
-    unique (id_project, code)
-);
-
-alter table nodes
-    owner to postgres;
-
-create table node_assignments
-(
-    id_node_assignment uuid                     default gen_random_uuid() not null
-        primary key,
-    id_node            uuid                                               not null
-        references nodes
-            on delete cascade,
-    id_project         uuid                                               not null
-        references projects,
-    id_owner           uuid                                               not null
-        references owners,
-    id_node_location   uuid
-        references node_locations,
-    start_at           timestamp with time zone                           not null,
-    end_at             timestamp with time zone,
-    reason             text,
-    assigned_by        uuid,
-    ticket_ref         text,
-    created_at         timestamp with time zone default now(),
-    updated_at         timestamp with time zone default now()
-);
-
-alter table node_assignments
-    owner to postgres;
-
 create table sensor_types
 (
     id_sensor_type uuid                     default gen_random_uuid() not null
@@ -178,6 +140,204 @@ create table sensor_catalogs
 );
 
 alter table sensor_catalogs
+    owner to postgres;
+
+create table user_dashboards
+(
+    id_dashboard uuid                     default gen_random_uuid() not null
+        primary key,
+    id_user      uuid                                               not null,
+    id_project   uuid
+        references projects
+            on delete cascade,
+    name         text                                               not null,
+    description  text,
+    layout_type  text                     default 'grid'::text,
+    grid_cols    integer                  default 4,
+    is_default   boolean                  default false,
+    is_public    boolean                  default false,
+    created_at   timestamp with time zone default now(),
+    updated_at   timestamp with time zone default now()
+);
+
+alter table user_dashboards
+    owner to postgres;
+
+create index idx_user_dashboards_user
+    on user_dashboards (id_user);
+
+create index idx_user_dashboards_project
+    on user_dashboards (id_project);
+
+create table owner_forwarding_webhooks
+(
+    id_owner_forwarding_webhook uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner                    uuid                                               not null
+        references owners
+            on delete cascade,
+    label                       text                                               not null,
+    endpoint_url                text                                               not null,
+    http_method                 text                     default 'POST'::text,
+    headers_json                jsonb,
+    secret_token                text,
+    payload_template            jsonb,
+    max_retry                   integer                  default 3,
+    retry_backoff_ms            integer                  default 2000,
+    enabled                     boolean                  default true,
+    last_status                 text,
+    last_delivery_at            timestamp with time zone,
+    last_error                  text,
+    created_at                  timestamp with time zone default now(),
+    updated_at                  timestamp with time zone default now()
+);
+
+alter table owner_forwarding_webhooks
+    owner to postgres;
+
+create table owner_forwarding_databases
+(
+    id_owner_forwarding_db uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner               uuid                                               not null
+        references owners
+            on delete cascade,
+    label                  text                                               not null,
+    db_type                text                                               not null
+        constraint owner_forwarding_databases_db_type_check
+            check (db_type = ANY (ARRAY ['mysql'::text, 'postgres'::text])),
+    host                   text                                               not null,
+    port                   integer                                            not null,
+    database_name          text                                               not null,
+    username               text                                               not null,
+    password_cipher        text                                               not null,
+    target_schema          text,
+    target_table           text                                               not null,
+    write_mode             text                     default 'append'::text,
+    batch_size             integer                  default 100,
+    enabled                boolean                  default true,
+    last_status            text,
+    last_delivery_at       timestamp with time zone,
+    last_error             text,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now()
+);
+
+alter table owner_forwarding_databases
+    owner to postgres;
+
+create table owner_forwarding_logs
+(
+    id_owner_forwarding_log uuid                     default gen_random_uuid() not null
+        primary key,
+    id_owner                uuid                                               not null
+        references owners
+            on delete cascade,
+    config_type             text                                               not null
+        constraint owner_forwarding_logs_config_type_check
+            check (config_type = ANY (ARRAY ['webhook'::text, 'database'::text])),
+    config_id               uuid                                               not null,
+    status                  text                                               not null,
+    attempts                integer                  default 1,
+    error_message           text,
+    duration_ms             integer,
+    created_at              timestamp with time zone default now()
+);
+
+alter table owner_forwarding_logs
+    owner to postgres;
+
+create table node_profiles
+(
+    id_node_profile  uuid                     default gen_random_uuid() not null
+        primary key,
+    id_node_model    uuid                                               not null
+        references node_models
+            on delete cascade,
+    id_project       uuid
+                                                                        references projects
+                                                                            on delete set null,
+    code             text                                               not null,
+    name             text                                               not null,
+    description      text,
+    parser_type      text                                               not null,
+    mapping_json     jsonb                                              not null,
+    transform_script text,
+    enabled          boolean                  default true,
+    created_at       timestamp with time zone default now(),
+    updated_at       timestamp with time zone default now(),
+    unique (id_node_model, code)
+);
+
+comment on table node_profiles is 'Payload parsing profiles for different node models';
+
+comment on column node_profiles.parser_type is 'Parser type: json_path, lorawan, modbus, etc.';
+
+comment on column node_profiles.mapping_json is 'JSON mapping configuration for parsing payloads to sensor channels';
+
+alter table node_profiles
+    owner to postgres;
+
+create table nodes
+(
+    id_node                uuid                     default gen_random_uuid() not null
+        primary key,
+    id_project             uuid                                               not null
+        references projects
+            on delete cascade,
+    id_node_model          uuid                                               not null
+        references node_models,
+    code                   text                                               not null,
+    serial_number          text,
+    dev_eui                text,
+    ip_address             inet,
+    install_date           date,
+    firmware_version       text,
+    battery_type           text,
+    telemetry_interval_sec integer                  default 300,
+    connectivity_status    text                     default 'offline'::text,
+    last_seen_at           timestamp with time zone,
+    id_current_location    uuid
+        references node_locations,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now(),
+    id_node_profile        uuid
+                                                                              references node_profiles
+                                                                                  on delete set null,
+    unique (id_project, code)
+);
+
+comment on column nodes.id_node_profile is 'Assigned parsing profile for this node';
+
+alter table nodes
+    owner to postgres;
+
+create index idx_nodes_node_profile
+    on nodes (id_node_profile);
+
+create table node_assignments
+(
+    id_node_assignment uuid                     default gen_random_uuid() not null
+        primary key,
+    id_node            uuid                                               not null
+        references nodes
+            on delete cascade,
+    id_project         uuid                                               not null
+        references projects,
+    id_owner           uuid                                               not null
+        references owners,
+    id_node_location   uuid
+        references node_locations,
+    start_at           timestamp with time zone                           not null,
+    end_at             timestamp with time zone,
+    reason             text,
+    assigned_by        uuid,
+    ticket_ref         text,
+    created_at         timestamp with time zone default now(),
+    updated_at         timestamp with time zone default now()
+);
+
+alter table node_assignments
     owner to postgres;
 
 create table sensors
@@ -317,33 +477,6 @@ create table alert_events
 alter table alert_events
     owner to postgres;
 
-create table user_dashboards
-(
-    id_dashboard uuid                     default gen_random_uuid() not null
-        primary key,
-    id_user      uuid                                               not null,
-    id_project   uuid
-        references projects
-            on delete cascade,
-    name         text                                               not null,
-    description  text,
-    layout_type  text                     default 'grid'::text,
-    grid_cols    integer                  default 4,
-    is_default   boolean                  default false,
-    is_public    boolean                  default false,
-    created_at   timestamp with time zone default now(),
-    updated_at   timestamp with time zone default now()
-);
-
-alter table user_dashboards
-    owner to postgres;
-
-create index idx_user_dashboards_user
-    on user_dashboards (id_user);
-
-create index idx_user_dashboards_project
-    on user_dashboards (id_project);
-
 create table dashboard_widgets
 (
     id_widget_instance uuid                     default gen_random_uuid() not null
@@ -378,83 +511,105 @@ create index idx_dashboard_widgets_dashboard
 create index idx_dashboard_widgets_sensor
     on dashboard_widgets (id_sensor);
 
-create table owner_forwarding_webhooks
+create table node_unpaired_devices
 (
-    id_owner_forwarding_webhook uuid                     default gen_random_uuid() not null
-        primary key,
-    id_owner                    uuid                                               not null
-        references owners
-            on delete cascade,
-    label                       text                                               not null,
-    endpoint_url                text                                               not null,
-    http_method                 text                     default 'POST'::text,
-    headers_json                jsonb,
-    secret_token                text,
-    payload_template            jsonb,
-    max_retry                   integer                  default 3,
-    retry_backoff_ms            integer                  default 2000,
-    enabled                     boolean                  default true,
-    last_status                 text,
-    last_delivery_at            timestamp with time zone,
-    last_error                  text,
-    created_at                  timestamp with time zone default now(),
-    updated_at                  timestamp with time zone default now()
+    id_node_unpaired_device uuid                     default gen_random_uuid() not null
+        constraint "PK_730e8a5501e7a0add123574c6dc"
+            primary key,
+    hardware_id             text                                               not null,
+    id_node_model           uuid
+        constraint fk_node_unpaired_node_model
+            references node_models
+            on delete set null,
+    first_seen_at           timestamp with time zone default now()             not null,
+    last_seen_at            timestamp with time zone default now()             not null,
+    last_payload            jsonb,
+    last_topic              text,
+    seen_count              integer                  default 1                 not null,
+    suggested_project       uuid
+        constraint fk_node_unpaired_suggested_project
+            references projects
+            on delete set null,
+    suggested_owner         uuid
+        constraint fk_node_unpaired_suggested_owner
+            references owners
+            on delete set null,
+    paired_node_id          uuid
+        constraint fk_node_unpaired_paired_node
+            references nodes
+            on delete set null,
+    status                  text                     default 'pending'::text   not null
 );
 
-alter table owner_forwarding_webhooks
+comment on column node_unpaired_devices.hardware_id is 'Unique hardware identifier: IMEI, dev_eui, MAC address, serial number';
+
+comment on column node_unpaired_devices.id_node_model is 'Auto-detected or manually assigned node model';
+
+comment on column node_unpaired_devices.last_payload is 'Last received raw payload from device';
+
+comment on column node_unpaired_devices.last_topic is 'Last MQTT topic where data was received';
+
+comment on column node_unpaired_devices.seen_count is 'Number of times this device has sent data';
+
+comment on column node_unpaired_devices.suggested_project is 'Suggested project for pairing (based on topic/rules)';
+
+comment on column node_unpaired_devices.suggested_owner is 'Suggested owner for pairing';
+
+comment on column node_unpaired_devices.paired_node_id is 'Reference to nodes table after pairing (optional tracking)';
+
+comment on column node_unpaired_devices.status is 'Status: pending, paired, ignored';
+
+alter table node_unpaired_devices
     owner to postgres;
 
-create table owner_forwarding_databases
+create unique index idx_node_unpaired_hardware
+    on node_unpaired_devices (hardware_id);
+
+create index idx_node_unpaired_status
+    on node_unpaired_devices (status);
+
+create index idx_node_unpaired_last_seen
+    on node_unpaired_devices (last_seen_at);
+
+create index idx_node_profiles_node_model
+    on node_profiles (id_node_model);
+
+create index idx_node_profiles_project
+    on node_profiles (id_project);
+
+create table iot_log
 (
-    id_owner_forwarding_db uuid                     default gen_random_uuid() not null
-        primary key,
-    id_owner               uuid                                               not null
-        references owners
-            on delete cascade,
-    label                  text                                               not null,
-    db_type                text                                               not null
-        constraint owner_forwarding_databases_db_type_check
-            check (db_type = ANY (ARRAY ['mysql'::text, 'postgres'::text])),
-    host                   text                                               not null,
-    port                   integer                                            not null,
-    database_name          text                                               not null,
-    username               text                                               not null,
-    password_cipher        text                                               not null,
-    target_schema          text,
-    target_table           text                                               not null,
-    write_mode             text                     default 'append'::text,
-    batch_size             integer                  default 100,
-    enabled                boolean                  default true,
-    last_status            text,
-    last_delivery_at       timestamp with time zone,
-    last_error             text,
-    created_at             timestamp with time zone default now(),
-    updated_at             timestamp with time zone default now()
+    id         uuid           default uuid_generate_v4()    not null
+        constraint "PK_e75a3f71d2554eb0dd763a70f66"
+            primary key,
+    label      log_label_enum default 'log'::log_label_enum not null,
+    topic      varchar(500),
+    payload    jsonb                                        not null,
+    device_id  varchar(255),
+    timestamp  timestamp                                    not null,
+    processed  boolean        default false                 not null,
+    notes      text,
+    created_at timestamp      default CURRENT_TIMESTAMP     not null,
+    updated_at timestamp      default CURRENT_TIMESTAMP     not null
 );
 
-alter table owner_forwarding_databases
+alter table iot_log
     owner to postgres;
 
-create table owner_forwarding_logs
-(
-    id_owner_forwarding_log uuid                     default gen_random_uuid() not null
-        primary key,
-    id_owner                uuid                                               not null
-        references owners
-            on delete cascade,
-    config_type             text                                               not null
-        constraint owner_forwarding_logs_config_type_check
-            check (config_type = ANY (ARRAY ['webhook'::text, 'database'::text])),
-    config_id               uuid                                               not null,
-    status                  text                                               not null,
-    attempts                integer                  default 1,
-    error_message           text,
-    duration_ms             integer,
-    created_at              timestamp with time zone default now()
-);
+create index "IDX_iot_log_label"
+    on iot_log (label);
 
-alter table owner_forwarding_logs
-    owner to postgres;
+create index "IDX_iot_log_device_id"
+    on iot_log (device_id);
+
+create index "IDX_iot_log_processed"
+    on iot_log (processed);
+
+create index "IDX_iot_log_created_at"
+    on iot_log (created_at);
+
+create index "IDX_iot_log_timestamp"
+    on iot_log (timestamp);
 
 create function uuid_nil() returns uuid
     immutable

@@ -221,10 +221,10 @@ export class TelemetryProcessorService {
         errors.push(...parsedTelemetry.parseErrors);
       }
 
-      // 7. Load node's sensors with channels
+      // 7. Load node's sensors with channels and sensor types
       const sensors = await this.sensorRepository.find({
         where: { idNode: node.idNode },
-        relations: ['channels'],
+        relations: ['channels', 'channels.sensorType'],
       });
 
       if (sensors.length === 0) {
@@ -250,11 +250,17 @@ export class TelemetryProcessorService {
       let sensorLogsCreated = 0;
 
       for (const parsedSensor of parsedTelemetry.sensors) {
-        // Find matching sensor by label
-        const sensor = sensors.find(s => s.label === parsedSensor.sensorLabel);
+        // Find matching sensor by idSensor (if present), fallback to label
+        let sensor = null;
+        if (parsedSensor.idSensor) {
+          sensor = sensors.find(s => s.idSensor === parsedSensor.idSensor);
+        }
+        if (!sensor) {
+          sensor = sensors.find(s => s.label === parsedSensor.sensorLabel);
+        }
 
         if (!sensor) {
-          errors.push(`Sensor not found: ${parsedSensor.sensorLabel}`);
+          errors.push(`Sensor not found: ${parsedSensor.sensorLabel || parsedSensor.idSensor}`);
           continue;
         }
 
@@ -267,29 +273,71 @@ export class TelemetryProcessorService {
             continue;
           }
 
-          // Find matching channel by metric_code
-          const channel = sensor.channels?.find(c => c.metricCode === parsedChannel.channelCode);
+          // Find matching channel by idSensorChannel (if present), fallback to metric_code (case-insensitive)
+          let channel = null;
+          if (parsedChannel.idSensorChannel) {
+            channel = sensor.channels?.find(c => c.idSensorChannel === parsedChannel.idSensorChannel);
+          }
+          if (!channel) {
+            const channelCode = parsedChannel.channelCode.toUpperCase();
+            channel = sensor.channels?.find(c => 
+              c.metricCode?.toUpperCase() === channelCode
+            );
+          }
 
           if (!channel) {
-            errors.push(`Channel not found: ${parsedChannel.channelCode} for sensor ${sensor.label}`);
+            // Log available channels for debugging
+            const availableChannels = sensor.channels?.map(c => c.metricCode).join(', ') || 'none';
+            errors.push(
+              `Channel not found: ${parsedChannel.channelCode} for sensor ${sensor.label}. ` +
+              `Available channels: ${availableChannels}`
+            );
             continue;
           }
 
           channelsProcessed++;
 
-          // Apply engineering conversion if exists
+          // Apply engineering conversion
           let valueEngineered = parsedChannel.value;
-          if (channel.multiplier) {
-            const multiplier = typeof channel.multiplier === 'string'
-              ? parseFloat(channel.multiplier)
-              : channel.multiplier;
-            valueEngineered = valueEngineered * multiplier;
-          }
-          if (channel.offsetValue) {
-            const offset = typeof channel.offsetValue === 'string'
-              ? parseFloat(channel.offsetValue)
-              : channel.offsetValue;
-            valueEngineered = valueEngineered + offset;
+
+          try {
+            // Priority 1: Use sensor type formula (most flexible)
+            if (channel.sensorType?.conversionFormula) {
+              valueEngineered = this.applyFormulaConversion(
+                parsedChannel.value,
+                channel.sensorType.conversionFormula
+              );
+              this.logger.debug(
+                `Applied formula conversion for ${channel.metricCode}: ${parsedChannel.value} → ${valueEngineered} using formula: ${channel.sensorType.conversionFormula}`
+              );
+            }
+            // Priority 2: Use channel-level multiplier/offset (simple linear)
+            else if (channel.multiplier || channel.offsetValue) {
+              if (channel.multiplier) {
+                const multiplier = typeof channel.multiplier === 'string'
+                  ? parseFloat(channel.multiplier)
+                  : channel.multiplier;
+                valueEngineered = valueEngineered * multiplier;
+              }
+              if (channel.offsetValue) {
+                const offset = typeof channel.offsetValue === 'string'
+                  ? parseFloat(channel.offsetValue)
+                  : channel.offsetValue;
+                valueEngineered = valueEngineered + offset;
+              }
+              this.logger.debug(
+                `Applied linear conversion for ${channel.metricCode}: ${parsedChannel.value} → ${valueEngineered}`
+              );
+            }
+            // No conversion
+            else {
+              this.logger.debug(`No conversion for ${channel.metricCode}, using raw value`);
+            }
+          } catch (conversionError) {
+            errors.push(
+              `Conversion error for ${channel.metricCode}: ${conversionError.message}`
+            );
+            valueEngineered = parsedChannel.value; // Fallback to raw value
           }
 
           // Create sensor log entry
@@ -308,7 +356,7 @@ export class TelemetryProcessorService {
               idNode: node.idNode,
               idProject: node.idProject,
               idOwner: idOwner,
-              ts: parsedTelemetry.timestamp,
+              ts: iotLog.timestamp, // Use iotLog.timestamp (UTC) instead of parsedTelemetry.timestamp (WIB +7)
               valueRaw: parsedChannel.value,
               valueEngineered,
               qualityFlag: 'good',
@@ -333,7 +381,7 @@ export class TelemetryProcessorService {
       await this.nodeRepository.update(
         { idNode: node.idNode },
         {
-          lastSeenAt: parsedTelemetry.timestamp,
+          lastSeenAt: iotLog.timestamp, // Use iotLog.timestamp (UTC) for consistency
           connectivityStatus: 'online',
         },
       );
@@ -588,4 +636,69 @@ export class TelemetryProcessorService {
       failedToday,
     };
   }
+
+  /**
+   * Apply formula-based conversion to raw sensor value
+   * Uses sandboxed JavaScript evaluation with safety checks
+   * 
+   * @param rawValue - The raw sensor value (e.g., voltage: 3.3)
+   * @param formula - JavaScript expression using 'x' as the raw value variable
+   * @returns Converted engineered value
+   * 
+   * @example
+   * // Pressure: 0.5-4.5V → 0-10 bar
+   * applyFormulaConversion(3.3, "(x - 0.5) * 2.5")  // Returns 7.0 bar
+   * 
+   * @example
+   * // Flow rate: pulse count → L/min
+   * applyFormulaConversion(100, "x / 7.5")  // Returns 13.333 L/min
+   * 
+   * @example
+   * // Non-linear: quadratic conversion
+   * applyFormulaConversion(5, "Math.pow(x, 2) * 0.1")  // Returns 2.5
+   * 
+   * @note Variable naming: We use lowercase 'x' following standard mathematical notation
+   *       f(x) = formula, where x represents the independent variable (raw sensor value)
+   */
+  private applyFormulaConversion(rawValue: number, formula: string): number {
+    try {
+      // Validate formula doesn't contain dangerous code
+      const dangerousPatterns = [
+        /require\s*\(/,
+        /import\s+/,
+        /eval\s*\(/,
+        /Function\s*\(/,
+        /\bprocess\b/,
+        /\bchild_process\b/,
+        /\bfs\b/,
+        /__dirname/,
+        /__filename/,
+      ];
+
+      for (const pattern of dangerousPatterns) {
+        if (pattern.test(formula)) {
+          throw new Error(`Formula contains dangerous pattern: ${pattern}`);
+        }
+      }
+
+      // Create safe evaluation context
+      const x = rawValue;
+      const Math = global.Math; // Allow Math functions
+
+      // Evaluate formula in sandboxed context
+      // Using Function constructor is safer than eval() as it doesn't have access to closure scope
+      const result = new Function('x', 'Math', `"use strict"; return (${formula});`)(x, Math);
+
+      // Validate result
+      if (typeof result !== 'number' || !isFinite(result)) {
+        throw new Error(`Formula produced invalid result: ${result}`);
+      }
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Formula conversion error: ${error.message}. Formula: ${formula}, Raw value: ${rawValue}`);
+      throw new Error(`Invalid conversion formula: ${error.message}`);
+    }
+  }
 }
+

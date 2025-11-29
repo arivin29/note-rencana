@@ -1,0 +1,690 @@
+#include <Arduino.h>
+#include <ModbusMaster.h>
+
+// KhursLabs ESP32-S3 IoT Acquisition board: UART2 -> on-board RS485
+constexpr int RS485_RX_PIN = 16;
+constexpr int RS485_TX_PIN = 15;
+constexpr uint8_t DEFAULT_SLAVE_ID = 1;
+constexpr uint8_t SCAN_START_ID = 1;
+constexpr uint8_t SCAN_END_ID = 5;  // Scan rentang ID 1-5 saja
+constexpr uint32_t READ_INTERVAL_MS = 3000;  // 3 detik
+
+// Baud rate scanner - HIRP RM-3D3Y supports 1200-9600bps
+constexpr bool AUTO_BAUD_SCAN = true;  // Set FALSE to use fixed baud rate
+constexpr uint32_t BAUD_RATES[] = {9600, 4800, 2400, 1200};  // Most common first
+constexpr uint8_t BAUD_RATE_COUNT = 4;
+
+// Register Scanner Settings
+constexpr uint16_t SCAN_START_REG = 0x0000;
+constexpr uint16_t SCAN_END_REG = 0x0050;     // Sampai register 0x50
+constexpr bool SCANNER_MODE = false;         // Set TRUE untuk full scan
+constexpr bool QUICK_TEST_MODE = false;      // Set TRUE untuk quick test
+
+HardwareSerial &rs485 = Serial2;
+ModbusMaster modbus;
+int8_t activeSlaveId = -1;
+uint32_t activeBaudRate = 0;
+
+struct MeterData {
+    // Phase L1 (Single-phase or 3-phase L1)
+    float voltage_L1;
+    float current_L1;
+    float activePower_L1;
+    float reactivePower_L1;
+    float apparentPower_L1;
+    float powerFactor_L1;
+    float frequency;
+    
+    // Phase L2 (3-phase only)
+    float voltage_L2;
+    float current_L2;
+    float activePower_L2;
+    
+    // Phase L3 (3-phase only)
+    float voltage_L3;
+    float current_L3;
+    float activePower_L3;
+    
+    // Total / Combined (for 3-phase)
+    float totalActivePower;
+    float totalReactivePower;
+    float totalApparentPower;
+    float totalPowerFactor;
+    
+    // Energy counters
+    float activeEnergy;
+    float reactiveEnergy;
+    float importEnergy;
+    float exportEnergy;
+};
+
+uint32_t toUint32(uint16_t hi, uint16_t lo)
+{
+    return (static_cast<uint32_t>(hi) << 16) | lo;
+}
+
+bool readMeter(MeterData &out)
+{
+    const uint16_t startReg = 0x0000;
+    const uint8_t registerCount = 16; // Read 0x0000 - 0x000F
+    
+    // Try Input Registers first (Function Code 0x04)
+    uint8_t result = modbus.readInputRegisters(startReg, registerCount);
+    
+    // If failed, try Holding Registers (Function Code 0x03)
+    if (result != modbus.ku8MBSuccess) {
+        Serial.printf("[Modbus] Input Reg failed (0x%02X), trying Holding Reg...\n", result);
+        result = modbus.readHoldingRegisters(startReg, registerCount);
+        if (result != modbus.ku8MBSuccess) {
+            Serial.printf("[Modbus] Holding Reg also failed: 0x%02X\n", result);
+            return false;
+        }
+        Serial.println("[Modbus] ✓ Using Holding Registers");
+    } else {
+        Serial.println("[Modbus] ✓ Using Input Registers");
+    }
+
+    // Read raw values
+    uint16_t raw[16];
+    for (int i = 0; i < 16; i++) {
+        raw[i] = modbus.getResponseBuffer(i);
+    }
+
+    // Print RAW values table
+    Serial.println("\n╔════════════════════════════════════════════════════════════════╗");
+    Serial.println("║              RAW REGISTER VALUES (0x0000-0x000F)              ║");
+    Serial.println("╚════════════════════════════════════════════════════════════════╝");
+    Serial.println("Reg  | Hex    | Decimal | Signed  | ÷10      | ÷100    | ÷1000");
+    Serial.println("-----+--------+---------+---------+----------+---------+---------");
+    
+    for (int i = 0; i < 16; i++) {
+        int16_t signedVal = static_cast<int16_t>(raw[i]);
+        // Show all registers, even if 0 (to see if meter is responding)
+        Serial.printf("0x%02X | 0x%04X | %7u | %7d | %8.1f | %7.2f | %7.3f\n",
+                      i, raw[i], raw[i], signedVal,
+                      raw[i]/10.0f, raw[i]/100.0f, raw[i]/1000.0f);
+    }
+    Serial.println("─────┴────────┴─────────┴─────────┴──────────┴─────────┴─────────\n");
+
+    // Standard parsing - Chinese Meter Layout
+    // Phase L1 / Single-Phase (registers 0x00-0x06)
+    out.voltage_L1 = raw[0] / 10.0f;
+    out.current_L1 = raw[1] / 100.0f;
+    out.activePower_L1 = static_cast<int16_t>(raw[2]) / 10.0f;
+    out.reactivePower_L1 = static_cast<int16_t>(raw[3]) / 10.0f;
+    out.apparentPower_L1 = static_cast<int16_t>(raw[4]) / 10.0f;
+    out.powerFactor_L1 = raw[5] / 100.0f;
+    out.frequency = raw[6] / 10.0f;
+
+    // Phase L2 (3-phase meter, registers 0x08-0x0A)
+    // Note: Register 0x07 is reserved, L2 starts at 0x08
+    uint16_t rawL2[3] = {0};
+    result = modbus.readInputRegisters(0x0008, 3);
+    if (result == modbus.ku8MBSuccess) {
+        rawL2[0] = modbus.getResponseBuffer(0);
+        rawL2[1] = modbus.getResponseBuffer(1);
+        rawL2[2] = modbus.getResponseBuffer(2);
+        
+        out.voltage_L2 = rawL2[0] / 10.0f;
+        out.current_L2 = rawL2[1] / 100.0f;
+        out.activePower_L2 = static_cast<int16_t>(rawL2[2]) / 10.0f;
+    } else {
+        out.voltage_L2 = 0;
+        out.current_L2 = 0;
+        out.activePower_L2 = 0;
+    }
+    delay(10);
+    
+    // Phase L3 (3-phase meter, registers 0x10-0x12)
+    uint16_t rawL3[3] = {0};
+    result = modbus.readInputRegisters(0x0010, 3);
+    if (result == modbus.ku8MBSuccess) {
+        rawL3[0] = modbus.getResponseBuffer(0);
+        rawL3[1] = modbus.getResponseBuffer(1);
+        rawL3[2] = modbus.getResponseBuffer(2);
+        
+        out.voltage_L3 = rawL3[0] / 10.0f;
+        out.current_L3 = rawL3[1] / 100.0f;
+        out.activePower_L3 = static_cast<int16_t>(rawL3[2]) / 10.0f;
+    } else {
+        out.voltage_L3 = 0;
+        out.current_L3 = 0;
+        out.activePower_L3 = 0;
+    }
+    delay(10);
+    
+    // Total values (sum of all phases for 3-phase meter)
+    out.totalActivePower = out.activePower_L1 + out.activePower_L2 + out.activePower_L3;
+    out.totalReactivePower = out.reactivePower_L1; // L2/L3 reactive not read yet
+    out.totalApparentPower = out.apparentPower_L1;
+    out.totalPowerFactor = out.powerFactor_L1;
+
+    // 32-bit energy (try both endianness)
+    uint32_t kwh_be = (static_cast<uint32_t>(raw[7]) << 16) | raw[8];
+    out.activeEnergy = kwh_be / 100.0f;
+    
+    uint32_t kvarh = (static_cast<uint32_t>(raw[9]) << 16) | raw[10];
+    out.reactiveEnergy = kvarh / 100.0f;
+    
+    uint32_t importWh = (static_cast<uint32_t>(raw[11]) << 16) | raw[12];
+    out.importEnergy = importWh / 100.0f;
+    
+    uint32_t exportWh = (static_cast<uint32_t>(raw[13]) << 16) | raw[14];
+    out.exportEnergy = exportWh / 100.0f;
+    
+    return true;
+}
+
+bool changeSlaveId(uint8_t currentId, uint8_t newId)
+{
+    modbus.begin(currentId, rs485);
+    uint8_t result = modbus.writeSingleRegister(0x0012, newId);
+    if (result == modbus.ku8MBSuccess) {
+        Serial.printf("[Modbus] Slave ID changed to %u\n", newId);
+        modbus.begin(newId, rs485);
+        activeSlaveId = newId;
+        return true;
+    }
+    Serial.printf("[Modbus] Failed to change ID (err=0x%02X)\n", result);
+    return false;
+}
+
+int8_t scanForSlave(uint8_t fromId, uint8_t toId)
+{
+    Serial.printf("Scanning RS485 bus for IDs %u-%u...\n", fromId, toId);
+    for (uint8_t id = fromId; id <= toId; ++id) {
+        modbus.begin(id, rs485);
+        uint8_t result = modbus.readInputRegisters(0x0000, 1);
+        if (result == modbus.ku8MBSuccess) {
+            Serial.printf("✓ Detected meter at slave ID %u\n", id);
+            return static_cast<int8_t>(id);
+        }
+        Serial.printf("  ID %u: no response (err=0x%02X)\n", id, result);
+        delay(100);
+    }
+    Serial.println("  No meter detected in requested range.");
+    return -1;
+}
+
+bool scanBaudRates(uint8_t &foundSlaveId, uint32_t &foundBaudRate)
+{
+    Serial.println("\n╔════════════════════════════════════════════════════════╗");
+    Serial.println("║          AUTO BAUD RATE SCANNER - HIRP Meter          ║");
+    Serial.println("╚════════════════════════════════════════════════════════╝\n");
+    
+    for (uint8_t i = 0; i < BAUD_RATE_COUNT; i++) {
+        uint32_t baud = BAUD_RATES[i];
+        
+        Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        Serial.printf("Testing Baud Rate: %u bps\n", baud);
+        Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        
+        rs485.end();
+        delay(100);
+        rs485.begin(baud, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);
+        delay(100);
+        
+        int8_t foundId = scanForSlave(SCAN_START_ID, SCAN_END_ID);
+        
+        if (foundId > 0) {
+            foundSlaveId = static_cast<uint8_t>(foundId);
+            foundBaudRate = baud;
+            
+            Serial.println("\n╔════════════════════════════════════════════════════════╗");
+            Serial.printf("║  ✓ SUCCESS! Meter found at %u bps, Slave ID %u         ║\n", baud, foundId);
+            Serial.println("╚════════════════════════════════════════════════════════╝\n");
+            
+            return true;
+        }
+        
+        Serial.printf("✗ No meter found at %u bps\n\n", baud);
+        delay(500);
+    }
+    
+    Serial.println("╔════════════════════════════════════════════════════════╗");
+    Serial.println("║  ✗ FAILED - No meter detected at any baud rate        ║");
+    Serial.println("╚════════════════════════════════════════════════════════╝");
+    Serial.println("\nPossible issues:");
+    Serial.println("  1. RS485 wiring incorrect (A/B swapped or not connected)");
+    Serial.println("  2. Meter not powered (check L, N terminals have 220V AC)");
+    Serial.println("  3. Slave ID > 5 (try increasing SCAN_END_ID)");
+    Serial.println("  4. Different Modbus protocol (not RTU)\n");
+    
+    return false;
+}
+
+void scanAllRegisters()
+{
+    Serial.println("\n╔════════════════════════════════════════════════════════╗");
+    Serial.println("║       MODBUS REGISTER SCANNER - SCN-310 Meter         ║");
+    Serial.println("╚════════════════════════════════════════════════════════╝\n");
+    
+    // Test Input Registers (Function Code 0x04)
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("📥 SCANNING INPUT REGISTERS (FC 0x04)");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    
+    uint16_t validCount = 0;
+    for (uint16_t reg = SCAN_START_REG; reg <= SCAN_END_REG; reg++) {
+        uint8_t result = modbus.readInputRegisters(reg, 1);
+        
+        if (result == modbus.ku8MBSuccess) {
+            uint16_t value = modbus.getResponseBuffer(0);
+            int16_t signedVal = static_cast<int16_t>(value);
+            
+            // Only show non-zero values or interesting patterns
+            if (value != 0x0000 && value != 0xFFFF) {
+                Serial.printf("✓ Reg[0x%04X]: 0x%04X  (%5u | %6d signed) ", 
+                              reg, value, value, signedVal);
+                
+                // Try different scaling factors
+                Serial.printf("→ ÷10=%.1f  ÷100=%.2f  ÷1000=%.3f\n",
+                              value/10.0f, value/100.0f, value/1000.0f);
+                validCount++;
+            }
+        } else if (result != 0xE2) { // Ignore timeout
+            Serial.printf("✗ Reg[0x%04X]: ERROR 0x%02X\n", reg, result);
+        }
+        delay(50); // Small delay between reads
+    }
+    
+    Serial.printf("\n📊 Found %u non-zero Input Registers\n\n", validCount);
+    
+    // Test Holding Registers (Function Code 0x03)
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("📤 SCANNING HOLDING REGISTERS (FC 0x03)");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    
+    validCount = 0;
+    for (uint16_t reg = SCAN_START_REG; reg <= SCAN_END_REG; reg++) {
+        uint8_t result = modbus.readHoldingRegisters(reg, 1);
+        
+        if (result == modbus.ku8MBSuccess) {
+            uint16_t value = modbus.getResponseBuffer(0);
+            int16_t signedVal = static_cast<int16_t>(value);
+            
+            if (value != 0x0000 && value != 0xFFFF) {
+                Serial.printf("✓ Reg[0x%04X]: 0x%04X  (%5u | %6d signed) ", 
+                              reg, value, value, signedVal);
+                
+                Serial.printf("→ ÷10=%.1f  ÷100=%.2f  ÷1000=%.3f\n",
+                              value/10.0f, value/100.0f, value/1000.0f);
+                validCount++;
+            }
+        } else if (result != 0xE2) {
+            Serial.printf("✗ Reg[0x%04X]: ERROR 0x%02X\n", reg, result);
+        }
+        delay(50);
+    }
+    
+    Serial.printf("\n📊 Found %u non-zero Holding Registers\n", validCount);
+    Serial.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("✅ SCAN COMPLETE!");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+}
+
+void testCommonRegisters()
+{
+    Serial.println("\n╔════════════════════════════════════════════════════════╗");
+    Serial.println("║    TESTING COMMON REGISTERS - Chinese Meter Pattern   ║");
+    Serial.println("╚════════════════════════════════════════════════════════╝\n");
+    
+    // Test voltage locations (0x0000, 0x0001)
+    Serial.println("━━━ VOLTAGE TEST ━━━");
+    for (uint16_t reg = 0x0000; reg <= 0x0001; reg++) {
+        uint8_t result = modbus.readInputRegisters(reg, 1);
+        if (result == modbus.ku8MBSuccess) {
+            uint16_t raw = modbus.getResponseBuffer(0);
+            if (raw > 0) {
+                Serial.printf("✓ Reg[0x%04X]: %5u → ÷10=%.1fV  ÷100=%.2fV\n", 
+                              reg, raw, raw/10.0f, raw/100.0f);
+            }
+        }
+        delay(50);
+    }
+    
+    // Test current (usually 0x0001 or 0x0002)
+    Serial.println("\n━━━ CURRENT TEST ━━━");
+    for (uint16_t reg = 0x0001; reg <= 0x0002; reg++) {
+        uint8_t result = modbus.readInputRegisters(reg, 1);
+        if (result == modbus.ku8MBSuccess) {
+            uint16_t raw = modbus.getResponseBuffer(0);
+            Serial.printf("✓ Reg[0x%04X]: %5u → ÷100=%.2fA  ÷1000=%.3fA\n", 
+                          reg, raw, raw/100.0f, raw/1000.0f);
+        }
+        delay(50);
+    }
+    
+    // Test power (0x0002, 0x0003)
+    Serial.println("\n━━━ POWER TEST ━━━");
+    for (uint16_t reg = 0x0002; reg <= 0x0003; reg++) {
+        uint8_t result = modbus.readInputRegisters(reg, 1);
+        if (result == modbus.ku8MBSuccess) {
+            uint16_t raw = modbus.getResponseBuffer(0);
+            int16_t signed_val = static_cast<int16_t>(raw);
+            if (raw > 0) {
+                Serial.printf("✓ Reg[0x%04X]: %5u (%6d signed) → ÷10=%.1fW  ÷100=%.2fW\n", 
+                              reg, raw, signed_val, raw/10.0f, raw/100.0f);
+            }
+        }
+        delay(50);
+    }
+    
+    // Test frequency (0x0006, 0x0007) - Most reliable indicator!
+    Serial.println("\n━━━ FREQUENCY TEST (50Hz expected) ━━━");
+    for (uint16_t reg = 0x0006; reg <= 0x0007; reg++) {
+        uint8_t result = modbus.readInputRegisters(reg, 1);
+        if (result == modbus.ku8MBSuccess) {
+            uint16_t raw = modbus.getResponseBuffer(0);
+            if (raw > 0) {
+                Serial.printf("✓ Reg[0x%04X]: %5u → ÷10=%.1fHz  ÷100=%.2fHz", 
+                              reg, raw, raw/10.0f, raw/100.0f);
+                
+                // Highlight if close to 50Hz or 60Hz
+                float freq = raw / 10.0f;
+                if (freq >= 49.0f && freq <= 51.0f) {
+                    Serial.printf("  ⭐ LIKELY 50Hz!");
+                } else if (freq >= 59.0f && freq <= 61.0f) {
+                    Serial.printf("  ⭐ LIKELY 60Hz!");
+                }
+                Serial.println();
+            }
+        }
+        delay(50);
+    }
+    
+    // Test power factor (0x0005)
+    Serial.println("\n━━━ POWER FACTOR TEST ━━━");
+    uint8_t result = modbus.readInputRegisters(0x0005, 1);
+    if (result == modbus.ku8MBSuccess) {
+        uint16_t raw = modbus.getResponseBuffer(0);
+        Serial.printf("✓ Reg[0x0005]: %5u → ÷100=%.2f PF\n", raw, raw/100.0f);
+    }
+    delay(50);
+    
+    // Test energy counters (32-bit at 0x0020-0x0021)
+    Serial.println("\n━━━ ENERGY TEST (32-bit) ━━━");
+    result = modbus.readInputRegisters(0x0020, 2);
+    if (result == modbus.ku8MBSuccess) {
+        uint16_t hi = modbus.getResponseBuffer(0);
+        uint16_t lo = modbus.getResponseBuffer(1);
+        uint32_t energy_be = (static_cast<uint32_t>(hi) << 16) | lo;
+        uint32_t energy_le = (static_cast<uint32_t>(lo) << 16) | hi;
+        
+        Serial.printf("✓ Reg[0x0020-21]: Hi=0x%04X Lo=0x%04X\n", hi, lo);
+        Serial.printf("  Big Endian:    %u → ÷100=%.2f kWh\n", energy_be, energy_be/100.0f);
+        Serial.printf("  Little Endian: %u → ÷100=%.2f kWh\n", energy_le, energy_le/100.0f);
+    }
+    
+    // Read first 16 registers for overview
+    Serial.println("\n━━━ REGISTER OVERVIEW (0x0000-0x000F) ━━━");
+    result = modbus.readInputRegisters(0x0000, 16);
+    if (result == modbus.ku8MBSuccess) {
+        Serial.println("Reg | Raw Value | ÷10      | ÷100     | Signed");
+        Serial.println("----+-----------+----------+----------+--------");
+        for (int i = 0; i < 16; i++) {
+            uint16_t raw = modbus.getResponseBuffer(i);
+            int16_t signed_val = static_cast<int16_t>(raw);
+            if (raw != 0) {
+                Serial.printf("%02X  | %5u     | %8.1f | %8.2f | %6d\n", 
+                              i, raw, raw/10.0f, raw/100.0f, signed_val);
+            }
+        }
+    }
+    
+    Serial.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("✅ QUICK TEST COMPLETE!");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+}
+
+void quickTestCommonRegisters()
+{
+    Serial.println("\n╔════════════════════════════════════════════════════════╗");
+    Serial.println("║     QUICK TEST - Common Chinese Meter Registers       ║");
+    Serial.println("╚════════════════════════════════════════════════════════╝\n");
+    
+    // Test common register locations
+    const uint16_t testRegs[] = {
+        0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
+        0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F,
+        0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017,
+        0x0018, 0x0019, 0x001A, 0x001B,
+        0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025
+    };
+    
+    // Try reading multiple registers at once (more efficient)
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("📥 Reading INPUT REGISTERS (FC 0x04)");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    
+    uint8_t result = modbus.readInputRegisters(0x0000, 16);
+    if (result == modbus.ku8MBSuccess) {
+        for (int i = 0; i < 16; i++) {
+            uint16_t value = modbus.getResponseBuffer(i);
+            int16_t signedVal = static_cast<int16_t>(value);
+            
+            Serial.printf("Reg[0x%04X]: 0x%04X  (%5u) ", i, value, value);
+            
+            // Show likely interpretation
+            if (i == 0 && value >= 1800 && value <= 2600) {
+                Serial.printf("→ Voltage L1: %.1f V ✓", value/10.0f);
+            } else if (i == 1 && value < 10000) {
+                Serial.printf("→ Current L1: %.2f A", value/100.0f);
+            } else if (i == 2 && value > 0) {
+                Serial.printf("→ Power L1: %.1f W", value/10.0f);
+            } else if (i == 6 && value >= 490 && value <= 510) {
+                Serial.printf("→ Frequency: %.1f Hz ✓", value/10.0f);
+            } else if (i == 8 && value >= 1800 && value <= 2600) {
+                Serial.printf("→ Voltage L2: %.1f V", value/10.0f);
+            } else if (i == 16 && value >= 1800 && value <= 2600) {
+                Serial.printf("→ Voltage L3: %.1f V", value/10.0f);
+            } else if (value != 0) {
+                Serial.printf("→ ÷10=%.1f  ÷100=%.2f", value/10.0f, value/100.0f);
+            }
+            Serial.println();
+        }
+    } else {
+        Serial.printf("❌ Failed to read registers (err=0x%02X)\n", result);
+    }
+    
+    // Test energy registers (32-bit)
+    Serial.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("⚡ ENERGY COUNTERS (32-bit values)");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    
+    result = modbus.readInputRegisters(0x0020, 10);
+    if (result == modbus.ku8MBSuccess) {
+        for (int i = 0; i < 5; i++) {
+            uint16_t hi = modbus.getResponseBuffer(i*2);
+            uint16_t lo = modbus.getResponseBuffer(i*2 + 1);
+            uint32_t energy_be = (static_cast<uint32_t>(hi) << 16) | lo;
+            uint32_t energy_le = (static_cast<uint32_t>(lo) << 16) | hi;
+            
+            Serial.printf("Reg[0x%04X-0x%04X]: ", 0x0020 + i*2, 0x0020 + i*2 + 1);
+            Serial.printf("Hi=0x%04X Lo=0x%04X → ", hi, lo);
+            
+            if (energy_be > 0 && energy_be < 1000000000) {
+                Serial.printf("%.2f kWh (BE) ", energy_be/100.0f);
+            }
+            if (energy_le > 0 && energy_le < 1000000000) {
+                Serial.printf("%.2f kWh (LE)", energy_le/100.0f);
+            }
+            if (hi == 0 && lo == 0) {
+                Serial.print("(Empty)");
+            }
+            Serial.println();
+        }
+    }
+    
+    Serial.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Serial.println("✅ QUICK TEST COMPLETE!");
+    Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+}
+
+void printMeterData(const MeterData &data)
+{
+    Serial.println("╔════════════════════════════════════════════════════════════════╗");
+    Serial.println("║            METER READINGS (PARSED) - Chinese Meter            ║");
+    Serial.println("╚════════════════════════════════════════════════════════════════╝");
+    
+    // Phase L1 / Single-Phase Data
+    Serial.println("\n━━━ PHASE L1 / SINGLE-PHASE ━━━");
+    Serial.printf("⚡ Voltage L1     : %.1f V\n", data.voltage_L1);
+    Serial.printf("🔌 Current L1     : %.3f A\n", data.current_L1);
+    Serial.printf("📊 Active Power   : %.1f W\n", data.activePower_L1);
+    Serial.printf("📈 Reactive Power : %.1f var\n", data.reactivePower_L1);
+    Serial.printf("📉 Apparent Power : %.1f VA\n", data.apparentPower_L1);
+    Serial.printf("⚖️  Power Factor   : %.2f\n", data.powerFactor_L1);
+    Serial.printf("🔄 Frequency      : %.1f Hz", data.frequency);
+    
+    // Highlight if frequency is detected correctly
+    if (data.frequency >= 49.0f && data.frequency <= 51.0f) {
+        Serial.print(" ⭐ (50Hz detected!)");
+    } else if (data.frequency >= 59.0f && data.frequency <= 61.0f) {
+        Serial.print(" ⭐ (60Hz detected!)");
+    } else if (data.frequency == 0.0f) {
+        Serial.print(" ⚠️  (No power or wrong register)");
+    }
+    Serial.println();
+    
+    // Show L2 and L3 if they have values (3-phase meter)
+    if (data.voltage_L2 > 0 || data.current_L2 > 0) {
+        Serial.println("\n━━━ PHASE L2 ━━━");
+        Serial.printf("⚡ Voltage L2     : %.1f V\n", data.voltage_L2);
+        Serial.printf("🔌 Current L2     : %.3f A\n", data.current_L2);
+        Serial.printf("📊 Active Power   : %.1f W\n", data.activePower_L2);
+    }
+    
+    if (data.voltage_L3 > 0 || data.current_L3 > 0) {
+        Serial.println("\n━━━ PHASE L3 ━━━");
+        Serial.printf("⚡ Voltage L3     : %.1f V\n", data.voltage_L3);
+        Serial.printf("� Current L3     : %.3f A\n", data.current_L3);
+        Serial.printf("📊 Active Power   : %.1f W\n", data.activePower_L3);
+    }
+    
+    // Energy counters
+    Serial.println("\n━━━ ENERGY COUNTERS ━━━");
+    Serial.printf("�🔋 Active Energy  : %.2f kWh\n", data.activeEnergy);
+    Serial.printf("🔋 Reactive Energy: %.2f kvarh\n", data.reactiveEnergy);
+    Serial.printf("📥 Import Energy  : %.2f kWh\n", data.importEnergy);
+    Serial.printf("📤 Export Energy  : %.2f kWh\n", data.exportEnergy);
+    
+    Serial.println("\n════════════════════════════════════════════════════════════════\n");
+}
+
+void setup()
+{
+    Serial.begin(115200);
+    delay(1000);
+    
+    Serial.println("\n\n");
+    Serial.println("╔════════════════════════════════════════════════════════╗");
+    Serial.println("║     HIRP RM-3D3Y / SCN3196Y Modbus Monitor            ║");
+    Serial.println("╚════════════════════════════════════════════════════════╝");
+    Serial.println("  Datasheet: 1200-9600bps, default 2400bps");
+    Serial.println("  Protocol: Modbus-RTU over RS-485");
+    Serial.println("════════════════════════════════════════════════════════\n");
+
+    if (AUTO_BAUD_SCAN) {
+        uint8_t foundId = 0;
+        uint32_t foundBaud = 0;
+        
+        if (scanBaudRates(foundId, foundBaud)) {
+            activeSlaveId = static_cast<int8_t>(foundId);
+            activeBaudRate = foundBaud;
+            modbus.begin(foundId, rs485);
+            
+            Serial.println("Starting normal operation...\n");
+        } else {
+            Serial.println("⚠️  Auto-scan failed. Will retry in 10 seconds...\n");
+            delay(10000);
+        }
+    } else {
+        // Fixed baud rate mode
+        activeBaudRate = BAUD_RATES[0];
+        Serial.printf("Using fixed baud rate: %u bps\n\n", activeBaudRate);
+        
+        rs485.begin(activeBaudRate, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);
+        modbus.begin(DEFAULT_SLAVE_ID, rs485);
+
+        activeSlaveId = scanForSlave(SCAN_START_ID, SCAN_END_ID);
+        if (activeSlaveId > 0) {
+            modbus.begin(static_cast<uint8_t>(activeSlaveId), rs485);
+        } else {
+            Serial.printf("Falling back to default slave ID %u\n", DEFAULT_SLAVE_ID);
+            activeSlaveId = DEFAULT_SLAVE_ID;
+        }
+    }
+}
+
+void loop()
+{
+    static uint32_t lastReadMs = 0;
+    if (millis() - lastReadMs < READ_INTERVAL_MS) {
+        delay(50);
+        return;
+    }
+    lastReadMs = millis();
+
+    if (activeSlaveId < 0 || activeBaudRate == 0) {
+        // Re-scan with all baud rates
+        if (AUTO_BAUD_SCAN) {
+            uint8_t foundId = 0;
+            uint32_t foundBaud = 0;
+            if (scanBaudRates(foundId, foundBaud)) {
+                activeSlaveId = static_cast<int8_t>(foundId);
+                activeBaudRate = foundBaud;
+                modbus.begin(foundId, rs485);
+            }
+        } else {
+            activeSlaveId = scanForSlave(SCAN_START_ID, SCAN_END_ID);
+            if (activeSlaveId > 0) {
+                modbus.begin(static_cast<uint8_t>(activeSlaveId), rs485);
+            }
+        }
+        return;
+    }
+
+    // QUICK TEST MODE: Test common register locations
+    if (QUICK_TEST_MODE) {
+        quickTestCommonRegisters();
+        Serial.println("Waiting 5 seconds before next test...\n");
+        return;
+    }
+
+    // SCANNER MODE: Scan all registers
+    if (SCANNER_MODE) {
+        scanAllRegisters();
+        Serial.println("Waiting 5 seconds before next scan...\n");
+        return;
+    }
+    
+    // QUICK TEST MODE: Test common registers
+    if (QUICK_TEST_MODE) {
+        testCommonRegisters();
+        Serial.println("Waiting 3 seconds before next test...\n");
+        return;
+    }
+
+    // NORMAL MODE: Read meter data
+    MeterData data;
+    if (readMeter(data)) {
+        printMeterData(data);
+    } else {
+        Serial.println("Read failed. Re-scanning bus...");
+        if (AUTO_BAUD_SCAN) {
+            uint8_t foundId = 0;
+            uint32_t foundBaud = 0;
+            if (scanBaudRates(foundId, foundBaud)) {
+                activeSlaveId = static_cast<int8_t>(foundId);
+                activeBaudRate = foundBaud;
+                modbus.begin(foundId, rs485);
+            }
+        } else {
+            activeSlaveId = scanForSlave(SCAN_START_ID, SCAN_END_ID);
+            if (activeSlaveId > 0) {
+                modbus.begin(static_cast<uint8_t>(activeSlaveId), rs485);
+            }
+        }
+    }
+}

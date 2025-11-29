@@ -5,5 +5,7 @@ export * from './node-unpaired-device.entity';
 export * from './owner.entity';
 export * from './project.entity';
 export * from './sensor.entity';
+export * from './sensor-catalog.entity';
 export * from './sensor-channel.entity';
 export * from './sensor-log.entity';
+export * from './sensor-type.entity';

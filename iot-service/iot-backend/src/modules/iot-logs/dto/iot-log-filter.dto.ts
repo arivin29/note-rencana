@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsDateString, IsEnum, IsString } from 'class-validator';
+import { IsOptional, IsDateString, IsEnum, IsString, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum LogLabel {
   TELEMETRY = 'telemetry',
@@ -77,4 +78,29 @@ export class IotLogFilterDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Page number for pagination',
+    example: 1,
+    default: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Number of items per page',
+    example: 10,
+    default: 10,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

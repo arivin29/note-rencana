@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import { OwnersModule } from './modules/owners/owners.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { NodeModelsModule } from './modules/node-models/node-models.module';
@@ -24,6 +25,9 @@ import { NodeProfilesModule } from './modules/node-profiles/node-profiles.module
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { DeviceCommandsModule } from './modules/device-commands/device-commands.module';
 import { IotLogsModule } from './modules/iot-logs/iot-logs.module';
+import { UsersModule } from './users/users.module';
+import { AuditModule } from './audit/audit.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import * as entities from './entities'; 
 
 @Module({
@@ -56,6 +60,7 @@ import * as entities from './entities';
         };
       },
     }),
+    AuthModule,
     OwnersModule,
     ProjectsModule,
     NodeModelsModule,
@@ -77,6 +82,9 @@ import * as entities from './entities';
     MqttModule,
     DeviceCommandsModule,
     IotLogsModule,
+    UsersModule,
+    AuditModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

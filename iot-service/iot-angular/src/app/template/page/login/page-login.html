@@ -7,26 +7,75 @@
 			<div class="text-inverse text-opacity-50 text-center mb-4">
 				For your protection, please verify your identity.
 			</div>
+
+			<!-- Error Message -->
+			<div *ngIf="errorMessage" class="alert alert-danger mb-3" role="alert">
+				<i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+			</div>
+
 			<div class="mb-3">
 				<label class="form-label">Email Address <span class="text-danger">*</span></label>
-				<input type="text" class="form-control form-control-lg bg-inverse bg-opacity-5" value="" placeholder="">
+				<input 
+					type="email" 
+					name="email"
+					[(ngModel)]="email"
+					#emailInput="ngModel"
+					class="form-control form-control-lg bg-inverse bg-opacity-5" 
+					placeholder="Enter your email"
+					required
+					email
+					[disabled]="loading">
+				<div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" class="text-danger mt-1">
+					<small *ngIf="emailInput.errors?.['required']">Email is required</small>
+					<small *ngIf="emailInput.errors?.['email']">Please enter a valid email</small>
+				</div>
 			</div>
+
 			<div class="mb-3">
 				<div class="d-flex">
 					<label class="form-label">Password <span class="text-danger">*</span></label>
-					<a href="#" class="ms-auto text-inverse text-decoration-none text-opacity-50">Forgot password?</a>
+					<a routerLink="/auth/forgot-password" class="ms-auto text-inverse text-decoration-none text-opacity-50">Forgot password?</a>
 				</div>
-				<input type="password" class="form-control form-control-lg bg-inverse bg-opacity-5" value="" placeholder="">
+				<input 
+					type="password" 
+					name="password"
+					[(ngModel)]="password"
+					#passwordInput="ngModel"
+					class="form-control form-control-lg bg-inverse bg-opacity-5" 
+					placeholder="Enter your password"
+					required
+					minlength="6"
+					[disabled]="loading">
+				<div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="text-danger mt-1">
+					<small *ngIf="passwordInput.errors?.['required']">Password is required</small>
+					<small *ngIf="passwordInput.errors?.['minlength']">Password must be at least 6 characters</small>
+				</div>
 			</div>
+
 			<div class="mb-3">
 				<div class="form-check">
-					<input class="form-check-input" type="checkbox" value="" id="customCheck1">
+					<input 
+						class="form-check-input" 
+						type="checkbox" 
+						name="rememberMe"
+						[(ngModel)]="rememberMe"
+						id="customCheck1"
+						[disabled]="loading">
 					<label class="form-check-label" for="customCheck1">Remember me</label>
 				</div>
 			</div>
-			<button type="submit" class="btn btn-outline-theme btn-lg d-block w-100 fw-500 mb-3">Sign In</button>
+
+			<button 
+				type="submit" 
+				class="btn btn-outline-theme btn-lg d-block w-100 fw-500 mb-3"
+				[disabled]="loading || f.invalid">
+				<span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+				<span *ngIf="loading">Signing In...</span>
+				<span *ngIf="!loading">Sign In</span>
+			</button>
+
 			<div class="text-center text-inverse text-opacity-50">
-				Don't have an account yet? <a routerLink="/template/page/register">Sign up</a>.
+				Don't have an account yet? <a routerLink="/auth/register">Sign up</a>.
 			</div>
 		</form>
 	</div>

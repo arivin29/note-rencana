@@ -97,7 +97,7 @@ export class IotLogsController {
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Items per page (default: 100)',
+    description: 'Items per page (default: 100, max: 100)',
     example: 100,
   })
   @ApiQuery({
@@ -146,14 +146,16 @@ export class IotLogsController {
   })
   async findAll(
     @Query() filters: IotLogFilterDto,
-    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit = 100,
   ): Promise<{
     data: IotLogResponseDto[];
     total: number;
     page: number;
     limit: number;
   }> {
+    // Extract page and limit from filters, with defaults
+    const page = filters.page || 1;
+    const limit = filters.limit || 100;
+    
     return this.iotLogsService.findAll(filters, page, limit);
   }
 }

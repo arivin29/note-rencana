@@ -1,0 +1,279 @@
+<!-- BEGIN profile -->
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <h1 class="page-header mb-0">My Profile</h1>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+  <div class="spinner-border text-theme" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <p class="mt-3 text-muted">Loading profile...</p>
+</div>
+
+<!-- Profile Content -->
+<div *ngIf="!loading && user" class="row">
+  <!-- Profile Info Card -->
+  <div class="col-xl-4">
+    <div class="card border-0 mb-3">
+      <div class="card-body">
+        <div class="text-center mb-3">
+          <!-- User Avatar -->
+          <div class="d-flex justify-content-center mb-3">
+            <div class="rounded-circle bg-theme text-white d-flex align-items-center justify-content-center" 
+                 style="width: 100px; height: 100px; font-size: 2.5rem;">
+              {{ user.name.charAt(0).toUpperCase() }}
+            </div>
+          </div>
+          
+          <h4 class="mb-1">{{ user.name }}</h4>
+          <p class="text-muted mb-2">{{ user.email }}</p>
+          
+          <!-- Role Badge -->
+          <span class="badge" [ngClass]="getRoleBadgeClass()" style="font-size: 0.85rem;">
+            <i class="bi bi-shield-check me-1"></i>{{ user.role | uppercase }}
+          </span>
+          
+          <!-- Status Badge -->
+          <span class="badge ms-2" [ngClass]="getStatusBadgeClass()" style="font-size: 0.85rem;">
+            <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>
+            {{ user.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+        
+        <hr>
+        
+        <!-- Account Info -->
+        <div class="mb-3">
+          <label class="text-muted mb-1">User ID</label>
+          <p class="mb-0 font-monospace small">{{ user.idUser }}</p>
+        </div>
+        
+        <div class="mb-3" *ngIf="user.idOwner">
+          <label class="text-muted mb-1">Owner ID</label>
+          <p class="mb-0 font-monospace small">{{ user.idOwner }}</p>
+        </div>
+        
+        <div class="mb-3">
+          <label class="text-muted mb-1">Account Created</label>
+          <p class="mb-0">{{ formatDate(user.createdAt) }}</p>
+        </div>
+        
+        <div class="mb-0">
+          <label class="text-muted mb-1">Last Updated</label>
+          <p class="mb-0">{{ formatDate(user.updatedAt) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Forms -->
+  <div class="col-xl-8">
+    <!-- Success/Error Messages -->
+    <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle me-2"></i>{{ successMessage }}
+      <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+    </div>
+    
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+      <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+    </div>
+
+    <!-- Edit Profile Card -->
+    <div class="card border-0 mb-3">
+      <div class="card-header bg-none fw-bold d-flex align-items-center">
+        <span class="flex-1">Profile Information</span>
+        <button 
+          type="button" 
+          class="btn btn-sm" 
+          [ngClass]="editingProfile ? 'btn-outline-secondary' : 'btn-outline-theme'"
+          (click)="toggleEditProfile()">
+          <i class="bi" [ngClass]="editingProfile ? 'bi-x-lg' : 'bi-pencil'"></i>
+          {{ editingProfile ? 'Cancel' : 'Edit' }}
+        </button>
+      </div>
+      <div class="card-body">
+        <form #profileForm="ngForm" (ngSubmit)="saveProfile(profileForm)">
+          <!-- View Mode -->
+          <div *ngIf="!editingProfile">
+            <div class="row mb-3">
+              <label class="col-form-label col-md-3 fw-bold">Name</label>
+              <div class="col-md-9">
+                <p class="form-control-plaintext">{{ user.name }}</p>
+              </div>
+            </div>
+            <div class="row mb-0">
+              <label class="col-form-label col-md-3 fw-bold">Email</label>
+              <div class="col-md-9">
+                <p class="form-control-plaintext">{{ user.email }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit Mode -->
+          <div *ngIf="editingProfile">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Name <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                name="name"
+                [(ngModel)]="editForm.name"
+                #nameInput="ngModel"
+                class="form-control"
+                required
+                minlength="3"
+                [disabled]="saving">
+              <div *ngIf="nameInput.invalid && (nameInput.dirty || nameInput.touched)" class="text-danger mt-1">
+                <small *ngIf="nameInput.errors?.['required']">Name is required</small>
+                <small *ngIf="nameInput.errors?.['minlength']">Name must be at least 3 characters</small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+              <input 
+                type="email" 
+                name="email"
+                [(ngModel)]="editForm.email"
+                #emailInput="ngModel"
+                class="form-control"
+                required
+                email
+                [disabled]="saving">
+              <div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" class="text-danger mt-1">
+                <small *ngIf="emailInput.errors?.['required']">Email is required</small>
+                <small *ngIf="emailInput.errors?.['email']">Please enter a valid email</small>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button 
+                type="button" 
+                class="btn btn-white me-2"
+                (click)="toggleEditProfile()"
+                [disabled]="saving">
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-theme"
+                [disabled]="saving || profileForm.invalid">
+                <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                <span *ngIf="saving">Saving...</span>
+                <span *ngIf="!saving">Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Change Password Card -->
+    <div class="card border-0">
+      <div class="card-header bg-none fw-bold d-flex align-items-center">
+        <span class="flex-1">Change Password</span>
+        <button 
+          type="button" 
+          class="btn btn-sm" 
+          [ngClass]="editingPassword ? 'btn-outline-secondary' : 'btn-outline-theme'"
+          (click)="toggleEditPassword()">
+          <i class="bi" [ngClass]="editingPassword ? 'bi-x-lg' : 'bi-key'"></i>
+          {{ editingPassword ? 'Cancel' : 'Change Password' }}
+        </button>
+      </div>
+      <div class="card-body">
+        <!-- Success/Error Messages for Password -->
+        <div *ngIf="passwordSuccessMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle me-2"></i>{{ passwordSuccessMessage }}
+          <button type="button" class="btn-close" (click)="passwordSuccessMessage = ''" aria-label="Close"></button>
+        </div>
+        
+        <div *ngIf="passwordErrorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>{{ passwordErrorMessage }}
+          <button type="button" class="btn-close" (click)="passwordErrorMessage = ''" aria-label="Close"></button>
+        </div>
+
+        <div *ngIf="!editingPassword">
+          <p class="text-muted mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Keep your account secure by using a strong password. Click "Change Password" to update.
+          </p>
+        </div>
+
+        <form *ngIf="editingPassword" #passwordFormRef="ngForm" (ngSubmit)="changePassword(passwordFormRef)">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Current Password <span class="text-danger">*</span></label>
+            <input 
+              type="password" 
+              name="oldPassword"
+              [(ngModel)]="passwordForm.oldPassword"
+              #oldPasswordInput="ngModel"
+              class="form-control"
+              required
+              [disabled]="saving">
+            <div *ngIf="oldPasswordInput.invalid && (oldPasswordInput.dirty || oldPasswordInput.touched)" class="text-danger mt-1">
+              <small *ngIf="oldPasswordInput.errors?.['required']">Current password is required</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">New Password <span class="text-danger">*</span></label>
+            <input 
+              type="password" 
+              name="newPassword"
+              [(ngModel)]="passwordForm.newPassword"
+              #newPasswordInput="ngModel"
+              class="form-control"
+              required
+              minlength="6"
+              [disabled]="saving">
+            <div *ngIf="newPasswordInput.invalid && (newPasswordInput.dirty || newPasswordInput.touched)" class="text-danger mt-1">
+              <small *ngIf="newPasswordInput.errors?.['required']">New password is required</small>
+              <small *ngIf="newPasswordInput.errors?.['minlength']">Password must be at least 6 characters</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Confirm New Password <span class="text-danger">*</span></label>
+            <input 
+              type="password" 
+              name="confirmPassword"
+              [(ngModel)]="passwordForm.confirmPassword"
+              #confirmPasswordInput="ngModel"
+              class="form-control"
+              required
+              [disabled]="saving">
+            <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="text-danger mt-1">
+              <small *ngIf="confirmPasswordInput.errors?.['required']">Please confirm your password</small>
+            </div>
+            <div *ngIf="passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword" class="text-danger mt-1">
+              <small>Passwords do not match</small>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button 
+              type="button" 
+              class="btn btn-white me-2"
+              (click)="toggleEditPassword()"
+              [disabled]="saving">
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              class="btn btn-theme"
+              [disabled]="saving || passwordFormRef.invalid || passwordForm.newPassword !== passwordForm.confirmPassword">
+              <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              <span *ngIf="saving">Changing...</span>
+              <span *ngIf="!saving">Change Password</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END profile -->
