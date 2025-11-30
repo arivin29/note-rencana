@@ -1,0 +1,315 @@
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-0">Audit Logs</h1>
+    <p class="text-muted small mb-0">System activity and security audit trail</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-sm" [class.btn-success]="autoRefresh" [class.btn-outline-secondary]="!autoRefresh" 
+            (click)="toggleAutoRefresh()" title="Auto refresh every 30s">
+      <i class="bi" [class.bi-pause-circle]="autoRefresh" [class.bi-arrow-clockwise]="!autoRefresh"></i>
+      {{ autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF' }}
+    </button>
+    <button class="btn btn-sm btn-outline-primary" (click)="exportToCSV()">
+      <i class="bi bi-download"></i> Export CSV
+    </button>
+  </div>
+</div>
+
+<!-- Success/Error Alerts -->
+<div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+  <i class="bi bi-check-circle me-2"></i>{{ successMessage }}
+  <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+</div>
+
+<div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+  <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+  <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+</div>
+
+<!-- Filters Card -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row g-3">
+      <!-- Search -->
+      <div class="col-md-4">
+        <label class="form-label small text-muted">Search</label>
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search description, user..." 
+                 [(ngModel)]="searchQuery" (keyup.enter)="onSearch()">
+          <button class="btn btn-outline-secondary" type="button" (click)="onSearch()">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Filter -->
+      <div class="col-md-2">
+        <label class="form-label small text-muted">Action</label>
+        <select class="form-select" [(ngModel)]="filterAction" (change)="onFilterChange()">
+          <option value="">All Actions</option>
+          <option *ngFor="let action of actions" [value]="action">{{ action }}</option>
+        </select>
+      </div>
+
+      <!-- Entity Type Filter -->
+      <div class="col-md-2">
+        <label class="form-label small text-muted">Entity Type</label>
+        <select class="form-select" [(ngModel)]="filterEntityType" (change)="onFilterChange()">
+          <option value="">All Types</option>
+          <option *ngFor="let type of entityTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="col-md-2">
+        <label class="form-label small text-muted">Status</label>
+        <select class="form-select" [(ngModel)]="filterStatus" (change)="onFilterChange()">
+          <option value="">All</option>
+          <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+
+      <!-- Reset Button -->
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+          <i class="bi bi-arrow-clockwise"></i> Reset
+        </button>
+      </div>
+
+      <!-- Date Range -->
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Date From</label>
+        <input type="datetime-local" class="form-control" [(ngModel)]="filterDateFrom" (change)="onFilterChange()">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Date To</label>
+        <input type="datetime-local" class="form-control" [(ngModel)]="filterDateTo" (change)="onFilterChange()">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Audit Logs Table -->
+<div class="card">
+  <div class="card-body">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-2">Loading audit logs...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && logs.length === 0" class="text-center py-5">
+      <i class="bi bi-inbox display-1 text-muted"></i>
+      <p class="text-muted mt-3">No audit logs found</p>
+      <p class="text-muted small">Try adjusting your filters or search query</p>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="!loading && logs.length > 0" class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th class="sortable-header" (click)="onSort('createdAt')">
+              Date/Time
+              <i class="bi" [class.bi-sort-down]="sortBy === 'createdAt' && sortOrder === 'desc'"
+                 [class.bi-sort-up]="sortBy === 'createdAt' && sortOrder === 'asc'"
+                 [class.bi-arrow-down-up]="sortBy !== 'createdAt'"></i>
+            </th>
+            <th>User</th>
+            <th class="sortable-header" (click)="onSort('action')">
+              Action
+              <i class="bi" [class.bi-sort-down]="sortBy === 'action' && sortOrder === 'desc'"
+                 [class.bi-sort-up]="sortBy === 'action' && sortOrder === 'asc'"
+                 [class.bi-arrow-down-up]="sortBy !== 'action'"></i>
+            </th>
+            <th>Entity</th>
+            <th>Status</th>
+            <th>Description</th>
+            <th>IP Address</th>
+            <th style="width: 80px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs">
+            <td>
+              <small class="text-muted">{{ formatDate(log.createdAt) }}</small>
+            </td>
+            <td>
+              <div *ngIf="log.userName">
+                <div class="fw-medium">{{ log.userName }}</div>
+                <small class="text-muted">{{ log.userEmail }}</small>
+              </div>
+              <span *ngIf="!log.userName" class="text-muted">System</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getActionBadgeClass(log.action)">
+                {{ log.action }}
+              </span>
+            </td>
+            <td>
+              <div *ngIf="log.entityType">
+                <small class="text-muted">{{ log.entityType }}</small>
+                <div *ngIf="log.entityId" class="font-monospace small text-muted">
+                  {{ log.entityId.substring(0, 8) }}...
+                </div>
+              </div>
+              <span *ngIf="!log.entityType" class="text-muted">-</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getStatusBadgeClass(log.status)">
+                {{ log.status }}
+              </span>
+            </td>
+            <td>
+              <div class="text-truncate" style="max-width: 250px;" [title]="log.description || ''">
+                {{ log.description || '-' }}
+              </div>
+            </td>
+            <td>
+              <small class="font-monospace">{{ log.ipAddress || '-' }}</small>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" (click)="openDetailModal(log)" 
+                      title="View Details">
+                <i class="bi bi-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="!loading && logs.length > 0" class="d-flex justify-content-between align-items-center mt-3">
+      <div class="text-muted small">
+        Showing {{ getShowingFrom() }} to {{ getShowingTo() }} of {{ totalLogs }} logs
+      </div>
+      
+      <nav aria-label="Audit logs pagination">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" (click)="onPageChange(currentPage - 1)" aria-label="Previous">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          
+          <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage">
+            <a class="page-link" (click)="onPageChange(page)">{{ page }}</a>
+          </li>
+          
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" (click)="onPageChange(currentPage + 1)" aria-label="Next">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div *ngIf="showDetailModal" class="modal-backdrop" (click)="closeDetailModal()">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Audit Log Details</h5>
+        <button type="button" class="btn-close" (click)="closeDetailModal()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedLog">
+        <div class="row g-3">
+          <!-- Basic Info -->
+          <div class="col-md-6">
+            <label class="form-label small text-muted">Date/Time</label>
+            <div class="fw-medium">{{ formatDate(selectedLog.createdAt) }}</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small text-muted">User</label>
+            <div class="fw-medium" *ngIf="selectedLog.userName">
+              {{ selectedLog.userName }}
+              <small class="text-muted d-block">{{ selectedLog.userEmail }}</small>
+            </div>
+            <div *ngIf="!selectedLog.userName" class="text-muted">System</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small text-muted">Action</label>
+            <div>
+              <span class="badge" [ngClass]="getActionBadgeClass(selectedLog.action)">
+                {{ selectedLog.action }}
+              </span>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small text-muted">Status</label>
+            <div>
+              <span class="badge" [ngClass]="getStatusBadgeClass(selectedLog.status)">
+                {{ selectedLog.status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small text-muted">Entity Type</label>
+            <div class="fw-medium">{{ selectedLog.entityType || '-' }}</div>
+          </div>
+
+          <div class="col-12" *ngIf="selectedLog.entityId">
+            <label class="form-label small text-muted">Entity ID</label>
+            <div class="font-monospace small">{{ selectedLog.entityId }}</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label small text-muted">Description</label>
+            <div>{{ selectedLog.description || '-' }}</div>
+          </div>
+
+          <!-- Request Info -->
+          <div class="col-12"><hr></div>
+          <div class="col-md-6">
+            <label class="form-label small text-muted">IP Address</label>
+            <div class="font-monospace small">{{ selectedLog.ipAddress || '-' }}</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small text-muted">Request Method</label>
+            <div>{{ selectedLog.requestMethod || '-' }}</div>
+          </div>
+
+          <div class="col-12" *ngIf="selectedLog.requestUrl">
+            <label class="form-label small text-muted">Request URL</label>
+            <div class="font-monospace small text-break">{{ selectedLog.requestUrl }}</div>
+          </div>
+
+          <div class="col-12" *ngIf="selectedLog.userAgent">
+            <label class="form-label small text-muted">User Agent</label>
+            <div class="small text-muted">{{ selectedLog.userAgent }}</div>
+          </div>
+
+          <!-- Old/New Values -->
+          <div class="col-12" *ngIf="selectedLog.oldValues"><hr></div>
+          
+          <div class="col-md-6" *ngIf="selectedLog.oldValues">
+            <label class="form-label small text-muted">Old Values</label>
+            <pre class="bg-light p-2 small rounded">{{ selectedLog.oldValues | json }}</pre>
+          </div>
+
+          <div class="col-md-6" *ngIf="selectedLog.newValues">
+            <label class="form-label small text-muted">New Values</label>
+            <pre class="bg-light p-2 small rounded">{{ selectedLog.newValues | json }}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

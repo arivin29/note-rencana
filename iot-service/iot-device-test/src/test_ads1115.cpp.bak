@@ -1,0 +1,232 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_ADS1X15.h>
+
+// KhursLabs ESP32-S3 IoT Acquisition Board I2C Pins
+constexpr int I2C_SDA = 8;
+constexpr int I2C_SCL = 9;
+
+// ADS1115 object
+Adafruit_ADS1115 ads;
+
+// Test mode settings
+constexpr uint32_t READ_INTERVAL_MS = 2000;  // Read every 2 seconds
+constexpr bool CONTINUOUS_MODE = true;       // Use continuous conversion mode
+
+void printSeparator() {
+    Serial.println("════════════════════════════════════════════════════════════════");
+}
+
+void printHeader() {
+    Serial.println("\n\n");
+    printSeparator();
+    Serial.println("           ADS1115 16-BIT ADC TEST - ALL CHANNELS");
+    printSeparator();
+    Serial.println("  Board: KhursLabs ESP32-S3 IoT Acquisition");
+    Serial.println("  I2C Address: 0x48 (default)");
+    Serial.println("  Channels: A0, A1, A2, A3 (Single-ended)");
+    Serial.println("  Resolution: 16-bit");
+    Serial.println("  Gain: GAIN_TWOTHIRDS (±6.144V)");
+    printSeparator();
+    Serial.println();
+}
+
+void setup() {
+    Serial.begin(115200);
+    delay(1000);
+    
+    printHeader();
+    
+    // Initialize I2C with custom pins
+    Wire.begin(I2C_SDA, I2C_SCL);
+    Serial.printf("I2C initialized: SDA=%d, SCL=%d\n", I2C_SDA, I2C_SCL);
+    
+    // Scan I2C bus first
+    Serial.println("\n━━━ I2C BUS SCAN ━━━");
+    bool deviceFound = false;
+    for (uint8_t addr = 1; addr < 127; addr++) {
+        Wire.beginTransmission(addr);
+        uint8_t error = Wire.endTransmission();
+        
+        if (error == 0) {
+            Serial.printf("✓ Device found at 0x%02X", addr);
+            if (addr == 0x48) Serial.print(" ← ADS1115 (default)");
+            if (addr == 0x49) Serial.print(" ← ADS1115 (ADDR to VDD)");
+            if (addr == 0x4A) Serial.print(" ← ADS1115 (ADDR to SDA)");
+            if (addr == 0x4B) Serial.print(" ← ADS1115 (ADDR to SCL)");
+            Serial.println();
+            deviceFound = true;
+        }
+    }
+    
+    if (!deviceFound) {
+        Serial.println("✗ No I2C devices found!");
+        Serial.println("\nPossible issues:");
+        Serial.println("  1. ADS1115 not connected");
+        Serial.println("  2. Wrong I2C pins (check SDA/SCL)");
+        Serial.println("  3. Missing pull-up resistors");
+        Serial.println("  4. Power supply issue (VDD not connected)");
+        Serial.println("\nStopping...\n");
+        while (1) delay(1000);
+    }
+    
+    Serial.println();
+    
+    // Initialize ADS1115
+    Serial.println("━━━ ADS1115 INITIALIZATION ━━━");
+    if (!ads.begin(0x48, &Wire)) {
+        Serial.println("✗ Failed to initialize ADS1115!");
+        Serial.println("  Check I2C connection and address");
+        Serial.println("\nStopping...\n");
+        while (1) delay(1000);
+    }
+    
+    Serial.println("✓ ADS1115 initialized successfully!");
+    
+    // Configure gain
+    ads.setGain(GAIN_TWOTHIRDS);  // ±6.144V range (187.5µV per bit)
+    Serial.println("✓ Gain set to GAIN_TWOTHIRDS (±6.144V)");
+    Serial.println("  LSB: 0.1875 mV/bit");
+    
+    // Set data rate (samples per second)
+    ads.setDataRate(RATE_ADS1115_128SPS);  // 128 samples/sec
+    Serial.println("✓ Data rate: 128 SPS");
+    
+    // Start continuous conversion if enabled
+    if (CONTINUOUS_MODE) {
+        ads.startADCReading(ADS1X15_REG_CONFIG_MUX_SINGLE_0, true);
+        Serial.println("✓ Continuous mode enabled");
+    } else {
+        Serial.println("✓ Single-shot mode enabled");
+    }
+    
+    Serial.println();
+    printSeparator();
+    Serial.println("           STARTING CONTINUOUS MEASUREMENT");
+    printSeparator();
+    Serial.println("\nColumn headers:");
+    Serial.println("  RAW    = Raw ADC value (-32768 to 32767)");
+    Serial.println("  VOLT   = Voltage (V)");
+    Serial.println("  mV     = Voltage (millivolts)");
+    Serial.println("  Status = Connection status\n");
+    printSeparator();
+    Serial.println();
+}
+
+void loop() {
+    static uint32_t lastReadMs = 0;
+    
+    if (millis() - lastReadMs < READ_INTERVAL_MS) {
+        delay(50);
+        return;
+    }
+    lastReadMs = millis();
+    
+    Serial.println("╔════════════════════════════════════════════════════════════════╗");
+    Serial.printf("║  Timestamp: %lu ms", millis());
+    Serial.println("                                    ║");
+    Serial.println("╚════════════════════════════════════════════════════════════════╝\n");
+    
+    // Read all 4 channels
+    for (uint8_t channel = 0; channel < 4; channel++) {
+        Serial.printf("━━━ CHANNEL A%d ━━━\n", channel);
+        
+        int16_t rawValue;
+        
+        if (CONTINUOUS_MODE) {
+            // Read in continuous mode
+            rawValue = ads.getLastConversionResults();
+            
+            // Start next channel conversion
+            if (channel < 3) {
+                ads.startADCReading((adsGain_t)(ADS1X15_REG_CONFIG_MUX_SINGLE_0 + channel + 1), true);
+            } else {
+                ads.startADCReading(ADS1X15_REG_CONFIG_MUX_SINGLE_0, true);  // Loop back to A0
+            }
+            
+            delay(10);  // Wait for conversion
+        } else {
+            // Single-shot mode
+            rawValue = ads.readADC_SingleEnded(channel);
+        }
+        
+        // Convert to voltage
+        float voltage = ads.computeVolts(rawValue);
+        float millivolts = voltage * 1000.0f;
+        
+        // Determine connection status
+        bool connected = true;
+        String status = "OK";
+        
+        // Check if sensor is disconnected (very low reading in GAIN_TWOTHIRDS)
+        if (abs(rawValue) < 10) {
+            connected = false;
+            status = "DISCONNECTED";
+        }
+        
+        // Print results
+        Serial.printf("  Raw Value : %6d", rawValue);
+        if (rawValue >= 0) Serial.print(" ");
+        Serial.println();
+        
+        Serial.printf("  Voltage   : %8.4f V\n", voltage);
+        Serial.printf("  Millivolts: %8.2f mV\n", millivolts);
+        Serial.printf("  Status    : %s", status.c_str());
+        
+        if (!connected) {
+            Serial.print(" ⚠️");
+        } else if (voltage > 0.1f && voltage < 3.5f) {
+            Serial.print(" ✓");
+        }
+        Serial.println("\n");
+        
+        delay(50);
+    }
+    
+    Serial.println("────────────────────────────────────────────────────────────────");
+    
+    // Summary table
+    Serial.println("\n📊 SUMMARY TABLE:");
+    Serial.println("┌─────────┬─────────┬───────────┬──────────────┐");
+    Serial.println("│ Channel │   RAW   │  Voltage  │    Status    │");
+    Serial.println("├─────────┼─────────┼───────────┼──────────────┤");
+    
+    for (uint8_t channel = 0; channel < 4; channel++) {
+        int16_t rawValue;
+        
+        if (CONTINUOUS_MODE) {
+            if (channel == 0) {
+                ads.startADCReading(ADS1X15_REG_CONFIG_MUX_SINGLE_0, true);
+                delay(10);
+            }
+            rawValue = ads.getLastConversionResults();
+            if (channel < 3) {
+                ads.startADCReading((adsGain_t)(ADS1X15_REG_CONFIG_MUX_SINGLE_0 + channel + 1), true);
+                delay(10);
+            }
+        } else {
+            rawValue = ads.readADC_SingleEnded(channel);
+        }
+        
+        float voltage = ads.computeVolts(rawValue);
+        bool connected = (abs(rawValue) >= 10);
+        
+        Serial.printf("│   A%-5d │ %7d │ %7.3f V │ ", channel, rawValue, voltage);
+        
+        if (!connected) {
+            Serial.print("NO SENSOR   ");
+        } else if (voltage < 0.1f) {
+            Serial.print("~0V (GND)   ");
+        } else if (voltage > 3.2f) {
+            Serial.print("HIGH (3.3V) ");
+        } else {
+            Serial.print("ACTIVE      ");
+        }
+        Serial.println("│");
+    }
+    
+    Serial.println("└─────────┴─────────┴───────────┴──────────────┘");
+    
+    Serial.println("\n════════════════════════════════════════════════════════════════\n");
+    Serial.printf("Next reading in %u seconds...\n\n", READ_INTERVAL_MS / 1000);
+}

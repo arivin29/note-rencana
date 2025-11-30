@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, ILike } from 'typeorm';
 import { Node } from '../../entities/node.entity';
+import { SensorLog } from '../../entities/sensor-log.entity';
 import { CreateNodeDto } from './dto/create-node.dto';
 import { UpdateNodeDto } from './dto/update-node.dto';
 import { NodeResponseDto, NodeDetailedResponseDto } from './dto/node-response.dto';
@@ -12,6 +13,8 @@ export class NodesService {
   constructor(
     @InjectRepository(Node)
     private readonly nodeRepository: Repository<Node>,
+    @InjectRepository(SensorLog)
+    private readonly sensorLogRepository: Repository<SensorLog>,
   ) {}
 
   /**
@@ -226,6 +229,7 @@ export class NodesService {
       connectivityStatus: node.connectivityStatus,
       lastSeenAt: node.lastSeenAt,
       idCurrentLocation: node.idCurrentLocation,
+      idNodeProfile: node.idNodeProfile,
       createdAt: node.createdAt,
       updatedAt: node.updatedAt,
       project: node.project ? {
@@ -379,19 +383,46 @@ export class NodesService {
       relations: ['sensors', 'sensors.sensorCatalog', 'sensors.sensorChannels'],
     });
 
+    // Get latest sensor logs for all channels in this node
+    const channelIds = (nodeWithSensors?.sensors || [])
+      .flatMap(sensor => sensor.sensorChannels || [])
+      .map(channel => channel.idSensorChannel);
+
+    // Query latest logs for all channels at once (more efficient)
+    const latestLogs = await Promise.all(
+      channelIds.map(async (channelId) => {
+        const log = await this.sensorLogRepository.findOne({
+          where: { idSensorChannel: channelId },
+          order: { ts: 'DESC' },
+        });
+        return { channelId, log };
+      })
+    );
+
+    // Create a map for quick lookup
+    const latestLogMap = new Map();
+    latestLogs.forEach(({ channelId, log }) => {
+      if (log) {
+        latestLogMap.set(channelId, log);
+      }
+    });
+
     const sensorsWithData = (nodeWithSensors?.sensors || []).map((sensor: any) => ({
       idSensor: sensor.idSensor,
       sensorCode: sensor.label,
       catalogName: sensor.sensorCatalog?.modelName || 'Unknown',
       status: 'active',
-      channels: (sensor.sensorChannels || []).map((channel: any) => ({
-        idSensorChannel: channel.idSensorChannel,
-        metricCode: channel.metricCode,
-        unit: channel.unit,
-        latestValue: null,
-        timestamp: null,
-        status: 'active',
-      })),
+      channels: (sensor.sensorChannels || []).map((channel: any) => {
+        const latestLog = latestLogMap.get(channel.idSensorChannel);
+        return {
+          idSensorChannel: channel.idSensorChannel,
+          metricCode: channel.metricCode,
+          unit: channel.unit,
+          latestValue: latestLog?.valueEngineered ?? latestLog?.valueRaw ?? null,
+          timestamp: latestLog?.ts ?? null,
+          status: 'active',
+        };
+      }),
     }));
 
     // Recent activity (placeholder)

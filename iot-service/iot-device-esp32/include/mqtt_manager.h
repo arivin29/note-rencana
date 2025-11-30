@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <Client.h>
+
+// MQTT_MAX_PACKET_SIZE and MQTT_SOCKET_TIMEOUT are now set via platformio.ini build_flags
+// This ensures the library is compiled with the correct limits from the start
+
 #include <PubSubClient.h>
 
 // ============================================================================

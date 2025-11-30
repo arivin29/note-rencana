@@ -1,6 +1,6 @@
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -16,6 +16,9 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+  
+  // Enable ClassSerializerInterceptor to respect @Exclude() decorators
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('IoT Monitoring System API')
@@ -25,6 +28,7 @@ async function bootstrap() {
     )
     .setVersion('1.0.0')
     .addBearerAuth()
+    .addTag('Authentication', 'User authentication and authorization')
     .addTag('Owners', 'Owner management and statistics')
     .addTag('Projects', 'Project management endpoints')
     .addTag('Nodes', 'Node management and monitoring')

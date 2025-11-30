@@ -4,6 +4,11 @@
 
 export interface SensorTypeResponseDto {
   category: string;
+
+  /**
+   * Conversion formula using "x" as variable
+   */
+  conversionFormula?: string;
   createdAt: string;
   defaultUnit?: string;
   idSensorType: string;

@@ -4,158 +4,49 @@
 #include <Adafruit_ADS1X15.h>
 
 // Global Modbus instance
-extern ModbusMaster modbusNode;
+
+// NOTE: ModbusMaster library removed - RS485 now uses raw Modbus RTU in main.cpp
 
 // ============================================================================
-// RS485 SCANNER IMPLEMENTATION
+// RS485 SCANNER STUB (disabled - using raw Modbus in main.cpp)
 // ============================================================================
 
 RS485Scanner::RS485Scanner() {
-    modbus = &modbusNode;
     activeCount = 0;
     regStartAddr = 0;
-    regEndAddr = 100;          // Default: scan registers 0-100
-    functionCode = 4;          // Default: Input Registers (0x04)
+    regEndAddr = 100;
+    functionCode = 4;
 }
 
 bool RS485Scanner::begin() {
-    #if DEBUG_MODBUS
-    Serial.println(F("[RS485] Initializing scanner..."));
-    #endif
-
-    // Modbus already initialized in main.cpp (setupModbus)
+    Serial.println(F("[RS485] Using raw Modbus (library disabled)"));
     return true;
 }
 
-uint8_t RS485Scanner::scanSlaves(uint8_t startId, uint8_t endId) {
-    #if DEBUG_MODBUS
-    Serial.print(F("[RS485] Scanning slave IDs "));
-    Serial.print(startId);
-    Serial.print(F("-"));
-    Serial.print(endId);
-    Serial.println(F("..."));
-    #endif
-
-    activeCount = 0;
-
-    for (uint8_t slaveId = startId; slaveId <= endId; slaveId++) {
-        if (pingSlaveId(slaveId)) {
-            activeSlaves[activeCount++] = slaveId;
-
-            #if DEBUG_MODBUS
-            Serial.print(F("  [✓] Slave ID "));
-            Serial.print(slaveId);
-            Serial.println(F(" detected"));
-            #endif
-        }
-
-        delay(10); // Small delay between pings
-    }
-
-    #if DEBUG_MODBUS
-    Serial.print(F("[RS485] Found "));
-    Serial.print(activeCount);
-    Serial.println(F(" active slaves"));
-    #endif
-
-    return activeCount;
-}
-
-bool RS485Scanner::pingSlaveId(uint8_t slaveId) {
-    modbus->begin(slaveId, MODBUS_SERIAL);
-
-    // Try to read 1 register from address 0
-    uint8_t result = modbus->readHoldingRegisters(0, 1);
-
-    // If success or illegal data address (device responds but register not available)
-    return (result == modbus->ku8MBSuccess || result == 0x02);
-}
-
-bool RS485Scanner::readAllSlaves(JsonArray& output) {
-    if (activeCount == 0) {
-        #if DEBUG_MODBUS
-        Serial.println(F("[RS485] No active slaves to read"));
-        #endif
-        return false;
-    }
-
-    for (uint8_t i = 0; i < activeCount; i++) {
-        uint8_t slaveId = activeSlaves[i];
-
-        JsonObject slaveData = output.add<JsonObject>();
-        slaveData["slave_id"] = slaveId;
-
-        JsonArray registers = slaveData["registers"].to<JsonArray>();
-
-        readSlaveRegisters(slaveId, regStartAddr, regEndAddr - regStartAddr, slaveData);
-    }
-
-    return true;
-}
-
-bool RS485Scanner::readSlaveRegisters(uint8_t slaveId, uint16_t startAddr, uint8_t count, JsonObject& output) {
-    modbus->begin(slaveId, MODBUS_SERIAL);
-
-    JsonArray registers = output["registers"].to<JsonArray>();
-
-    // Read in chunks (max 125 registers per read)
-    uint8_t chunkSize = 10;  // Read 10 registers at a time (configurable)
-
-    for (uint16_t addr = startAddr; addr < startAddr + count; addr += chunkSize) {
-        uint8_t readCount = min(chunkSize, (uint8_t)(startAddr + count - addr));
-
-        uint8_t result;
-        if (functionCode == 3) {
-            result = modbus->readHoldingRegisters(addr, readCount);
-        } else {
-            result = modbus->readInputRegisters(addr, readCount);
-        }
-
-        if (result == modbus->ku8MBSuccess) {
-            for (uint8_t i = 0; i < readCount; i++) {
-                uint16_t value = modbus->getResponseBuffer(i);
-
-                // Only add non-zero values to save space (optional)
-                if (value != 0) {
-                    JsonObject reg = registers.add<JsonObject>();
-                    reg["addr"] = addr + i;
-                    reg["val"] = value;
-                }
-            }
-        }
-
-        delay(50); // Delay between chunk reads
-    }
-
-    return true;
-}
-
+uint8_t RS485Scanner::scanSlaves(uint8_t, uint8_t) { return 0; }
+bool RS485Scanner::pingSlaveId(uint8_t) { return false; }
+bool RS485Scanner::readAllSlaves(JsonArray&) { return false; }
+bool RS485Scanner::readSlaveRegisters(uint8_t, uint16_t, uint8_t, JsonObject&) { return false; }
 void RS485Scanner::setRegisterRange(uint16_t start, uint16_t end) {
     regStartAddr = start;
     regEndAddr = end;
-
-    #if DEBUG_MODBUS
-    Serial.print(F("[RS485] Register range set to "));
-    Serial.print(start);
-    Serial.print(F("-"));
-    Serial.println(end);
-    #endif
 }
 
+
 // ============================================================================
-// ANALOG INPUT READER IMPLEMENTATION
+// ANALOG INPUT READER IMPLEMENTATION (4-20mA via ESP32 GPIO1/GPIO2)
 // ============================================================================
 
 AnalogInputReader::AnalogInputReader() {
-    channels[0] = ANALOG_CURRENT_A2_PIN;
-    channels[1] = ANALOG_CURRENT_A3_PIN;
-    channelNames[0] = "A2";
-    channelNames[1] = "A3";
+    channels[0] = ANALOG_CURRENT_A2_PIN;  // GPIO1
+    channels[1] = ANALOG_CURRENT_A3_PIN;  // GPIO2
+    channelNames[0] = "gpio1";
+    channelNames[1] = "gpio2";
 }
 
 bool AnalogInputReader::begin() {
     #if DEBUG_SENSORS
-    Serial.println(F("[Analog] Initializing analog inputs..."));
+    Serial.println(F("[Analog] Initializing 4-20mA reader (ESP32 GPIO1/GPIO2)..."));
     #endif
 
     pinMode(ANALOG_CURRENT_A2_PIN, INPUT);
@@ -166,41 +57,17 @@ bool AnalogInputReader::begin() {
 
 void AnalogInputReader::readAllChannels(JsonArray& output) {
     for (uint8_t i = 0; i < 2; i++) {
-        AnalogChannelData data = readChannel(channels[i], channelNames[i].c_str());
-
+        // Read RAW ADC value from ESP32 (12-bit: 0-4095)
+        uint16_t rawValue = analogRead(channels[i]);
+        
+        // DEBUG: Print raw value only
+        Serial.printf("[Analog] %s (GPIO%d): raw=%d\n", 
+                      channelNames[i].c_str(), channels[i], rawValue);
+        
         JsonObject channel = output.add<JsonObject>();
-        channel["ch"] = data.channel;
-        channel["adc"] = data.rawADC;
-        channel["volt"] = data.voltage;
-        channel["ma"] = data.currentMA;
+        channel["ch"] = channelNames[i];
+        channel["raw"] = rawValue;        // RAW 12-bit from ESP32 only
     }
-}
-
-AnalogChannelData AnalogInputReader::readChannel(uint8_t pin, const char* name) {
-    AnalogChannelData data;
-    data.channel = String(name);
-    data.pin = pin;
-
-    // Read ADC (12-bit: 0-4095)
-    data.rawADC = analogRead(pin);
-
-    // Convert to voltage
-    data.voltage = adcToVoltage(data.rawADC);
-
-    // Convert to current (4-20mA with 100Ω shunt)
-    data.currentMA = voltageToCurrent(data.voltage);
-
-    return data;
-}
-
-float AnalogInputReader::adcToVoltage(uint16_t adc) {
-    // ESP32 12-bit ADC: 0-4095 = 0-3.3V
-    return (adc / (float)ADC_MAX_VALUE) * ADC_VREF;
-}
-
-float AnalogInputReader::voltageToCurrent(float voltage) {
-    // With 100Ω shunt: I = V / 100 * 1000 (mA)
-    return (voltage / 100.0) * 1000.0;
 }
 
 // ============================================================================
@@ -248,25 +115,33 @@ void ADC16Reader::readAllChannels(JsonArray& output) {
         return;
     }
 
-    // Read channels A0 and A1
-    for (uint8_t ch = 0; ch < 2; ch++) {
-        ADC16ChannelData data = readChannel(ch);
+    Adafruit_ADS1115 ads;
+    ads.setGain((adsGain_t)currentGain);
+    ads.begin(i2cAddress);
 
+    // Read all 4 channels: A0, A1, A2, A3
+    for (uint8_t ch = 0; ch < 4; ch++) {
+        String channelName = "A" + String(ch);
+        
+        // Read RAW 16-bit signed value directly from ADS1115 chip
+        int16_t rawValue = ads.readADC_SingleEnded(ch);
+        
+        // Calculate voltage based on gain setting
+        // GAIN_TWOTHIRDS = ±6.144V range, LSB = 0.1875mV
+        float voltage = rawValue * 0.0001875;
+        
+        // Simple connection detection
+        bool connected = (abs(rawValue) >= 10 && voltage <= 6.0);
+        
         JsonObject channel = output.add<JsonObject>();
-        channel["ch"] = data.channel;
-        channel["raw"] = data.rawADC;
-        channel["volt"] = data.voltage;
-        channel["connected"] = data.connected;
+        channel["ch"] = channelName;
+        channel["raw"] = rawValue;           // RAW 16-bit signed from ADS1115
+        channel["volt"] = voltage;           // Calculated voltage
+        channel["connected"] = connected;    // Connection status
 
         #if DEBUG_SENSORS
-        Serial.print(F("[ADC16] "));
-        Serial.print(data.channel);
-        Serial.print(F(": raw="));
-        Serial.print(data.rawADC);
-        Serial.print(F(", volt="));
-        Serial.print(data.voltage, 4);
-        Serial.print(F("V, connected="));
-        Serial.println(data.connected ? "YES" : "NO");
+        Serial.printf("[ADC16] %s: %6d raw | %0.4fV\n", 
+                      channelName.c_str(), rawValue, voltage);
         #endif
     }
 }
@@ -313,9 +188,9 @@ float ADC16Reader::rawToVoltage(int16_t raw) {
     // GAIN_TWOTHIRDS: ±6.144V range
     // LSB = 6.144V / 32768 = 0.1875 mV
 
-    float lsb = 0.0001875;  // 0.1875 mV per bit
+    float lsb = 0.0001875;  // 0.1875 mV per bit (default for GAIN_TWOTHIRDS)
 
-    switch (currentGain) {
+    switch ((adsGain_t)currentGain) {
         case GAIN_TWOTHIRDS:  // ±6.144V
             lsb = 0.1875 / 1000.0;
             break;
@@ -529,7 +404,7 @@ void GenericIOManager::generateRawTelemetry(JsonDocument& doc) {
 }
 
 void GenericIOManager::readDigitalInputs(JsonObject& output) {
-    // Read pump status from GPIO14
+    // Read pump status from GPIO38 (IO_DIGITAL_IN_1_PIN)
     bool pumpStatus = digitalRead(IO_DIGITAL_IN_1_PIN);
     output["pump_status"] = pumpStatus;  // true=ON, false=OFF
     output["pump_pin"] = IO_DIGITAL_IN_1_PIN;

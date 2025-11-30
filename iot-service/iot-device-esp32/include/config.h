@@ -13,9 +13,9 @@
 // ============================================================================
 
 // --- RS485 Modbus (Terminal Block KF301) ---
-#define RS485_RX_PIN            18      // UART1 RX (was GPIO16)
-#define RS485_TX_PIN            17      // UART1 TX (was GPIO17)
-#define RS485_DE_RE_PIN         4       // Driver Enable / Receiver Enable (same pin)
+#define RS485_RX_PIN            16      // UART2 RX -> MAX485 RO (B-)
+#define RS485_TX_PIN            15      // UART2 TX -> MAX485 DI (A+)
+#define RS485_DE_RE_PIN         -1      // Driver Enable (not used - auto-direction)
 
 // --- Analog Current Inputs 4-20mA (Terminal Block KF350) ---
 // Board has built-in 100Ω shunt resistor: 4mA=0.4V, 20mA=2.0V
@@ -43,8 +43,11 @@
 #define RELAY_PIN               15      // GPIO15 - Digital Output for Relay (active LOW)
 #define IO_DIGITAL_OUT_1_PIN    15      // Same as relay - for hard restart
 
-// Digital Input 1: Pump Status Monitor
-#define IO_DIGITAL_IN_1_PIN     14      // GPIO14 - Digital Input for pump status (HIGH=ON, LOW=OFF)
+// NE555 Relay Module (GPIO14) - Controlled via MQTT
+#define RELAY_NE555_PIN         14      // GPIO14 - NE555 Relay Module (active LOW)
+
+// Digital Input 1: Pump Status Monitor (Changed to GPIO38)
+#define IO_DIGITAL_IN_1_PIN     38      // GPIO38 - Digital Input for pump status (HIGH=ON, LOW=OFF)
 
 // --- 4G LTE Module SIM7600E (Internal) ---
 #define SIM7600_TX_PIN          6       // TX3 on board (ESP32 GPIO6 -> SIM7600 RX)
@@ -84,8 +87,8 @@
 #define PRESSURE_MAX_BAR        10.0    // Maximum pressure (bar) - ADJUST to your sensor
 
 // --- RS485 Modbus Configuration ---
-#define MODBUS_SERIAL           Serial1 // Hardware serial for RS485 (UART1)
-#define MODBUS_BAUDRATE         9600    // Default baudrate (adjust for TUF2000M)
+#define MODBUS_SERIAL           Serial2 // Hardware serial for RS485 (UART2)
+#define MODBUS_BAUDRATE         9600    // Default baudrate (TUF-2000M: 9600 8N1)
 #define MODBUS_TIMEOUT_MS       1000    // Modbus response timeout
 
 // --- INA219 Configuration ---
@@ -120,6 +123,9 @@
 // --- Telemetry ---
 #define TELEMETRY_INTERVAL_MS   30000   // Send data every 30 seconds
 #define MAX_OFFLINE_RECORDS     1000    // Max records to store when offline
+
+// --- RS485 Device Monitoring ---
+#define RS485_SCAN_INTERVAL_MS  120000  // Scan RS485 devices every 2 minutes (120 seconds)
 
 // --- Watchdog ---
 #define WATCHDOG_TIMEOUT_MS     300000  // 5 minutes - restart if no MQTT connection

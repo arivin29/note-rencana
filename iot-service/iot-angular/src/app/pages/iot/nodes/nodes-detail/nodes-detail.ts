@@ -12,6 +12,7 @@ import { AddChannelFormValue, SensorTypeOption } from './node-detail-add-channel
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorLogsService } from '../../../../../sdk/core/services/sensor-logs.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
+import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
 
 interface SensorChannelRow {
     id: string;
@@ -78,6 +79,7 @@ interface SensorDetail {
 export class NodesDetailPage implements OnInit {
     nodeId = ''; // Node code from route (e.g., "ESP-CS-F03")
     nodeUuid = ''; // Node UUID from database (for API calls)
+    idNodeProfile = ''; // Node Profile UUID
     loading = false;
     error: string | null = null;
     sensorDrawerState = {
@@ -87,15 +89,19 @@ export class NodesDetailPage implements OnInit {
     channelDrawerState = {
         isOpen: false,
         sensorId: '',
-        sensorLabel: ''
+        sensorLabel: '',
+        channelId: null as string | null,
+        mode: 'add' as 'add' | 'edit'
     };
-    // sensorTypeOptions removed - now loaded from backend in drawer component
+    mappingUpdateVisible = false;
     sensors: SensorDetail[] = [];
 
     nodeMeta = {
+        ownerId: '',
         owner: '',
         ownerContact: '',
         ownerPhone: '',
+        projectId: '',
         project: '',
         projectCode: '',
         model: '',
@@ -120,7 +126,8 @@ export class NodesDetailPage implements OnInit {
         private router: Router,
         private nodesService: NodesService,
         private sensorLogsService: SensorLogsService,
-        private sensorsService: SensorsService
+        private sensorsService: SensorsService,
+        private sensorChannelsService: SensorChannelsService
     ) {
         this.route.paramMap.subscribe((params) => {
             const paramId = params.get('nodeId');
@@ -147,8 +154,8 @@ export class NodesDetailPage implements OnInit {
             next: (httpResponse) => {
                 console.log('Raw httpResponse:', httpResponse);
                 let dashboard: any = httpResponse.body;
-                console.log('Dashboard body type:', typeof dashboard);
-                console.log('Dashboard body:', dashboard);
+                // console.log('Dashboard body type:', typeof dashboard);
+                // console.log('Dashboard body:', dashboard);
 
                 // If response is string, parse it
                 if (typeof dashboard === 'string') {
@@ -164,13 +171,17 @@ export class NodesDetailPage implements OnInit {
 
                 // Store node code for display (nodeUuid already set from route)
                 this.nodeId = node.code || this.nodeUuid;
+                this.idNodeProfile = node.idNodeProfile || ''; // Store node profile ID
                 console.log('Node code for display:', this.nodeId);
                 console.log('Node UUID:', this.nodeUuid);
+                console.log('Node Profile ID:', this.idNodeProfile);
 
                 this.nodeMeta = {
+                    ownerId: owner.idOwner || '',
                     owner: owner.name || 'Unknown Owner',
                     ownerContact: owner.contactPerson || '-',
                     ownerPhone: owner.industry || '-',
+                    projectId: node.project?.idProject || '',
                     project: node.project?.name || 'Unknown Project',
                     projectCode: node.project?.areaType || '-',
                     model: node.nodeModel?.modelName || '-',
@@ -389,15 +400,30 @@ export class NodesDetailPage implements OnInit {
         this.channelDrawerState = {
             isOpen: true,
             sensorId: sensor.id,
-            sensorLabel: sensor.label
+            sensorLabel: sensor.label,
+            channelId: null,
+            mode: 'add'
         };
+    }
+    
+    openEditChannelDrawer(sensor: SensorDetail, channel: SensorChannelRow) {
+        this.channelDrawerState = {
+            isOpen: true,
+            sensorId: sensor.id,
+            sensorLabel: sensor.label,
+            channelId: channel.id,
+            mode: 'edit'
+        };
+        console.log('Edit channel:', channel.id);
     }
 
     handleAddChannelDrawerClose() {
         this.channelDrawerState = {
             isOpen: false,
             sensorId: '',
-            sensorLabel: ''
+            sensorLabel: '',
+            channelId: null,
+            mode: 'add'
         };
     }
 
@@ -445,6 +471,40 @@ export class NodesDetailPage implements OnInit {
                 console.error('Error deleting sensor:', err);
                 this.loading = false;
                 alert('Failed to delete sensor. Please try again.');
+            }
+        });
+    }
+    
+    deleteChannel(sensor: SensorDetail, channel: SensorChannelRow) {
+        // 1. Show detailed confirmation
+        const confirmDelete = confirm(
+            `Are you sure you want to delete channel "${channel.metric}"?\n\n` +
+            `Sensor: ${sensor.label}\n` +
+            `Channel ID: ${channel.id}\n` +
+            `Metric: ${channel.metric}\n` +
+            `Unit: ${channel.unit}\n\n` +
+            `This will permanently remove:\n` +
+            `- Channel configuration\n` +
+            `- All telemetry history for this channel\n\n` +
+            `This action cannot be undone.`
+        );
+
+        if (!confirmDelete) return;
+
+        // 2. Show loading state
+        this.loading = true;
+
+        // 3. Call DELETE API
+        this.sensorChannelsService.sensorChannelsControllerRemove({ id: channel.id }).subscribe({
+            next: () => {
+                this.loading = false;
+                // 4. Reload fresh data from backend (Always Reload pattern)
+                this.loadNodeDashboard();
+            },
+            error: (err) => {
+                console.error('Error deleting channel:', err);
+                this.loading = false;
+                alert('Failed to delete channel. Please try again.');
             }
         });
     }
@@ -554,5 +614,31 @@ export class NodesDetailPage implements OnInit {
                 }
             }
         };
+    }
+
+    // Mapping Update Methods
+    openMappingUpdate(): void {
+        console.log('Opening mapping update drawer:', {
+            nodeUuid: this.nodeUuid,
+            idNodeProfile: this.idNodeProfile,
+            mappingUpdateVisible: this.mappingUpdateVisible
+        });
+        
+        if (!this.idNodeProfile) {
+            alert('This node does not have a profile assigned yet.');
+            return;
+        }
+        
+        this.mappingUpdateVisible = true;
+    }
+
+    onMappingUpdated(profileId: string): void {
+        console.log('Mapping updated for profile:', profileId);
+        // Optionally reload node data or show success message
+        this.loadNodeDashboard();
+    }
+
+    onMappingUpdateClose(): void {
+        this.mappingUpdateVisible = false;
     }
 }

@@ -1,5 +1,6 @@
 export interface ParsedChannelValue {
   channelCode: string;
+  idSensorChannel?: string; // Direct database ID for faster lookup
   value: number | null;
   unit: string;
   payloadPath: string;
@@ -9,6 +10,7 @@ export interface ParsedChannelValue {
 
 export interface ParsedSensorData {
   sensorLabel: string;
+  idSensor?: string; // Direct database ID for faster lookup
   catalogId: string;
   channels: ParsedChannelValue[];
 }

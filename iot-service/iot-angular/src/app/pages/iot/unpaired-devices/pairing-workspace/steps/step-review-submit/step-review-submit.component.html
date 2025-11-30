@@ -1,0 +1,150 @@
+<card class="mb-4">
+  <card-body>
+    <h2 class="step-title">
+      <i class="fa fa-check-circle me-2"></i>
+      Step 4: Review & Submit
+    </h2>
+    <p class="step-description">Review your configuration before submitting</p>
+
+    <div class="config-summary">
+        <div class="summary-section">
+            <h4 class="summary-title">
+                <i class="fa fa-server me-2"></i>
+                Node Configuration
+            </h4>
+      <div *ngIf="nodeConfig.mode === 'existing' && nodeConfig.selectedExistingNode" class="summary-content">
+        <div class="summary-row">
+          <span class="summary-label">Mode:</span>
+          <span class="summary-value">Using Existing Node</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Node Code:</span>
+          <span class="summary-value">{{ nodeConfig.selectedExistingNode.code }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Serial Number:</span>
+          <span class="summary-value">{{ nodeConfig.selectedExistingNode.serialNumber }}</span>
+            </div>
+        <div class="summary-row" *ngIf="nodeDetail?.nodeModel?.modelName">
+          <span class="summary-label">Model:</span>
+          <span class="summary-value">{{ nodeDetail?.nodeModel?.modelName }}</span>
+        </div>
+        <div class="summary-row" *ngIf="nodeDetail?.currentLocation?.address">
+          <span class="summary-label">Location:</span>
+          <span class="summary-value">{{ nodeDetail?.currentLocation?.address }}</span>
+        </div>
+        <div class="summary-row" *ngIf="profileDetail">
+          <span class="summary-label">Sensor Profile:</span>
+          <span class="summary-value">
+            {{ profileDetail.name }} ({{ profileDetail.parserType | uppercase }})
+          </span>
+        </div>
+        </div>
+      <div *ngIf="nodeConfig.mode === 'new' && nodeConfig.newNode" class="summary-content">
+        <div class="summary-row">
+          <span class="summary-label">Mode:</span>
+          <span class="summary-value">New Node</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Model:</span>
+          <span class="summary-value">
+            {{ getNodeModelName(nodeConfig.newNode.nodeModelId) }}
+          </span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Serial Number:</span>
+          <span class="summary-value">{{ nodeConfig.newNode.serialNumber }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Battery Type:</span>
+          <span class="summary-value">{{ nodeConfig.newNode.batteryType }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Telemetry:</span>
+          <span class="summary-value">
+            {{ nodeConfig.newNode.telemetryMode }} / {{ nodeConfig.newNode.telemetryIntervalSec }}s
+          </span>
+        </div>
+        <div class="summary-row" *ngIf="profileDetail">
+          <span class="summary-label">Sensor Profile:</span>
+          <span class="summary-value">
+            {{ profileDetail.name }} ({{ profileDetail.parserType | uppercase }})
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-section">
+      <h4 class="summary-title">
+        <i class="fa fa-microchip me-2"></i>
+        Sensors & Channels ({{ addedSensors.length }})
+      </h4>
+      <div *ngFor="let sensor of addedSensors" class="sensor-summary">
+        <div class="sensor-summary-header">
+          <i class="fa fa-microchip me-2"></i>
+          {{ sensor.label }}
+        </div>
+        <div class="channels-summary">
+          <div *ngFor="let channel of getEnabledChannels(sensor)"
+               class="channel-summary-row">
+            <div class="d-flex w-100 justify-content-between align-items-center">
+              <span class="channel-name">{{ channel.template.channelName }}</span>
+              <span class="channel-mapping" *ngIf="channel.mappedField">
+                <i class="fa fa-arrow-left me-1"></i>
+                {{ channel.mappedField.path }}
+              </span>
+              <span class="text-warning" *ngIf="!channel.mappedField">
+                <i class="fa fa-exclamation-triangle me-1"></i>
+                Not mapped
+              </span>
+            </div>
+            <div class="profile-map text-muted" *ngIf="profileDetail">
+              <ng-container *ngIf="getProfileChannelPath(channel.template.channelCode); else profileMissing">
+                Profile mapping: {{ getProfileChannelPath(channel.template.channelCode) }}
+              </ng-container>
+              <ng-template #profileMissing>
+                <span class="text-warning">Not defined in profile</span>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-section" *ngIf="profileDetail">
+      <h4 class="summary-title">
+        <i class="fa fa-id-card me-2"></i>
+        Profile Details
+      </h4>
+      <div class="summary-content">
+        <div class="summary-row">
+          <span class="summary-label">Name:</span>
+          <span class="summary-value">{{ profileDetail.name }}</span>
+        </div>
+        <div class="summary-row" *ngIf="profileDetail?.description">
+          <span class="summary-label">Description:</span>
+          <span class="summary-value">{{ profileDetail.description }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Parser Type:</span>
+          <span class="summary-value">{{ profileDetail.parserType | uppercase }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-section">
+      <h4 class="summary-title">
+        <i class="fa fa-code me-2"></i>
+        Final Configuration (JSON)
+      </h4>
+      <pre class="final-payload-json">{{ finalPayload | json }}</pre>
+    </div>
+  </div>
+
+  <div class="text-end mt-4">
+    <button class="btn btn-success" (click)="emitSubmit()">
+      <i class="fa fa-link me-1"></i> Pair Device
+    </button>
+    </div>
+  </card-body>
+</card>

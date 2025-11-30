@@ -12,6 +12,14 @@ export class CreateSensorTypeDto {
   @IsOptional()
   defaultUnit?: string;
 
+  @ApiPropertyOptional({
+    description: 'Conversion formula using JavaScript expression with "x" as raw value variable',
+    example: '(x - 0.5) * 2.5',
+  })
+  @IsString()
+  @IsOptional()
+  conversionFormula?: string;
+
   @ApiPropertyOptional({ description: 'Default precision (decimal places)' })
   @IsNumber()
   @IsOptional()

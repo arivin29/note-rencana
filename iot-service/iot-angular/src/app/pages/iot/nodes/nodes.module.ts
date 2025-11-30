@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { NodesRoutingModule } from './nodes-routing.module';
@@ -13,6 +14,8 @@ import { NodesDetailPage } from './nodes-detail/nodes-detail';
 import { SensorChanelDetail } from './nodes-detail/sensor-chanel-detail/sensor-chanel-detail';
 import { NodeDetailAddSensorDrawerComponent } from './nodes-detail/node-detail-add-sensor-drawer/node-detail-add-sensor-drawer.component';
 import { NodeDetailAddChannelDrawerComponent } from './nodes-detail/node-detail-add-channel-drawer/node-detail-add-channel-drawer.component';
+import { NodeRelayControlComponent } from './nodes-detail/node-relay-control/node-relay-control.component';
+import { NodeMappingUpdateComponent } from './nodes-detail/node-mapping-update/node-mapping-update.component';
 
 @NgModule({
   declarations: [
@@ -22,14 +25,17 @@ import { NodeDetailAddChannelDrawerComponent } from './nodes-detail/node-detail-
     NodesDetailPage,
     SensorChanelDetail,
     NodeDetailAddSensorDrawerComponent,
-    NodeDetailAddChannelDrawerComponent
+    NodeDetailAddChannelDrawerComponent,
+    NodeRelayControlComponent,
+    NodeMappingUpdateComponent
   ],
   imports: [
     CommonModule, 
     FormsModule,
     ReactiveFormsModule,
     RouterModule, 
-    NgApexchartsModule, 
+    NgApexchartsModule,
+    DragDropModule,
     SharedComponentsModule, 
     NodesRoutingModule
   ]

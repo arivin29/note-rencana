@@ -1,12 +1,24 @@
 // Core Module
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { CommonModule, JsonPipe } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule, Title } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
+
+// Auth Services & Guards
+import { JwtInterceptor } from './services/jwt.interceptor';
+import { AuthGuard } from './services/auth.guard';
+import { GuestGuard } from './services/guest.guard';
+import { ProfileComponent } from './pages/auth/profile/profile.component';
+import { LoginPage } from './template/page/login/page-login';
+import { RegisterPage } from './template/page/register/page-register';
+import { ForgotPasswordPage } from './template/page/forgot-password/page-forgot-password';
+
+// Admin Components
+import { AuditLogsListComponent } from './pages/admin/audit-logs/audit-logs-list.component';
 
 // API Configuration 
 import { environment } from '../environments/environment';
@@ -73,7 +85,12 @@ import { SharedComponentsModule } from './shared/shared-components.module';
         FooterComponent,
         ThemePanelComponent,
         IotAlertsPage, 
-        WidgetsShowcasePage
+        WidgetsShowcasePage,
+        ProfileComponent,
+        LoginPage,
+        RegisterPage,
+        ForgotPasswordPage, 
+        AuditLogsListComponent
     ],
     imports: [
         CommonModule,
@@ -113,7 +130,15 @@ import { SharedComponentsModule } from './shared/shared-components.module';
         TagInputModule,
         QuillModule.forRoot()
     ],
-    providers: [Title,
+    providers: [
+        Title,
+        AuthGuard,
+        GuestGuard,
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: JwtInterceptor,
+            multi: true
+        },
         provideNgxMask(),
         provideHighlightOptions({
             fullLibraryLoader: () => import('highlight.js'),

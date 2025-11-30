@@ -1,0 +1,28 @@
+/* Users List Component Styles */
+
+.page-header {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table th.sortable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.badge {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-group-sm > .btn {
+  padding: 0.25rem 0.5rem;
+}
+
+.pagination .page-link {
+  cursor: pointer;
+}

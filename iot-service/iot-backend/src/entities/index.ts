@@ -1,4 +1,8 @@
 // Export all entities from a single file
+export { User } from '../auth/entities/user.entity';
+export { AuditLog } from '../audit/entities/audit-log.entity';
+export { Notification } from '../notifications/entities/notification.entity';
+export { NotificationChannel } from '../notifications/entities/notification-channel.entity';
 export { Owner } from './owner.entity';
 export { Project } from './project.entity';
 export { NodeLocation } from './node-location.entity';
@@ -19,3 +23,4 @@ export { OwnerForwardingDatabase } from './owner-forwarding-database.entity';
 export { OwnerForwardingLog } from './owner-forwarding-log.entity';
 export { NodeUnpairedDevice } from './node-unpaired-device.entity';
 export { NodeProfile } from './node-profile.entity';
+export { IotLog } from './iot-log.entity';

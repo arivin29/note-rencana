@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApiConfiguration, ApiConfigurationParams } from './api-configuration';
 
 import { AppService } from './services/app.service';
+import { AuthenticationService } from './services/authentication.service';
 import { OwnersService } from './services/owners.service';
 import { ProjectsService } from './services/projects.service';
 import { NodeModelsService } from './services/node-models.service';
@@ -24,6 +25,12 @@ import { DashboardWidgetsService } from './services/dashboard-widgets.service';
 import { SensorLogsService } from './services/sensor-logs.service';
 import { DashboardService } from './services/dashboard.service';
 import { UnpairedDevicesService } from './services/unpaired-devices.service';
+import { NodeProfilesService } from './services/node-profiles.service';
+import { DeviceCommandsService } from './services/device-commands.service';
+import { IoTLogsService } from './services/io-t-logs.service';
+import { UsersService } from './services/users.service';
+import { AuditService } from './services/audit.service';
+import { NotificationsService } from './services/notifications.service';
 
 /**
  * Module that provides all services and configuration.
@@ -34,6 +41,7 @@ import { UnpairedDevicesService } from './services/unpaired-devices.service';
   declarations: [],
   providers: [
     AppService,
+    AuthenticationService,
     OwnersService,
     ProjectsService,
     NodeModelsService,
@@ -51,6 +59,12 @@ import { UnpairedDevicesService } from './services/unpaired-devices.service';
     SensorLogsService,
     DashboardService,
     UnpairedDevicesService,
+    NodeProfilesService,
+    DeviceCommandsService,
+    IoTLogsService,
+    UsersService,
+    AuditService,
+    NotificationsService,
     ApiConfiguration
   ],
 })

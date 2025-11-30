@@ -1,0 +1,195 @@
+<!-- Modal Wrapper (only when showAsModal=true) -->
+<div *ngIf="showAsModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" (click)="onBackdropClick()">
+  <div class="modal-dialog modal-dialog-centered" (click)="onModalClick($event)">
+    <div class="modal-content">
+      <ng-container *ngTemplateOutlet="formContent"></ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- Inline/Card Wrapper (when showAsModal=false) -->
+<div *ngIf="!showAsModal" class="card shadow-sm">
+  <ng-container *ngTemplateOutlet="formContent"></ng-container>
+</div>
+
+<!-- Form Content Template -->
+<ng-template #formContent>
+  <!-- Header -->
+  <div [ngClass]="showAsModal ? 'modal-header' : 'card-header'">
+    <h5 [ngClass]="showAsModal ? 'modal-title' : 'mb-0'">
+      <i class="bi bi-person-plus me-2" *ngIf="mode === 'create'"></i>
+      <i class="bi bi-person-gear me-2" *ngIf="mode === 'edit'"></i>
+      {{ mode === 'create' ? 'Create New User' : 'Edit User' }}
+    </h5>
+    <button type="button" class="btn-close" (click)="onClose()" [disabled]="saving"></button>
+  </div>
+
+  <!-- Body -->
+  <div [ngClass]="showAsModal ? 'modal-body' : 'card-body'">
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="alert alert-danger mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+    </div>
+
+    <form #f="ngForm" (ngSubmit)="onSubmit(f)">
+      <!-- Name -->
+      <div class="mb-3">
+        <label class="form-label fw-bold">Name <span class="text-danger">*</span></label>
+        <input 
+          type="text" 
+          name="name"
+          [(ngModel)]="formData.name"
+          #nameInput="ngModel"
+          class="form-control"
+          placeholder="Enter user's full name"
+          required
+          minlength="3"
+          [disabled]="saving">
+        <div *ngIf="nameInput.invalid && (nameInput.dirty || nameInput.touched)" class="text-danger mt-1">
+          <small *ngIf="nameInput.errors?.['required']">Name is required</small>
+          <small *ngIf="nameInput.errors?.['minlength']">Name must be at least 3 characters</small>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+        <input 
+          type="email" 
+          name="email"
+          [(ngModel)]="formData.email"
+          #emailInput="ngModel"
+          class="form-control"
+          placeholder="user@example.com"
+          required
+          email
+          [disabled]="saving">
+        <div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" class="text-danger mt-1">
+          <small *ngIf="emailInput.errors?.['required']">Email is required</small>
+          <small *ngIf="emailInput.errors?.['email']">Please enter a valid email</small>
+        </div>
+      </div>
+
+      <!-- Password (Create mode only or optional in edit mode) -->
+      <div class="mb-3">
+        <label class="form-label fw-bold">
+          Password 
+          <span class="text-danger" *ngIf="mode === 'create'">*</span>
+          <small class="text-muted" *ngIf="mode === 'edit'">(leave blank to keep current)</small>
+        </label>
+        <input 
+          type="password" 
+          name="password"
+          [(ngModel)]="formData.password"
+          #passwordInput="ngModel"
+          class="form-control"
+          placeholder="Enter password"
+          [required]="mode === 'create'"
+          minlength="6"
+          [disabled]="saving">
+        <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)" class="text-danger mt-1">
+          <small *ngIf="passwordInput.errors?.['required']">Password is required</small>
+          <small *ngIf="passwordInput.errors?.['minlength']">Password must be at least 6 characters</small>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-3" *ngIf="mode === 'create' || formData.password">
+        <label class="form-label fw-bold">
+          Confirm Password 
+          <span class="text-danger" *ngIf="mode === 'create'">*</span>
+        </label>
+        <input 
+          type="password" 
+          name="confirmPassword"
+          [(ngModel)]="formData.confirmPassword"
+          #confirmPasswordInput="ngModel"
+          class="form-control"
+          placeholder="Re-enter password"
+          [required]="mode === 'create' || formData.password"
+          [disabled]="saving">
+        <div *ngIf="confirmPasswordInput.invalid && (confirmPasswordInput.dirty || confirmPasswordInput.touched)" class="text-danger mt-1">
+          <small *ngIf="confirmPasswordInput.errors?.['required']">Please confirm your password</small>
+        </div>
+        <div *ngIf="formData.password !== formData.confirmPassword && formData.confirmPassword" class="text-danger mt-1">
+          <small>Passwords do not match</small>
+        </div>
+      </div>
+
+      <!-- Role -->
+      <div class="mb-3">
+        <label class="form-label fw-bold">Role <span class="text-danger">*</span></label>
+        <select 
+          class="form-select"
+          name="role"
+          [(ngModel)]="formData.role"
+          required
+          [disabled]="saving">
+          <option value="tenant">Tenant</option>
+          <option value="admin">Admin</option>
+        </select>
+        <small class="text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          Admin users have full system access
+        </small>
+      </div>
+
+      <!-- Owner ID (for tenant users) -->
+      <div class="mb-3" *ngIf="formData.role === 'tenant'">
+        <label class="form-label fw-bold">Owner ID</label>
+        <input 
+          type="text" 
+          name="idOwner"
+          [(ngModel)]="formData.idOwner"
+          class="form-control"
+          placeholder="Enter owner ID (optional)"
+          [disabled]="saving">
+        <small class="text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          Associate this user with an owner
+        </small>
+      </div>
+
+      <!-- Active Status (only show in edit mode or inline mode) -->
+      <div class="mb-3" *ngIf="mode === 'edit' || !showAsModal">
+        <div class="form-check form-switch">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            name="isActive"
+            [(ngModel)]="formData.isActive"
+            id="isActive"
+            [disabled]="saving">
+          <label class="form-check-label fw-bold" for="isActive">
+            Active User
+          </label>
+        </div>
+        <small class="text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          Inactive users cannot log in
+        </small>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div [ngClass]="showAsModal ? 'modal-footer' : 'card-footer bg-light'">
+    <button 
+      type="button" 
+      class="btn btn-secondary"
+      (click)="onClose()"
+      [disabled]="saving">
+      Cancel
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-theme"
+      (click)="onSubmit(f)"
+      [disabled]="saving || f.invalid || (formData.password && formData.password !== formData.confirmPassword)">
+      <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+      <i class="bi bi-check-lg me-2" *ngIf="!saving"></i>
+      <span *ngIf="saving">Saving...</span>
+      <span *ngIf="!saving">{{ mode === 'create' ? 'Create User' : 'Save Changes' }}</span>
+    </button>
+  </div>
+</ng-template>

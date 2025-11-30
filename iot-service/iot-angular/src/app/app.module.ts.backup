@@ -1,0 +1,192 @@
+// Core Module
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
+import { CommonModule, JsonPipe } from '@angular/common';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NgModule } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { BrowserModule, Title } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { AppRoutingModule } from './app-routing.module';
+
+// Auth Services & Guards
+import { JwtInterceptor } from './services/jwt.interceptor';
+import { AuthGuard } from './services/auth.guard';
+import { GuestGuard } from './services/guest.guard';
+import { ProfileComponent } from './pages/auth/profile/profile.component';
+import { LoginPage } from './template/page/login/page-login';
+import { RegisterPage } from './template/page/register/page-register';
+import { ForgotPasswordPage } from './template/page/forgot-password/page-forgot-password';
+
+// Admin Components
+import { UsersListComponent } from './pages/admin/users/users-list.component';
+import { UserFormModalComponent } from './pages/admin/users/user-form-modal.component';
+import { UserDetailComponent } from './pages/admin/users/user-detail.component';
+import { AuditLogsListComponent } from './pages/admin/audit-logs/audit-logs-list.component';
+
+// API Configuration 
+import { environment } from '../environments/environment';
+
+// SDK API Module
+import { ApiModule } from '../sdk/core/api.module';
+import { ApiConfiguration } from '../sdk/core/api-configuration';
+
+
+// Plugins
+import { NgScrollbarModule, NG_SCROLLBAR_OPTIONS } from 'ngx-scrollbar';
+import { provideHighlightOptions, HighlightAuto } from 'ngx-highlightjs';
+import { FullCalendarModule } from '@fullcalendar/angular';
+import { NgxMasonryModule } from 'ngx-masonry';
+import {
+    NgbDatepickerModule,
+    NgbAlertModule,
+    NgbTypeaheadModule,
+    NgbTimepickerModule
+} from '@ng-bootstrap/ng-bootstrap';
+import { ColorSketchModule } from 'ngx-color/sketch';
+import { TagInputModule } from 'ngx-chips';
+import {
+    NgxMaskDirective,
+    NgxMaskPipe,
+    provideNgxMask
+} from 'ngx-mask';
+import { QuillModule } from 'ngx-quill';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { CountdownModule } from 'ngx-countdown';
+import { NgChartsModule } from 'ng2-charts';
+import { NgApexchartsModule } from 'ng-apexcharts';
+
+
+// App Component
+import { AppComponent } from './app.component';
+import { HeaderComponent } from './components/header/header.component';
+import { TopNavComponent } from './components/top-nav/top-nav.component';
+import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { SidebarMobileBackdropComponent } from './components/sidebar-mobile-backdrop/sidebar-mobile-backdrop.component';
+import { FooterComponent } from './components/footer/footer.component';
+import { ThemePanelComponent } from './components/theme-panel/theme-panel.component';
+// import { SharedComponentsModule } from './shared/shared-components.module';
+import { WidgetsModule } from './components/widgets/widgets-module';
+
+import { IotAlertsPage } from './pages/iot/alerts/iot-alerts'; 
+import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showcase';
+
+// IoT Dashboard Module (contains IotDashboardPage + 8 widget components)
+import { IotDashboardModule } from './pages/iot/dashboard/dashboard.module';
+
+// Dashboard Kedua (Super Admin Dashboard)
+import { DashboardKeduaModule } from './pages/iot/dashboard-kedua/dashboard-kedua.module';
+
+import { SharedComponentsModule } from './shared/shared-components.module';
+ 
+@NgModule({
+    declarations: [
+        AppComponent,
+        HeaderComponent,
+        TopNavComponent,
+        SidebarComponent,
+        SidebarMobileBackdropComponent,
+        FooterComponent,
+        ThemePanelComponent,
+        IotAlertsPage, 
+        WidgetsShowcasePage,
+        ProfileComponent,
+        LoginPage,
+        RegisterPage,
+        ForgotPasswordPage,
+        UsersListComponent,
+        UserFormModalComponent,
+        UserDetailComponent,
+        AuditLogsListComponent
+    ],
+    imports: [
+        CommonModule,
+        AppRoutingModule,
+        BrowserAnimationsModule,
+        BrowserModule,
+        FormsModule,
+        ReactiveFormsModule,
+        HttpClientModule,
+        JsonPipe,
+        SharedComponentsModule,
+        WidgetsModule,
+
+        // IoT Dashboard Module
+        IotDashboardModule,
+
+        // Dashboard Kedua Module (Super Admin)
+        DashboardKeduaModule,
+
+        // SDK API Module
+        ApiModule.forRoot({ rootUrl: environment.apiUrl }),
+
+        NgChartsModule,
+        NgScrollbarModule,
+        NgxMasonryModule,
+        NgbDatepickerModule,
+        NgbTimepickerModule,
+        NgbTypeaheadModule,
+        NgxMaskDirective,
+        NgxMaskPipe,
+        NgSelectModule,
+        NgApexchartsModule,
+        HighlightAuto,
+        FullCalendarModule,
+        ColorSketchModule,
+        CountdownModule,
+        TagInputModule,
+        QuillModule.forRoot()
+    ],
+    providers: [
+        Title,
+        AuthGuard,
+        GuestGuard,
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: JwtInterceptor,
+            multi: true
+        },
+        provideNgxMask(),
+        provideHighlightOptions({
+            fullLibraryLoader: () => import('highlight.js'),
+            lineNumbersLoader: () => import('ngx-highlightjs/line-numbers'),
+        }),
+        {
+            provide: NG_SCROLLBAR_OPTIONS,
+            useValue: {
+                visibility: 'hover'
+            }
+        } 
+    ],
+    bootstrap: [AppComponent]
+})
+
+export class AppModule {
+    title: string = 'HUD';
+
+    constructor(private router: Router, private titleService: Title, private route: ActivatedRoute) {
+        router.events.subscribe((e) => {
+            if (e instanceof NavigationEnd) {
+                const pageTitle = this.getDeepestTitle(this.route);
+                if (pageTitle) {
+                    this.title = 'HUD | ' + pageTitle;
+                }
+                this.titleService.setTitle(this.title);
+
+                var elm = document.getElementById('app');
+                if (elm) {
+                    elm.classList.remove('app-sidebar-toggled');
+                    elm.classList.remove('app-sidebar-mobile-toggled');
+                }
+            }
+        });
+    }
+
+    private getDeepestTitle(route: ActivatedRoute): string | null {
+        let currentRoute: ActivatedRoute | null = route;
+        while (currentRoute && currentRoute.firstChild) {
+            currentRoute = currentRoute.firstChild;
+        }
+
+        return currentRoute?.snapshot.data?.['title'] ?? null;
+    }
+}

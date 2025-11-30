@@ -1,6 +1,17 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+// Auth Components & Guards
+import { AuthGuard } from './services/auth.guard';
+import { GuestGuard } from './services/guest.guard';
+import { ProfileComponent } from './pages/auth/profile/profile.component';
+import { LoginPage } from './template/page/login/page-login';
+import { RegisterPage } from './template/page/register/page-register';
+import { ForgotPasswordPage } from './template/page/forgot-password/page-forgot-password';
+
+// Admin Components 
+import { AuditLogsListComponent } from './pages/admin/audit-logs/audit-logs-list.component';
+
 import { IotDashboardPage } from './pages/iot/dashboard/iot-dashboard';
 import { IotDashboardKeduaPage } from './pages/iot/dashboard-kedua/iot-dashboard-kedua';
 import { IotAlertsPage } from './pages/iot/alerts/iot-alerts';
@@ -68,13 +79,66 @@ import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showca
 // import { LandingPage } from './pages/landing/landing';
 
 const routes: Routes = [
+    // Default redirect to dashboard
     { path: '', redirectTo: '/iot/dashboard', pathMatch: 'full' },
 
-    { path: 'iot/dashboard', component: IotDashboardPage, data: { title: 'IoT Dashboard' } },
-    { path: 'iot/dashboard-admin', component: IotDashboardKeduaPage, data: { title: 'Super Admin Dashboard' } },
+    // Auth Routes (Guest Only - no login required)
+    { 
+        path: 'auth/login', 
+        component: LoginPage, 
+        canActivate: [GuestGuard],
+        data: { title: 'Login' } 
+    },
+    { 
+        path: 'auth/register', 
+        component: RegisterPage, 
+        canActivate: [GuestGuard],
+        data: { title: 'Register' } 
+    },
+    { 
+        path: 'auth/forgot-password', 
+        component: ForgotPasswordPage, 
+        canActivate: [GuestGuard],
+        data: { title: 'Forgot Password' } 
+    },
+
+    // User Profile (Protected)
+    { 
+        path: 'profile', 
+        component: ProfileComponent, 
+        canActivate: [AuthGuard],
+        data: { title: 'My Profile' } 
+    },
+
+    // Admin Routes (Protected - Admin Only)
+     
+    { 
+        path: 'admin/audit-logs', 
+        component: AuditLogsListComponent, 
+        canActivate: [AuthGuard],
+        data: { title: 'Audit Logs', roles: ['admin'] } 
+    },
+
+    // IoT Dashboard Routes (Protected)
+    { 
+        path: 'iot/dashboard', 
+        component: IotDashboardPage, 
+        canActivate: [AuthGuard],
+        data: { title: 'IoT Dashboard' } 
+    },
+    { 
+        path: 'iot/dashboard-admin', 
+        component: IotDashboardKeduaPage, 
+        canActivate: [AuthGuard],
+        data: { title: 'Super Admin Dashboard', roles: ['admin'] } 
+    },
     {
         path: 'iot/nodes',
         loadChildren: () => import('./pages/iot/nodes/nodes.module').then((m) => m.NodesModule)
+    },
+    {
+        path: 'admin/users',
+        loadChildren: () => import('./pages/admin/users/users.module').then((m) => m.UsersModule)
     },
     { path: 'iot/alerts', component: IotAlertsPage, data: { title: 'IoT Alerts' } },
     {

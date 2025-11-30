@@ -8,6 +8,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { SensorTypeResponseDto } from '../../models/sensor-type-response-dto';
 
 export interface SensorTypesControllerFindAll$Params {
   page?: number;
@@ -15,7 +16,7 @@ export interface SensorTypesControllerFindAll$Params {
   search?: string;
 }
 
-export function sensorTypesControllerFindAll(http: HttpClient, rootUrl: string, params?: SensorTypesControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function sensorTypesControllerFindAll(http: HttpClient, rootUrl: string, params?: SensorTypesControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SensorTypeResponseDto>>> {
   const rb = new RequestBuilder(rootUrl, sensorTypesControllerFindAll.PATH, 'get');
   if (params) {
     rb.query('page', params.page, {});
@@ -24,11 +25,11 @@ export function sensorTypesControllerFindAll(http: HttpClient, rootUrl: string, 
   }
 
   return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
+    rb.build({ responseType: 'json', accept: 'application/json', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      return r as StrictHttpResponse<Array<SensorTypeResponseDto>>;
     })
   );
 }

@@ -1,0 +1,166 @@
+<card class="mb-4">
+    <card-body>
+        <h2 class="step-title">
+            <i class="fa fa-server me-2"></i>
+            Step 1: Node Configuration
+        </h2>
+        <p class="step-description">Choose to use an existing inactive node or create a new one</p>
+
+        <div class="mode-selection mb-4">
+            <button class="mode-card" [class.active]="nodeConfig.mode === 'existing'" (click)="selectMode('existing')">
+                <i class="fa fa-recycle fa-2x mb-2"></i>
+                <h4>Use Existing Node</h4>
+                <p class="text-muted">Reuse an inactive or maintenance node</p>
+            </button>
+            <button class="mode-card" [class.active]="nodeConfig.mode === 'new'" (click)="selectMode('new')">
+                <i class="fa fa-plus-circle fa-2x mb-2"></i>
+                <h4>Create New Node</h4>
+                <p class="text-muted">Configure a new node from scratch</p>
+            </button>
+        </div>
+
+        <div *ngIf="nodeConfig.mode === 'existing'" class="existing-nodes-section">
+            <h4 class="section-title">Select Inactive Node</h4>
+            <div class="existing-nodes-list">
+                <div *ngFor="let node of existingNodes" class="existing-node-card"
+                    [class.selected]="nodeConfig.selectedExistingNode?.idNode === node.idNode"
+                    (click)="selectExistingNode(node)">
+                    <div class="node-header">
+                        <div>
+                            <div class="node-code">{{ node.code }}</div>
+                            <div class="node-sn">SN: {{ node.serialNumber || '-' }}</div>
+                        </div>
+                        <span class="badge" [class.bg-secondary]="node.connectivityStatus === 'inactive'"
+                            [class.bg-warning]="node.connectivityStatus === 'maintenance'">
+                            {{ node.connectivityStatus || 'unknown' }}
+                        </span>
+                    </div>
+                    <div class="node-info">
+                        <span><i class="fa fa-microchip me-1"></i>{{ node.nodeModel?.name || 'Unknown Model' }}</span>
+                        <span *ngIf="node.lastSeenAt"><i class="fa fa-clock me-1"></i>Last seen: {{ node.lastSeenAt |
+                            date:'dd MMM yyyy HH:mm' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="nodeConfig.mode === 'new'" class="new-node-form">
+            <h4 class="section-title">Node Details</h4>
+
+            <div class="row g-3">
+                <!-- Owner (Read-only from unpaired device) -->
+                <div class="col-md-6" *ngIf="suggestedOwnerName">
+                    <label class="form-label text-uppercase small text-muted">Owner</label>
+                    <input type="text" class="form-control" [value]="suggestedOwnerName" disabled>
+                    <small class="text-muted">Auto-detected from device data</small>
+                </div>
+
+                <!-- Project (Required dropdown) -->
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Project <span class="text-danger">*</span></label>
+                    <select class="form-select" [(ngModel)]="nodeConfig.newNode!.projectId"
+                        (ngModelChange)="onFormChange()">
+                        <option value="">-- Select Project --</option>
+                        <option *ngFor="let project of projectOptions" [value]="project.id">
+                            {{ project.name }}
+                        </option>
+                    </select>
+                    <small class="text-muted">Select the project for this node</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Node Model <span class="text-danger">*</span></label>
+                    <select class="form-select" [(ngModel)]="nodeConfig.newNode!.nodeModelId"
+                        (ngModelChange)="onFormChange()">
+                        <option value="">-- Select Node Model --</option>
+                        <option *ngFor="let model of nodeModels" [value]="model.idNodeModel">
+                            {{ model.name }} – {{ model.manufacturer }}
+                        </option>
+                    </select>
+                    <small class="text-muted">Choose the hardware model for this node</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Serial Number <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.serialNumber"
+                        (ngModelChange)="onFormChange()" placeholder="e.g., ESP32-001-XYZ">
+                    <small class="text-muted">Unique identifier from hardware</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Node Code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.code"
+                        (ngModelChange)="onFormChange()" placeholder="e.g., WM-NODE-003">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">DevEUI</label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.devEui"
+                        placeholder="For LoRaWAN devices">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">IP Address</label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.ipAddress"
+                        placeholder="192.168.1.100">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Firmware Version</label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.firmwareVersion"
+                        placeholder="v2.1.4">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Battery Type</label>
+                    <select class="form-select" [(ngModel)]="nodeConfig.newNode!.batteryType">
+                        <option value="Li-SOCl2">Li-SOCl2</option>
+                        <option value="Li-Ion">Li-Ion</option>
+                        <option value="Li-Po">Li-Po</option>
+                        <option value="Alkaline">Alkaline</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Telemetry Mode</label>
+                    <select class="form-select" [(ngModel)]="nodeConfig.newNode!.telemetryMode">
+                        <option value="push">Push</option>
+                        <option value="pull">Pull</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Telemetry Interval (seconds)</label>
+                    <input type="number" class="form-control" [(ngModel)]="nodeConfig.newNode!.telemetryIntervalSec"
+                        min="30" step="30" placeholder="120">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Location Type</label>
+                    <select class="form-select" [(ngModel)]="nodeConfig.newNode!.locationType">
+                        <option value="manual">Manual</option>
+                        <option value="gps">GPS</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Latitude</label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.latitude"
+                        placeholder="-6.200000">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">Longitude</label>
+                    <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.longitude"
+                        placeholder="106.816666">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label text-uppercase small text-muted">Address</label>
+                    <textarea class="form-control" [(ngModel)]="nodeConfig.newNode!.address" rows="2"
+                        placeholder="Enter full address"></textarea>
+                </div>
+            </div>
+        </div>
+    </card-body>
+</card>

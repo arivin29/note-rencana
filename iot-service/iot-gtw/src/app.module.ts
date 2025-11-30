@@ -11,13 +11,16 @@ import {
   NodeUnpairedDevice, 
   Owner, 
   Project, 
-  Sensor, 
+  Sensor,
+  SensorCatalog,
   SensorChannel, 
-  SensorLog 
+  SensorLog,
+  SensorType
 } from './entities/existing';
 import { IotLogModule } from './modules/iot-log/iot-log.module';
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { HealthModule } from './modules/health/health.module';
+import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -49,8 +52,10 @@ import { HealthModule } from './modules/health/health.module';
           Owner,
           Project,
           Sensor,
+          SensorCatalog,
           SensorChannel,
           SensorLog,
+          SensorType,
         ],
         synchronize: false, // Use migrations instead
         logging: configService.get('database.logging'),
@@ -62,6 +67,7 @@ import { HealthModule } from './modules/health/health.module';
     IotLogModule,
     MqttModule,
     HealthModule,
+    SchedulerAppModule, // Auto-process telemetry every 30 seconds
   ],
 })
 export class AppModule {}

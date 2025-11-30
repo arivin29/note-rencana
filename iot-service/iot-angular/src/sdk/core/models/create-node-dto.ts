@@ -40,6 +40,11 @@ export interface CreateNodeDto {
   idNodeModel: string;
 
   /**
+   * Node Profile ID for payload parsing
+   */
+  idNodeProfile?: string;
+
+  /**
    * Project ID
    */
   idProject: string;

@@ -2,8 +2,8 @@
 <div class="config-drawer" [class.open]="isOpen">
   <div class="config-drawer-header d-flex align-items-center justify-content-between">
     <div>
-      <div class="text-muted text-uppercase small">New Entry</div>
-      <h5 class="mb-0">Add Sensor Type</h5>
+      <div class="text-muted text-uppercase small">{{ isEditMode ? 'Edit Entry' : 'New Entry' }}</div>
+      <h5 class="mb-0">{{ isEditMode ? 'Edit Sensor Type' : 'Add Sensor Type' }}</h5>
     </div>
     <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
       <i class="fa fa-times"></i>
@@ -11,9 +11,10 @@
   </div>
   <div class="config-drawer-body">
     <form #sensorTypeForm="ngForm" (ngSubmit)="handleSubmit(sensorTypeForm.valid ?? false)">
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Code</label>
-        <input type="text" class="form-control" name="code" [(ngModel)]="formModel.code" required>
+      <div class="mb-3" *ngIf="isEditMode">
+        <label class="form-label text-muted text-uppercase small">ID</label>
+        <input type="text" class="form-control" name="code" [(ngModel)]="formModel.code" disabled>
+        <small class="text-muted">ID cannot be changed</small>
       </div>
       <div class="mb-3">
         <label class="form-label text-muted text-uppercase small">Category</label>
@@ -33,13 +34,78 @@
           </div>
         </div>
       </div>
-      <div class="mb-4">
+      <div class="mb-3">
         <label class="form-label text-muted text-uppercase small">Description</label>
         <textarea class="form-control" rows="3" name="description" [(ngModel)]="formModel.description"></textarea>
       </div>
+
+      <!-- Advanced Settings Toggle -->
+      <div class="mb-3">
+        <button type="button" class="btn btn-sm btn-outline-info w-100" (click)="toggleAdvanced()">
+          <i class="fa" [class.fa-chevron-down]="!showAdvanced" [class.fa-chevron-up]="showAdvanced"></i>
+          Advanced: Conversion Formula
+        </button>
+      </div> 
+
+      <!-- Conversion Formula Section (Collapsible) -->
+      <div *ngIf="showAdvanced" class="border rounded p-3 mb-3 bg-light">
+        <div class="mb-2">
+          <label class="form-label text-muted text-uppercase small">
+            Conversion Formula
+            <span class="badge bg-info ms-2">Optional</span>
+          </label>
+          <small class="form-text text-muted d-block mb-2">
+            JavaScript expression using <code>x</code> as raw sensor value. Example: <code>(x - 0.5) * 2.5</code>
+          </small>
+          <textarea 
+            class="form-control font-monospace" 
+            rows="2" 
+            name="conversionFormula" 
+            [(ngModel)]="formModel.conversionFormula"
+            placeholder="(x - 0.5) * 2.5"
+            [class.is-invalid]="formulaError !== null && formModel.conversionFormula"
+          ></textarea> 
+          <div class="invalid-feedback" *ngIf="formulaError">
+            {{ formulaError }}
+          </div>
+        </div>
+
+        <!-- Formula Examples -->
+        <div class="mb-2">
+          <label class="form-label text-muted text-uppercase small">Quick Examples</label>
+          <div class="d-flex flex-wrap gap-1">
+            <button 
+              *ngFor="let example of formulaExamples" 
+              type="button" 
+              class="btn btn-sm btn-outline-secondary"
+              (click)="useFormulaExample(example.value)"
+              [title]="example.description"
+            >
+              {{ example.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Formula Help -->
+        <div class="alert alert-info small mb-0">
+          <strong>Available functions:</strong> <code>Math.sqrt()</code>, <code>Math.pow()</code>, 
+          <code>Math.log()</code>, <code>Math.abs()</code>, etc.
+          <br>
+          <strong>Example use cases:</strong>
+          <ul class="mb-0 mt-1">
+            <li>Linear conversion: <code>(x - offset) * multiplier</code></li>
+            <li>4-20mA sensors: <code>(x - 4) * (range / 16)</code></li>
+            <li>Voltage to engineering units: <code>(x - 0.5) * 2.5</code></li>
+          </ul>
+        </div>
+      </div>
+
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
-        <button type="submit" class="btn btn-theme flex-fill" [disabled]="sensorTypeForm.invalid">Save Sensor Type</button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="sensorTypeForm.invalid || formulaError !== null">
+          <i class="fa" [class.fa-save]="isEditMode" [class.fa-plus]="!isEditMode"></i>
+          {{ isEditMode ? 'Update Sensor Type' : 'Save Sensor Type' }}
+        </button>
       </div>
     </form>
   </div>

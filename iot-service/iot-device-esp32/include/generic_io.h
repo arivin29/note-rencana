@@ -62,13 +62,13 @@ private:
 };
 
 // ============================================================================
-// ANALOG INPUT READER (4-20mA Generic)
+// ANALOG INPUT READER (4-20mA via ESP32 GPIO1/GPIO2)
 // ============================================================================
 
 struct AnalogChannelData {
     String channel;            // "A2" atau "A3"
-    uint8_t pin;
-    uint16_t rawADC;
+    uint8_t pin;               // GPIO pin
+    uint16_t rawADC;           // Raw 12-bit from ESP32 ADC
     float voltage;
     float currentMA;
 };
@@ -80,21 +80,12 @@ public:
     // Initialize
     bool begin();
 
-    // Read all analog channels
+    // Read all analog channels (GPIO1/GPIO2)
     void readAllChannels(JsonArray& output);
 
-    // Read specific channel
-    AnalogChannelData readChannel(uint8_t pin, const char* name);
-
 private:
-    uint8_t channels[2];       // A2, A3
-    String channelNames[2];
-
-    // Convert ADC to voltage
-    float adcToVoltage(uint16_t adc);
-
-    // Convert voltage to current (with 100Ω shunt)
-    float voltageToCurrent(float voltage);
+    uint8_t channels[2];       // GPIO1, GPIO2
+    String channelNames[2];    // "A2", "A3"
 };
 
 // ============================================================================
@@ -102,8 +93,8 @@ private:
 // ============================================================================
 
 struct ADC16ChannelData {
-    String channel;            // "A0" atau "A1"
-    uint8_t channelNum;        // 0 atau 1
+    String channel;            // "A0", "A1", "A2", "A3"
+    uint8_t channelNum;        // 0, 1, 2, 3
     int16_t rawADC;            // Raw 16-bit ADC (-32768 to 32767)
     float voltage;             // Voltage in V
     bool connected;            // Is sensor connected?
@@ -119,10 +110,10 @@ public:
     // Check if ADS1115 is available
     bool isAvailable() { return available; }
 
-    // Read all ADC channels
+    // Read all ADC channels (A0, A1, A2, A3)
     void readAllChannels(JsonArray& output);
 
-    // Read specific channel (0 or 1)
+    // Read specific channel (0-3)
     ADC16ChannelData readChannel(uint8_t channel);
 
     // Set gain (default: GAIN_TWOTHIRDS = ±6.144V)

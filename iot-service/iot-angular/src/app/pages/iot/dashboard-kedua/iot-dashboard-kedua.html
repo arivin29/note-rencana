@@ -24,10 +24,16 @@
                 [timeRange]="timeRange"></dk-system-overview>
         </card>
     </div>
-    <div class="col-xl-9 col-md-6 mb-3">
+    <div class="col-xl-6 col-md-12 mb-3">
         <card>
             <dk-nodes-status-trends [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
                 [timeRange]="timeRange"></dk-nodes-status-trends>
+        </card>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <card>
+            <dk-iot-logs-stats [ownerId]="selectedOwnerId" [projectId]="selectedProjectId"
+                [timeRange]="timeRange"></dk-iot-logs-stats>
         </card>
     </div>
 </div>

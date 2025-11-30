@@ -18,6 +18,11 @@ export interface NodeResponseDto {
   idCurrentLocation?: string;
   idNode: string;
   idNodeModel: string;
+
+  /**
+   * Node Profile ID for payload parsing
+   */
+  idNodeProfile?: string;
   idProject: string;
   installDate?: string;
   ipAddress?: string;

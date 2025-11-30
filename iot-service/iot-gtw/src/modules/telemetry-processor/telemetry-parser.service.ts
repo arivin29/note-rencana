@@ -162,6 +162,7 @@ export class TelemetryParserService {
 
     return {
       sensorLabel: sensorConfig.label || 'Unknown',
+      idSensor: sensorConfig.idSensor || undefined, // Include sensor ID from profile mapping
       catalogId: sensorConfig.catalogId || null,
       channels,
     };
@@ -176,6 +177,7 @@ export class TelemetryParserService {
     errors: string[],
   ): ParsedChannelValue {
     const channelCode = channelConfig.channelCode;
+    const idSensorChannel = channelConfig.idSensorChannel || undefined; // Include channel ID from profile mapping
     const payloadPath = channelConfig.payloadPath;
     const unit = channelConfig.unit || '';
 
@@ -185,6 +187,7 @@ export class TelemetryParserService {
       if (value === undefined || value === null) {
         return {
           channelCode,
+          idSensorChannel,
           value: null,
           unit,
           payloadPath,
@@ -199,6 +202,7 @@ export class TelemetryParserService {
       if (numericValue === null) {
         return {
           channelCode,
+          idSensorChannel,
           value: null,
           unit,
           payloadPath,
@@ -209,6 +213,7 @@ export class TelemetryParserService {
 
       return {
         channelCode,
+        idSensorChannel,
         value: numericValue,
         unit,
         payloadPath,
@@ -218,6 +223,7 @@ export class TelemetryParserService {
       errors.push(`Error parsing channel ${channelCode}: ${error.message}`);
       return {
         channelCode,
+        idSensorChannel,
         value: null,
         unit,
         payloadPath,

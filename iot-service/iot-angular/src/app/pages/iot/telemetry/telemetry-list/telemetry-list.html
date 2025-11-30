@@ -1,266 +1,404 @@
 <div class="d-flex align-items-center mb-3">
-  <div>
-    <ul class="breadcrumb mb-1">
-      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
-      <li class="breadcrumb-item active">Telemetry</li>
-    </ul>
-    <h1 class="page-header mb-0">
-      Telemetry Aggregates
-      <span *ngIf="projectIdFilter" class="badge bg-theme ms-2">
-        <i class="fa fa-filter me-1"></i>
-        Filtered by Project
-      </span>
-    </h1>
-    <div class="text-muted text-opacity-75 small">
-      Monitoring hasil agregasi sensor channel per window {{ selectedAggregationLabel }}
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+            <li class="breadcrumb-item active">Telemetry</li>
+        </ul>
+        <h1 class="page-header mb-0">
+            Telemetry Aggregates <br>
+            <span *ngIf="ownerIdFilter" class="badge bg-primary ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-filter me-1"></i>Owner
+            </span>
+            <span *ngIf="projectIdFilter" class="badge bg-info ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-filter me-1"></i>Project
+            </span>
+            <span *ngIf="nodeIdFilter" class="badge bg-success ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-filter me-1"></i>Node
+            </span>
+            <span *ngIf="sensorIdFilter" class="badge bg-warning ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-filter me-1"></i>Sensor
+            </span>
+            <span *ngIf="sensorChannelIdFilter" class="badge bg-theme ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-filter me-1"></i>Channel
+            </span>
+            <span *ngIf="autoRefreshEnabled" class="badge bg-success ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-sync fa-spin me-1"></i>Auto
+            </span>
+        </h1>
+        <div class="text-muted text-opacity-75 small">
+            Monitoring hasil agregasi sensor channel per window {{ selectedAggregationLabel }}
+            <span *ngIf="lastRefreshTime" class="ms-2">
+                · Last updated: {{ lastRefreshTime | date: 'HH:mm:ss' }}
+            </span>
+        </div>
     </div>
-  </div>
-  <div class="ms-auto d-flex flex-wrap gap-2">
-    <a *ngIf="projectIdFilter" 
-       routerLink="/iot/telemetry" 
-       class="btn btn-outline-secondary btn-sm">
-      <i class="fa fa-times fa-fw me-1"></i>
-      Clear Filter
-    </a>
-    <button class="btn btn-outline-theme btn-sm">
-      <i class="fa fa-sync fa-fw me-1"></i>
-      Sync Aggregation
-    </button>
-    <button class="btn btn-outline-default btn-sm">
-      <i class="fa fa-bell fa-fw me-1"></i>
-      Configure Alerts
-    </button>
-    <div class="btn-group btn-group-sm">
-      <button class="btn btn-theme dropdown-toggle" type="button" data-bs-toggle="dropdown"
-        aria-expanded="false" [disabled]="exporting || loading">
-        <i class="fa fa-file-export fa-fw me-1"></i>
-        <span *ngIf="!exporting">Export CSV</span>
-        <span *ngIf="exporting">Exporting...</span>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end">
-        <li><button class="dropdown-item" type="button" (click)="exportCsv('raw')" [disabled]="exporting">
-          Keseluruhan
-        </button></li>
-        <li><button class="dropdown-item" type="button" (click)="exportCsv('5m')" [disabled]="exporting">
-          Per 5 Menit
-        </button></li>
-        <li><button class="dropdown-item" type="button" (click)="exportCsv('1h')" [disabled]="exporting">
-          Per 1 Jam
-        </button></li>
-      </ul>
+    <div class="ms-auto d-flex flex-wrap gap-2">
+        <button *ngIf="ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter"
+            (click)="clearAllFilters()" class="btn btn-outline-secondary btn-sm">
+            <i class="fa fa-times fa-fw me-1"></i>
+            Clear All Filters
+        </button>
+
+        <!-- Auto Refresh Toggle (Grafana Style) -->
+        <div class="btn-group btn-group-sm">
+            <button class="btn" [class.btn-theme]="autoRefreshEnabled" [class.btn-outline-default]="!autoRefreshEnabled"
+                (click)="toggleAutoRefresh()">
+                <i class="fa" [class.fa-pause]="autoRefreshEnabled" [class.fa-play]="!autoRefreshEnabled"></i>
+                <span class="ms-1">{{ autoRefreshEnabled ? 'Stop' : 'Auto' }}</span>
+            </button>
+            <button class="btn dropdown-toggle dropdown-toggle-split" [class.btn-theme]="autoRefreshEnabled"
+                [class.btn-outline-default]="!autoRefreshEnabled" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <span>{{ selectedRefreshLabel }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <h6 class="dropdown-header">Refresh Interval</h6>
+                </li>
+                <li *ngFor="let interval of refreshIntervals">
+                    <button class="dropdown-item" type="button" (click)="setRefreshInterval(interval.value)"
+                        [class.active]="autoRefreshInterval === interval.value">
+                        <i class="fa fa-check fa-fw me-1" *ngIf="autoRefreshInterval === interval.value"></i>
+                        <span [class.ms-4]="autoRefreshInterval !== interval.value">{{ interval.label }}</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <button class="btn btn-outline-theme btn-sm" (click)="syncAggregation()" [disabled]="loading">
+            <i class="fa fa-sync fa-fw me-1" [class.fa-spin]="loading"></i>
+            Sync Aggregation
+        </button>
+        <button class="btn btn-outline-default btn-sm">
+            <i class="fa fa-bell fa-fw me-1"></i>
+            Configure Alerts
+        </button>
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-theme dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                [disabled]="exporting || loading">
+                <i class="fa fa-file-export fa-fw me-1"></i>
+                <span *ngIf="!exporting">Export CSV</span>
+                <span *ngIf="exporting">Exporting...</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" type="button" (click)="exportCsv('raw')" [disabled]="exporting">
+                        Keseluruhan
+                    </button></li>
+                <li><button class="dropdown-item" type="button" (click)="exportCsv('5m')" [disabled]="exporting">
+                        Per 5 Menit
+                    </button></li>
+                <li><button class="dropdown-item" type="button" (click)="exportCsv('1h')" [disabled]="exporting">
+                        Per 1 Jam
+                    </button></li>
+            </ul>
+        </div>
     </div>
-  </div>
 </div>
 
 <card class="shadow-sm">
-  <ul class="nav nav-tabs nav-tabs-v2 px-4 pt-3">
-    <li class="nav-item me-3" *ngFor="let agg of aggregations">
-      <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
-        [class.active]="selectedAggregation === agg"
-        (click)="onAggregationChange(agg)">
-        <span>{{ agg }}</span>
-        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
-          {{ aggregationLabels[agg] || agg }}
-        </span>
-      </a>
-    </li>
-  </ul>
-  <div class="p-4">
-    <div class="row g-3 mb-4">
-      <div class="col-lg-4 col-md-6">
-        <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
-        <div class="dropdown w-100">
-          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-            data-bs-toggle="dropdown">
-            {{ filters.owner }}
-          </button>
-          <div class="dropdown-menu w-100">
-            <button class="dropdown-item" *ngFor="let option of ownerOptions" (click)="setFilter('owner', option)">
-              {{ option }}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-4 col-md-6">
-        <label class="text-muted text-uppercase small d-block mb-1">Project</label>
-        <div class="dropdown w-100">
-          <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-            data-bs-toggle="dropdown">
-            {{ filters.project }}
-          </button>
-          <div class="dropdown-menu w-100">
-            <button class="dropdown-item" *ngFor="let option of projectOptions" (click)="setFilter('project', option)">
-              {{ option }}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-4 col-md-12">
-        <label class="text-muted text-uppercase small d-block mb-1">Search</label>
-        <div class="input-group">
-          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search"></i></span>
-          <input type="text" class="form-control border-start-0 ps-0"
-            placeholder="Cari channel / node / project"
-            [(ngModel)]="searchTerm">
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-3 mb-4">
-      <div class="col-lg-4 col-md-6">
-        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-          <div class="text-muted text-uppercase small mb-1">Total Records</div>
-          <div class="fs-3 fw-bold text-theme">{{ totalChannels | number }}</div>
-          <div class="text-muted small">In selected time range</div>
-        </div>
-      </div>
-      <div class="col-lg-4 col-md-6">
-        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-          <div class="text-muted text-uppercase small mb-1">Total Data Points</div>
-          <div class="fs-3 fw-bold">{{ totalPoints | number }}</div>
-          <div class="text-muted small">Global count (all pages)</div>
-        </div>
-      </div>
-      <div class="col-lg-4 col-md-6">
-        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-          <div class="text-muted text-uppercase small mb-1">Unique Nodes</div>
-          <div class="fs-3 fw-bold">{{ uniqueNodesCount }}</div>
-          <div class="text-muted small">On current page</div>
-        </div>
-      </div>
-      <div class="col-lg-4 col-md-6">
-        <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-          <div class="text-muted text-uppercase small mb-1">Data Quality</div>
-          <div class="d-flex gap-3">
-            <div>
-              <div class="fw-bold text-success">{{ qualitySummary.good }}</div>
-              <div class="text-muted small">Healthy</div>
+    <ul class="nav nav-tabs nav-tabs-v2 px-4 pt-3">
+        <li class="nav-item me-3" *ngFor="let agg of aggregations">
+            <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+                [class.active]="selectedAggregation === agg" (click)="onAggregationChange(agg)">
+                <span>{{ agg }}</span>
+                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
+                    {{ aggregationLabels[agg] || agg }}
+                </span>
+            </a>
+        </li>
+    </ul>
+    <div class="p-4">
+        <!-- Cascading Filters -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-2 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">
+                    <i class="fa fa-building me-1"></i>Owner
+                </label>
+                <select class="form-select form-select-sm" [(ngModel)]="selectedOwnerId"
+                    (change)="onOwnerChange(selectedOwnerId)">
+                    <option value="">All Owners</option>
+                    <option *ngFor="let opt of ownerOptions" [value]="opt.id">{{ opt.label }}</option>
+                </select>
             </div>
-            <div>
-              <div class="fw-bold text-warning">{{ qualitySummary.warning }}</div>
-              <div class="text-muted small">Warning</div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">
+                    <i class="fa fa-folder me-1"></i>Project
+                </label>
+                <select class="form-select form-select-sm" [(ngModel)]="selectedProjectId"
+                    (change)="onProjectChange(selectedProjectId)"
+                    [disabled]="!selectedOwnerId">
+                    <option value="">All Projects</option>
+                    <option *ngFor="let opt of projectOptions" [value]="opt.id">{{ opt.label }}</option>
+                </select>
             </div>
-            <div>
-              <div class="fw-bold text-danger">{{ qualitySummary.critical }}</div>
-              <div class="text-muted small">Critical</div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">
+                    <i class="fa fa-server me-1"></i>Node
+                </label>
+                <select class="form-select form-select-sm" [(ngModel)]="selectedNodeId"
+                    (change)="onNodeChange(selectedNodeId)" 
+                    [disabled]="!selectedProjectId">
+                    <option value="">All Nodes</option>
+                    <option *ngFor="let opt of nodeOptions" [value]="opt.id">{{ opt.label }}</option>
+                </select>
             </div>
-          </div>
-          <div class="text-muted small mt-2">Current page only</div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">
+                    <i class="fa fa-microchip me-1"></i>Sensor
+                </label>
+                <select class="form-select form-select-sm" [(ngModel)]="selectedSensorId"
+                    (change)="onSensorChange(selectedSensorId)"
+                    [disabled]="!selectedNodeId">
+                    <option value="">All Sensors</option>
+                    <option *ngFor="let opt of sensorOptions" [value]="opt.id">{{ opt.label }}</option>
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="text-muted text-uppercase small d-block mb-1">
+                    <i class="fa fa-signal me-1"></i>Channel
+                </label>
+                <select class="form-select form-select-sm" [(ngModel)]="selectedChannelId"
+                    (change)="onChannelChange(selectedChannelId)"
+                    [disabled]="!selectedSensorId">
+                    <option value="">All Channels</option>
+                    <option *ngFor="let opt of channelOptions" [value]="opt.id">{{ opt.label }}</option>
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-12">
+                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted">
+                        <i class="fa fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control form-control-sm border-start-0 ps-0"
+                        placeholder="Search keyword..." [(ngModel)]="searchTerm">
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+                    <div class="text-muted text-uppercase small mb-1">Total Records</div>
+                    <div class="fs-3 fw-bold text-theme">{{ totalChannels | number }}</div>
+                    <div class="text-muted small">In selected time range</div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+                    <div class="text-muted text-uppercase small mb-1">Total Data Points</div>
+                    <div class="fs-3 fw-bold">{{ totalPoints | number }}</div>
+                    <div class="text-muted small">Global count (all pages)</div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+                    <div class="text-muted text-uppercase small mb-1">Unique Nodes</div>
+                    <div class="fs-3 fw-bold">{{ uniqueNodesCount }}</div>
+                    <div class="text-muted small">On current page</div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
+                    <div class="text-muted text-uppercase small mb-1">Data Quality</div>
+                    <div class="d-flex gap-3">
+                        <div>
+                            <div class="fw-bold text-success">{{ qualitySummary.good }}</div>
+                            <div class="text-muted small">Healthy</div>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-warning">{{ qualitySummary.warning }}</div>
+                            <div class="text-muted small">Warning</div>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-danger">{{ qualitySummary.critical }}</div>
+                            <div class="text-muted small">Critical</div>
+                        </div>
+                    </div>
+                    <div class="text-muted small mt-2">Current page only</div>
+                </div>
+            </div>
+
+            <!-- Active Filters Card -->
+            <div class="col-lg-4 col-md-6"
+                *ngIf="ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter">
+                <div class="border rounded-3 p-3 bg-primary bg-opacity-10 border-primary border-opacity-25 h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="text-primary text-uppercase small fw-semibold">
+                            <i class="fa fa-filter me-1"></i>Active Filters
+                        </div>
+                        <button (click)="clearAllFilters()" class="btn btn-outline-primary btn-sm py-0 px-2"
+                            style="font-size: 0.75rem;">
+                            Clear
+                        </button>
+                    </div>
+                    <div class="d-flex flex-column gap-1">
+                        <div *ngIf="ownerIdFilter" class="small">
+                            <i class="fa fa-building text-primary me-1"></i>
+                            <span class="text-muted">Owner:</span>
+                            <span class="fw-semibold">{{ ownerIdFilter }}</span>
+                        </div>
+                        <div *ngIf="projectIdFilter" class="small">
+                            <i class="fa fa-folder text-info me-1"></i>
+                            <span class="text-muted">Project:</span>
+                            <span class="fw-semibold">{{ projectIdFilter }}</span>
+                        </div>
+                        <div *ngIf="nodeIdFilter" class="small">
+                            <i class="fa fa-server text-success me-1"></i>
+                            <span class="text-muted">Node:</span>
+                            <span class="fw-semibold">{{ nodeIdFilter }}</span>
+                        </div>
+                        <div *ngIf="sensorIdFilter" class="small">
+                            <i class="fa fa-microchip text-warning me-1"></i>
+                            <span class="text-muted">Sensor:</span>
+                            <span class="fw-semibold">{{ sensorIdFilter }}</span>
+                        </div>
+                        <div *ngIf="sensorChannelIdFilter" class="small">
+                            <i class="fa fa-signal text-theme me-1"></i>
+                            <span class="text-muted">Channel:</span>
+                            <span class="fw-semibold">{{ sensorChannelIdFilter }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <div class="text-muted text-uppercase small">Time Range</div>
+                    <div class="fw-semibold">Last {{ selectedAggregationLabel }}</div>
+                    <div class="text-muted small">
+                        Real-time sensor readings
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted text-uppercase small">Active Filter Scope</div>
+                    <div class="fw-semibold"
+                        *ngIf="!ownerIdFilter && !projectIdFilter && !nodeIdFilter && !sensorIdFilter && !sensorChannelIdFilter">
+                        All Data (No Filters)
+                    </div>
+                    <div class="fw-semibold" *ngIf="sensorChannelIdFilter">
+                        <i class="fa fa-signal me-1"></i>Single Channel
+                    </div>
+                    <div class="fw-semibold" *ngIf="!sensorChannelIdFilter && sensorIdFilter">
+                        <i class="fa fa-microchip me-1"></i>All Channels in Sensor
+                    </div>
+                    <div class="fw-semibold" *ngIf="!sensorIdFilter && nodeIdFilter">
+                        <i class="fa fa-server me-1"></i>All Sensors in Node
+                    </div>
+                    <div class="fw-semibold" *ngIf="!nodeIdFilter && projectIdFilter">
+                        <i class="fa fa-folder me-1"></i>All Nodes in Project
+                    </div>
+                    <div class="fw-semibold" *ngIf="!projectIdFilter && ownerIdFilter">
+                        <i class="fa fa-building me-1"></i>All Projects in Owner
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-muted small">Records displayed</div>
+                    <div class="fw-semibold fs-4">{{ totalChannels }}</div>
+                    <div class="text-muted small">({{ totalPoints | number }} data points)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <!-- Loading State -->
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border text-theme" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading telemetry data...</p>
+            </div>
+
+            <!-- Error State -->
+            <div *ngIf="!loading && error" class="alert alert-danger" role="alert">
+                <i class="fa fa-exclamation-triangle me-2"></i>
+                {{ error }}
+            </div>
+
+            <!-- Data Table -->
+            <table *ngIf="!loading && !error" class="table table-hover text-nowrap align-middle mb-0">
+                <thead class="text-uppercase text-muted small">
+                    <tr>
+                        <th class="pt-0 pb-2">Channel / Sensor</th>
+                        <th class="pt-0 pb-2">Node</th>
+                        <th class="pt-0 pb-2">Project / Owner</th>
+                        <th class="pt-0 pb-2 text-end">Latest Value</th>
+                        <th class="pt-0 pb-2 text-center">Quality</th>
+                        <th class="pt-0 pb-2">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let row of filteredTelemetry">
+                        <td>
+                            <div class="fw-semibold text-inverse">{{ row.channelLabel }}</div>
+                            <div class="text-muted small">
+                                <span *ngIf="row.sensorType" class="badge bg-primary bg-opacity-10 text-primary">{{
+                                    row.sensorType }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.nodeName }}</div>
+                            <div class="text-muted small" *ngIf="row.nodeSerialNumber">SN: {{ row.nodeSerialNumber }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ row.project }}</div>
+                            <div class="text-muted small">{{ row.owner }}</div>
+                        </td>
+                        <td class="text-end">
+                            <div class="fw-bold fs-5">{{ row.latest | number: '1.2-2' }}</div>
+                            <div class="text-muted small">{{ row.unit || '-' }}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge" [ngClass]="qualityBadge(row.quality)">
+                                {{ row.quality | titlecase }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="text-muted small">{{ row.windowStart | date: 'dd MMM yyyy' }}</div>
+                            <div class="fw-semibold">{{ row.windowStart | date: 'HH:mm:ss' }}</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Empty State -->
+            <div class="text-center text-muted py-5 border-top" *ngIf="!loading && !error && !filteredTelemetry.length">
+                <i class="fa fa-inbox fs-1"></i>
+                <p class="mt-2">Tidak ada log telemetry untuk filter ini.</p>
+            </div>
+
+            <!-- Pagination -->
+            <div *ngIf="!loading && !error && totalRecords > pageSize"
+                class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                <div class="text-muted small">
+                    Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalRecords | number }} records
+                </div>
+                <nav aria-label="Telemetry pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" [class.disabled]="currentPage === 1">
+                            <a class="page-link" href="javascript:;" (click)="previousPage()">
+                                <i class="fa fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+                            <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+                        </li>
+                        <li class="page-item" [class.disabled]="currentPage === totalPages">
+                            <a class="page-link" href="javascript:;" (click)="nextPage()">
+                                <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
     </div>
-
-    <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
-      <div class="row g-3 align-items-center">
-        <div class="col-md-4">
-          <div class="text-muted text-uppercase small">Time Range</div>
-          <div class="fw-semibold">Last {{ selectedAggregationLabel }}</div>
-          <div class="text-muted small">
-            Real-time sensor readings
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="text-muted text-uppercase small">Filters</div>
-          <div class="fw-semibold">Owner · {{ filters.owner }}</div>
-          <div class="fw-semibold">Project · {{ filters.project }}</div>
-        </div>
-        <div class="col-md-4 text-md-end">
-          <div class="text-muted small">Records displayed</div>
-          <div class="fw-semibold fs-4">{{ totalChannels }}</div>
-          <div class="text-muted small">({{ totalPoints | number }} data points)</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="table-responsive">
-      <!-- Loading State -->
-      <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-theme" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2 text-muted">Loading telemetry data...</p>
-      </div>
-
-      <!-- Error State -->
-      <div *ngIf="!loading && error" class="alert alert-danger" role="alert">
-        <i class="fa fa-exclamation-triangle me-2"></i>
-        {{ error }}
-      </div>
-
-      <!-- Data Table -->
-      <table *ngIf="!loading && !error" class="table table-hover text-nowrap align-middle mb-0">
-        <thead class="text-uppercase text-muted small">
-          <tr>
-            <th class="pt-0 pb-2">Channel / Sensor</th>
-            <th class="pt-0 pb-2">Node</th>
-            <th class="pt-0 pb-2">Project / Owner</th>
-            <th class="pt-0 pb-2 text-end">Latest Value</th>
-            <th class="pt-0 pb-2 text-center">Quality</th>
-            <th class="pt-0 pb-2">Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of filteredTelemetry">
-            <td>
-              <div class="fw-semibold text-inverse">{{ row.channelLabel }}</div>
-              <div class="text-muted small">
-                <span *ngIf="row.sensorType" class="badge bg-primary bg-opacity-10 text-primary">{{ row.sensorType }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="fw-semibold">{{ row.nodeName }}</div>
-              <div class="text-muted small" *ngIf="row.nodeSerialNumber">SN: {{ row.nodeSerialNumber }}</div>
-            </td>
-            <td>
-              <div class="fw-semibold">{{ row.project }}</div>
-              <div class="text-muted small">{{ row.owner }}</div>
-            </td>
-            <td class="text-end">
-              <div class="fw-bold fs-5">{{ row.latest | number: '1.2-2' }}</div>
-              <div class="text-muted small">{{ row.unit || '-' }}</div>
-            </td>
-            <td class="text-center">
-              <span class="badge" [ngClass]="qualityBadge(row.quality)">
-                {{ row.quality | titlecase }}
-              </span>
-            </td>
-            <td>
-              <div class="text-muted small">{{ row.windowStart | date: 'dd MMM yyyy' }}</div>
-              <div class="fw-semibold">{{ row.windowStart | date: 'HH:mm:ss' }}</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Empty State -->
-      <div class="text-center text-muted py-5 border-top" *ngIf="!loading && !error && !filteredTelemetry.length">
-        <i class="fa fa-inbox fs-1"></i>
-        <p class="mt-2">Tidak ada log telemetry untuk filter ini.</p>
-      </div>
-      
-      <!-- Pagination -->
-      <div *ngIf="!loading && !error && totalRecords > pageSize" class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-        <div class="text-muted small">
-          Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalRecords | number }} records
-        </div>
-        <nav aria-label="Telemetry pagination">
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" href="javascript:;" (click)="previousPage()">
-                <i class="fa fa-chevron-left"></i>
-              </a>
-            </li>
-            <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
-              <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
-            </li>
-            <li class="page-item" [class.disabled]="currentPage === totalPages">
-              <a class="page-link" href="javascript:;" (click)="nextPage()">
-                <i class="fa fa-chevron-right"></i>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
-  </div>
 </card>

@@ -43,6 +43,9 @@ export class NodeResponseDto {
   @ApiPropertyOptional()
   idCurrentLocation?: string;
 
+  @ApiPropertyOptional({ description: 'Node Profile ID for payload parsing' })
+  idNodeProfile?: string;
+
   @ApiProperty()
   createdAt: Date;
 

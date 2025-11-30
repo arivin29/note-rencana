@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Sensor } from './sensor.entity';
+import { SensorType } from './sensor-type.entity';
 
 @Entity('sensor_channels')
 export class SensorChannel {
@@ -43,4 +44,8 @@ export class SensorChannel {
   @ManyToOne(() => Sensor, sensor => sensor.channels)
   @JoinColumn({ name: 'id_sensor' })
   sensor: Sensor;
+
+  @ManyToOne(() => SensorType, sensorType => sensorType.channels)
+  @JoinColumn({ name: 'id_sensor_type' })
+  sensorType: SensorType;
 }

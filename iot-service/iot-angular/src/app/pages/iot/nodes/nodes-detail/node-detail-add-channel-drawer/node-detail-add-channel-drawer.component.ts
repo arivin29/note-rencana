@@ -49,7 +49,7 @@ export class NodeDetailAddChannelDrawerComponent implements OnInit, OnChanges {
   ) {}
 
   ngOnInit(): void {
-    this.loadSensorTypes();
+    // Don't load sensor types here - load when drawer opens
   }
 
   /**
@@ -72,21 +72,25 @@ export class NodeDetailAddChannelDrawerComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     // Handle drawer open/close
-    if (changes['isOpen']) {
-      if (this.isOpen) {
-        // Drawer just opened - reset form and load fresh data
-        if (this.mode === 'edit' && this.channelId) {
-          // Edit mode: fetch from backend
-          this.loadChannelData();
-        } else {
-          // Add mode: create empty form
-          this.formModel = this.createEmptyForm();
-        }
+    if (changes['isOpen'] && this.isOpen) {
+      console.log('Channel drawer opened - mode:', this.mode, 'channelId:', this.channelId);
+      
+      // Drawer just opened - load sensor types first
+      this.loadSensorTypes();
+      
+      // After types loaded, check if we need to load channel data
+      if (this.mode === 'edit' && this.channelId) {
+        // Edit mode: fetch from backend after a short delay to ensure types are loaded
+        // Better: handle this in the loadSensorTypes success callback
+      } else {
+        // Add mode: create empty form
+        this.formModel = this.createEmptyForm();
       }
     }
 
-    // Handle channelId change in edit mode
-    if (changes['channelId'] && this.channelId && this.isOpen) {
+    // Handle mode or channelId change while drawer is already open
+    if (changes['channelId'] && this.channelId && this.isOpen && this.mode === 'edit') {
+      console.log('Channel ID changed while drawer open:', this.channelId);
       this.loadChannelData();
     }
 
@@ -165,12 +169,17 @@ export class NodeDetailAddChannelDrawerComponent implements OnInit, OnChanges {
    * Load channel data from backend (edit mode)
    */
   loadChannelData() {
-    if (!this.channelId) return;
+    if (!this.channelId) {
+      console.warn('loadChannelData called but channelId is null');
+      return;
+    }
 
+    console.log('Loading channel data for ID:', this.channelId);
     this.loadingChannel = true;
     this.sensorChannelsService.sensorChannelsControllerFindOne({ id: this.channelId }).subscribe({
       next: (response: any) => {
         const data = this.parseResponse(response);
+        console.log('Loaded channel data:', data);
         
         // Populate form with backend data
         this.formModel = {
@@ -200,26 +209,38 @@ export class NodeDetailAddChannelDrawerComponent implements OnInit, OnChanges {
    */
   loadSensorTypes() {
     this.loading = true;
+    console.log('Loading sensor types...');
+    
     this.sensorTypesService.sensorTypesControllerFindAll({ limit: 100 }).subscribe({
-      next: (response: any) => {
-        const data = this.parseResponse(response);
+      next: (data: any) => {
+        // SDK returns array directly, not wrapped in {data: [...]}
+        console.log('Received sensor types response:', data);
         
-        this.sensorTypeOptions = (data.data || []).map((type: any) => ({
+        const types = Array.isArray(data) ? data : [];
+        console.log('Parsed sensor types count:', types.length);
+        
+        this.sensorTypeOptions = types.map((type: any) => ({
           id: type.idSensorType,
           label: type.category,
           unit: type.defaultUnit || '',
           precision: type.precision || 0.01
         }));
         
-        // Only set default if in add mode and no sensorTypeId yet
-        if (this.mode === 'add' && !this.formModel.sensorTypeId && this.sensorTypeOptions.length > 0) {
-          this.formModel.sensorTypeId = this.sensorTypeOptions[0].id;
-          this.onSensorTypeChange();
-        }
-        
-        // In edit mode, sensorTypeId already set from initialValue - no need to change
+        console.log('Mapped sensor type options:', this.sensorTypeOptions.length);
         
         this.loading = false;
+        
+        // After sensor types loaded, handle mode-specific logic
+        if (this.mode === 'edit' && this.channelId) {
+          // Edit mode: load channel data from backend
+          this.loadChannelData();
+        } else {
+          // Add mode: set default sensor type
+          if (this.sensorTypeOptions.length > 0) {
+            this.formModel.sensorTypeId = this.sensorTypeOptions[0].id;
+            this.onSensorTypeChange();
+          }
+        }
       },
       error: (err) => {
         console.error('Error loading sensor types:', err);

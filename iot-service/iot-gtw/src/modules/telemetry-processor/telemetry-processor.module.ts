@@ -5,10 +5,12 @@ import {
   Node,
   NodeProfile,
   NodeUnpairedDevice,
+  Owner,
   Project,
   Sensor,
   SensorChannel,
   SensorLog,
+  SensorType,
 } from '../../entities/existing';
 import { TelemetryParserService } from './telemetry-parser.service';
 import { TelemetryProcessorService } from './telemetry-processor.service';
@@ -21,10 +23,12 @@ import { TelemetryProcessorController } from './telemetry-processor.controller';
       Node,
       NodeProfile,
       NodeUnpairedDevice,
+      Owner,
       Project,
       Sensor,
       SensorChannel,
       SensorLog,
+      SensorType,
     ]),
   ],
   controllers: [TelemetryProcessorController],

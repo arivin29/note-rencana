@@ -22,17 +22,18 @@ export class SensorTypesController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiResponse({ status: 200 })
-  findAll(
+  @ApiResponse({ status: 200, type: [SensorTypeResponseDto] })
+  async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
-  ) {
-    return this.sensorTypesService.findAll({
+  ): Promise<SensorTypeResponseDto[]> {
+    const result = await this.sensorTypesService.findAll({
       page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : 1000, // Return all for simple UI
       search,
     });
+    return result.data;
   }
 
   @Get(':id')

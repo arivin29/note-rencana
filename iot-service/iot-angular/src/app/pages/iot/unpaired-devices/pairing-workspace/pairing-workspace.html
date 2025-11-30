@@ -1,0 +1,107 @@
+<div class="pairing-wizard-container">
+    <!-- Page Header -->
+    <div class="wizard-header">
+        <div>
+            <ul class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a routerLink="/iot/unpaired-devices">Unpaired Devices</a></li>
+                <li class="breadcrumb-item active">Pair Device</li>
+            </ul>
+            <h1 class="page-header mb-0">Pair Hardware {{ hardwareId }}</h1>
+            <p class="text-muted mb-0">{{ projectName }}</p>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-outline-secondary" (click)="discardChanges()">
+                <i class="fa fa-times me-1"></i> Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Step Indicator -->
+    <card class="mb-4">
+        <card-body class="py-3">
+            <ul class="nav nav-pills justify-content-center flex-wrap gap-2 mb-0">
+                <li class="nav-item" *ngFor="let step of wizardSteps">
+                    <span class="nav-link"
+                          [ngClass]="{
+                            'active': currentStep === step.id,
+                            'bg-success text-white': currentStep > step.id,
+                            'text-muted': currentStep < step.id
+                          }">
+                        <strong class="me-1">{{ step.id }}.</strong> {{ step.label }}
+                    </span>
+                </li>
+            </ul>
+        </card-body>
+    </card>
+
+    <!-- Step Content -->
+    <div class="step-content">
+        <!-- ============================================ -->
+        <!-- STEP 1: NODE CONFIGURATION -->
+        <!-- ============================================ -->
+        <pw-step-node-config
+            *ngIf="currentStep === 1"
+            [nodeConfig]="nodeConfig"
+            [nodeModels]="nodeModels"
+            [unpairedDevice]="unpairedDevice"
+            (configChange)="onNodeConfigChange($event)"
+            (validationChange)="onStep1ValidationChange($event)"
+            (selectNode)="onNodeChaneged($event)">
+        </pw-step-node-config>
+
+        <!-- ============================================ -->
+        <!-- STEP 2: ADD SENSORS -->
+        <!-- ============================================ -->
+        <pw-step-sensor-config
+            *ngIf="currentStep === 2" idNode="{{id_node}}"
+            (sensorsChange)="onSensorsChange($event)"
+            (validationChange)="onStep2ValidationChange($event)">
+        </pw-step-sensor-config>
+
+        <!-- ============================================ -->
+        <!-- STEP 3: PAYLOAD MAPPING -->
+        <!-- ============================================ -->
+        <pw-step-payload-mapping
+            *ngIf="currentStep === 3"
+            [addedSensors]="addedSensors"
+            [nodeModelId]="getActiveNodeModelId()"
+            [projectId]="projectId"
+            [unpairedDevice]="unpairedDevice"
+            (sensorsChange)="onSensorsChange($event)"
+            (validationChange)="onStep3ValidationChange($event)"
+            (idSensorProfile)="onSensorProfileSelected($event)"
+            (metadataChange)="onPayloadMetadataChange($event)">
+        </pw-step-payload-mapping>
+
+        <!-- ============================================ -->
+        <!-- STEP 4: REVIEW & SUBMIT -->
+        <!-- ============================================ -->
+        <pw-step-review-submit
+            *ngIf="currentStep === 4"
+            [nodeConfig]="nodeConfig"
+            [nodeModels]="nodeModels"
+            [addedSensors]="addedSensors"
+            [ownerId]="ownerId"
+            [projectId]="projectId"
+            [idSensorProfile]="sensorProfileId"
+            [hardwareId]="hardwareId"
+            [unpairedDeviceId]="unpairedDevice?.idNodeUnpairedDevice"
+            (submit)="onSubmitPairing($event)">
+        </pw-step-review-submit>
+    </div>
+
+    <!-- Wizard Navigation -->
+    <div class="wizard-navigation">
+        <button class="btn btn-outline-secondary" [disabled]="currentStep === 1" (click)="previousStep()">
+            <i class="fa fa-arrow-left me-1"></i> Previous
+        </button>
+
+        <div class="step-info">
+            Step {{ currentStep }} of 4
+        </div>
+
+        <button *ngIf="currentStep < 4" class="btn btn-theme" [disabled]="!canProceedToNextStep()" (click)="nextStep()">
+            Next <i class="fa fa-arrow-right ms-1"></i>
+        </button>
+    </div>
+</div>

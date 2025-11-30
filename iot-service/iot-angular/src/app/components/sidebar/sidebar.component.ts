@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AppMenuService } from '../../service/app-menus.service';
 import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'sidebar',
@@ -11,10 +12,21 @@ import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 export class SidebarComponent implements OnInit {
 	menus: any[] = [];
 	
-	constructor(private appMenuService: AppMenuService, private router: Router) { }
+	constructor(
+		private appMenuService: AppMenuService, 
+		private router: Router,
+		private authService: AuthService
+	) { }
 	
 	ngOnInit() {
-		this.menus = this.appMenuService.getAppMenus();
+		const allMenus = this.appMenuService.getAppMenus();
+		// Filter menus based on user role
+		this.menus = allMenus.filter(menu => {
+			if (menu.role) {
+				return this.authService.hasRole(menu.role);
+			}
+			return true;
+		});
 	}
 	
 	isActive(path: string) {
