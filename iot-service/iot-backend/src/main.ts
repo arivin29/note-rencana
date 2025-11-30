@@ -41,8 +41,18 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS with specific origins
+  app.enableCors({
+    origin: [
+      'http://localhost:4200',           // Angular dev server
+      'http://localhost:3000',           // Backend Swagger UI
+      'https://devetek-helios.web.app',  // Firebase Hosting
+      'https://devetek-helios.firebaseapp.com', // Firebase Hosting (alternative)
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type,Authorization,Accept',
+  });
 
   const configService = app.get(ConfigService);
   const port = Number(configService.get<string>('PORT')) || 3000;
