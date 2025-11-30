@@ -6,3 +6,7 @@ dist
 coverage
 *.log
 tmp
+
+# PM2 logs
+logs/*.log
+!logs/.gitkeep
