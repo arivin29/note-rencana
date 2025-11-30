@@ -280,9 +280,13 @@ void sendFullTelemetry() {
         JsonDocument doc2;
         doc2["device_id"] = DEVICE_ID;
         doc2["timestamp"] = timeManager.getTimestamp();
+        doc2["firmware"] = "esp32s3-multisensor-v2.1";
         
         // RS485 data only
         buildRS485Data(doc2);
+        
+        // Add node info (same as basic sensors)
+        appendNodeInfo(doc2);
 
         Serial.println("\n========== RS485 TELEMETRY ==========");
         serializeJsonPretty(doc2, Serial);

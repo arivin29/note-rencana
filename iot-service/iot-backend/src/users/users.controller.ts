@@ -21,6 +21,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { FilterUsersDto } from './dto/filter-users.dto';
+import { UserResponseDto, PaginatedUserResponseDto } from './dto/user-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -36,40 +37,40 @@ export class UsersController {
 
   @Get()
   @ApiOperation({ summary: 'Get all users with filters (admin sees all, tenant sees self)' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Users retrieved successfully', type: PaginatedUserResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(
     @Query() filterDto: FilterUsersDto,
     @CurrentUser() currentUser: User,
-  ) {
+  ): Promise<PaginatedUserResponseDto> {
     return this.usersService.findAll(filterDto, currentUser);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, description: 'User found' })
+  @ApiResponse({ status: 200, description: 'User found', type: UserResponseDto })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 403, description: 'Forbidden - Tenant can only view self' })
-  async findOne(@Param('id') id: string, @CurrentUser() currentUser: User) {
+  async findOne(@Param('id') id: string, @CurrentUser() currentUser: User): Promise<UserResponseDto> {
     return this.usersService.findOne(id, currentUser);
   }
 
   @Post()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create new user (admin only)' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 201, description: 'User created successfully', type: UserResponseDto })
   @ApiResponse({ status: 400, description: 'Bad request - Email exists or validation error' })
   @ApiResponse({ status: 403, description: 'Forbidden - Only admins can create users' })
   async create(
     @Body() createUserDto: CreateUserDto,
     @CurrentUser() currentUser: User,
-  ) {
+  ): Promise<UserResponseDto> {
     return this.usersService.create(createUserDto, currentUser);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update user (admin updates any, tenant updates self with limited fields)' })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 200, description: 'User updated successfully', type: UserResponseDto })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -77,7 +78,7 @@ export class UsersController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
     @CurrentUser() currentUser: User,
-  ) {
+  ): Promise<UserResponseDto> {
     return this.usersService.update(id, updateUserDto, currentUser);
   }
 
@@ -88,7 +89,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 400, description: 'Cannot delete own account' })
   @ApiResponse({ status: 403, description: 'Forbidden - Only admins can delete users' })
-  async delete(@Param('id') id: string, @CurrentUser() currentUser: User) {
+  async delete(@Param('id') id: string, @CurrentUser() currentUser: User): Promise<{ message: string }> {
     return this.usersService.delete(id, currentUser);
   }
 
@@ -102,18 +103,18 @@ export class UsersController {
     @Param('id') id: string,
     @Body() changePasswordDto: ChangePasswordDto,
     @CurrentUser() currentUser: User,
-  ) {
+  ): Promise<{ message: string }> {
     return this.usersService.changePassword(id, changePasswordDto, currentUser);
   }
 
   @Patch(':id/toggle-active')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Toggle user active status (admin only)' })
-  @ApiResponse({ status: 200, description: 'User status toggled successfully' })
+  @ApiResponse({ status: 200, description: 'User status toggled successfully', type: UserResponseDto })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 400, description: 'Cannot deactivate own account' })
   @ApiResponse({ status: 403, description: 'Forbidden - Only admins can toggle status' })
-  async toggleActive(@Param('id') id: string, @CurrentUser() currentUser: User) {
+  async toggleActive(@Param('id') id: string, @CurrentUser() currentUser: User): Promise<UserResponseDto> {
     return this.usersService.toggleActive(id, currentUser);
   }
 }

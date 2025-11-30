@@ -40,90 +40,92 @@
     <!-- Left Column: User Info & Quick Actions -->
     <div class="col-lg-4 mb-4">
       <!-- User Info Card -->
-      <div class="card shadow-sm">
-        <div class="card-body text-center">
-          <!-- Avatar -->
-          <div class="user-avatar mx-auto mb-3">
-            {{ getUserInitials() }}
-          </div>
-          
-          <!-- User Name -->
-          <h3 class="mb-1">{{ user.name }}</h3>
-          <p class="text-muted mb-3">{{ user.email }}</p>
-          
-          <!-- Role & Status Badges -->
-          <div class="mb-3">
-            <span class="badge me-2" [ngClass]="getRoleBadgeClass(user.role)">
-              <i class="bi bi-shield me-1"></i>{{ user.role | uppercase }}
-            </span>
-            <span class="badge" [ngClass]="getStatusBadgeClass(user.isActive)">
-              <i class="bi" [ngClass]="user.isActive ? 'bi-check-circle' : 'bi-x-circle'"></i>
-              {{ user.isActive ? 'Active' : 'Inactive' }}
-            </span>
-          </div>
-          
-          <hr>
-          
-          <!-- User Details -->
-          <div class="text-start">
-            <div class="detail-item">
-              <i class="bi bi-fingerprint text-muted me-2"></i>
-              <strong>ID:</strong>
-              <span class="ms-2">{{ user.idUser }}</span>
+      <card>
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <!-- Avatar -->
+                <div class="user-avatar mx-auto mb-3">
+                    {{ getUserInitials() }}
+                </div>
+        
+                <!-- User Name -->
+                <h3 class="mb-1">{{ user.name }}</h3>
+                <p class="text-muted mb-3">{{ user.email }}</p>
+        
+                <!-- Role & Status Badges -->
+                <div class="mb-3">
+                    <span class="badge me-2" [ngClass]="getRoleBadgeClass(user.role)">
+                        <i class="bi bi-shield me-1"></i>{{ user.role | uppercase }}
+                    </span>
+                    <span class="badge" [ngClass]="getStatusBadgeClass(user.isActive)">
+                        <i class="bi" [ngClass]="user.isActive ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                        {{ user.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+        
+                <hr>
+        
+                <!-- User Details -->
+                <div class="text-start">
+                    <div class="detail-item">
+                        <i class="bi bi-fingerprint text-muted me-2"></i>
+                        <strong>ID:</strong>
+                        <span class="ms-2">{{ user.idUser }}</span>
+                    </div>
+        
+                    <div class="detail-item" *ngIf="user.idOwner">
+                        <i class="bi bi-building text-muted me-2"></i>
+                        <strong>Owner:</strong>
+                        <span class="ms-2">
+                            <a *ngIf="ownerDetail" [routerLink]="['/iot/owners', ownerDetail.idOwner]">{{ ownerDetail.name
+                                }}</a>
+                            <span *ngIf="!ownerDetail">{{ user.idOwner }}</span>
+                        </span>
+                    </div>
+        
+                    <div class="detail-item">
+                        <i class="bi bi-calendar-plus text-muted me-2"></i>
+                        <strong>Created:</strong>
+                        <span class="ms-2">{{ formatDate(user.createdAt) }}</span>
+                    </div>
+        
+                    <div class="detail-item">
+                        <i class="bi bi-calendar-check text-muted me-2"></i>
+                        <strong>Updated:</strong>
+                        <span class="ms-2">{{ formatDate(user.updatedAt) }}</span>
+                    </div>
+                </div>
             </div>
-            
-            <div class="detail-item" *ngIf="user.idOwner">
-              <i class="bi bi-building text-muted me-2"></i>
-              <strong>Owner:</strong>
-              <span class="ms-2">
-                <a *ngIf="ownerDetail" [routerLink]="['/iot/owners', ownerDetail.idOwner]">{{ ownerDetail.name }}</a>
-                <span *ngIf="!ownerDetail">{{ user.idOwner }}</span>
-              </span>
-            </div>
-            
-            <div class="detail-item">
-              <i class="bi bi-calendar-plus text-muted me-2"></i>
-              <strong>Created:</strong>
-              <span class="ms-2">{{ formatDate(user.createdAt) }}</span>
-            </div>
-            
-            <div class="detail-item">
-              <i class="bi bi-calendar-check text-muted me-2"></i>
-              <strong>Updated:</strong>
-              <span class="ms-2">{{ formatDate(user.updatedAt) }}</span>
-            </div>
-          </div>
         </div>
-      </div>
+      </card>
 
       <!-- Quick Actions Card -->
-      <div class="card shadow-sm mt-4">
-        <div class="card-header">
-          <h5 class="mb-0">
-            <i class="bi bi-lightning me-2"></i>Quick Actions
-          </h5>
+      <card>
+        <div class="card shadow-sm mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" (click)="editUser()" [disabled]="loading">
+                        <i class="bi bi-pencil me-2"></i>Edit User
+                    </button>
+        
+                    <button class="btn" [ngClass]="user.isActive ? 'btn-warning' : 'btn-success'" (click)="toggleStatus()"
+                        [disabled]="loading">
+                        <i class="bi" [ngClass]="user.isActive ? 'bi-pause-circle' : 'bi-play-circle'" class="me-2"></i>
+                        {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                    </button>
+        
+                    <button class="btn btn-danger" (click)="showDeleteConfirm = true" [disabled]="loading">
+                        <i class="bi bi-trash me-2"></i>Delete User
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-          <div class="d-grid gap-2">
-            <button class="btn btn-primary" (click)="editUser()" [disabled]="loading">
-              <i class="bi bi-pencil me-2"></i>Edit User
-            </button>
-            
-            <button 
-              class="btn"
-              [ngClass]="user.isActive ? 'btn-warning' : 'btn-success'"
-              (click)="toggleStatus()" 
-              [disabled]="loading">
-              <i class="bi" [ngClass]="user.isActive ? 'bi-pause-circle' : 'bi-play-circle'" class="me-2"></i>
-              {{ user.isActive ? 'Deactivate' : 'Activate' }}
-            </button>
-            
-            <button class="btn btn-danger" (click)="showDeleteConfirm = true" [disabled]="loading">
-              <i class="bi bi-trash me-2"></i>Delete User
-            </button>
-          </div>
-        </div>
-      </div>
+      </card>
     </div>
 
     <!-- Right Column: Statistics & Activities -->
@@ -320,3 +322,13 @@
     </div>
   </div>
 </div>
+
+<!-- User Edit Form Modal -->
+<app-user-form
+  *ngIf="showEditModal && user"
+  [mode]="'edit'"
+  [user]="user"
+  [showAsModal]="true"
+  (close)="closeEditModal()"
+  (save)="onUserSaved($event)">
+</app-user-form>

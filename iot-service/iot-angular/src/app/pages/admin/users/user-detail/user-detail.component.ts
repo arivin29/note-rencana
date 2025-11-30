@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '@services/auth.service';
 import { UsersService } from '@sdk/core/services/users.service';
 import { AuditService } from '@sdk/core/services/audit.service';
-import { OwnersService } from '../../../../sdk/core/services/owners.service';
-import { OwnerResponseDto } from '../../../../sdk/core/models/owner-response-dto';
-import { User } from '../../../models/auth.model';
+import { OwnersService } from '@sdk/core/services/owners.service';
+import { OwnerResponseDto } from '@sdk/core/models/owner-response-dto';
+import { UserResponseDto } from '@sdk/core/models/user-response-dto';
 
 interface UserStats {
   totalLogins: number;
@@ -29,7 +29,7 @@ interface RecentActivity {
 })
 export class UserDetailComponent implements OnInit {
   userId: string = '';
-  user: User | null = null;
+  user: UserResponseDto | null = null;
   loading: boolean = false;
   loadingStats: boolean = false;
   
@@ -114,20 +114,12 @@ export class UserDetailComponent implements OnInit {
       next: (response: any) => {
         try {
           const body = typeof response === 'string' ? JSON.parse(response) : response;
-          this.user = {
-            idUser: body.idUser,
-            name: body.name,
-            email: body.email,
-            role: body.role,
-            isActive: body.isActive,
-            idOwner: body.idOwner,
-            createdAt: new Date(body.createdAt),
-            updatedAt: new Date(body.updatedAt)
-          };
+          this.user = body; // Response already in UserResponseDto format
           
           // Calculate account age
           if (this.user && this.user.createdAt) {
-            const diffTime = Math.abs(new Date().getTime() - this.user.createdAt.getTime());
+            const createdDate = new Date(this.user.createdAt);
+            const diffTime = Math.abs(new Date().getTime() - createdDate.getTime());
             this.stats.accountAge = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           }
           
@@ -297,10 +289,28 @@ export class UserDetailComponent implements OnInit {
    * Navigate to edit
    */
   editUser(): void {
-    // Navigate back to users list with edit modal
-    this.router.navigate(['/admin/users'], { 
-      queryParams: { edit: this.userId } 
-    });
+    // Open edit modal directly instead of navigating
+    this.showEditModal = true;
+  }
+  
+  /**
+   * Close edit modal
+   */
+  closeEditModal(): void {
+    this.showEditModal = false;
+  }
+  
+  /**
+   * Handle user saved from modal
+   */
+  onUserSaved(user: UserResponseDto): void {
+    this.successMessage = 'User updated successfully!';
+    this.closeEditModal();
+    this.loadUser(); // Reload user data
+    
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3000);
   }
 
   /**
@@ -343,9 +353,10 @@ export class UserDetailComponent implements OnInit {
   /**
    * Format date
    */
-  formatDate(date: Date | null | undefined): string {
+  formatDate(date: Date | string | null | undefined): string {
     if (!date) return 'Never';
-    return new Date(date).toLocaleDateString('en-US', {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -361,7 +372,7 @@ export class UserDetailComponent implements OnInit {
     if (!this.user?.name) return '?';
     return this.user.name
       .split(' ')
-      .map(word => word[0])
+      .map((word: string) => word[0])
       .join('')
       .toUpperCase()
       .substring(0, 2);

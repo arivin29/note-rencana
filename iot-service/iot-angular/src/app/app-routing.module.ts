@@ -9,9 +9,7 @@ import { LoginPage } from './template/page/login/page-login';
 import { RegisterPage } from './template/page/register/page-register';
 import { ForgotPasswordPage } from './template/page/forgot-password/page-forgot-password';
 
-// Admin Components
-import { UsersListComponent } from './pages/admin/users/users-list.component';
-import { UserDetailComponent } from './pages/admin/users/user-detail.component';
+// Admin Components 
 import { AuditLogsListComponent } from './pages/admin/audit-logs/audit-logs-list.component';
 
 import { IotDashboardPage } from './pages/iot/dashboard/iot-dashboard';
@@ -113,18 +111,7 @@ const routes: Routes = [
     },
 
     // Admin Routes (Protected - Admin Only)
-    { 
-        path: 'admin/users', 
-        component: UsersListComponent, 
-        canActivate: [AuthGuard],
-        data: { title: 'User Management', roles: ['admin'] } 
-    },
-    { 
-        path: 'admin/users/:id', 
-        component: UserDetailComponent, 
-        canActivate: [AuthGuard],
-        data: { title: 'User Details', roles: ['admin'] } 
-    },
+     
     { 
         path: 'admin/audit-logs', 
         component: AuditLogsListComponent, 
@@ -148,6 +135,10 @@ const routes: Routes = [
     {
         path: 'iot/nodes',
         loadChildren: () => import('./pages/iot/nodes/nodes.module').then((m) => m.NodesModule)
+    },
+    {
+        path: 'admin/users',
+        loadChildren: () => import('./pages/admin/users/users.module').then((m) => m.UsersModule)
     },
     { path: 'iot/alerts', component: IotAlertsPage, data: { title: 'IoT Alerts' } },
     {

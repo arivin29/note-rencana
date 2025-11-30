@@ -219,11 +219,12 @@
 </div>
 
 <!-- User Form Modal Component -->
-<app-user-form-modal
+<app-user-form
   *ngIf="showModal"
   [mode]="modalMode"
   [user]="selectedUser"
+  [showAsModal]="true"
   (close)="closeModal()"
   (save)="onUserSaved($event)">
-</app-user-form-modal>
+</app-user-form>
 <!-- END users-list -->

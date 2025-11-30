@@ -11,6 +11,8 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { PaginatedUserResponseDto } from '../models/paginated-user-response-dto';
+import { UserResponseDto } from '../models/user-response-dto';
 import { usersControllerChangePassword } from '../fn/users/users-controller-change-password';
 import { UsersControllerChangePassword$Params } from '../fn/users/users-controller-change-password';
 import { usersControllerCreate } from '../fn/users/users-controller-create';
@@ -45,7 +47,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  usersControllerFindAll$Response(params?: UsersControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  usersControllerFindAll$Response(params?: UsersControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedUserResponseDto>> {
     return usersControllerFindAll(this.http, this.rootUrl, params, context);
   }
 
@@ -59,9 +61,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  usersControllerFindAll(params?: UsersControllerFindAll$Params, context?: HttpContext): Observable<void> {
+  usersControllerFindAll(params?: UsersControllerFindAll$Params, context?: HttpContext): Observable<PaginatedUserResponseDto> {
     return this.usersControllerFindAll$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<PaginatedUserResponseDto>): PaginatedUserResponseDto => r.body)
     );
   }
 
@@ -78,7 +80,7 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  usersControllerCreate$Response(params: UsersControllerCreate$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  usersControllerCreate$Response(params: UsersControllerCreate$Params, context?: HttpContext): Observable<StrictHttpResponse<UserResponseDto>> {
     return usersControllerCreate(this.http, this.rootUrl, params, context);
   }
 
@@ -92,9 +94,9 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  usersControllerCreate(params: UsersControllerCreate$Params, context?: HttpContext): Observable<void> {
+  usersControllerCreate(params: UsersControllerCreate$Params, context?: HttpContext): Observable<UserResponseDto> {
     return this.usersControllerCreate$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body)
     );
   }
 
@@ -111,7 +113,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  usersControllerFindOne$Response(params: UsersControllerFindOne$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  usersControllerFindOne$Response(params: UsersControllerFindOne$Params, context?: HttpContext): Observable<StrictHttpResponse<UserResponseDto>> {
     return usersControllerFindOne(this.http, this.rootUrl, params, context);
   }
 
@@ -125,9 +127,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  usersControllerFindOne(params: UsersControllerFindOne$Params, context?: HttpContext): Observable<void> {
+  usersControllerFindOne(params: UsersControllerFindOne$Params, context?: HttpContext): Observable<UserResponseDto> {
     return this.usersControllerFindOne$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body)
     );
   }
 
@@ -177,7 +179,7 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  usersControllerUpdate$Response(params: UsersControllerUpdate$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  usersControllerUpdate$Response(params: UsersControllerUpdate$Params, context?: HttpContext): Observable<StrictHttpResponse<UserResponseDto>> {
     return usersControllerUpdate(this.http, this.rootUrl, params, context);
   }
 
@@ -191,9 +193,9 @@ export class UsersService extends BaseService {
    *
    * This method sends `application/json` and handles request body of type `application/json`.
    */
-  usersControllerUpdate(params: UsersControllerUpdate$Params, context?: HttpContext): Observable<void> {
+  usersControllerUpdate(params: UsersControllerUpdate$Params, context?: HttpContext): Observable<UserResponseDto> {
     return this.usersControllerUpdate$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body)
     );
   }
 
@@ -243,7 +245,7 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  usersControllerToggleActive$Response(params: UsersControllerToggleActive$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+  usersControllerToggleActive$Response(params: UsersControllerToggleActive$Params, context?: HttpContext): Observable<StrictHttpResponse<UserResponseDto>> {
     return usersControllerToggleActive(this.http, this.rootUrl, params, context);
   }
 
@@ -257,9 +259,9 @@ export class UsersService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  usersControllerToggleActive(params: UsersControllerToggleActive$Params, context?: HttpContext): Observable<void> {
+  usersControllerToggleActive(params: UsersControllerToggleActive$Params, context?: HttpContext): Observable<UserResponseDto> {
     return this.usersControllerToggleActive$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
+      map((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body)
     );
   }
 

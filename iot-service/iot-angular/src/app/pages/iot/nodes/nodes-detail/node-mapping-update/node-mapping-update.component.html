@@ -52,6 +52,23 @@
                     <i class="fa fa-file-code me-1"></i>
                     Available Payload Fields (Drag to map)
                 </div>
+                
+                <!-- Log Selection Dropdown -->
+                <div class="mb-3" *ngIf="recentLogs.length > 0">
+                    <label class="form-label small">Select Payload Source:</label>
+                    <select class="form-select form-select-sm" 
+                            [(ngModel)]="selectedLogIndex" 
+                            (change)="updatePayloadFieldsFromLog(+selectedLogIndex)">
+                        <option *ngFor="let log of recentLogs; let i = index" [value]="i">
+                            {{ getLogDisplayInfo(log, i) }}
+                        </option>
+                    </select>
+                    <div class="small text-muted mt-1">
+                        <i class="fa fa-info-circle me-1"></i>
+                        Showing {{ payloadFields.length }} fields from selected log
+                    </div>
+                </div>
+                
                 <div cdkDropList 
                      id="payload-fields" 
                      [cdkDropListData]="payloadFields"

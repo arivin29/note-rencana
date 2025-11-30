@@ -8,6 +8,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { PaginatedUserResponseDto } from '../../models/paginated-user-response-dto';
 
 export interface UsersControllerFindAll$Params {
 
@@ -42,7 +43,7 @@ export interface UsersControllerFindAll$Params {
   limit?: number;
 }
 
-export function usersControllerFindAll(http: HttpClient, rootUrl: string, params?: UsersControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function usersControllerFindAll(http: HttpClient, rootUrl: string, params?: UsersControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedUserResponseDto>> {
   const rb = new RequestBuilder(rootUrl, usersControllerFindAll.PATH, 'get');
   if (params) {
     rb.query('role', params.role, {});
@@ -54,11 +55,11 @@ export function usersControllerFindAll(http: HttpClient, rootUrl: string, params
   }
 
   return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
+    rb.build({ responseType: 'json', accept: 'application/json', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      return r as StrictHttpResponse<PaginatedUserResponseDto>;
     })
   );
 }

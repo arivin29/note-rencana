@@ -10,6 +10,7 @@ import { UserFormComponent } from './user-form/user-form.component';
 
 // Users Routing
 import { UsersRoutingModule } from './users-routing.module';
+import { SharedComponentsModule } from 'src/app/shared/shared-components.module';
 
 @NgModule({
   declarations: [
@@ -22,7 +23,8 @@ import { UsersRoutingModule } from './users-routing.module';
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
-    UsersRoutingModule
+    UsersRoutingModule,
+      SharedComponentsModule
   ],
   exports: [
     UsersListComponent,

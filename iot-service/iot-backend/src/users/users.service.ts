@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
+import { plainToClass } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../auth/entities/user.entity';
 import { Owner } from '../entities/owner.entity';
@@ -13,6 +14,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { FilterUsersDto } from './dto/filter-users.dto';
+import { UserResponseDto, PaginatedUserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -30,7 +32,7 @@ export class UsersService {
   async findAll(
     filterDto: FilterUsersDto,
     currentUser: User,
-  ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedUserResponseDto> {
     const { role, idOwner, isActive, search, page = 1, limit = 10 } = filterDto;
 
     const where: any = {};
@@ -74,13 +76,21 @@ export class UsersService {
     // Order by created date
     queryBuilder.orderBy('user.createdAt', 'DESC');
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    const [users, total] = await queryBuilder.getManyAndCount();
+
+    // Transform to DTOs
+    const data = users.map(user => 
+      plainToClass(UserResponseDto, user, { excludeExtraneousValues: true })
+    );
 
     return {
       data,
       total,
       page,
       limit,
+      get totalPages() { return Math.ceil(total / limit); },
+      get hasNextPage() { return page < Math.ceil(total / limit); },
+      get hasPreviousPage() { return page > 1; },
     };
   }
 
@@ -88,7 +98,7 @@ export class UsersService {
    * Find user by ID
    * Role-based access: admin can view any user, tenant can only view self
    */
-  async findOne(id: string, currentUser: User): Promise<User> {
+  async findOne(id: string, currentUser: User): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({
       where: { idUser: id },
     });
@@ -102,13 +112,13 @@ export class UsersService {
       throw new ForbiddenException('You can only view your own profile');
     }
 
-    return user;
+    return plainToClass(UserResponseDto, user, { excludeExtraneousValues: true });
   }
 
   /**
    * Create new user (admin only)
    */
-  async create(createUserDto: CreateUserDto, currentUser: User): Promise<User> {
+  async create(createUserDto: CreateUserDto, currentUser: User): Promise<UserResponseDto> {
     // Only admin can create users
     if (currentUser.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admins can create users');
@@ -149,7 +159,9 @@ export class UsersService {
       createdBy: currentUser.idUser,
     });
 
-    return await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    return plainToClass(UserResponseDto, savedUser, { excludeExtraneousValues: true });
   }
 
   /**
@@ -160,7 +172,7 @@ export class UsersService {
     id: string,
     updateUserDto: UpdateUserDto,
     currentUser: User,
-  ): Promise<User> {
+  ): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({
       where: { idUser: id },
     });
@@ -208,7 +220,9 @@ export class UsersService {
     Object.assign(user, updateUserDto);
     user.updatedBy = currentUser.idUser;
 
-    return await this.userRepository.save(user);
+    const updatedUser = await this.userRepository.save(user);
+
+    return plainToClass(UserResponseDto, updatedUser, { excludeExtraneousValues: true });
   }
 
   /**
@@ -287,7 +301,7 @@ export class UsersService {
   /**
    * Toggle user active status (admin only)
    */
-  async toggleActive(id: string, currentUser: User): Promise<User> {
+  async toggleActive(id: string, currentUser: User): Promise<UserResponseDto> {
     // Only admin can toggle active status
     if (currentUser.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admins can toggle user status');
@@ -310,6 +324,8 @@ export class UsersService {
     user.isActive = !user.isActive;
     user.updatedBy = currentUser.idUser;
 
-    return await this.userRepository.save(user);
+    const updatedUser = await this.userRepository.save(user);
+
+    return plainToClass(UserResponseDto, updatedUser, { excludeExtraneousValues: true });
   }
 }

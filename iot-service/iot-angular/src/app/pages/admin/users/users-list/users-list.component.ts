@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
-import { User } from '../../../models/auth.model';
+import { AuthService } from '@services/auth.service';
 import { UsersService } from '@sdk/core/services/users.service';
+import { UserResponseDto } from '@sdk/core/models/user-response-dto';
 import { CreateUserDto, UpdateUserDto } from '@sdk/core/models';
 
 @Component({
@@ -12,7 +12,7 @@ import { CreateUserDto, UpdateUserDto } from '@sdk/core/models';
   standalone: false
 })
 export class UsersListComponent implements OnInit {
-  users: User[] = [];
+  users: UserResponseDto[] = [];
   loading: boolean = false;
   
   // Pagination
@@ -33,7 +33,7 @@ export class UsersListComponent implements OnInit {
   // Modal
   showModal: boolean = false;
   modalMode: 'create' | 'edit' = 'create';
-  selectedUser: User | null = null;
+  selectedUser: UserResponseDto | null = null;
   
   // Messages
   successMessage: string = '';
@@ -85,27 +85,17 @@ export class UsersListComponent implements OnInit {
     this.usersService.usersControllerFindAll$Response(params).subscribe({
       next: (response: any) => {
         try {
+            console.log('Response data:', response.body);
           // Parse the response body
-          const body = JSON.parse(response.body || '{}');
+            const body =  (response.body || '{}');
           
-          // Map the users data
-          this.users = (body.data || []).map((user: any) => ({
-            idUser: user.idUser,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            isActive: user.isActive,
-            idOwner: user.idOwner,
-            createdAt: new Date(user.createdAt),
-            updatedAt: new Date(user.updatedAt)
-          }));
-          
+          // Map the users data - response already in UserResponseDto format
+          this.users = body.data || [];
+            console.log('Response data:', body);
           // Handle pagination metadata
-          if (body.meta) {
-            this.totalUsers = body.meta.total || 0;
-            this.totalPages = body.meta.totalPages || 1;
-            this.currentPage = body.meta.page || 1;
-          }
+          this.totalUsers = body.total || 0;
+          this.totalPages = Math.ceil(this.totalUsers / this.pageSize);
+          this.currentPage = body.page || 1;
         } catch (error) {
           console.error('Error parsing response:', error);
           this.errorMessage = 'Failed to parse response data.';
@@ -124,7 +114,7 @@ export class UsersListComponent implements OnInit {
   /**
    * Mock users data (DEPRECATED - now using real API)
    */
-  getMockUsers(): User[] {
+  getMockUsers(): UserResponseDto[] {
     // Keeping this for reference, but it's no longer used
     return [];
   }
@@ -179,10 +169,39 @@ export class UsersListComponent implements OnInit {
   /**
    * Open edit user modal
    */
-  openEditModal(user: User): void {
+  openEditModal(user: UserResponseDto): void {
     this.modalMode = 'edit';
     this.selectedUser = { ...user };
     this.showModal = true;
+    // Clear query params after opening modal
+    this.router.navigate([], {
+      queryParams: {},
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  /**
+   * Load user by ID and open edit modal
+   * Used when navigating from user detail page with query param
+   */
+  loadUserForEdit(userId: string): void {
+    this.loading = true;
+    this.usersService.usersControllerFindOne({ id: userId }).subscribe({
+      next: (user: UserResponseDto) => {
+        this.loading = false;
+        this.openEditModal(user);
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = error?.error?.message || 'Failed to load user for editing.';
+        console.error('Load user for edit error:', error);
+        // Clear query params on error
+        this.router.navigate([], {
+          queryParams: {},
+          queryParamsHandling: 'merge'
+        });
+      }
+    });
   }
 
   /**
@@ -191,12 +210,17 @@ export class UsersListComponent implements OnInit {
   closeModal(): void {
     this.showModal = false;
     this.selectedUser = null;
+    // Clear query params when closing modal
+    this.router.navigate([], {
+      queryParams: {},
+      queryParamsHandling: 'merge'
+    });
   }
 
   /**
    * Handle user saved
    */
-  onUserSaved(user: User): void {
+  onUserSaved(user: UserResponseDto): void {
     this.successMessage = this.modalMode === 'create' 
       ? 'User created successfully!'
       : 'User updated successfully!';
@@ -212,7 +236,7 @@ export class UsersListComponent implements OnInit {
   /**
    * Delete user
    */
-  deleteUser(user: User): void {
+  deleteUser(user: UserResponseDto): void {
     if (!confirm(`Are you sure you want to delete user "${user.name}"?`)) {
       return;
     }
@@ -244,7 +268,7 @@ export class UsersListComponent implements OnInit {
   /**
    * Toggle user active status
    */
-  toggleUserStatus(user: User): void {
+  toggleUserStatus(user: UserResponseDto): void {
     const action = user.isActive ? 'deactivate' : 'activate';
     if (!confirm(`Are you sure you want to ${action} user "${user.name}"?`)) {
       return;
@@ -311,9 +335,10 @@ export class UsersListComponent implements OnInit {
   /**
    * Format date
    */
-  formatDate(date: Date | undefined): string {
+  formatDate(date: string | Date | undefined): string {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-US', {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

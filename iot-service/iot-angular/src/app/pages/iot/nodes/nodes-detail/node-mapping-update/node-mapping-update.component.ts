@@ -51,6 +51,8 @@ export class NodeMappingUpdateComponent implements OnChanges {
   payloadFields: string[] = [];
   currentMapping: any = {};
   metadataMapping: Record<string, MetadataMapping> = {};
+  recentLogs: any[] = []; // Store 10 recent logs
+  selectedLogIndex: number = 0; // Currently selected log index
 
   readonly metaTargets: MetadataTarget[] = [
     {
@@ -110,13 +112,26 @@ export class NodeMappingUpdateComponent implements OnChanges {
 
   async loadNodeDashboard(): Promise<void> {
     try {
-      this.nodeDashboard = await this.nodesService.nodesControllerGetDashboard({ 
+      const response = await this.nodesService.nodesControllerGetDashboard({ 
         id: this.nodeId 
       }).toPromise();
-      this.nodeDashboard = JSON.parse(this.nodeDashboard);
       
-      console.log('Node Dashboard:', this.nodeDashboard);
-      console.log('Sensors with Data:', this.nodeDashboard?.sensorsWithData);
+      console.log('=== Raw API Response ===');
+      console.log('Type:', typeof response);
+      console.log('Response:', response);
+      
+      // Parse if it's a string, otherwise use as-is
+      this.nodeDashboard = typeof response === 'string' ? JSON.parse(response) : response;
+      
+      console.log('=== Parsed nodeDashboard ===');
+      console.log('Full nodeDashboard:', this.nodeDashboard);
+      console.log('sensorsWithData:', this.nodeDashboard?.sensorsWithData);
+      console.log('sensorsWithData length:', this.nodeDashboard?.sensorsWithData?.length);
+      
+      if (!this.nodeDashboard?.sensorsWithData || this.nodeDashboard.sensorsWithData.length === 0) {
+        console.error('⚠️ WARNING: sensorsWithData is empty or undefined!');
+        console.log('Available keys in nodeDashboard:', Object.keys(this.nodeDashboard || {}));
+      }
       
       // Extract payload fields from recent IoT logs
       await this.extractPayloadFieldsFromLogs();
@@ -147,9 +162,9 @@ export class NodeMappingUpdateComponent implements OnChanges {
           mappingJson.sensors.forEach((sensor: any) => {
             if (sensor.channels && Array.isArray(sensor.channels)) {
               sensor.channels.forEach((ch: any) => {
-                // Try different field names for channel code
+                // Try different field names for channel code and path
                 const channelCode = ch.channelCode || ch.metricCode;
-                const sourcePath = ch.path || ch.sourcePath;
+                const sourcePath = ch.payloadPath || ch.path || ch.sourcePath;
                 
                 if (channelCode && sourcePath) {
                   this.currentMapping[channelCode] = sourcePath;
@@ -164,7 +179,7 @@ export class NodeMappingUpdateComponent implements OnChanges {
           console.log('Found channels array in mappingJson (old structure)');
           mappingJson.channels.forEach((ch: any) => {
             const channelCode = ch.channelCode || ch.metricCode;
-            const sourcePath = ch.path || ch.sourcePath;
+            const sourcePath = ch.payloadPath || ch.path || ch.sourcePath;
             
             if (channelCode && sourcePath) {
               this.currentMapping[channelCode] = sourcePath;
@@ -208,40 +223,86 @@ export class NodeMappingUpdateComponent implements OnChanges {
         const deviceId = this.nodeDashboard.node.code;
       console.log('Fetching IoT logs for deviceId:', deviceId);
 
-      // Fetch latest IoT logs for this device
+      // Fetch latest 10 IoT logs for this device (each may have different payload structure)
       const logsResponse: any = await this.iotLogsService.iotLogsControllerFindAll({
         deviceId: deviceId,
         page: 1,
-        limit: 10 // Get latest 10 logs to analyze payload structure
+        limit: 10 // Get latest 10 logs to allow user to select which payload structure to use
       }).toPromise();
-
-    //   console.log('IoT Logs Response:', logsResponse);
 
       // Parse response if it's a string
       const logs = typeof logsResponse === 'string' ? JSON.parse(logsResponse) : logsResponse;
 
       if (logs && logs.data && Array.isArray(logs.data) && logs.data.length > 0) {
-        // Extract field paths from all logs' payloads
-        const payloadFields = new Set<string>();
+        // Store all logs for dropdown selection
+        this.recentLogs = logs.data;
         
-        logs.data.forEach((log: any) => {
-          if (log.payload) {
-            // Parse payload if it's a string
-            const payload = typeof log.payload === 'string' ? JSON.parse(log.payload) : log.payload;
-            const fields = this.extractFieldPaths(payload);
-            fields.forEach(field => payloadFields.add(field));
-          }
-        });
-
-        this.payloadFields = Array.from(payloadFields).sort();
-        // console.log('Extracted payload fields:', this.payloadFields);
+        // Extract fields from the first log by default
+        this.updatePayloadFieldsFromLog(0);
       } else {
         console.warn('No IoT logs found for this device');
+        this.recentLogs = [];
         this.payloadFields = [];
       }
     } catch (error) {
       console.error('Error fetching IoT logs:', error);
+      this.recentLogs = [];
       this.payloadFields = [];
+    }
+  }
+
+  /**
+   * Update payload fields based on selected log index
+   */
+  updatePayloadFieldsFromLog(logIndex: number | string): void {
+    // Convert to number if it's a string (from select dropdown)
+    const index = typeof logIndex === 'string' ? parseInt(logIndex, 10) : logIndex;
+    
+    if (index < 0 || index >= this.recentLogs.length || isNaN(index)) {
+      console.warn('Invalid log index:', logIndex);
+      return;
+    }
+
+    this.selectedLogIndex = index;
+    const selectedLog = this.recentLogs[index];
+    
+    if (selectedLog && selectedLog.payload) {
+      // Parse payload if it's a string
+      const payload = typeof selectedLog.payload === 'string' 
+        ? JSON.parse(selectedLog.payload) 
+        : selectedLog.payload;
+      
+      const fields = this.extractFieldPaths(payload);
+      this.payloadFields = fields.sort();
+      
+      console.log('Updated payload fields from log #' + (index + 1), this.payloadFields);
+    } else {
+      console.warn('No payload found in selected log');
+      this.payloadFields = [];
+    }
+  }
+
+  /**
+   * Get display info for log dropdown
+   */
+  getLogDisplayInfo(log: any, index: number): string {
+    const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'No timestamp';
+    const fieldCount = this.getFieldCountFromLog(log);
+    return `Log #${index + 1} - ${timestamp} (${fieldCount} fields)`;
+  }
+
+  /**
+   * Get field count from a log's payload
+   */
+  getFieldCountFromLog(log: any): number {
+    if (!log.payload) return 0;
+    try {
+      const payload = typeof log.payload === 'string' 
+        ? JSON.parse(log.payload) 
+        : log.payload;
+      return this.extractFieldPaths(payload).length;
+    } catch (error) {
+      return 0;
     }
   }
 
@@ -274,7 +335,11 @@ export class NodeMappingUpdateComponent implements OnChanges {
 
   getSensorsWithChannels(): SensorWithData[] {
     const sensors = this.nodeDashboard?.sensorsWithData || [];
-    // console.log('getSensorsWithChannels:', sensors);
+    console.log('getSensorsWithChannels called, returning:', sensors.length, 'sensors');
+    if (sensors.length === 0) {
+      console.warn('No sensors found in nodeDashboard.sensorsWithData');
+      console.log('nodeDashboard object:', this.nodeDashboard);
+    }
     return sensors;
   }
 
