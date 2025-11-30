@@ -98,6 +98,7 @@ src/
 | `npm run generate-api` | Generate SDK from backend |
 | `npm test` | Run unit tests |
 | `npm run e2e` | Run e2e tests |
+| `firebase deploy --only hosting:devetek-helios` | Deploy to Firebase hosting |
 
 ---
 
