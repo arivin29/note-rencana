@@ -97,6 +97,36 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Production Deployment with PM2
+
+```bash
+# Build the project
+$ npm run build
+
+# Start with PM2
+$ npm run pm2:start
+
+# Stop PM2
+$ npm run pm2:stop
+
+# Restart PM2
+$ npm run pm2:restart
+
+# Reload (zero-downtime)
+$ npm run pm2:reload
+
+# View logs
+$ npm run pm2:logs
+
+# Monitor
+$ npm run pm2:monit
+
+# Delete from PM2
+$ npm run pm2:delete
+```
+
+**PM2 Configuration:** `ecosystem.config.js`
+
 ## Run tests
 
 ```bash
