@@ -1,10 +1,12 @@
-import { Controller, Post, Body, Get, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -42,6 +44,45 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@CurrentUser() user: User) {
     return this.authService.getProfile(user.idUser);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile (alias for /me)' })
+  @ApiResponse({ status: 200, description: 'User profile retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getProfileAlias(@CurrentUser() user: User) {
+    return this.authService.getProfile(user.idUser);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - Email already exists' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(
+    @CurrentUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto
+  ) {
+    return this.authService.updateProfile(user.idUser, updateProfileDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid old password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async changePassword(
+    @CurrentUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto
+  ) {
+    return this.authService.changePassword(user.idUser, changePasswordDto);
   }
 
   @Public()

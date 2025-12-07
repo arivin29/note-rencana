@@ -102,9 +102,9 @@ export class AppMenuService {
 			{ 'path': '/admin/audit-logs', 'icon': 'bi bi-shield-check', 'text': 'Audit Logs', 'role': 'admin' },
 			{ 'is_divider': true }, 
 			{ 'text': 'Users', 'is_header': true }, 
-			{ 'path': '/template/profile', 'icon': 'bi bi-people', 'text': 'Profile' }, 
-			{ 'path': '/template/calendar', 'icon': 'bi bi-calendar4', 'text': 'Calendar' }, 
-			{ 'path': '/template/settings', 'icon': 'bi bi-gear', 'text': 'Settings' },
+			{ 'path': '/profile', 'icon': 'bi bi-people', 'text': 'Profile' }, 
+			// { 'path': '/template/calendar', 'icon': 'bi bi-calendar4', 'text': 'Calendar' }, 
+			// { 'path': '/template/settings', 'icon': 'bi bi-gear', 'text': 'Settings' },
 			{ 'path': '/template/helper', 'icon': 'bi bi-gem', 'text': 'Helper' }
 		];
 	}

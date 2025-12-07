@@ -21,7 +21,27 @@
         Add Model
       </button>
     </div>
-    <div class="table-responsive">
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-2">Loading node models...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !loading" class="alert alert-danger">
+      <i class="fa fa-exclamation-triangle me-2"></i>
+      {{ errorMessage }}
+      <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadNodeModels()">
+        <i class="fa fa-refresh me-1"></i>
+        Retry
+      </button>
+    </div>
+
+    <!-- Data Table -->
+    <div *ngIf="!loading && !errorMessage" class="table-responsive">
       <table class="table table-hover text-nowrap align-middle mb-0">
         <thead class="text-uppercase text-muted small">
           <tr>
@@ -31,26 +51,35 @@
             <th>Build Agent</th>
             <th>Firmware Repo</th>
             <th class="text-end">Supports Codegen</th>
+            <th class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let model of filteredNodeModels" (click)="navigateToModel(model)" class="table-row-link">
-            <td>
+          <tr *ngFor="let model of filteredNodeModels">
+            <td (click)="navigateToModel(model)" class="cursor-pointer">
               <div class="fw-semibold text-theme">{{ model.modelCode }}</div>
               <div class="text-muted small">{{ model.modelName }}</div>
               <div class="badge bg-dark bg-opacity-25 text-uppercase">{{ model.hardwareClass }}</div>
             </td>
-            <td>{{ model.vendor }}</td>
-            <td>{{ model.toolchain }}</td>
-            <td>{{ model.buildAgent }}</td>
-            <td class="text-truncate" style="max-width: 220px;">
+            <td (click)="navigateToModel(model)" class="cursor-pointer">{{ model.vendor }}</td>
+            <td (click)="navigateToModel(model)" class="cursor-pointer">{{ model.toolchain }}</td>
+            <td (click)="navigateToModel(model)" class="cursor-pointer">{{ model.buildAgent }}</td>
+            <td (click)="navigateToModel(model)" class="cursor-pointer" class="text-truncate" style="max-width: 220px;">
               <span class="text-muted small">{{ model.firmwareRepo }}</span>
             </td>
-            <td class="text-end">
+            <td (click)="navigateToModel(model)" class="cursor-pointer text-end">
               <span class="badge" [ngClass]="model.supportsCodegen ? 'bg-success' : 'bg-secondary'">
                 {{ model.supportsCodegen ? 'Yes' : 'No' }}
               </span>
               <div class="text-muted small">{{ model.flashProtocol }}</div>
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-warning me-1" (click)="openDrawerForEdit(model); $event.stopPropagation()">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-theme" (click)="navigateToModel(model); $event.stopPropagation()">
+                <i class="fa fa-eye"></i>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -64,6 +93,8 @@
 
 <app-node-model-drawer
   [isOpen]="isDrawerOpen"
+  [mode]="drawerMode"
+  [existingModel]="selectedModel"
   [hardwareClassOptions]="hardwareClassOptions"
   (save)="handleDrawerSave($event)"
   (close)="closeDrawer()"

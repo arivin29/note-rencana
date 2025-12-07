@@ -6,7 +6,19 @@
 }
 
 .card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+  /* box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);
+  border-radius: 0.5rem;
+  background-color: var(--bs-body-bg);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important; */
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 1.25rem;
+}
+
+.card-body {
+  padding: 1.5rem;
 }
 
 .badge {
@@ -15,4 +27,26 @@
 
 .form-control-plaintext {
   padding: 0.5rem 0;
+}
+
+/* Avatar styling */
+.rounded-circle {
+  box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.2);
+}
+
+/* Form styling */
+.form-control {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--bs-body-color);
+}
+
+.form-control:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--bs-theme-rgb);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-theme-rgb), 0.25);
+}
+
+.form-control:disabled {
+  opacity: 0.6;
 }

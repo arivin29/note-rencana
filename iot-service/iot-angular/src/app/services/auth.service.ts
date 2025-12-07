@@ -92,17 +92,16 @@ export class AuthService {
    * Logout user and clear session
    */
   logout(): void {
-    // Call backend logout endpoint (optional)
+    // Clear session first
+    this.clearSession();
+    
+    // Navigate to login
+    this.router.navigate(['/auth/login']);
+    
+    // Call backend logout endpoint (fire and forget)
     this.http.post(`${this.API_URL}/logout`, {}).subscribe({
-      next: () => {
-        this.clearSession();
-        this.router.navigate(['/auth/login']);
-      },
-      error: () => {
-        // Clear session even if backend call fails
-        this.clearSession();
-        this.router.navigate(['/auth/login']);
-      }
+      next: () => console.log('Logout successful'),
+      error: (err) => console.error('Logout error (ignored):', err)
     });
   }
 

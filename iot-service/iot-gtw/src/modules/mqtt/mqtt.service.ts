@@ -409,6 +409,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
             const messageStr = message.toString();
             this.logger.log(`🔧 Config request from device: ${deviceId} (payload: "${messageStr}")`);
 
+            // Get default configs from ENV
+            const deviceDefaults = this.configService.get('deviceDefaults');
+
             // Check if device exists in database
             const node = await this.nodeRepository.findOne({
                 where: [
@@ -421,33 +424,108 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
             let config: any = null;
 
             if (!node) {
-                this.logger.warn(`⚠️  Device ${deviceId} not found in database - sending null config`);
-                config = null;
+                this.logger.warn(`⚠️  Device ${deviceId} not found in database - sending minimal config with defaults`);
+                
+                // Device not found - send minimal config with ENV defaults
+                config = {
+                    device_id: deviceId,
+                    config_version: deviceDefaults.version,
+                    updated_at: new Date().toISOString(),
+                    network: {
+                        lte: {
+                            retry_interval_ms: deviceDefaults.network.lte.retryIntervalMs,
+                            max_retries_before_reboot: deviceDefaults.network.lte.maxRetriesBeforeReboot,
+                            reboot_count_before_offline: deviceDefaults.network.lte.rebootCountBeforeOffline,
+                            offline_pause_minutes: deviceDefaults.network.lte.offlinePauseMinutes,
+                        },
+                        watchdog: {
+                            enabled: deviceDefaults.network.watchdog.enabled,
+                            timeout_minutes: deviceDefaults.network.watchdog.timeoutMinutes,
+                            pause_during_offline: deviceDefaults.network.watchdog.pauseDuringOffline,
+                        },
+                        offline_mode: {
+                            auto_detect_no_sim: deviceDefaults.network.offlineMode.autoDetectNoSim,
+                            auto_recheck_sim_minutes: deviceDefaults.network.offlineMode.autoRecheckSimMinutes,
+                            max_offline_cycles_before_restart: deviceDefaults.network.offlineMode.maxOfflineCyclesBeforeRestart,
+                        },
+                    },
+                    rs485: {
+                        persist_to_sd: deviceDefaults.rs485Behavior.persistToSd,
+                        read_in_offline_mode: deviceDefaults.rs485Behavior.readInOfflineMode,
+                        devices: [], // Empty for unpaired devices
+                    },
+                    node: {
+                        telemetry_interval_ms: 60000, // Default 1 minute for unpaired
+                        rs485_scan_interval_ms: deviceDefaults.nodeAdvanced.rs485ScanIntervalMs,
+                        sync_rate_limit_ms: deviceDefaults.nodeAdvanced.syncRateLimitMs,
+                        sync_max_burst: deviceDefaults.nodeAdvanced.syncMaxBurst,
+                        sync_pause_after_burst_ms: deviceDefaults.nodeAdvanced.syncPauseAfterBurstMs,
+                    },
+                };
             } else {
                 this.logger.log(`✅ Device ${deviceId} found - fetching RS485 configs from sensor catalogs`);
                 
-                // Get configs from database (sensor_catalogs.default_channels_json)
-                config = await this.getRS485ConfigFromDatabase(node.idNode);
+                // Get RS485 configs from database (sensor_catalogs.default_channels_json)
+                const rs485Devices = await this.getRS485ConfigFromDatabase(node.idNode);
                 
-                if (!config || config.length === 0) {
+                if (!rs485Devices || rs485Devices.length === 0) {
                     this.logger.warn(`⚠️  No sensor configs found for device ${deviceId}`);
-                    config = null;
                 }
+                
+                // Build full config with database + ENV defaults
+                config = {
+                    device_id: deviceId,
+                    config_version: deviceDefaults.version,
+                    updated_at: node.updatedAt.toISOString(),
+                    network: {
+                        lte: {
+                            retry_interval_ms: deviceDefaults.network.lte.retryIntervalMs,
+                            max_retries_before_reboot: deviceDefaults.network.lte.maxRetriesBeforeReboot,
+                            reboot_count_before_offline: deviceDefaults.network.lte.rebootCountBeforeOffline,
+                            offline_pause_minutes: deviceDefaults.network.lte.offlinePauseMinutes,
+                        },
+                        watchdog: {
+                            enabled: deviceDefaults.network.watchdog.enabled,
+                            timeout_minutes: deviceDefaults.network.watchdog.timeoutMinutes,
+                            pause_during_offline: deviceDefaults.network.watchdog.pauseDuringOffline,
+                        },
+                        offline_mode: {
+                            auto_detect_no_sim: deviceDefaults.network.offlineMode.autoDetectNoSim,
+                            auto_recheck_sim_minutes: deviceDefaults.network.offlineMode.autoRecheckSimMinutes,
+                            max_offline_cycles_before_restart: deviceDefaults.network.offlineMode.maxOfflineCyclesBeforeRestart,
+                        },
+                    },
+                    rs485: {
+                        persist_to_sd: deviceDefaults.rs485Behavior.persistToSd,
+                        read_in_offline_mode: deviceDefaults.rs485Behavior.readInOfflineMode,
+                        devices: rs485Devices || [], // From database
+                    },
+                    node: {
+                        telemetry_interval_ms: node.telemetryIntervalSec * 1000, // Convert seconds to milliseconds
+                        rs485_scan_interval_ms: deviceDefaults.nodeAdvanced.rs485ScanIntervalMs,
+                        sync_rate_limit_ms: deviceDefaults.nodeAdvanced.syncRateLimitMs,
+                        sync_max_burst: deviceDefaults.nodeAdvanced.syncMaxBurst,
+                        sync_pause_after_burst_ms: deviceDefaults.nodeAdvanced.syncPauseAfterBurstMs,
+                    },
+                };
             }
 
             // Publish response to stream_config/{device_id} (unified topic for pull & push)
             const responseTopic = `stream_config/${deviceId}`;
-            const responsePayload = config === null ? 'null' : JSON.stringify(config);
+            const responsePayload = JSON.stringify(config);
 
             await this.publish(responseTopic, responsePayload);
 
             this.logger.log(`📤 Config sent via stream_config: ${responseTopic}`);
+            this.logger.log(`   📋 Config version: ${config.config_version}`);
+            this.logger.log(`   🔌 RS485 devices: ${config.rs485.devices.length}`);
+            this.logger.log(`   ⏱️  Telemetry interval: ${config.node.telemetry_interval_ms}ms`);
             
             // Log to database
             await this.iotLogService.create({
                 label: LogLabel.COMMAND,
                 topic: responseTopic,
-                payload: config || { status: 'no_config' },
+                payload: config,
                 deviceId: node ? deviceId : undefined,
                 timestamp: new Date(),
                 notes: `Config ${config ? 'sent' : 'not found'} for device ${deviceId}`,

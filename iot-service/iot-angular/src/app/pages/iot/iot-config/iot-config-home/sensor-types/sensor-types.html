@@ -12,7 +12,7 @@
         <button class="btn btn-theme" (click)="openCreateDrawer()">
             <i class="fa fa-plus me-2"></i>Tambah Sensor Type
         </button>
-    </div> 
+    </div>
 </div>
 
 <!-- Loading State -->
@@ -37,8 +37,7 @@
         <div class="table-responsive">
             <table class="table table-hover text-nowrap align-middle mb-0">
                 <thead class="text-uppercase text-muted small">
-                    <tr>
-                        <th>ID</th>
+                    <tr> 
                         <th>Category</th>
                         <th>Unit</th>
                         <th>Precision</th>
@@ -48,9 +47,9 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let type of filteredSensorTypes">
-                        <td class="fw-semibold text-muted small font-monospace">
+                        <!-- <td class="fw-semibold text-muted small font-monospace">
                             {{ type.idSensorType.substring(0, 8) }}...
-                        </td>
+                        </td> -->
                         <td>
                             <span class="badge bg-primary bg-opacity-25 text-primary">{{ type.category }}</span>
                         </td>
@@ -68,18 +67,11 @@
                         </td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm" role="group">
-                                <button 
-                                    class="btn btn-outline-primary" 
-                                    (click)="openEditDrawer(type)"
-                                    title="Edit"
-                                >
+                                <button class="btn btn-outline-primary" (click)="openEditDrawer(type)" title="Edit">
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button 
-                                    class="btn btn-outline-danger" 
-                                    (click)="deleteSensorType(type.idSensorType)"
-                                    title="Delete"
-                                >
+                                <button class="btn btn-outline-danger" (click)="deleteSensorType(type.idSensorType)"
+                                    title="Delete">
                                     <i class="fa fa-trash"></i>
                                 </button>
                             </div>
@@ -95,9 +87,6 @@
     </div>
 </card>
 
-<app-sensor-type-drawer 
-    [isOpen]="isDrawerOpen" 
-    [editData]="editingType"
-    (close)="handleDrawerClose()"
+<app-sensor-type-drawer [isOpen]="isDrawerOpen" [editData]="editingType" (close)="handleDrawerClose()"
     (save)="handleDrawerSave($event)">
 </app-sensor-type-drawer>

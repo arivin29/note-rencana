@@ -57,6 +57,12 @@ export class JwtInterceptor implements HttpInterceptor {
    * Attempt to refresh token and retry request
    */
   private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    // Don't try to refresh if the failed request was to /auth endpoints
+    if (request.url.includes('/auth/')) {
+      this.authService.logout();
+      return throwError(() => new Error('Authentication failed'));
+    }
+
     if (!this.isRefreshing) {
       this.isRefreshing = true;
       this.refreshTokenSubject.next(null);
@@ -69,7 +75,8 @@ export class JwtInterceptor implements HttpInterceptor {
         }),
         catchError((err) => {
           this.isRefreshing = false;
-          // Token refresh failed, user will be logged out by auth service
+          // Token refresh failed, logout user and redirect to login
+          this.authService.logout();
           return throwError(() => err);
         })
       );

@@ -8,3 +8,29 @@
   background: rgba(111, 211, 255, 0.12);
   color: #6fd3ff;
 }
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// Pagination styles
+.pagination {
+  .page-link {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover:not(.disabled) {
+      background-color: rgba(111, 211, 255, 0.1);
+    }
+  }
+  
+  .page-item.active .page-link {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+  
+  .page-item.disabled .page-link {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}

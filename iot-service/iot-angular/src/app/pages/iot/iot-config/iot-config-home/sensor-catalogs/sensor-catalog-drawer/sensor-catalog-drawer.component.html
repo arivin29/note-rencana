@@ -1,0 +1,77 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="handleBackdropClick()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">{{ mode === 'edit' ? 'Update Entry' : 'New Entry' }}</div>
+      <h5 class="mb-0">{{ drawerTitle }}</h5>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+  <div class="config-drawer-body">
+    <form #catalogForm="ngForm" (ngSubmit)="handleSubmit(catalogForm.valid ?? false)">
+      
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Model Name *</label>
+        <input type="text" class="form-control" name="modelName" 
+               [(ngModel)]="formModel.modelName" 
+               required
+               placeholder="e.g. PX-420i">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Vendor *</label>
+        <input type="text" class="form-control" name="vendor" 
+               [(ngModel)]="formModel.vendor" 
+               required
+               placeholder="e.g. Endress+Hauser">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Firmware Version</label>
+        <input type="text" class="form-control" name="firmware" 
+               [(ngModel)]="formModel.firmware"
+               placeholder="e.g. v2.1.0">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Calibration Interval (Days)</label>
+        <input type="number" class="form-control" name="calibrationIntervalDays" 
+               [(ngModel)]="formModel.calibrationIntervalDays"
+               min="1"
+               placeholder="365">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Icon Asset</label>
+        <input type="text" class="form-control" name="iconAsset" 
+               [(ngModel)]="formModel.iconAsset"
+               placeholder="e.g. fa fa-microchip">
+        <small class="text-muted">Font Awesome class or icon path</small>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Icon Color</label>
+        <input type="text" class="form-control" name="iconColor" 
+               [(ngModel)]="formModel.iconColor"
+               placeholder="#6fd3ff">
+        <small class="text-muted">Hex color code</small>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Datasheet URL</label>
+        <input type="url" class="form-control" name="datasheetUrl" 
+               [(ngModel)]="formModel.datasheetUrl"
+               placeholder="https://example.com/datasheet.pdf">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="catalogForm.invalid">
+          {{ submitButtonLabel }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

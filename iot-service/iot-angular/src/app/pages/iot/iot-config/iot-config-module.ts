@@ -11,6 +11,8 @@ import { NodeModelsPage } from './iot-config-home/node-models/node-models';
 import { SensorTypesPage } from './iot-config-home/sensor-types/sensor-types';
 import { SensorTypeDrawerComponent } from './iot-config-home/sensor-types/sensor-type-drawer/sensor-type-drawer.component';
 import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-catalogs'; 
+import { SensorCatalogDrawerComponent } from './iot-config-home/sensor-catalogs/sensor-catalog-drawer/sensor-catalog-drawer.component';
+import { SensorCatalogDetailPage } from './iot-config-home/sensor-catalogs/sensor-catalog-detail/sensor-catalog-detail';
 
 
 @NgModule({
@@ -21,6 +23,8 @@ import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-cat
         SensorTypesPage,
         SensorTypeDrawerComponent,
         SensorCatalogsPage, 
+        SensorCatalogDrawerComponent,
+        SensorCatalogDetailPage,
         NodeModelDetailPage 
     ],
     imports: [

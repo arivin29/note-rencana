@@ -1,0 +1,176 @@
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a routerLink="/iot/config">IoT Config</a></li>
+      <li class="breadcrumb-item"><a routerLink="/iot/config/sensor-catalogs">Sensor Catalogs</a></li>
+      <li class="breadcrumb-item active">{{ catalog?.modelName }}</li>
+    </ul>
+    <h1 class="page-header mb-0">{{ catalog?.modelName }}</h1>
+    <div class="text-muted text-opacity-75 small">
+      Vendor: {{ catalog?.vendor }}
+    </div>
+  </div>
+  <div class="ms-auto d-flex gap-2">
+    <a routerLink="/iot/config/sensor-catalogs" class="btn btn-outline-default btn-sm">
+      <i class="fa fa-arrow-left me-1"></i>
+      Back
+    </a>
+    <button class="btn btn-warning btn-sm" (click)="openEditDrawer()" [disabled]="loading">
+      <i class="fa fa-edit me-1"></i>
+      Edit
+    </button>
+    <button class="btn btn-danger btn-sm" (click)="deleteCatalog()" [disabled]="loading">
+      <i class="fa fa-trash me-1"></i>
+      Delete
+    </button>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+  <div class="spinner-border text-theme" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <p class="text-muted mt-2">Loading catalog details...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="errorMessage && !loading" class="alert alert-danger">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  {{ errorMessage }}
+</div>
+
+<!-- Content (show only when not loading and no error) -->
+<div *ngIf="!loading && !errorMessage && catalog">
+
+  <!-- Overview Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <card class="shadow-sm h-100">
+        <card-body>
+          <div class="text-muted text-uppercase small mb-1">Catalog ID</div>
+          <div class="fs-5 fw-bold text-truncate">{{ catalog.idSensorCatalog }}</div>
+        </card-body>
+      </card>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <card class="shadow-sm h-100">
+        <card-body>
+          <div class="text-muted text-uppercase small mb-1">Firmware</div>
+          <div class="fs-5 fw-bold">{{ catalog.firmware || 'N/A' }}</div>
+        </card-body>
+      </card>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <card class="shadow-sm h-100">
+        <card-body>
+          <div class="text-muted text-uppercase small mb-1">Calibration Interval</div>
+          <div class="fs-5 fw-bold">{{ catalog.calibrationIntervalDays || 0 }} days</div>
+        </card-body>
+      </card>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <card class="shadow-sm h-100">
+        <card-body>
+          <div class="text-muted text-uppercase small mb-1">Icon</div>
+          <div class="d-flex align-items-center gap-2">
+            <div class="icon-preview" [style.background-color]="catalog.iconColor || '#6fd3ff'">
+              <i [ngClass]="catalog.iconAsset || 'fa fa-microchip'"></i>
+            </div>
+            <div class="small text-muted">{{ catalog.iconAsset || 'default' }}</div>
+          </div>
+        </card-body>
+      </card>
+    </div>
+  </div>
+
+  <!-- Detailed Information -->
+  <card class="shadow-sm mb-4">
+    <div class="card-body">
+      <h4 class="mb-3">Catalog Information</h4>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted" style="width: 200px;">Model Name</td>
+              <td class="fw-semibold">{{ catalog.modelName }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Vendor</td>
+              <td class="fw-semibold">{{ catalog.vendor }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Firmware Version</td>
+              <td>{{ catalog.firmware || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Calibration Interval</td>
+              <td>{{ catalog.calibrationIntervalDays || 0 }} days</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Icon Asset</td>
+              <td><code>{{ catalog.iconAsset || 'N/A' }}</code></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Icon Color</td>
+              <td>
+                <span class="badge" [style.background-color]="catalog.iconColor || '#6fd3ff'">
+                  {{ catalog.iconColor || 'Default' }}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Datasheet URL</td>
+              <td>
+                <a *ngIf="catalog.datasheetUrl" [href]="catalog.datasheetUrl" target="_blank" class="text-theme">
+                  <i class="fa fa-external-link me-1"></i>
+                  {{ catalog.datasheetUrl }}
+                </a>
+                <span *ngIf="!catalog.datasheetUrl" class="text-muted">N/A</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Created At</td>
+              <td>{{ catalog.createdAt | date:'medium' }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Updated At</td>
+              <td>{{ catalog.updatedAt | date:'medium' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </card>
+
+  <!-- Default Channels Configuration -->
+  <card class="shadow-sm mb-4" *ngIf="catalog.defaultChannelsJson">
+    <div class="card-body">
+      <h4 class="mb-3">Default Channels Configuration</h4>
+      <div class="bg-dark bg-opacity-50 rounded p-3">
+        <pre class="mb-0 text-white small">{{ catalog.defaultChannelsJson | json }}</pre>
+      </div>
+    </div>
+  </card>
+
+  <!-- Default Thresholds Configuration -->
+  <card class="shadow-sm" *ngIf="catalog.defaultThresholdsJson">
+    <div class="card-body">
+      <h4 class="mb-3">Default Thresholds Configuration</h4>
+      <div class="bg-dark bg-opacity-50 rounded p-3">
+        <pre class="mb-0 text-white small">{{ catalog.defaultThresholdsJson | json }}</pre>
+      </div>
+    </div>
+  </card>
+
+</div>
+<!-- End Content -->
+
+<!-- Edit Drawer -->
+<app-sensor-catalog-drawer 
+  [isOpen]="isDrawerOpen" 
+  [mode]="'edit'"
+  [existingCatalog]="catalog"
+  (save)="handleDrawerSave($event)" 
+  (close)="closeDrawer()">
+</app-sensor-catalog-drawer>

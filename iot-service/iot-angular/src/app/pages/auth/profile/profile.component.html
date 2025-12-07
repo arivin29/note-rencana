@@ -17,8 +17,8 @@
 <div *ngIf="!loading && user" class="row">
   <!-- Profile Info Card -->
   <div class="col-xl-4">
-    <div class="card border-0 mb-3">
-      <div class="card-body">
+    <card class="mb-3">
+      <card-body>
         <div class="text-center mb-3">
           <!-- User Avatar -->
           <div class="d-flex justify-content-center mb-3">
@@ -65,8 +65,8 @@
           <label class="text-muted mb-1">Last Updated</label>
           <p class="mb-0">{{ formatDate(user.updatedAt) }}</p>
         </div>
-      </div>
-    </div>
+      </card-body>
+    </card>
   </div>
 
   <!-- Edit Forms -->
@@ -83,8 +83,8 @@
     </div>
 
     <!-- Edit Profile Card -->
-    <div class="card border-0 mb-3">
-      <div class="card-header bg-none fw-bold d-flex align-items-center">
+    <card class="mb-3">
+      <card-header class="bg-none fw-bold d-flex align-items-center">
         <span class="flex-1">Profile Information</span>
         <button 
           type="button" 
@@ -94,8 +94,8 @@
           <i class="bi" [ngClass]="editingProfile ? 'bi-x-lg' : 'bi-pencil'"></i>
           {{ editingProfile ? 'Cancel' : 'Edit' }}
         </button>
-      </div>
-      <div class="card-body">
+      </card-header>
+      <card-body>
         <form #profileForm="ngForm" (ngSubmit)="saveProfile(profileForm)">
           <!-- View Mode -->
           <div *ngIf="!editingProfile">
@@ -168,12 +168,12 @@
             </div>
           </div>
         </form>
-      </div>
-    </div>
+      </card-body>
+    </card>
 
     <!-- Change Password Card -->
-    <div class="card border-0">
-      <div class="card-header bg-none fw-bold d-flex align-items-center">
+    <card>
+      <card-header class="bg-none fw-bold d-flex align-items-center">
         <span class="flex-1">Change Password</span>
         <button 
           type="button" 
@@ -183,8 +183,8 @@
           <i class="bi" [ngClass]="editingPassword ? 'bi-x-lg' : 'bi-key'"></i>
           {{ editingPassword ? 'Cancel' : 'Change Password' }}
         </button>
-      </div>
-      <div class="card-body">
+      </card-header>
+      <card-body>
         <!-- Success/Error Messages for Password -->
         <div *ngIf="passwordSuccessMessage" class="alert alert-success alert-dismissible fade show" role="alert">
           <i class="bi bi-check-circle me-2"></i>{{ passwordSuccessMessage }}
@@ -272,8 +272,8 @@
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </card-body>
+    </card>
   </div>
 </div>
 <!-- END profile -->

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import databaseConfig from './config/database.config';
 import mqttConfig from './config/mqtt.config';
+import deviceDefaultsConfig from './config/device-defaults.config';
 import { IotLog } from './entities';
 import { 
   Node, 
@@ -27,7 +28,7 @@ import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
     // Config Module
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, mqttConfig],
+      load: [databaseConfig, mqttConfig, deviceDefaultsConfig],
       envFilePath: '.env',
     }),
 

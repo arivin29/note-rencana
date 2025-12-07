@@ -17,6 +17,7 @@
 #include "time_manager.h"
 #include "generic_io.h"
 #include "rs485_config_manager.h"
+#include "sd_manager.h"  // NEW: SD card manager for offline data buffering
 
 // ============================================================================
 // HARDWARE SERIAL FOR SIM7600
@@ -44,6 +45,10 @@ MQTTManager mqttManager(gsmClient);
 ConnectionManager connectionManager(lteManager, mqttManager);
 TimeManager timeManager;
 GenericIOManager ioManager;
+
+// External global managers (defined in their respective .cpp files)
+extern RS485ConfigManager rs485ConfigMgr;
+extern SDManager sdManager;
 
 String DEVICE_ID;
 unsigned long lastTelemetrySent = 0;
@@ -101,23 +106,27 @@ void controlRelay(const String& target, const String& state) {
 // ============================================================================
 
 void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
-    Serial.print("[MQTT] Message arrived [");
-    Serial.print(topic);
-    Serial.print("] ");
-    Serial.print(length);
-    Serial.println(" bytes");
+    Serial.println("\n========================================");
+    Serial.print("[MQTT] 📨 Message arrived!");
+    Serial.println("\n========================================");
+    Serial.printf("[MQTT] Topic: %s\n", topic);
+    Serial.printf("[MQTT] Length: %u bytes\n", length);
 
     // Convert payload to string
     String message;
     for (unsigned int i = 0; i < length; i++) {
         message += (char)payload[i];
     }
+    
+    Serial.println("[MQTT] Payload preview (first 200 chars):");
+    Serial.println(message.substring(0, 200));
+    Serial.println("========================================\n");
 
     String topicStr = String(topic);
     
     // Handle stream_config/{device_id}
     if (topicStr.indexOf("stream_config/") >= 0) {
-        Serial.println("[Config] Received config from server");
+        Serial.println("[Config] ✅ This is RS485 config message!");
         Serial.println("[Config] Raw payload:");
         Serial.println("========================================");
         Serial.println(message);
@@ -354,6 +363,83 @@ static String buildDeviceId() {
     return id;
 }
 
+// Build basic telemetry JSON (without RS485 - lightweight)
+String buildBasicTelemetryJSON() {
+    DynamicJsonDocument doc(2048);
+    
+    doc["device_id"] = DEVICE_ID;
+    doc["timestamp"] = time(nullptr);
+    
+    // System info
+    JsonObject sys = doc.createNestedObject("system");
+    sys["uptime"] = millis();
+    sys["free_heap"] = ESP.getFreeHeap();
+    sys["cpu_freq"] = ESP.getCpuFreqMHz();
+    
+    // Network info
+    JsonObject net = doc.createNestedObject("network");
+    net["lte_connected"] = lteManager.isConnected();
+    net["mqtt_connected"] = connectionManager.isFullyConnected();
+    net["signal"] = lteManager.getSignalQuality();
+    
+    // I/O data (use existing GenericIOManager method)
+    ioManager.generateRawTelemetry(doc);
+    
+    String output;
+    serializeJson(doc, output);
+    return output;
+}
+
+// Build RS485 telemetry JSON (separate message for large data)
+String buildRS485TelemetryJSON() {
+    DynamicJsonDocument doc(4096);
+    
+    doc["device_id"] = DEVICE_ID;
+    doc["timestamp"] = time(nullptr);
+    
+    // RS485 devices only
+    JsonDocument rs485Doc = rs485ConfigMgr.buildDynamicTelemetry();
+    doc["rs485"] = rs485Doc.as<JsonObject>();
+    
+    String output;
+    serializeJson(doc, output);
+    return output;
+}
+
+// Request RS485 configuration from server
+void requestRS485Config() {
+    Serial.println("\n========================================");
+    Serial.println("[Config] Requesting RS485 configuration...");
+    Serial.println("========================================");
+    
+    // Device mengirim request ke: get_config/{device_id}
+    // Server akan mengirim response ke: stream_config/{device_id}
+    String requestTopic = "get_config/" + DEVICE_ID;
+    String requestPayload = "{\"request\":\"config\"}";
+    
+    Serial.printf("[Config] Request topic: %s\n", requestTopic.c_str());
+    Serial.printf("[Config] Request payload: %s\n", requestPayload.c_str());
+    
+    if (mqttManager.publish(requestTopic.c_str(), requestPayload.c_str())) {
+        Serial.println("[Config] ✅ Config request sent");
+        
+        // Subscribe to config topic
+        String configTopic = "stream_config/" + DEVICE_ID;
+        Serial.printf("[Config] Subscribing to: %s\n", configTopic.c_str());
+        
+        if (mqttManager.subscribe(configTopic.c_str())) {
+            Serial.println("[Config] ✅ Subscribed successfully");
+            Serial.println("[Config] 🕐 Waiting for server response...");
+            Serial.println("[Config] 💡 If no response in 30s, server may not have config");
+        } else {
+            Serial.println("[Config] ❌ Failed to subscribe");
+        }
+    } else {
+        Serial.println("[Config] ❌ Failed to send config request");
+    }
+    Serial.println("========================================\n");
+}
+
 // ============================================================================
 // SETUP
 // ============================================================================
@@ -389,6 +475,16 @@ void setup() {
     
     pinMode(IO_DIGITAL_IN_1_PIN, INPUT);  // Pump status input
     Serial.println("[Digital Input] GPIO38 initialized for pump status");
+
+    // NEW: Initialize SD card for offline data buffering
+    Serial.println("\n[3.5/6] Initializing SD Card Manager...");
+    if (sdManager.begin()) {
+        Serial.println("[SD] ✅ SD card ready for offline buffering");
+        sdManager.printStatus();
+    } else {
+        Serial.println("[SD] ⚠️ SD card not available");
+        Serial.println("[SD] Device will operate without data buffering (graceful degradation)");
+    }
 
     Serial.println("\n[4/6] Powering LTE stack...");
     bool lteReady = lteManager.begin();
@@ -433,64 +529,188 @@ void setup() {
 // ============================================================================
 // REQUEST RS485 CONFIG FROM SERVER
 // ============================================================================
-
-void requestRS485Config() {
-    if (!mqttManager.isConnected()) {
-        Serial.println("[Config] ⚠️ Cannot request config - MQTT not connected");
-        return;
-    }
-    
-    String topic = "get_config/" + DEVICE_ID;
-    String payload = "request";
-    
-    Serial.print("[Config] Requesting config from server: ");
-    Serial.println(topic);
-    
-    if (mqttManager.publish(topic.c_str(), payload.c_str())) {
-        Serial.println("[Config] ✅ Config request sent");
-        
-        // Subscribe to stream_config topic
-        String streamTopic = "stream_config/" + DEVICE_ID;
-        mqttManager.subscribe(streamTopic.c_str());
-        Serial.print("[Config] Subscribed to: ");
-        Serial.println(streamTopic);
-    } else {
-        Serial.println("[Config] ❌ Failed to send config request");
-    }
-}
-
+// LOOP - 3-SERVICE ARCHITECTURE
 // ============================================================================
-// LOOP
+// Service 1: Sensor Reading (30s) - ALWAYS runs, saves to SD when offline
+// Service 2: Network Management (1s) - Non-blocking state machine
+// Service 3: Data Sync (10s) - ONE-by-ONE sync from SD when connected
 // ============================================================================
 
 void loop() {
-    connectionManager.loop();
-
+    static unsigned long lastSensorRead = 0;
+    static unsigned long lastNetworkCheck = 0;
+    static unsigned long lastSync = 0;
+    static unsigned long lastRS485Scan = 0;
+    
+    // Burst control for data sync
+    static int burstCount = 0;
+    static bool pausingAfterBurst = false;
+    static unsigned long pauseStartTime = 0;
+    
     unsigned long now = millis();
-
-    if (connectionManager.isFullyConnected()) {
-        // Send boot notification and request config
-        if (!bootNotificationSent) {
+    
+    // ========================================================================
+    // SERVICE 1: SENSOR READING (ALWAYS RUNNING - INDEPENDENT)
+    // ========================================================================
+    if (now - lastSensorRead >= TELEMETRY_INTERVAL_MS) {
+        #if DEBUG_SENSORS
+        Serial.println("\n[SERVICE 1] Reading sensors...");
+        #endif
+        
+        // ============================================================
+        // MESSAGE 1: Basic Telemetry (Always send)
+        // ============================================================
+        String basicTelemetry = buildBasicTelemetryJSON();
+        bool basicSent = false;
+        
+        Serial.printf("[Telemetry] Message 1 - Basic sensors (%d bytes)\n", basicTelemetry.length());
+        
+        // Try to send immediately if connected
+        if (connectionManager.isFullyConnected()) {
+            Serial.printf("[Telemetry] Publishing to: %s\n", MQTT_TOPIC);
+            if (mqttManager.publish(MQTT_TOPIC, basicTelemetry.c_str())) {
+                Serial.println("[Telemetry] ✅ Message 1 sent successfully");
+                basicSent = true;
+            } else {
+                // Send failed - save to SD as backup
+                Serial.println("[Telemetry] ❌ Message 1 send failed");
+                if (sdManager.isAvailable()) {
+                    sdManager.writeTelemetry(basicTelemetry);
+                    Serial.println("[Telemetry] 💾 Message 1 saved to SD");
+                } else {
+                    Serial.println("[Telemetry] ⚠️ Message 1 lost (no SD)");
+                }
+            }
+        } else {
+            // Offline - save to SD
+            Serial.println("[Telemetry] Offline mode - saving to SD");
+            if (sdManager.isAvailable()) {
+                sdManager.writeTelemetry(basicTelemetry);
+                Serial.println("[Telemetry] 💾 Message 1 saved to SD");
+            } else {
+                Serial.println("[Telemetry] ⚠️ Message 1 lost (no SD)");
+            }
+        }
+        
+        // ============================================================
+        // MESSAGE 2: RS485 Data (Only if devices configured)
+        // ============================================================
+        if (rs485ConfigMgr.hasConfig() && rs485ConfigMgr.getOnlineCount() > 0) {
+            String rs485Telemetry = buildRS485TelemetryJSON();
+            String rs485Topic = String(MQTT_TOPIC) + "/rs485";
+            
+            Serial.printf("[Telemetry] Message 2 - RS485 data (%d bytes)\n", rs485Telemetry.length());
+            
+            if (connectionManager.isFullyConnected()) {
+                Serial.printf("[Telemetry] Publishing to: %s\n", rs485Topic.c_str());
+                if (mqttManager.publish(rs485Topic.c_str(), rs485Telemetry.c_str())) {
+                    Serial.println("[Telemetry] ✅ Message 2 sent successfully");
+                } else {
+                    // Send failed - save to SD
+                    Serial.println("[Telemetry] ❌ Message 2 send failed");
+                    if (sdManager.isAvailable()) {
+                        sdManager.writeTelemetry(rs485Telemetry);
+                        Serial.println("[Telemetry] 💾 Message 2 saved to SD");
+                    }
+                }
+            } else {
+                // Offline - save to SD
+                Serial.println("[Telemetry] Offline mode - saving to SD");
+                if (sdManager.isAvailable()) {
+                    sdManager.writeTelemetry(rs485Telemetry);
+                    Serial.println("[Telemetry] 💾 Message 2 saved to SD");
+                }
+            }
+        } else {
+            Serial.println("[Telemetry] No RS485 devices configured, skipping Message 2");
+        }
+        
+        lastSensorRead = now;
+    }
+    
+    // ========================================================================
+    // SERVICE 2: NETWORK MANAGEMENT (NON-BLOCKING STATE MACHINE)
+    // ========================================================================
+    if (now - lastNetworkCheck >= 1000) {
+        connectionManager.loop();  // Non-blocking tick
+        
+        // Send boot notification once when connected
+        if (connectionManager.isFullyConnected() && !bootNotificationSent) {
             sendBootNotification();
-            delay(1000);  // Give server time to process boot event
+            delay(1000);
             requestRS485Config();
             bootNotificationSent = true;
         }
-
-        // Periodic telemetry
-        if (now - lastTelemetrySent >= TELEMETRY_INTERVAL_MS) {
-            lastTelemetrySent = now;
-            sendFullTelemetry();
+        
+        lastNetworkCheck = now;
+    }
+    
+    // ========================================================================
+    // SERVICE 3: DATA SYNC (ONE-by-ONE FROM SD WHEN CONNECTED)
+    // ========================================================================
+    
+    // Check if in pause mode (after burst)
+    if (pausingAfterBurst) {
+        if (now - pauseStartTime >= SYNC_PAUSE_AFTER_BURST_MS) {
+            pausingAfterBurst = false;
+            burstCount = 0;
+            Serial.println("[SYNC] ⏸️ Pause ended, resuming sync");
+        }
+        // Skip sync while pausing
+    } else if (connectionManager.isFullyConnected() && 
+               now - lastSync >= SYNC_RATE_LIMIT_MS) {
+        
+        // Check if SD has pending data
+        if (sdManager.hasPendingData()) {
+            String oldestFile = sdManager.getOldestFile();
+            
+            if (!oldestFile.isEmpty()) {
+                // Read file content
+                String jsonData = sdManager.readFile(oldestFile);
+                
+                if (!jsonData.isEmpty()) {
+                    // Send ONE file only
+                    if (mqttManager.publish(MQTT_TOPIC, jsonData.c_str())) {
+                        // Delete after successful send
+                        if (sdManager.deleteFile(oldestFile)) {
+                            burstCount++;
+                            
+                            uint32_t remaining = sdManager.getPendingFileCount();
+                            Serial.printf("[SYNC] ✅ Sent & deleted (%d/%d) - %u files remaining\n", 
+                                          burstCount, SYNC_MAX_BURST, remaining);
+                            
+                            // Check burst limit (10 messages)
+                            if (burstCount >= SYNC_MAX_BURST) {
+                                pausingAfterBurst = true;
+                                pauseStartTime = now;
+                                Serial.println("[SYNC] ⏸️ Burst limit reached, pausing 30s");
+                            }
+                        } else {
+                            Serial.println("[SYNC] ⚠️ Send OK but delete failed");
+                        }
+                    } else {
+                        // Send failed - keep file, stop syncing
+                        Serial.printf("[SYNC] ❌ Send failed, keeping file: %s\n", oldestFile.c_str());
+                    }
+                } else {
+                    Serial.printf("[SYNC] ❌ Failed to read file: %s\n", oldestFile.c_str());
+                }
+            }
         }
         
-        // Periodic RS485 scan (configured interval in config.h)
-        if (now - lastRS485Scan >= RS485_SCAN_INTERVAL_MS) {
-            lastRS485Scan = now;
-            Serial.println("\n[Periodic] RS485 device scan...");
-            rs485ConfigMgr.scanDevices(1, 10);
-            rs485ConfigMgr.printDeviceStatus();
-        }
+        lastSync = now;
     }
-
+    
+    // ========================================================================
+    // PERIODIC RS485 SCAN (WHEN CONNECTED)
+    // ========================================================================
+    if (connectionManager.isFullyConnected() && 
+        now - lastRS485Scan >= RS485_SCAN_INTERVAL_MS) {
+        Serial.println("\n[Periodic] RS485 device scan...");
+        rs485ConfigMgr.scanDevices(1, 10);
+        rs485ConfigMgr.printDeviceStatus();
+        lastRS485Scan = now;
+    }
+    
     delay(100);
 }

@@ -13,6 +13,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { Owner } from '../entities/owner.entity';
 
 @Injectable()
@@ -158,6 +160,76 @@ export class AuthService {
     const { password, ...userWithoutPassword } = user;
 
     return userWithoutPassword as User;
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { idUser: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if email already taken by another user
+    if (updateProfileDto.email && updateProfileDto.email !== user.email) {
+      const existingUser = await this.userRepository.findOne({
+        where: { email: updateProfileDto.email },
+      });
+
+      if (existingUser) {
+        throw new BadRequestException('Email already exists');
+      }
+    }
+
+    // Update fields
+    if (updateProfileDto.name) {
+      user.name = updateProfileDto.name;
+    }
+
+    if (updateProfileDto.email) {
+      user.email = updateProfileDto.email;
+    }
+
+    await this.userRepository.save(user);
+
+    // Return user without password
+    const { password, ...userWithoutPassword } = user;
+
+    return userWithoutPassword as User;
+  }
+
+  /**
+   * Change user password
+   */
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { idUser: userId },
+      select: ['idUser', 'email', 'password'], // Need to select password explicitly
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify old password
+    const isOldPasswordValid = await bcrypt.compare(changePasswordDto.oldPassword, user.password);
+
+    if (!isOldPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+
+    // Update password
+    user.password = hashedPassword;
+    await this.userRepository.save(user);
+
+    return { message: 'Password changed successfully' };
   }
 
   /**

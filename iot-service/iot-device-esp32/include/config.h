@@ -121,8 +121,64 @@
 // ============================================================================
 
 // --- Telemetry ---
-#define TELEMETRY_INTERVAL_MS   30000   // Send data every 30 seconds
-#define MAX_OFFLINE_RECORDS     1000    // Max records to store when offline
+// CONFIGURABLE: Can be overridden from SD card config.json
+// Default: 30 seconds (adjust based on use case)
+// Range: 10-300 seconds (10s for high-frequency, 300s for low-power)
+#define TELEMETRY_INTERVAL_MS   30000   // Default sensor reading interval (30 seconds)
+
+// --- Connection State Machine ---
+// RETRY_MODE: Quick reconnection attempts
+#define RETRY_MODE_MAX_ATTEMPTS         10      // Number of retry attempts before entering offline mode
+#define RETRY_MODE_INTERVAL_MS          30000   // Retry interval (30 seconds)
+#define RETRY_MODE_DURATION_MS          (RETRY_MODE_MAX_ATTEMPTS * RETRY_MODE_INTERVAL_MS) // ~5 minutes
+
+// OFFLINE_MODE: Long-term offline with periodic modem restarts
+#define OFFLINE_MODE_MAX_CYCLES         3       // Number of offline cycles before ESP restart
+#define OFFLINE_MODE_WAIT_MS            600000  // Wait time before modem restart (10 minutes)
+#define OFFLINE_MODE_RETRY_PER_CYCLE    10      // Retry attempts per offline cycle
+#define OFFLINE_MODE_TOTAL_DURATION_MS  (OFFLINE_MODE_MAX_CYCLES * (OFFLINE_MODE_WAIT_MS + (OFFLINE_MODE_RETRY_PER_CYCLE * RETRY_MODE_INTERVAL_MS))) // ~40 minutes
+
+// ESP_RESTART: Triggered after maximum offline cycles
+#define ESP_RESTART_AFTER_OFFLINE       true    // Enable ESP restart after max offline cycles
+
+// --- SD Card Configuration ---
+#define SD_CARD_REQUIRED                false   // Device works without SD card (graceful degradation)
+#define SD_CARD_MAX_USAGE_PERCENT       80      // Maximum SD card usage before cleanup
+#define SD_CARD_AUTO_CLEANUP            true    // Automatic cleanup of old data
+#define SD_CARD_DELETE_AFTER_SEND       true    // Delete data after successful MQTT send
+#define SD_CARD_DATA_RETENTION_DAYS     7       // Keep data for 7 days max
+#define SD_CARD_CHECK_INTERVAL_MS       300000  // Check SD status every 5 minutes
+
+// SD Card Folder Structure
+#define SD_DATA_FOLDER                  "/data"     // Telemetry data folder
+#define SD_LOGS_FOLDER                  "/logs"     // System logs folder
+#define SD_SYSTEM_FOLDER                "/system"   // System state & counters folder
+#define SD_CONFIG_FILE                  "/config.json" // Configuration file
+
+// --- Data Sync Configuration ---
+// SYNC STRATEGY: Send ONE file at a time (NEVER batch/borongan)
+// Why? To avoid network flooding and ensure reliable delivery
+#define SYNC_ENABLED                    true    // Enable data sync from SD card
+#define SYNC_RATE_LIMIT_MS              10000   // Wait 10 seconds between each message (ONE by ONE)
+#define SYNC_MAX_BURST                  10      // Max consecutive sends before pause
+#define SYNC_PAUSE_AFTER_BURST_MS       30000   // Pause 30s after 10 messages (prevent overload)
+#define SYNC_PRIORITY_OLDEST_FIRST      true    // Send oldest data first (FIFO)
+
+// Sync behavior:
+// - Send 1 file per cycle (10s interval)
+// - After 10 files sent → Pause 30s
+// - Resume sync after pause
+// - Continue until all files sent or connection lost
+
+// --- Data Buffering Strategy ---
+// SIMPLIFIED: Use SD Card only (no RAM buffer)
+// Advantages: Simpler code, persistent storage, sufficient for 30s interval
+// Trade-off: Slightly slower write (~20ms vs 1ms RAM), but acceptable
+#define USE_RAM_BUFFER                  false   // Disabled - use SD card directly
+#define DATA_BUFFER_SIZE                0       // Not used (RAM buffer disabled)
+
+// SD card write performance is sufficient for telemetry interval (30s)
+// Modern SD cards support 10,000+ write cycles (years of operation)
 
 // --- RS485 Device Monitoring ---
 #define RS485_SCAN_INTERVAL_MS  120000  // Scan RS485 devices every 2 minutes (120 seconds)

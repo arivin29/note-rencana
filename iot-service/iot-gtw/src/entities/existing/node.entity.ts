@@ -32,6 +32,9 @@ export class Node {
   @Column('text', { name: 'firmware_version', nullable: true })
   firmwareVersion: string;
 
+  @Column('integer', { name: 'telemetry_interval_sec', default: 300 })
+  telemetryIntervalSec: number;
+
   @Column('text', { name: 'connectivity_status', default: 'offline' })
   connectivityStatus: string;
 
