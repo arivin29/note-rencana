@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Put,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -72,7 +73,29 @@ export class OwnersController {
     description: 'List of owners retrieved successfully',
     type: PaginatedResponseDto 
   })
-  async findAll(@Query() query: OwnerQueryDto): Promise<PaginatedResponseDto<OwnerResponseDto>> {
+  async findAll(
+    @Request() req: any,
+    @Query() query: OwnerQueryDto
+  ): Promise<PaginatedResponseDto<OwnerResponseDto>> {
+    // For non-admin users, only show their own owner
+    if (req.user?.role !== 'admin' && req.user?.idOwner) {
+      const ownerId = req.user.idOwner;
+      console.log('Filtering owners for tenant user:', req.user.email, 'ownerId:', ownerId);
+      
+      // Get single owner and format as paginated response
+      const owner = await this.ownersService.findOne(ownerId);
+      return {
+        data: [owner],
+        meta: {
+          total: 1,
+          page: query.page || 1,
+          limit: query.limit || 10,
+          totalPages: 1,
+        },
+      };
+    }
+    
+    // Admin users see all owners
     return this.ownersService.findAll(query);
   }
 
@@ -88,7 +111,16 @@ export class OwnersController {
     type: OwnerResponseDto 
   })
   @ApiResponse({ status: 404, description: 'Owner not found' })
-  async findOne(@Param('id') id: string): Promise<OwnerResponseDto> {
+  @ApiResponse({ status: 403, description: 'Forbidden - Access denied' })
+  async findOne(
+    @Request() req: any,
+    @Param('id') id: string
+  ): Promise<OwnerResponseDto> {
+    // For non-admin users, only allow access to their own owner
+    if (req.user?.role !== 'admin' && req.user?.idOwner !== id) {
+      throw new Error('Forbidden: You can only access your own owner data');
+    }
+    
     return this.ownersService.findOne(id);
   }
 
@@ -105,23 +137,39 @@ export class OwnersController {
   })
   @ApiResponse({ status: 404, description: 'Owner not found' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Access denied' })
   async update(
+    @Request() req: any,
     @Param('id') id: string,
     @Body() updateOwnerDto: UpdateOwnerDto,
   ): Promise<OwnerResponseDto> {
+    // For non-admin users, only allow updating their own owner
+    if (req.user?.role !== 'admin' && req.user?.idOwner !== id) {
+      throw new Error('Forbidden: You can only update your own owner data');
+    }
+    
     return this.ownersService.update(id, updateOwnerDto);
   }
 
   @Delete(':id')
   @ApiOperation({ 
     summary: 'Delete owner',
-    description: 'Permanently deletes an owner and all related data (cascade)'
+    description: 'Permanently deletes an owner and all related data (cascade). Admin only.'
   })
   @ApiParam({ name: 'id', description: 'Owner UUID' })
   @ApiResponse({ status: 204, description: 'Owner successfully deleted' })
   @ApiResponse({ status: 404, description: 'Owner not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin only' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(
+    @Request() req: any,
+    @Param('id') id: string
+  ): Promise<void> {
+    // Only admin can delete owners
+    if (req.user?.role !== 'admin') {
+      throw new Error('Forbidden: Only admins can delete owners');
+    }
+    
     return this.ownersService.remove(id);
   }
 

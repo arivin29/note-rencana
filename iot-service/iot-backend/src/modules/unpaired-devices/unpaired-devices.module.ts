@@ -4,10 +4,11 @@ import { UnpairedDevicesController } from './unpaired-devices.controller';
 import { UnpairedDevicesService } from './unpaired-devices.service';
 import { NodeUnpairedDevice } from '../../entities/node-unpaired-device.entity';
 import { Node } from '../../entities/node.entity';
+import { Owner } from '../../entities/owner.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NodeUnpairedDevice, Node]),
+    TypeOrmModule.forFeature([NodeUnpairedDevice, Node, Owner]),
   ],
   controllers: [UnpairedDevicesController],
   providers: [UnpairedDevicesService],

@@ -18,6 +18,7 @@ export class DashboardTelemetryStreamsComponent implements OnInit, OnChanges {
   error: string | null = null;
 
   chartOptions: any = {};
+  Math = Math; // Expose Math for template
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -60,41 +61,51 @@ export class DashboardTelemetryStreamsComponent implements OnInit, OnChanges {
         data: s.data,
       })),
       chart: {
-        height: 300,
+        height: 320,
         type: 'area',
         toolbar: { show: false },
         zoom: { enabled: false },
       },
       dataLabels: { enabled: false },
-      stroke: { curve: 'smooth', width: 2 },
-      colors: ['#0EA5E9', '#6366F1'],
+      stroke: { curve: 'smooth', width: 3 },
+      colors: ['#22C55E'], // Single green line for messages
       fill: {
         type: 'gradient',
         gradient: {
           shadeIntensity: 1,
-          opacityFrom: 0.4,
+          opacityFrom: 0.5,
           opacityTo: 0.1,
         },
       },
       xaxis: {
         categories: data.chart.labels,
         labels: {
-          style: { fontSize: '11px' },
+          style: { fontSize: '11px', colors: '#64748b' },
+          rotate: -45,
         },
       },
       yaxis: {
+        title: {
+          text: 'Messages',
+          style: { fontSize: '12px', color: '#64748b' }
+        },
         labels: {
-          style: { fontSize: '11px' },
+          style: { fontSize: '11px', colors: '#64748b' },
+          formatter: (val: number) => Math.round(val).toString()
         },
       },
       legend: {
-        position: 'top',
-        horizontalAlign: 'left',
+        show: false, // Hide legend for single series
       },
       grid: {
-        borderColor: '#e7e7e7',
+        borderColor: '#e2e8f0',
         strokeDashArray: 4,
       },
+      tooltip: {
+        y: {
+          formatter: (val: number) => `${Math.round(val)} messages`
+        }
+      }
     };
   }
 

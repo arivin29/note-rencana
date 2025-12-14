@@ -4,16 +4,22 @@
             <div class="filter-header">
                 <div>
                     <div class="panel-label">Control Filters</div>
-                    <div class="panel-hint text-muted">Refine owners, projects, and time slices</div>
+                    <div class="panel-hint text-muted" *ngIf="isSuperAdmin">
+                        Refine owners, projects, and time slices (Super Admin View)
+                    </div>
+                    <div class="panel-hint text-muted" *ngIf="!isSuperAdmin">
+                        Refine projects and time slices for your data
+                    </div>
                 </div>
                 <div class="filter-chips">
-                    <span class="filter-chip">Owner · {{ getOwnerLabel() }}</span>
+                    <span class="filter-chip" *ngIf="isSuperAdmin">Owner · {{ getOwnerLabel() }}</span>
                     <span class="filter-chip">Project · {{ getProjectLabel() }}</span>
                     <span class="filter-chip">Range · {{ getRangeLabel() }}</span>
                 </div>
             </div>
             <div class="row g-3 align-items-end">
-                <div class="col-xl-4 col-md-6">
+                <!-- Owner Filter (Super Admin Only) -->
+                <div class="col-xl-4 col-md-6" *ngIf="isSuperAdmin">
                     <div class="filter-control">
                         <label class="filter-label">Owner</label>
                         <div class="filter-input">
@@ -26,7 +32,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6">
+                
+                <!-- Project Filter (All Users) -->
+                <div [ngClass]="isSuperAdmin ? 'col-xl-4 col-md-6' : 'col-xl-6 col-md-6'">
                     <div class="filter-control">
                         <label class="filter-label">Project</label>
                         <div class="filter-input">
@@ -39,7 +47,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-12">
+                
+                <!-- Time Range Filter (All Users) -->
+                <div [ngClass]="isSuperAdmin ? 'col-xl-4 col-12' : 'col-xl-6 col-12'">
                     <div class="filter-control">
                         <label class="filter-label">Time Range</label>
                         <div class="filter-input">
@@ -51,13 +61,18 @@
                             </select>
                         </div>
                         <div class="filter-hint small text-muted mt-2">
-                            {{ getRangeLabel() }} · {{ getOwnerLabel() }} · {{ getProjectLabel() }}
+                            {{ getRangeLabel() }} 
+                            <span *ngIf="isSuperAdmin"> · {{ getOwnerLabel() }}</span>
+                            · {{ getProjectLabel() }}
                         </div>
                     </div>
                 </div>
             </div>
             <div class="filter-footer">
-                <div class="text-muted small">Filters apply to all widgets, including telemetry and health tables.</div>
+                <div class="text-muted small">
+                    <span *ngIf="isSuperAdmin">Filters apply to all widgets. Super admin can view all owners.</span>
+                    <span *ngIf="!isSuperAdmin">Filters apply to your projects and data only.</span>
+                </div>
                 <button class="btn btn-outline-theme btn-sm" (click)="resetFilters()">Reset Filters</button>
             </div>
         </card-body>
@@ -70,29 +85,64 @@
         [timeRange]="dashboardFilters.timeRange">
     </dashboard-kpi-cards>
 
+    <!-- Offline Nodes Alert Widget -->
+    <card class="mb-3 mt-3">
+        <card-header class="fw-bold d-flex align-items-center">
+            <i class="bi bi-router text-danger me-2"></i>
+            <span>Offline Nodes Summary</span>
+            <span class="badge bg-danger ms-2">{{ offlineSummary.total }}</span>
+            <a href="/iot/alerts" class="btn btn-sm btn-outline-theme ms-auto">
+                View All Alerts <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </card-header>
+        <card-body>
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <i class="bi bi-exclamation-triangle text-danger d-block mb-2" style="font-size: 2.5rem;"></i>
+                        <div class="fs-2 fw-bold text-danger">{{ offlineSummary.total }}</div>
+                        <div class="text-muted small">Total Offline Nodes</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border-start border-end">
+                        <i class="bi bi-exclamation-circle text-warning d-block mb-2" style="font-size: 2.5rem;"></i>
+                        <div class="fs-2 fw-bold text-warning">{{ offlineSummary.warning }}</div>
+                        <div class="text-muted small">Warning (> 30 min)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <i class="bi bi-x-circle text-danger d-block mb-2" style="font-size: 2.5rem;"></i>
+                        <div class="fs-2 fw-bold text-danger">{{ offlineSummary.critical }}</div>
+                        <div class="text-muted small">Critical (> 1 hour)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-2 pt-3 border-top">
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Auto-detected by cron job every 5 minutes. Alert rules managed in backend.
+                </p>
+            </div>
+        </card-body>
+    </card>
+
  
+    <!-- Node Health Widget (Full Width) -->
     <div class="row g-3 mt-1">
-        <!-- Node Health Widget -->
-        <div class="col-md-6">
+        <div class="col-md-12">
             <dashboard-node-health 
                 [ownerId]="dashboardFilters.ownerId"
                 [projectId]="dashboardFilters.projectId"
                 [timeRange]="dashboardFilters.timeRange"
-                [limit]="5">
-            </dashboard-node-health>
-        </div>
-
-        <!-- Owner Leaderboard Widget -->
-        <div class="col-md-6">
-            <dashboard-owner-leaderboard 
-                [timeRange]="dashboardFilters.timeRange"
                 [limit]="10">
-            </dashboard-owner-leaderboard>
+            </dashboard-node-health>
         </div>
     </div>
 
     <!-- Activity Log & Release Window Row -->
-    <div class="row g-3 mt-1">
+    <!-- <div class="row g-3 mt-1">
         <div class="col-xl-6">
             <dashboard-activity-log 
                 [ownerId]="dashboardFilters.ownerId"
@@ -104,7 +154,7 @@
         <div class="col-xl-6">
             <dashboard-release-window></dashboard-release-window>
         </div>
-    </div>
+    </div> -->
 
     <!-- Telemetry Streams & Delivery/Alerts Row -->
     <div class="row g-3 mt-1 align-items-stretch">

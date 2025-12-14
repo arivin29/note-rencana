@@ -26,6 +26,7 @@ export class AlertEventsService {
     status?: string;
     startDate?: Date;
     endDate?: Date;
+    ownerId?: string;
   }): Promise<{ data: AlertEventResponseDto[]; total: number; page: number; limit: number }> {
     const page = options?.page || 1;
     const limit = options?.limit || 10;
@@ -35,6 +36,14 @@ export class AlertEventsService {
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.alertRule', 'rule')
       .leftJoinAndSelect('rule.sensorChannel', 'channel');
+
+    // Owner filtering via JOIN: alert_events -> nodes -> projects -> owners
+    if (options?.ownerId) {
+      queryBuilder
+        .innerJoin('nodes', 'node', "event.note ILIKE '%' || node.code || '%'")
+        .innerJoin('projects', 'project', 'project.id_project = node.id_project')
+        .andWhere('project.id_owner = :ownerId', { ownerId: options.ownerId });
+    }
 
     if (options?.idAlertRule) {
       queryBuilder.andWhere('event.idAlertRule = :idAlertRule', { idAlertRule: options.idAlertRule });
@@ -147,6 +156,181 @@ export class AlertEventsService {
     }
 
     await this.alertEventRepository.remove(event);
+  }
+
+  async getStatistics(dateRange?: string, ownerId?: string): Promise<{
+    open: number;
+    acknowledged: number;
+    cleared: number;
+    total: number;
+    byType: Record<string, number>;
+    bySeverity: Record<string, number>;
+  }> {
+    let startDate: Date | undefined;
+    
+    if (dateRange) {
+      const days = parseInt(dateRange.replace('d', ''));
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+    }
+
+    const queryBuilder = this.alertEventRepository
+      .createQueryBuilder('event')
+      .leftJoin('event.alertRule', 'rule');
+
+    // Owner filtering via JOIN
+    if (ownerId) {
+      queryBuilder
+        .innerJoin('nodes', 'node', "event.note ILIKE '%' || node.code || '%'")
+        .innerJoin('projects', 'project', 'project.id_project = node.id_project')
+        .andWhere('project.id_owner = :ownerId', { ownerId });
+    }
+
+    if (startDate) {
+      queryBuilder.andWhere('event.triggeredAt >= :startDate', { startDate });
+    }
+
+    // Count by status with owner filter
+    const openQuery = this.alertEventRepository
+      .createQueryBuilder('event')
+      .where('event.status = :status', { status: 'open' });
+    
+    const acknowledgedQuery = this.alertEventRepository
+      .createQueryBuilder('event')
+      .where('event.status = :status', { status: 'acknowledged' });
+    
+    const clearedQuery = this.alertEventRepository
+      .createQueryBuilder('event')
+      .where('event.status = :status', { status: 'cleared' });
+
+    if (ownerId) {
+      [openQuery, acknowledgedQuery, clearedQuery].forEach(q => {
+        q.innerJoin('nodes', 'node', "event.note ILIKE '%' || node.code || '%'")
+         .innerJoin('projects', 'project', 'project.id_project = node.id_project')
+         .andWhere('project.id_owner = :ownerId', { ownerId });
+      });
+    }
+
+    const [open, acknowledged, cleared, total] = await Promise.all([
+      openQuery.getCount(),
+      acknowledgedQuery.getCount(),
+      clearedQuery.getCount(),
+      queryBuilder.getCount(),
+    ]);
+
+    // Get counts by type with owner filter
+    const byTypeQuery = this.alertEventRepository
+      .createQueryBuilder('event')
+      .leftJoin('event.alertRule', 'rule')
+      .select('rule.ruleType', 'ruleType')
+      .addSelect('COUNT(*)', 'count')
+      .where(startDate ? 'event.triggeredAt >= :startDate' : '1=1', { startDate });
+
+    if (ownerId) {
+      byTypeQuery
+        .innerJoin('nodes', 'node', "event.note ILIKE '%' || node.code || '%'")
+        .innerJoin('projects', 'project', 'project.id_project = node.id_project')
+        .andWhere('project.id_owner = :ownerId', { ownerId });
+    }
+
+    const byTypeResults = await byTypeQuery
+      .groupBy('rule.ruleType')
+      .getRawMany();
+
+    const byType: Record<string, number> = {};
+    byTypeResults.forEach((item) => {
+      byType[item.ruleType] = parseInt(item.count);
+    });
+
+    // Get counts by severity with owner filter
+    const bySeverityQuery = this.alertEventRepository
+      .createQueryBuilder('event')
+      .leftJoin('event.alertRule', 'rule')
+      .select('rule.severity', 'severity')
+      .addSelect('COUNT(*)', 'count')
+      .where(startDate ? 'event.triggeredAt >= :startDate' : '1=1', { startDate });
+
+    if (ownerId) {
+      bySeverityQuery
+        .innerJoin('nodes', 'node', "event.note ILIKE '%' || node.code || '%'")
+        .innerJoin('projects', 'project', 'project.id_project = node.id_project')
+        .andWhere('project.id_owner = :ownerId', { ownerId });
+    }
+
+    const bySeverityResults = await bySeverityQuery
+      .groupBy('rule.severity')
+      .getRawMany();
+
+    const bySeverity: Record<string, number> = {};
+    bySeverityResults.forEach((item) => {
+      bySeverity[item.severity] = parseInt(item.count);
+    });
+
+    return {
+      open,
+      acknowledged,
+      cleared,
+      total,
+      byType,
+      bySeverity,
+    };
+  }
+
+  async getOfflineNodesSummary(ownerId?: string): Promise<{
+    warning: number;
+    critical: number;
+    total: number;
+    nodes: Array<{ nodeCode: string; offlineMinutes: number; severity: string }>;
+  }> {
+    const queryBuilder = this.alertEventRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.alertRule', 'rule')
+      .where('rule.ruleType = :ruleType', { ruleType: 'node_offline' })
+      .andWhere('event.status = :status', { status: 'open' });
+
+    // Owner filtering via JOIN
+    if (ownerId) {
+      queryBuilder
+        .innerJoin('nodes', 'node', "event.note ILIKE '%' || node.code || '%'")
+        .innerJoin('projects', 'project', 'project.id_project = node.id_project')
+        .andWhere('project.id_owner = :ownerId', { ownerId });
+    }
+
+    const offlineAlerts = await queryBuilder
+      .orderBy('event.value', 'DESC')
+      .getMany();
+
+    let warning = 0;
+    let critical = 0;
+    const nodes: Array<{ nodeCode: string; offlineMinutes: number; severity: string }> = [];
+
+    offlineAlerts.forEach((alert) => {
+      const offlineMinutes = alert.value || 0;
+      const severity = offlineMinutes >= 60 ? 'critical' : 'warning';
+      
+      if (severity === 'critical') {
+        critical++;
+      } else {
+        warning++;
+      }
+
+      // Extract node code from note
+      const noteMatch = alert.note?.match(/Node "([^"]+)"/);
+      if (noteMatch) {
+        nodes.push({
+          nodeCode: noteMatch[1],
+          offlineMinutes: Math.floor(offlineMinutes),
+          severity,
+        });
+      }
+    });
+
+    return {
+      warning,
+      critical,
+      total: warning + critical,
+      nodes,
+    };
   }
 
   private toResponseDto(event: AlertEvent): AlertEventResponseDto {

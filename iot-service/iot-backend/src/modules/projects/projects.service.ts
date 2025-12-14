@@ -30,7 +30,7 @@ export class ProjectsService {
     page?: number;
     limit?: number;
     search?: string;
-    idOwner?: string;
+    ownerId?: string;
     areaType?: string;
     status?: string;
   }): Promise<{ data: ProjectResponseDto[]; total: number; page: number; limit: number }> {
@@ -40,8 +40,8 @@ export class ProjectsService {
 
     const where: FindOptionsWhere<Project> = {};
 
-    if (params.idOwner) {
-      where.idOwner = params.idOwner;
+    if (params.ownerId) {
+      where.idOwner = params.ownerId;
     }
 
     if (params.areaType) {
@@ -125,39 +125,64 @@ export class ProjectsService {
     await this.projectRepository.remove(project);
   }
 
-  async getStatistics() {
-    const totalProjects = await this.projectRepository.count();
+  async getStatistics(ownerId?: string) {
+    // Base query for filtering by owner
+    const baseQuery = this.projectRepository.createQueryBuilder('project');
+    
+    if (ownerId) {
+      baseQuery.where('project.idOwner = :ownerId', { ownerId });
+    }
+    
+    const totalProjects = await baseQuery.getCount();
 
     // Group by area type
-    const projectsByAreaType = await this.projectRepository
+    const areaTypeQuery = this.projectRepository
       .createQueryBuilder('project')
       .select('project.areaType', 'areaType')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('project.areaType')
-      .getRawMany();
+      .groupBy('project.areaType');
+    
+    if (ownerId) {
+      areaTypeQuery.where('project.idOwner = :ownerId', { ownerId });
+    }
+    
+    const projectsByAreaType = await areaTypeQuery.getRawMany();
 
     const areaTypeStats = projectsByAreaType.map(item => ({
       areaType: item.areaType,
       count: parseInt(item.count, 10),
-      percentage: ((parseInt(item.count, 10) / totalProjects) * 100).toFixed(1)
+      percentage: totalProjects > 0 ? ((parseInt(item.count, 10) / totalProjects) * 100).toFixed(1) : '0'
     }));
 
     // Group by status
-    const projectsByStatus = await this.projectRepository
+    const statusQuery = this.projectRepository
       .createQueryBuilder('project')
       .select('project.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('project.status')
-      .getRawMany();
+      .groupBy('project.status');
+    
+    if (ownerId) {
+      statusQuery.where('project.idOwner = :ownerId', { ownerId });
+    }
+    
+    const projectsByStatus = await statusQuery.getRawMany();
 
     const statusStats = projectsByStatus.map(item => ({
       status: item.status,
       count: parseInt(item.count, 10),
-      percentage: ((parseInt(item.count, 10) / totalProjects) * 100).toFixed(1)
+      percentage: totalProjects > 0 ? ((parseInt(item.count, 10) / totalProjects) * 100).toFixed(1) : '0'
     }));
 
     // Count active vs inactive
-    const activeProjects = await this.projectRepository.count({ where: { status: 'active' } });
+    const activeQuery = this.projectRepository
+      .createQueryBuilder('project')
+      .where('project.status = :status', { status: 'active' });
+    
+    if (ownerId) {
+      activeQuery.andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+    
+    const activeProjects = await activeQuery.getCount();
     const inactiveProjects = totalProjects - activeProjects;
 
     return {

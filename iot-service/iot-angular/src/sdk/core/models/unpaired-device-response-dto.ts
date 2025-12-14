@@ -61,6 +61,11 @@ export interface UnpairedDeviceResponseDto {
 } | null;
 
   /**
+   * History of last 10 payloads with timestamps
+   */
+  payloadHistory: Array<Array<any>> | null;
+
+  /**
    * Number of times this device has sent data
    */
   seenCount: number;

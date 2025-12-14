@@ -1,0 +1,164 @@
+<div class="modal-header bg-theme text-white">
+  <h5 class="modal-title">
+    <i class="fa fa-user me-2"></i>
+    {{ mode === 'create' ? 'Add New User' : 'Edit User' }}
+  </h5>
+  <button type="button" class="btn-close btn-close-white" (click)="dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  <form [formGroup]="userForm">
+    <!-- Full Name -->
+    <div class="mb-3">
+      <label class="form-label">
+        Full Name <span class="text-danger">*</span>
+      </label>
+      <input 
+        type="text" 
+        class="form-control" 
+        formControlName="name"
+        placeholder="Enter full name"
+        [class.is-invalid]="isFieldInvalid('name')">
+      <div class="invalid-feedback" *ngIf="isFieldInvalid('name')">
+        <span *ngIf="userForm.get('name')?.errors?.['required']">Full name is required</span>
+        <span *ngIf="userForm.get('name')?.errors?.['minlength']">Name must be at least 3 characters</span>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="mb-3">
+      <label class="form-label">
+        Email Address <span class="text-danger">*</span>
+      </label>
+      <input 
+        type="email" 
+        class="form-control" 
+        formControlName="email"
+        placeholder="user@example.com"
+        [class.is-invalid]="isFieldInvalid('email')">
+      <div class="invalid-feedback" *ngIf="isFieldInvalid('email')">
+        <span *ngIf="userForm.get('email')?.errors?.['required']">Email is required</span>
+        <span *ngIf="userForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+      </div>
+    </div>
+
+    <!-- Password (only for create mode) -->
+    <div class="mb-3" *ngIf="mode === 'create'">
+      <label class="form-label">
+        Password <span class="text-danger">*</span>
+      </label>
+      <div class="input-group">
+        <input 
+          [type]="showPassword ? 'text' : 'password'" 
+          class="form-control" 
+          formControlName="password"
+          placeholder="Enter secure password"
+          [class.is-invalid]="isFieldInvalid('password')">
+        <button 
+          class="btn btn-outline-secondary" 
+          type="button"
+          (click)="showPassword = !showPassword">
+          <i class="fa" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+        </button>
+      </div>
+      <div class="invalid-feedback d-block" *ngIf="isFieldInvalid('password')">
+        <span *ngIf="userForm.get('password')?.errors?.['required']">Password is required</span>
+        <span *ngIf="userForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</span>
+        <span *ngIf="userForm.get('password')?.errors?.['pattern']">Password must contain uppercase, lowercase, number, and special character</span>
+      </div>
+      <div class="form-text">
+        <i class="fa fa-shield-alt me-1"></i>
+        Password must contain: uppercase, lowercase, number, and special character (@$!%*?&)
+      </div>
+    </div>
+
+    <!-- Phone (optional) -->
+    <div class="mb-3">
+      <label class="form-label">Phone Number</label>
+      <input 
+        type="tel" 
+        class="form-control" 
+        formControlName="phone"
+        placeholder="+62812345678">
+    </div>
+
+    <!-- Role -->
+    <div class="mb-3">
+      <label class="form-label">
+        Role <span class="text-danger">*</span>
+      </label>
+      <select 
+        class="form-select" 
+        formControlName="role"
+        [class.is-invalid]="isFieldInvalid('role')"
+        [disabled]="mode === 'edit' && !!ownerId">
+        <option value="">Select role...</option>
+        <option value="admin">Admin</option>
+        <option value="tenant">Tenant</option>
+      </select>
+      <div class="invalid-feedback" *ngIf="isFieldInvalid('role')">
+        Role is required
+      </div>
+      <div class="form-text" *ngIf="mode === 'create'">
+        <i class="fa fa-info-circle me-1"></i>
+        <strong>Note:</strong> Users created from owner page will automatically be assigned as <strong>Tenant</strong> role
+      </div>
+      <div class="form-text text-warning" *ngIf="mode === 'edit' && ownerId">
+        <i class="fa fa-lock me-1"></i>
+        <strong>Role is locked:</strong> Users assigned to an owner cannot be changed to Admin
+      </div>
+    </div>
+
+    <!-- Active Status (only for edit mode) -->
+    <div class="mb-3" *ngIf="mode === 'edit'">
+      <div class="form-check form-switch">
+        <input 
+          class="form-check-input" 
+          type="checkbox" 
+          formControlName="isActive"
+          id="isActiveSwitch">
+        <label class="form-check-label" for="isActiveSwitch">
+          <strong>Active Status</strong>
+          <span class="text-muted ms-2">
+            {{ userForm.get('isActive')?.value ? '(User can login)' : '(User cannot login)' }}
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Info for create mode -->
+    <div class="alert alert-success mb-3" *ngIf="mode === 'create'">
+      <i class="fa fa-info-circle me-2"></i>
+      New users will be created with <strong>Active</strong> status by default.
+    </div>
+
+    <!-- Owner Info (read-only) -->
+    <div class="alert alert-info mb-0">
+      <i class="fa fa-building me-2"></i>
+      <strong>Owner:</strong> {{ ownerName || 'Loading...' }}
+      <small class="d-block text-muted mt-1">
+        This user will be assigned to the above owner
+      </small>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="dismiss()">
+    <i class="fa fa-times me-1"></i> Cancel
+  </button>
+  <button 
+    type="button" 
+    class="btn btn-theme" 
+    (click)="save()"
+    [disabled]="saving || userForm.invalid">
+    <span *ngIf="!saving">
+      <i class="fa fa-save me-1"></i>
+      {{ mode === 'create' ? 'Create User' : 'Update User' }}
+    </span>
+    <span *ngIf="saving">
+      <span class="spinner-border spinner-border-sm me-1"></span>
+      Saving...
+    </span>
+  </button>
+</div>

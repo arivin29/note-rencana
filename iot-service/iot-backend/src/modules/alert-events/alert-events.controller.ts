@@ -17,6 +17,27 @@ export class AlertEventsController {
     return this.alertEventsService.create(createDto);
   }
 
+  // Statistics endpoints MUST be before :id routes
+  @Get('statistics/summary')
+  @ApiOperation({ summary: 'Get alert statistics' })
+  @ApiQuery({ name: 'dateRange', required: false, type: String, description: 'e.g., 7d, 30d' })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner UUID' })
+  @ApiResponse({ status: 200 })
+  getStatistics(
+    @Query('dateRange') dateRange?: string,
+    @Query('ownerId') ownerId?: string,
+  ) {
+    return this.alertEventsService.getStatistics(dateRange, ownerId);
+  }
+
+  @Get('statistics/offline-nodes')
+  @ApiOperation({ summary: 'Get offline nodes summary' })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner UUID' })
+  @ApiResponse({ status: 200 })
+  getOfflineNodesSummary(@Query('ownerId') ownerId?: string) {
+    return this.alertEventsService.getOfflineNodesSummary(ownerId);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all alert events' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -25,6 +46,7 @@ export class AlertEventsController {
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner UUID' })
   @ApiResponse({ status: 200 })
   findAll(
     @Query('page') page?: string,
@@ -33,6 +55,7 @@ export class AlertEventsController {
     @Query('status') status?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('ownerId') ownerId?: string,
   ) {
     return this.alertEventsService.findAll({
       page: page ? parseInt(page, 10) : undefined,
@@ -41,6 +64,7 @@ export class AlertEventsController {
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
+      ownerId,
     });
   }
 

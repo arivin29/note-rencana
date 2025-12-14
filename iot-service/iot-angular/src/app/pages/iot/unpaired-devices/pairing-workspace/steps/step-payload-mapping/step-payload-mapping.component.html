@@ -16,6 +16,27 @@
                     <p class="text-muted small mb-2">Drag fields to channels</p>
                 </div>
 
+                <!-- Payload History Selector -->
+                <div *ngIf="samplePayloads.length > 0" class="mb-3">
+                    <label class="form-label small fw-semibold">
+                        <i class="fa fa-history me-1"></i>
+                        Select Payload
+                        <span class="text-muted">({{ samplePayloads.length }} available)</span>
+                    </label>
+                    <select class="form-select form-select-sm" 
+                            [(ngModel)]="selectedPayloadIndex"
+                            (ngModelChange)="onPayloadSelectionChange($event)">
+                        <option *ngFor="let payload of samplePayloads; let i = index" [value]="i">
+                            #{{ i + 1 }} - {{ payload.receivedAt | date:'short' }} 
+                            ({{ countPayloadFields(payload) }} fields)
+                        </option>
+                    </select>
+                    <div class="form-text small">
+                        <i class="fa fa-info-circle me-1"></i>
+                        Choose the most complete payload for mapping
+                    </div>
+                </div>
+
                 <div *ngIf="selectedPayload" class="mb-2 small">
                     <strong>Topic:</strong> <span class="text-muted">{{ selectedPayload.topic }}</span>
                 </div>

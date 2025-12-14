@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Node } from '../../entities/node.entity';
 import { Owner } from '../../entities/owner.entity';
 import { Project } from '../../entities/project.entity';
@@ -26,6 +26,7 @@ export class DashboardService {
     private projectRepository: Repository<Project>,
     @InjectRepository(Sensor)
     private sensorRepository: Repository<Sensor>,
+    private dataSource: DataSource,
   ) {}
 
   async getPlatformStats(filters: DashboardFiltersDto) {
@@ -134,8 +135,48 @@ export class DashboardService {
   }
 
   async getKpiStats(filters: DashboardFiltersDto): Promise<KpiStatsResponseDto> {
-    const totalNodes = await this.nodeRepository.count();
-    const onlineNodes = Math.floor(totalNodes * 0.91); // 91% online
+    // Build where clause for filtering
+    const where: any = {};
+    
+    // Filter by project ID (takes precedence if specified)
+    if (filters.projectId) {
+      where.idProject = filters.projectId;
+    }
+    
+    // Filter by owner ID (through project relation) - only if projectId not specified
+    if (filters.ownerId && !filters.projectId) {
+      where.project = { idOwner: filters.ownerId };
+    }
+
+    // Count nodes with filters
+    const totalNodes = await this.nodeRepository.count({ where });
+    const onlineNodes = await this.nodeRepository.count({
+      where: { ...where, connectivityStatus: 'online' },
+    });
+    const degradedNodes = await this.nodeRepository.count({
+      where: { ...where, connectivityStatus: 'degraded' },
+    });
+    const offlineNodes = await this.nodeRepository.count({
+      where: { ...where, connectivityStatus: 'offline' },
+    });
+
+    // Calculate percentage
+    const healthyPercentage = totalNodes > 0 
+      ? Math.round((onlineNodes / totalNodes) * 100) 
+      : 0;
+
+    // Generate time series data for connectivity status (last 24 hours, hourly intervals)
+    const timeSeries = this.generateConnectivityTimeSeries(
+      onlineNodes, 
+      degradedNodes, 
+      offlineNodes, 
+      24 // 24 data points (hourly for last 24h)
+    );
+
+    // Mock alerts (TODO: Implement AlertEvent repository filtering)
+    const totalAlerts = Math.floor(totalNodes * 0.3); // 30% of nodes have alerts
+    const criticalAlerts = Math.floor(totalAlerts * 0.4); // 40% critical
+    const warningAlerts = totalAlerts - criticalAlerts;
 
     return {
       nodesOnline: {
@@ -143,30 +184,36 @@ export class DashboardService {
         delta: `+${Math.floor(onlineNodes * 0.02)}`,
         trend: 'up',
         sparkline: this.generateSparkline(12, onlineNodes),
-        healthyPercentage: 91,
-        newDeployments: 6,
+        healthyPercentage,
+        newDeployments: Math.floor(totalNodes * 0.05), // 5% new
+        timeSeries,
+        totalNodes,
+        degradedNodes,
+        offlineNodes,
       },
       activeAlerts: {
-        current: 7,
-        delta: '-2',
-        trend: 'down',
-        sparkline: this.generateSparkline(12, 7),
-        criticalCount: 3,
-        warningCount: 4,
+        current: totalAlerts,
+        delta: totalAlerts > 5 ? `-2` : `+1`,
+        trend: totalAlerts > 5 ? 'down' : 'up',
+        sparkline: this.generateSparkline(12, totalAlerts),
+        criticalCount: criticalAlerts,
+        warningCount: warningAlerts,
       },
       telemetryRate: {
-        current: 12400,
-        delta: '+1400',
-        trend: 'up',
-        sparkline: this.generateSparkline(12, 12000),
-        loraGrowth: 8,
-        coverage: 'stable',
+        current: onlineNodes * 50, // Average: 50 messages/min per node
+        delta: `+${Math.floor(onlineNodes * 5)}`,
+        trend: onlineNodes > 0 ? 'up' : 'flat',
+        sparkline: this.generateSparkline(12, onlineNodes * 50),
+        activeDevices: onlineNodes, // Devices currently sending data
+        totalDevices: totalNodes, // Total devices in system
+        lastMessageSecondsAgo: onlineNodes > 0 ? Math.floor(Math.random() * 30) : 0, // Simulated: 0-30 seconds
+        queueSize: 0, // No backlog (healthy)
       },
       forwardedPayloads: {
-        current: 4900,
-        delta: '+250',
+        current: onlineNodes * 200, // Estimate: 200 forwarded/node
+        delta: `+${onlineNodes * 10}`,
         trend: 'flat',
-        sparkline: this.generateSparkline(12, 4900),
+        sparkline: this.generateSparkline(12, onlineNodes * 200),
         webhookSuccess: 99.1,
         dbBatchSuccess: 92.4,
         distribution: {
@@ -179,12 +226,32 @@ export class DashboardService {
   }
 
   async getNodeHealth(filters: DashboardFiltersDto): Promise<NodeHealthResponseDto> {
+    // Build where clause for filtering
+    const where: any = {};
+    
+    // Filter by project ID (takes precedence if specified)
+    if (filters.projectId) {
+      where.idProject = filters.projectId;
+    }
+    
+    // Filter by owner ID (through project relation) - only if projectId not specified
+    if (filters.ownerId && !filters.projectId) {
+      where.project = { idOwner: filters.ownerId };
+    }
+
     const nodes = await this.nodeRepository.find({
+      where,
       relations: ['project'],
       take: filters.limit || 5,
+      order: { lastSeenAt: 'DESC' },
     });
 
-    const totalNodes = await this.nodeRepository.count();
+    const totalNodes = await this.nodeRepository.count({ where });
+
+    // Calculate actual status counts from the nodes
+    const onlineCount = nodes.filter(n => n.connectivityStatus === 'online').length;
+    const degradedCount = nodes.filter(n => n.connectivityStatus === 'degraded').length;
+    const offlineCount = nodes.filter(n => n.connectivityStatus === 'offline' || !n.connectivityStatus).length;
 
     return {
       nodes: nodes.map(node => ({
@@ -201,9 +268,9 @@ export class DashboardService {
       })),
       summary: {
         totalNodes,
-        onlineCount: Math.floor(totalNodes * 0.91),
-        degradedCount: Math.floor(totalNodes * 0.07),
-        offlineCount: Math.floor(totalNodes * 0.02),
+        onlineCount,
+        degradedCount,
+        offlineCount,
       },
     };
   }
@@ -264,43 +331,108 @@ export class DashboardService {
   }
 
   async getTelemetryStreams(filters: DashboardFiltersDto): Promise<TelemetryStreamsResponseDto> {
+    // Generate hourly labels for last 24 hours
     const hours: string[] = [];
+    const hourTimestamps: Date[] = [];
     for (let i = 23; i >= 0; i--) {
       const hour = new Date();
       hour.setHours(hour.getHours() - i, 0, 0, 0);
       hours.push(hour.getHours().toString().padStart(2, '0') + ':00');
+      hourTimestamps.push(new Date(hour));
     }
 
+    // Query REAL data from sensor_logs table
+    const sensorLogRepository = this.dataSource.getRepository('sensor_logs');
+    
+    // Build query with filters
+    let query = `
+      SELECT 
+        DATE_TRUNC('hour', sl.created_at) AS hour,
+        COUNT(*) AS message_count
+      FROM sensor_logs sl
+      INNER JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+      INNER JOIN sensors s ON sc.id_sensor = s.id_sensor
+      INNER JOIN nodes n ON s.id_node = n.id_node
+      INNER JOIN projects p ON n.id_project = p.id_project
+      WHERE sl.created_at >= NOW() - INTERVAL '24 hours'
+    `;
+
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (filters.ownerId) {
+      query += ` AND p.id_owner = $${paramIndex}`;
+      params.push(filters.ownerId);
+      paramIndex++;
+    }
+
+    if (filters.projectId) {
+      query += ` AND n.id_project = $${paramIndex}`;
+      params.push(filters.projectId);
+      paramIndex++;
+    }
+
+    query += `
+      GROUP BY DATE_TRUNC('hour', sl.created_at)
+      ORDER BY hour ASC
+    `;
+
+    const hourlyData = await this.dataSource.query(query, params);
+
+    // Map query results to hourly array (fill zeros for missing hours)
+    const dataPoints = hours.map((label, index) => {
+      const hourTimestamp = hourTimestamps[index];
+      const found = hourlyData.find(row => {
+        const rowHour = new Date(row.hour);
+        return rowHour.getHours() === hourTimestamp.getHours();
+      });
+      return found ? parseInt(found.message_count) : 0;
+    });
+
+    // Calculate statistics
+    const totalMessages = dataPoints.reduce((sum, count) => sum + count, 0);
+    const avgPerHour = totalMessages > 0 ? Math.round(totalMessages / 24) : 0;
+    const maxHour = Math.max(...dataPoints);
+
+    // Calculate growth vs yesterday (simplified - compare last 12h vs first 12h)
+    const recentHalf = dataPoints.slice(12).reduce((sum, count) => sum + count, 0);
+    const olderHalf = dataPoints.slice(0, 12).reduce((sum, count) => sum + count, 0);
+    const growthPercent = olderHalf > 0 
+      ? Math.round(((recentHalf - olderHalf) / olderHalf) * 100) 
+      : 0;
+
     const ingestionStats = {
-      successRate: 99.4,
-      totalPackets: 12400,
-      droppedPackets: 72,
-      avgLatency: 420,
+      successRate: 100.0, // Assume all logs in sensor_logs are successful
+      totalPackets: totalMessages,
+      droppedPackets: 0, // TODO: Track failed ingestion if applicable
+      avgLatency: 0, // TODO: Implement if timestamp tracking exists
     };
 
     const forwardingStats = {
-      totalForwarded: 4200,
-      webhookCount: 2800,
-      dbBatchCount: 1400,
-      webhookSuccessRate: 99.2,
-      dbSuccessRate: 92.7,
+      totalForwarded: 0, // TODO: Query from forwarding_logs when implemented
+      webhookCount: 0,
+      dbBatchCount: 0,
+      webhookSuccessRate: 0,
+      dbSuccessRate: 0,
     };
 
     return {
       chart: {
         labels: hours,
         series: [
-          { name: 'Flow Channels', data: this.generateRealisticSeries(24, 90, 160) },
-          { name: 'Pressure Channels', data: this.generateRealisticSeries(24, 40, 95) },
+          { name: 'Messages Received', data: dataPoints },
         ],
       },
       stats: {
         ingestion: ingestionStats,
         forwarding: forwardingStats,
         // Convenience properties for HTML
-        totalIngested: ingestionStats.totalPackets,
+        totalIngested: totalMessages,
         totalForwarded: forwardingStats.totalForwarded,
         successRate: ingestionStats.successRate,
+        avgPerHour: avgPerHour,
+        peakHour: maxHour,
+        growthPercent: growthPercent,
       },
     };
   }
@@ -429,6 +561,43 @@ export class DashboardService {
       data.push(Math.round(current));
     }
     return data;
+  }
+
+  /**
+   * Generate realistic time series data for connectivity status
+   * Simulates historical connectivity trends with slight variations
+   */
+  private generateConnectivityTimeSeries(
+    currentOnline: number,
+    currentDegraded: number,
+    currentOffline: number,
+    dataPoints: number = 24
+  ): Array<{ timestamp: string; online: number; degraded: number; offline: number }> {
+    const now = new Date();
+    const timeSeries: Array<{ timestamp: string; online: number; degraded: number; offline: number }> = [];
+    
+    // Generate data points going backwards in time (hourly intervals for 24h)
+    for (let i = dataPoints - 1; i >= 0; i--) {
+      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000); // 1 hour intervals
+      
+      // Add slight random variation to current values for historical simulation
+      // Recent data points should be closer to current values
+      const recency = 1 - (i / dataPoints); // 0 = oldest, 1 = newest
+      const variance = 1 - (recency * 0.5); // More variance in older data
+      
+      const online = Math.max(0, Math.round(currentOnline + (Math.random() - 0.5) * 2 * variance));
+      const degraded = Math.max(0, Math.round(currentDegraded + (Math.random() - 0.5) * 1 * variance));
+      const offline = Math.max(0, Math.round(currentOffline + (Math.random() - 0.5) * 1 * variance));
+      
+      timeSeries.push({
+        timestamp: timestamp.toISOString(),
+        online,
+        degraded,
+        offline,
+      });
+    }
+    
+    return timeSeries;
   }
 
   private formatTimestamp(date: Date): string {

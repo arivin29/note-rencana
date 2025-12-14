@@ -19,14 +19,11 @@ export class SidebarComponent implements OnInit {
 	) { }
 	
 	ngOnInit() {
-		const allMenus = this.appMenuService.getAppMenus();
-		// Filter menus based on user role
-		this.menus = allMenus.filter(menu => {
-			if (menu.role) {
-				return this.authService.hasRole(menu.role);
-			}
-			return true;
-		});
+		// Get user role from auth service
+		const userRole = this.authService.getCurrentUserRole(); // 'admin' or 'tenant'
+		
+		// Get menus filtered by user role
+		this.menus = this.appMenuService.getMenusByRole(userRole);
 	}
 	
 	isActive(path: string) {

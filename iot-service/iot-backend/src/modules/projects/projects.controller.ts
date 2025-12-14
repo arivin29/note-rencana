@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -22,23 +22,30 @@ export class ProjectsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'idOwner', required: false, type: String })
+  @ApiQuery({ name: 'ownerId', required: false, type: String })
   @ApiQuery({ name: 'areaType', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of projects' })
   findAll(
+    @Request() req: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
-    @Query('idOwner') idOwner?: string,
+    @Query('ownerId') ownerId?: string,
     @Query('areaType') areaType?: string,
     @Query('status') status?: string,
   ) {
+    // Auto-filter by owner for non-admin users
+    const finalOwnerId = req.user?.role !== 'admin' && req.user?.idOwner 
+      ? req.user.idOwner 
+      : ownerId;
+      console.log('Final ownerId used for filtering:', finalOwnerId);
+
     return this.projectsService.findAll({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       search,
-      idOwner,
+      ownerId: finalOwnerId,
       areaType,
       status,
     });
@@ -46,9 +53,18 @@ export class ProjectsController {
 
   @Get('statistics/overview')
   @ApiOperation({ summary: 'Get projects statistics overview' })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner ID' })
   @ApiResponse({ status: 200, description: 'Aggregated statistics' })
-  async getStatistics() {
-    return this.projectsService.getStatistics();
+  async getStatistics(
+    @Request() req: any,
+    @Query('ownerId') ownerId?: string
+  ) {
+    // Auto-filter by owner for non-admin users
+    const finalOwnerId = req.user?.role !== 'admin' && req.user?.idOwner 
+      ? req.user.idOwner 
+      : ownerId;
+
+    return this.projectsService.getStatistics(finalOwnerId);
   }
 
   @Get(':id')

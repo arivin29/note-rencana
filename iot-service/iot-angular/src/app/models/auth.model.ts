@@ -67,3 +67,13 @@ export interface ChangePasswordRequest {
   oldPassword: string;
   newPassword: string;
 }
+
+/**
+ * Owner Context
+ * Used for multi-tenant data filtering
+ */
+export interface OwnerContext {
+  ownerId: string | null;
+  isSuperAdmin: boolean;
+  hasOwnerContext: boolean;
+}

@@ -47,6 +47,17 @@ export class UnpairedDeviceResponseDto {
   lastPayload: any;
 
   @ApiProperty({
+    description: 'History of last 10 payloads with timestamps',
+    example: [
+      { payload: { temperature: 25.5, humidity: 60 }, timestamp: '2025-01-17T14:45:00Z' },
+      { payload: { temperature: 25.3, humidity: 61 }, timestamp: '2025-01-17T14:40:00Z' },
+    ],
+    nullable: true,
+    isArray: true,
+  })
+  payloadHistory?: Array<{ payload: any; timestamp: Date }>;
+
+  @ApiProperty({
     description: 'Last MQTT topic where data was received',
     example: 'devices/lora/867584050123456/up',
     nullable: true,

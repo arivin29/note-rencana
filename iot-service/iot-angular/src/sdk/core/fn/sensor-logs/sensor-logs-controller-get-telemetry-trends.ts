@@ -28,6 +28,11 @@ export interface SensorLogsControllerGetTelemetryTrends$Params {
   channelIds?: string;
 
 /**
+ * Filter by owner ID
+ */
+  ownerId?: string;
+
+/**
  * Data point interval in minutes
  */
   intervalMinutes?: number;
@@ -39,6 +44,7 @@ export function sensorLogsControllerGetTelemetryTrends(http: HttpClient, rootUrl
     rb.path('nodeId', params.nodeId, {});
     rb.query('hours', params.hours, {});
     rb.query('channelIds', params.channelIds, {});
+    rb.query('ownerId', params.ownerId, {});
     rb.query('intervalMinutes', params.intervalMinutes, {});
   }
 

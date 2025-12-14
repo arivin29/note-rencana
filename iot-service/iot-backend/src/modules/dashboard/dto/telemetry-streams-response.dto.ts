@@ -63,6 +63,15 @@ class TelemetryStats {
 
   @ApiProperty({ description: 'Success rate (convenience)', example: 99.4 })
   successRate: number;
+
+  @ApiProperty({ description: 'Average messages per hour', example: 88 })
+  avgPerHour?: number;
+
+  @ApiProperty({ description: 'Peak hour message count', example: 150 })
+  peakHour?: number;
+
+  @ApiProperty({ description: 'Growth percentage vs previous period', example: 15 })
+  growthPercent?: number;
 }
 
 export class TelemetryStreamsResponseDto {

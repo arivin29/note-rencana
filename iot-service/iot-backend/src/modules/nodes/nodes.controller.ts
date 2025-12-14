@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { NodesService } from './nodes.service';
 import { CreateNodeDto } from './dto/create-node.dto';
@@ -25,15 +25,23 @@ export class NodesController {
   @ApiQuery({ name: 'idProject', required: false, type: String })
   @ApiQuery({ name: 'idNodeModel', required: false, type: String })
   @ApiQuery({ name: 'connectivityStatus', required: false, type: String })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner ID' })
   @ApiResponse({ status: 200, description: 'List of nodes' })
   findAll(
+    @Request() req: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('idProject') idProject?: string,
     @Query('idNodeModel') idNodeModel?: string,
     @Query('connectivityStatus') connectivityStatus?: string,
+    @Query('ownerId') ownerId?: string,
   ) {
+    // Auto-filter by owner for non-admin users
+    const finalOwnerId = req.user?.role !== 'admin' && req.user?.idOwner 
+      ? req.user.idOwner 
+      : ownerId;
+
     return this.nodesService.findAll({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -41,14 +49,24 @@ export class NodesController {
       idProject,
       idNodeModel,
       connectivityStatus,
+      ownerId: finalOwnerId,
     });
   }
 
   @Get('statistics/overview')
   @ApiOperation({ summary: 'Get aggregated node statistics' })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner ID' })
   @ApiResponse({ status: 200, description: 'Node statistics overview' })
-  getStatistics() {
-    return this.nodesService.getStatisticsOverview();
+  getStatistics(
+    @Request() req: any,
+    @Query('ownerId') ownerId?: string
+  ) {
+    // Auto-filter by owner for non-admin users
+    const finalOwnerId = req.user?.role !== 'admin' && req.user?.idOwner 
+      ? req.user.idOwner 
+      : ownerId;
+
+    return this.nodesService.getStatisticsOverview(finalOwnerId);
   }
 
   @Get(':id')

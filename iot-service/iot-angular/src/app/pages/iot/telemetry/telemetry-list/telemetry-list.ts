@@ -313,7 +313,7 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         this.projectsService.projectsControllerFindAll$Response({
             page: 1,
             limit: 1000,
-            idOwner: ownerId
+            ownerId: ownerId
         }).subscribe({
             next: (response) => {
                 let body: any = response.body;

@@ -58,21 +58,87 @@ export class DashboardKpiCardsComponent implements OnInit, OnChanges {
   private buildKpiCards(data: KpiStatsResponseDto) {
     this.kpiCards = [
       {
-        title: 'NODES ONLINE',
+        title: 'NODES CONNECTIVITY TREND',
         value: data.nodesOnline.current,
         delta: data.nodesOnline.delta,
         trend: data.nodesOnline.trend,
         info: [
-          { icon: 'fa fa-circle text-success me-1', text: `${data.nodesOnline.healthyPercentage}% healthy` },
-          { icon: 'fa fa-plug me-1', text: `${data.nodesOnline.newDeployments} new deployments` }
+          { icon: 'fa fa-circle text-success me-1', text: `${data.nodesOnline.healthyPercentage}% healthy (${data.nodesOnline.current}/${data.nodesOnline.totalNodes} online)` },
+          { icon: 'fa fa-circle text-warning me-1', text: `${data.nodesOnline.degradedNodes} degraded` },
+          { icon: 'fa fa-circle text-danger me-1', text: `${data.nodesOnline.offlineNodes} offline` }
         ],
         chart: {
-          series: [{ data: data.nodesOnline.sparkline }],
+          series: [
+            { 
+              name: 'Online', 
+              data: data.nodesOnline.timeSeries.map(d => d.online),
+              color: '#10b981' // green
+            },
+            { 
+              name: 'Degraded', 
+              data: data.nodesOnline.timeSeries.map(d => d.degraded),
+              color: '#f59e0b' // yellow
+            },
+            { 
+              name: 'Offline', 
+              data: data.nodesOnline.timeSeries.map(d => d.offline),
+              color: '#ef4444' // red
+            }
+          ],
           options: {
-            chart: { type: 'bar', sparkline: { enabled: true }, height: 30 },
-            plotOptions: { bar: { horizontal: false, columnWidth: '60%', endingShape: 'rounded' } },
-            stroke: { show: false },
-            colors: ['#0EA5E9']
+            chart: { 
+              type: 'area', 
+              height: 80,
+              stacked: true,
+              toolbar: { show: false },
+              sparkline: { enabled: false }
+            },
+            dataLabels: { enabled: false },
+            stroke: { 
+              curve: 'smooth', 
+              width: 2 
+            },
+            fill: {
+              type: 'gradient',
+              gradient: {
+                opacityFrom: 0.6,
+                opacityTo: 0.2,
+              }
+            },
+            xaxis: {
+              categories: data.nodesOnline.timeSeries.map(d => {
+                const date = new Date(d.timestamp);
+                return date.getHours() + ':00';
+              }),
+              labels: {
+                show: true,
+                style: { fontSize: '10px', colors: '#94a3b8' }
+              },
+              axisBorder: { show: false },
+              axisTicks: { show: false }
+            },
+            yaxis: {
+              show: true,
+              labels: {
+                show: true,
+                style: { fontSize: '10px', colors: '#94a3b8' }
+              }
+            },
+            grid: {
+              show: true,
+              borderColor: '#334155',
+              strokeDashArray: 4,
+              padding: { left: 10, right: 10 }
+            },
+            legend: { show: false },
+            colors: ['#10b981', '#f59e0b', '#ef4444'],
+            tooltip: {
+              shared: true,
+              intersect: false,
+              y: {
+                formatter: (val: number) => `${val} nodes`
+              }
+            }
           }
         }
       },
@@ -95,13 +161,14 @@ export class DashboardKpiCardsComponent implements OnInit, OnChanges {
         }
       },
       {
-        title: 'TELEMETRY/MIN',
+        title: 'DATA INGESTION',
         value: this.formatNumber(data.telemetryRate.current),
         delta: data.telemetryRate.delta,
         trend: data.telemetryRate.trend,
         info: [
-          { icon: 'fa fa-arrow-up text-success me-1', text: `LoRa gateways +${data.telemetryRate.loraGrowth}%` },
-          { icon: 'fa fa-satellite-dish me-1', text: `Coverage ${data.telemetryRate.coverage}` }
+          { icon: 'fa fa-microchip text-primary me-1', text: `${data.telemetryRate.activeDevices}/${data.telemetryRate.totalDevices} devices sending` },
+          { icon: 'fa fa-clock text-muted me-1', text: `Last: ${data.telemetryRate.lastMessageSecondsAgo}s ago` },
+          { icon: 'fa fa-list text-success me-1', text: `Queue: ${data.telemetryRate.queueSize} pending` }
         ],
         chart: {
           series: [{ data: data.telemetryRate.sparkline }],
@@ -112,25 +179,29 @@ export class DashboardKpiCardsComponent implements OnInit, OnChanges {
             fill: { opacity: 0.3 }
           }
         }
-      },
-      {
-        title: 'FORWARDED PAYLOADS',
-        value: this.formatNumber(data.forwardedPayloads.current),
-        delta: `Webhook ${data.forwardedPayloads.webhookSuccess}%`,
-        trend: data.forwardedPayloads.trend,
-        info: [
-          { icon: 'fa fa-globe me-1', text: `Webhooks ${data.forwardedPayloads.webhookSuccess}% success` },
-          { icon: 'fa fa-database me-1', text: `DB batches ${data.forwardedPayloads.dbBatchSuccess}%` }
-        ],
-        chart: {
-          series: [60, 25, 15], // Default distribution: webhook, mysql, postgresql
-          options: {
-            chart: { type: 'donut', sparkline: { enabled: true }, height: 45 },
-            stroke: { show: false },
-            colors: ['#0EA5E9', '#6366F1', '#10B981']
-          }
-        }
       }
+      // TODO: FORWARDED PAYLOADS widget - needs redesign
+      // Currently shows technical distribution (webhook/db split) instead of actionable metrics
+      // See: TELEMETRY-WIDGET-REDESIGN.md for similar approach
+      // Proposed: PAYLOAD THROUGHPUT (rate, success rate, queue size)
+      // {
+      //   title: 'FORWARDED PAYLOADS',
+      //   value: this.formatNumber(data.forwardedPayloads.current),
+      //   delta: `Webhook ${data.forwardedPayloads.webhookSuccess}%`,
+      //   trend: data.forwardedPayloads.trend,
+      //   info: [
+      //     { icon: 'fa fa-globe me-1', text: `Webhooks ${data.forwardedPayloads.webhookSuccess}% success` },
+      //     { icon: 'fa fa-database me-1', text: `DB batches ${data.forwardedPayloads.dbBatchSuccess}%` }
+      //   ],
+      //   chart: {
+      //     series: [60, 25, 15],
+      //     options: {
+      //       chart: { type: 'donut', sparkline: { enabled: true }, height: 45 },
+      //       stroke: { show: false },
+      //       colors: ['#0EA5E9', '#6366F1', '#10B981']
+      //     }
+      //   }
+      // }
     ];
   }
 

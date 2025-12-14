@@ -209,6 +209,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
             this.logger.log(`✅ Saved [${label}] ${deviceId} → ${savedLog.id}`);
 
+            // Auto-update node connectivity status to 'online'
+            await this.updateNodeConnectivity(deviceId);
+
         } catch (error) {
             this.logger.error(
                 `❌ Failed to handle MQTT message from topic '${topic}': ${error.message}`,
@@ -300,6 +303,40 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
+     * Update node connectivity status when telemetry received
+     */
+    private async updateNodeConnectivity(deviceId: string): Promise<void> {
+        try {
+            // Find node by serial_number, dev_eui, or code
+            const node = await this.nodeRepository.findOne({
+                where: [
+                    { serialNumber: deviceId },
+                    { devEui: deviceId },
+                    { code: deviceId },
+                ],
+            });
+
+            if (!node) {
+                this.logger.warn(`⚠️  Node not found for connectivity update: ${deviceId}`);
+                return;
+            }
+
+            // Update connectivity status to 'online' and last_seen_at
+            const wasOffline = node.connectivityStatus !== 'online';
+            node.connectivityStatus = 'online';
+            node.lastSeenAt = new Date();
+
+            await this.nodeRepository.save(node);
+
+            if (wasOffline) {
+                this.logger.log(`🟢 Node ${deviceId} status changed to ONLINE`);
+            }
+        } catch (error) {
+            this.logger.error(`❌ Failed to update node connectivity: ${error.message}`);
+        }
+    }
+
+    /**
      * Check if device is paired (exists in nodes table)
      */
     private async isDevicePaired(deviceId: string): Promise<boolean> {
@@ -355,9 +392,17 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
             if (existing) {
                 // Update existing record
                 existing.lastSeenAt = new Date();
-                existing.lastPayload = payload;
                 existing.lastTopic = topic;
                 existing.seenCount += 1;
+
+                // Update payload history (keep last 10)
+                const payloadHistory = Array.isArray(existing.lastPayload) ? existing.lastPayload : [];
+                payloadHistory.unshift({
+                    payload,
+                    timestamp: new Date(),
+                });
+                // Keep only last 10 payloads
+                existing.lastPayload = payloadHistory.slice(0, 10);
 
                 // Update suggested owner if found
                 if (suggestedOwner) {
@@ -367,12 +412,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                 await this.unpairedDeviceRepository.save(existing);
                 this.logger.log(`📝 Updated unpaired device: ${deviceId} (seen ${existing.seenCount} times)`);
             } else {
-                // Create new record
+                // Create new record with payload in array format
                 const unpaired = this.unpairedDeviceRepository.create({
                     hardwareId: deviceId,
                     firstSeenAt: new Date(),
                     lastSeenAt: new Date(),
-                    lastPayload: payload,
+                    lastPayload: [{
+                        payload,
+                        timestamp: new Date(),
+                    }],
                     lastTopic: topic,
                     seenCount: 1,
                     suggestedOwner,

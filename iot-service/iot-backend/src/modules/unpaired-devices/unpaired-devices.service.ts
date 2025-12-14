@@ -93,6 +93,7 @@ export class UnpairedDevicesService {
     nodeModelId?: string;
     projectId?: string;
     ownerId?: string;
+    ownerCodePrefix?: string;
     seenAfter?: Date;
     seenBefore?: Date;
     limit?: number;
@@ -120,6 +121,11 @@ export class UnpairedDevicesService {
 
     if (filters?.ownerId) {
       query.andWhere('device.suggestedOwner = :ownerId', { ownerId: filters.ownerId });
+    }
+
+    // Filter by owner code prefix (e.g., 'DEMO1-')
+    if (filters?.ownerCodePrefix) {
+      query.andWhere('device.hardwareId LIKE :prefix', { prefix: `${filters.ownerCodePrefix}-%` });
     }
 
     if (filters?.seenAfter) {
@@ -158,11 +164,31 @@ export class UnpairedDevicesService {
       throw new NotFoundException(`Unpaired device with ID '${id}' not found`);
     }
 
-    return this.mapToResponseDto(device);
+    const response = this.mapToResponseDto(device);
+    
+    // Extract payload history from last_payload field (which is now an array)
+    if (device.lastPayload && Array.isArray(device.lastPayload)) {
+      response.payloadHistory = device.lastPayload;
+      // Also set lastPayload to the most recent one for backward compatibility
+      if (device.lastPayload.length > 0) {
+        response.lastPayload = device.lastPayload[0].payload;
+      }
+    } else {
+      // Fallback for old format (single object)
+      response.payloadHistory = [];
+      if (device.lastPayload) {
+        response.payloadHistory.push({
+          payload: device.lastPayload,
+          timestamp: device.lastSeenAt,
+        });
+      }
+    }
+
+    return response;
   }
 
   /**
-   * Get device by hardware_id
+   * Get device by hardware_id with last 10 payload history
    */
   async findByHardwareId(hardwareId: string): Promise<UnpairedDeviceResponseDto> {
     const device = await this.unpairedDeviceRepository.findOne({
@@ -174,7 +200,27 @@ export class UnpairedDevicesService {
       throw new NotFoundException(`Unpaired device with hardware_id '${hardwareId}' not found`);
     }
 
-    return this.mapToResponseDto(device);
+    const response = this.mapToResponseDto(device);
+    
+    // Extract payload history from last_payload field (which is now an array)
+    if (device.lastPayload && Array.isArray(device.lastPayload)) {
+      response.payloadHistory = device.lastPayload;
+      // Also set lastPayload to the most recent one for backward compatibility
+      if (device.lastPayload.length > 0) {
+        response.lastPayload = device.lastPayload[0].payload;
+      }
+    } else {
+      // Fallback for old format (single object)
+      response.payloadHistory = [];
+      if (device.lastPayload) {
+        response.payloadHistory.push({
+          payload: device.lastPayload,
+          timestamp: device.lastSeenAt,
+        });
+      }
+    }
+
+    return response;
   }
 
   /**
@@ -273,12 +319,21 @@ export class UnpairedDevicesService {
   /**
    * Get statistics about unpaired devices
    */
-  async getStats(): Promise<UnpairedDeviceStatsDto> {
+  async getStats(ownerCodePrefix?: string): Promise<UnpairedDeviceStatsDto> {
+    // Build base query for filtering
+    const buildQuery = () => {
+      const query = this.unpairedDeviceRepository.createQueryBuilder('device');
+      if (ownerCodePrefix) {
+        query.where('device.hardwareId LIKE :prefix', { prefix: `${ownerCodePrefix}-%` });
+      }
+      return query;
+    };
+
     const [total, pending, paired, ignored] = await Promise.all([
-      this.unpairedDeviceRepository.count(),
-      this.unpairedDeviceRepository.count({ where: { status: 'pending' } }),
-      this.unpairedDeviceRepository.count({ where: { status: 'paired' } }),
-      this.unpairedDeviceRepository.count({ where: { status: 'ignored' } }),
+      buildQuery().getCount(),
+      buildQuery().andWhere('device.status = :status', { status: 'pending' }).getCount(),
+      buildQuery().andWhere('device.status = :status', { status: 'paired' }).getCount(),
+      buildQuery().andWhere('device.status = :status', { status: 'ignored' }).getCount(),
     ]);
 
     const now = new Date();
@@ -286,15 +341,10 @@ export class UnpairedDevicesService {
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const [seenLast24h, seenLast7d, withSuggestions] = await Promise.all([
-      this.unpairedDeviceRepository.count({
-        where: { lastSeenAt: MoreThanOrEqual(last24h) },
-      }),
-      this.unpairedDeviceRepository.count({
-        where: { lastSeenAt: MoreThanOrEqual(last7d) },
-      }),
-      this.unpairedDeviceRepository
-        .createQueryBuilder('device')
-        .where('device.suggestedProject IS NOT NULL OR device.suggestedOwner IS NOT NULL')
+      buildQuery().andWhere('device.lastSeenAt >= :last24h', { last24h }).getCount(),
+      buildQuery().andWhere('device.lastSeenAt >= :last7d', { last7d }).getCount(),
+      buildQuery()
+        .andWhere('(device.suggestedProject IS NOT NULL OR device.suggestedOwner IS NOT NULL)')
         .getCount(),
     ]);
 
@@ -313,6 +363,7 @@ export class UnpairedDevicesService {
    * Map entity to response DTO
    */
   private mapToResponseDto(device: NodeUnpairedDevice): UnpairedDeviceResponseDto {
+    // console.log('Mapping unpaired device to response DTO:', device);
     return {
       idNodeUnpairedDevice: device.idNodeUnpairedDevice,
       hardwareId: device.hardwareId,

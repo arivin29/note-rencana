@@ -10,8 +10,11 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UnpairedDevicesService } from './unpaired-devices.service';
 import {
   CreateUnpairedDeviceDto,
@@ -20,11 +23,16 @@ import {
   PairDeviceDto,
   UnpairedDeviceStatsDto,
 } from './dto';
+import { Owner } from '../../entities/owner.entity';
 
 @ApiTags('Unpaired Devices')
 @Controller('unpaired-devices')
 export class UnpairedDevicesController {
-  constructor(private readonly unpairedDevicesService: UnpairedDevicesService) {}
+  constructor(
+    private readonly unpairedDevicesService: UnpairedDevicesService,
+    @InjectRepository(Owner)
+    private readonly ownerRepository: Repository<Owner>,
+  ) {}
 
   /**
    * Create new unpaired device
@@ -81,7 +89,7 @@ export class UnpairedDevicesController {
   @Get()
   @ApiOperation({
     summary: 'Get all unpaired devices',
-    description: 'List all unpaired devices with optional filters',
+    description: 'List all unpaired devices with optional filters. Non-admin users filtered by owner code prefix.',
   })
   @ApiQuery({ name: 'status', required: false, enum: ['pending', 'paired', 'ignored'] })
   @ApiQuery({ name: 'nodeModelId', required: false, type: String })
@@ -97,6 +105,7 @@ export class UnpairedDevicesController {
     type: [UnpairedDeviceResponseDto],
   })
   async findAll(
+    @Request() req: any,
     @Query('status') status?: 'pending' | 'paired' | 'ignored',
     @Query('nodeModelId') nodeModelId?: string,
     @Query('projectId') projectId?: string,
@@ -106,11 +115,28 @@ export class UnpairedDevicesController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ): Promise<UnpairedDeviceResponseDto[]> {
+    // For non-admin users, get owner code and filter by hardware_id prefix
+    let ownerCodePrefix: string | undefined;
+    
+    if (req.user?.role !== 'admin' && req.user?.idOwner) {
+      // Get owner code
+      const owner = await this.ownerRepository.findOne({
+        where: { idOwner: req.user.idOwner },
+        select: ['ownerCode'],
+      });
+      
+      if (owner) {
+        ownerCodePrefix = owner.ownerCode;
+        console.log('Filtering unpaired devices for tenant user:', req.user.email, 'ownerCode:', ownerCodePrefix);
+      }
+    }
+    
     return this.unpairedDevicesService.findAll({
       status,
       nodeModelId,
       projectId,
       ownerId,
+      ownerCodePrefix, // Pass owner code prefix for filtering
       seenAfter: seenAfter ? new Date(seenAfter) : undefined,
       seenBefore: seenBefore ? new Date(seenBefore) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -124,15 +150,29 @@ export class UnpairedDevicesController {
   @Get('stats')
   @ApiOperation({
     summary: 'Get unpaired devices statistics',
-    description: 'Get statistics about unpaired devices (total, by status, recent activity)',
+    description: 'Get statistics about unpaired devices (total, by status, recent activity). Filtered by owner for non-admin.',
   })
   @ApiResponse({
     status: 200,
     description: 'Unpaired devices statistics',
     type: UnpairedDeviceStatsDto,
   })
-  async getStats(): Promise<UnpairedDeviceStatsDto> {
-    return this.unpairedDevicesService.getStats();
+  async getStats(@Request() req: any): Promise<UnpairedDeviceStatsDto> {
+    // For non-admin users, get owner code and filter stats
+    let ownerCodePrefix: string | undefined;
+    
+    if (req.user?.role !== 'admin' && req.user?.idOwner) {
+      const owner = await this.ownerRepository.findOne({
+        where: { idOwner: req.user.idOwner },
+        select: ['ownerCode'],
+      });
+      
+      if (owner) {
+        ownerCodePrefix = owner.ownerCode;
+      }
+    }
+    
+    return this.unpairedDevicesService.getStats(ownerCodePrefix);
   }
 
   /**

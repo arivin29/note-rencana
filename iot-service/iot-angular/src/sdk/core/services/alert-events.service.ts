@@ -22,6 +22,10 @@ import { alertEventsControllerFindAll } from '../fn/alert-events/alert-events-co
 import { AlertEventsControllerFindAll$Params } from '../fn/alert-events/alert-events-controller-find-all';
 import { alertEventsControllerFindOne } from '../fn/alert-events/alert-events-controller-find-one';
 import { AlertEventsControllerFindOne$Params } from '../fn/alert-events/alert-events-controller-find-one';
+import { alertEventsControllerGetOfflineNodesSummary } from '../fn/alert-events/alert-events-controller-get-offline-nodes-summary';
+import { AlertEventsControllerGetOfflineNodesSummary$Params } from '../fn/alert-events/alert-events-controller-get-offline-nodes-summary';
+import { alertEventsControllerGetStatistics } from '../fn/alert-events/alert-events-controller-get-statistics';
+import { AlertEventsControllerGetStatistics$Params } from '../fn/alert-events/alert-events-controller-get-statistics';
 import { alertEventsControllerRemove } from '../fn/alert-events/alert-events-controller-remove';
 import { AlertEventsControllerRemove$Params } from '../fn/alert-events/alert-events-controller-remove';
 import { alertEventsControllerUpdate } from '../fn/alert-events/alert-events-controller-update';
@@ -96,6 +100,72 @@ export class AlertEventsService extends BaseService {
   alertEventsControllerCreate(params: AlertEventsControllerCreate$Params, context?: HttpContext): Observable<AlertEventResponseDto> {
     return this.alertEventsControllerCreate$Response(params, context).pipe(
       map((r: StrictHttpResponse<AlertEventResponseDto>): AlertEventResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `alertEventsControllerGetStatistics()` */
+  static readonly AlertEventsControllerGetStatisticsPath = '/api/alert-events/statistics/summary';
+
+  /**
+   * Get alert statistics.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `alertEventsControllerGetStatistics()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  alertEventsControllerGetStatistics$Response(params?: AlertEventsControllerGetStatistics$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return alertEventsControllerGetStatistics(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get alert statistics.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `alertEventsControllerGetStatistics$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  alertEventsControllerGetStatistics(params?: AlertEventsControllerGetStatistics$Params, context?: HttpContext): Observable<void> {
+    return this.alertEventsControllerGetStatistics$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `alertEventsControllerGetOfflineNodesSummary()` */
+  static readonly AlertEventsControllerGetOfflineNodesSummaryPath = '/api/alert-events/statistics/offline-nodes';
+
+  /**
+   * Get offline nodes summary.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `alertEventsControllerGetOfflineNodesSummary()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  alertEventsControllerGetOfflineNodesSummary$Response(params?: AlertEventsControllerGetOfflineNodesSummary$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return alertEventsControllerGetOfflineNodesSummary(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get offline nodes summary.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `alertEventsControllerGetOfflineNodesSummary$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  alertEventsControllerGetOfflineNodesSummary(params?: AlertEventsControllerGetOfflineNodesSummary$Params, context?: HttpContext): Observable<void> {
+    return this.alertEventsControllerGetOfflineNodesSummary$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

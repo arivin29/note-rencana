@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MqttService } from './mqtt.service';
+import { ConnectivityMonitorService } from './connectivity-monitor.service';
 import { IotLogModule } from '../iot-log/iot-log.module';
 import { Node, NodeUnpairedDevice, Sensor, SensorCatalog } from '../../entities/existing';
 import { Owner } from '../../entities/existing/owner.entity';
@@ -10,7 +11,7 @@ import { Owner } from '../../entities/existing/owner.entity';
     IotLogModule,
     TypeOrmModule.forFeature([Node, NodeUnpairedDevice, Owner, Sensor, SensorCatalog]),
   ],
-  providers: [MqttService],
-  exports: [MqttService],
+  providers: [MqttService, ConnectivityMonitorService],
+  exports: [MqttService, ConnectivityMonitorService],
 })
 export class MqttModule {}

@@ -11,11 +11,17 @@ import { RequestBuilder } from '../../request-builder';
 import { SensorLogStatisticsDto } from '../../models/sensor-log-statistics-dto';
 
 export interface SensorLogsControllerGetStatistics$Params {
+
+/**
+ * Filter by owner ID
+ */
+  ownerId?: string;
 }
 
 export function sensorLogsControllerGetStatistics(http: HttpClient, rootUrl: string, params?: SensorLogsControllerGetStatistics$Params, context?: HttpContext): Observable<StrictHttpResponse<SensorLogStatisticsDto>> {
   const rb = new RequestBuilder(rootUrl, sensorLogsControllerGetStatistics.PATH, 'get');
   if (params) {
+    rb.query('ownerId', params.ownerId, {});
   }
 
   return http.request(

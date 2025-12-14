@@ -5,9 +5,9 @@
 export interface TelemetryRateMetric {
 
   /**
-   * Coverage status
+   * Active devices sending data
    */
-  coverage: string;
+  activeDevices: number;
 
   /**
    * Current value
@@ -20,14 +20,24 @@ export interface TelemetryRateMetric {
   delta: string;
 
   /**
-   * LoRa gateway growth percentage
+   * Last message received (seconds ago)
    */
-  loraGrowth: number;
+  lastMessageSecondsAgo: number;
+
+  /**
+   * Pending queue size
+   */
+  queueSize: number;
 
   /**
    * Sparkline data points (last 12 intervals)
    */
   sparkline: Array<number>;
+
+  /**
+   * Total devices
+   */
+  totalDevices: number;
 
   /**
    * Trend direction

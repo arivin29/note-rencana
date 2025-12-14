@@ -549,9 +549,17 @@ export class TelemetryProcessorService {
       if (existing) {
         // Update existing entry
         existing.lastSeenAt = new Date();
-        existing.lastPayload = payload;
         existing.lastTopic = topic;
         existing.seenCount = existing.seenCount + 1;
+
+        // Update payload history (keep last 10)
+        const payloadHistory = Array.isArray(existing.lastPayload) ? existing.lastPayload : [];
+        payloadHistory.unshift({
+          payload,
+          timestamp: new Date(),
+        });
+        // Keep only last 10 payloads
+        existing.lastPayload = payloadHistory.slice(0, 10);
 
         // If paired_node_id provided, update it
         if (pairedNodeId) {
@@ -567,10 +575,13 @@ export class TelemetryProcessorService {
 
         this.logger.debug(`Updated unpaired device tracking for ${hardwareId}, seen ${existing.seenCount} times`);
       } else {
-        // Create new entry
+        // Create new entry with payload in array format
         const unpairedDevice = this.nodeUnpairedDeviceRepository.create({
           hardwareId,
-          lastPayload: payload,
+          lastPayload: [{
+            payload,
+            timestamp: new Date(),
+          }],
           lastTopic: topic,
           seenCount: 1,
           status: 'pending',

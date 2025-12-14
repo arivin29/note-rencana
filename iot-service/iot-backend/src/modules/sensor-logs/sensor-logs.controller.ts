@@ -102,6 +102,7 @@ export class SensorLogsController {
     description: 'The UUID of the node',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Telemetry trends retrieved successfully',
@@ -123,13 +124,14 @@ export class SensorLogsController {
     summary: 'Get sensor logs statistics',
     description: 'Retrieve aggregated statistics including total logs, distribution by quality/source, recent activity, and top channels',
   })
+  @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Statistics retrieved successfully',
     type: SensorLogStatisticsDto,
   })
-  async getStatistics(): Promise<SensorLogStatisticsDto> {
-    return this.sensorLogsService.getStatistics();
+  async getStatistics(@Query('ownerId') ownerId?: string): Promise<SensorLogStatisticsDto> {
+    return this.sensorLogsService.getStatistics(ownerId);
   }
 
   /**

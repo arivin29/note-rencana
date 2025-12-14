@@ -7,14 +7,29 @@ import { IngestionStats } from '../models/ingestion-stats';
 export interface TelemetryStats {
 
   /**
+   * Average messages per hour
+   */
+  avgPerHour: number;
+
+  /**
    * Forwarding statistics
    */
   forwarding: ForwardingStats;
 
   /**
+   * Growth percentage vs previous period
+   */
+  growthPercent: number;
+
+  /**
    * Ingestion statistics
    */
   ingestion: IngestionStats;
+
+  /**
+   * Peak hour message count
+   */
+  peakHour: number;
 
   /**
    * Success rate (convenience)

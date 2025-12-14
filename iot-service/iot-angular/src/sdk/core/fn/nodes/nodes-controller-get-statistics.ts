@@ -10,11 +10,17 @@ import { RequestBuilder } from '../../request-builder';
 
 
 export interface NodesControllerGetStatistics$Params {
+
+/**
+ * Filter by owner ID
+ */
+  ownerId?: string;
 }
 
 export function nodesControllerGetStatistics(http: HttpClient, rootUrl: string, params?: NodesControllerGetStatistics$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, nodesControllerGetStatistics.PATH, 'get');
   if (params) {
+    rb.query('ownerId', params.ownerId, {});
   }
 
   return http.request(

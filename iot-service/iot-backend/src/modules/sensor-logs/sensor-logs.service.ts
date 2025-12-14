@@ -185,6 +185,11 @@ export class SensorLogsService {
       .andWhere('log.ts >= :startDate', { startDate })
       .orderBy('log.ts', 'ASC');
 
+    // Apply owner filter if provided
+    if (query.ownerId) {
+      queryBuilder.andWhere('log.idOwner = :ownerId', { ownerId: query.ownerId });
+    }
+
     if (channelIds && channelIds.length > 0) {
       queryBuilder.andWhere('log.idSensorChannel IN (:...channelIds)', { channelIds });
     }
@@ -256,49 +261,79 @@ export class SensorLogsService {
   /**
    * Get sensor log statistics
    */
-  async getStatistics(): Promise<SensorLogStatisticsDto> {
+  async getStatistics(ownerId?: string): Promise<SensorLogStatisticsDto> {
+    // Base query builder for owner filtering
+    const baseQuery = this.sensorLogRepository.createQueryBuilder('log');
+    
+    if (ownerId) {
+      baseQuery.where('log.idOwner = :ownerId', { ownerId });
+    }
+
     // Total logs
-    const totalLogs = await this.sensorLogRepository.count();
+    const totalLogs = await baseQuery.getCount();
 
     // By quality
-    const byQuality = await this.sensorLogRepository
+    const qualityQuery = this.sensorLogRepository
       .createQueryBuilder('log')
       .select('log.qualityFlag', 'qualityFlag')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('log.qualityFlag')
-      .getRawMany();
+      .groupBy('log.qualityFlag');
+    
+    if (ownerId) {
+      qualityQuery.where('log.idOwner = :ownerId', { ownerId });
+    }
+    
+    const byQuality = await qualityQuery.getRawMany();
 
     const byQualityFormatted = byQuality.map(item => ({
       qualityFlag: item.qualityFlag || 'unknown',
       count: parseInt(item.count, 10),
-      percentage: parseFloat(((parseInt(item.count, 10) / totalLogs) * 100).toFixed(2)),
+      percentage: totalLogs > 0 ? parseFloat(((parseInt(item.count, 10) / totalLogs) * 100).toFixed(2)) : 0,
     }));
 
     // By source
-    const bySource = await this.sensorLogRepository
+    const sourceQuery = this.sensorLogRepository
       .createQueryBuilder('log')
       .select('log.ingestionSource', 'source')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('log.ingestionSource')
-      .getRawMany();
+      .groupBy('log.ingestionSource');
+    
+    if (ownerId) {
+      sourceQuery.where('log.idOwner = :ownerId', { ownerId });
+    }
+    
+    const bySource = await sourceQuery.getRawMany();
 
     const bySourceFormatted = bySource.map(item => ({
       source: item.source || 'unknown',
       count: parseInt(item.count, 10),
-      percentage: parseFloat(((parseInt(item.count, 10) / totalLogs) * 100).toFixed(2)),
+      percentage: totalLogs > 0 ? parseFloat(((parseInt(item.count, 10) / totalLogs) * 100).toFixed(2)) : 0,
     }));
 
-    // Recent activity
-    const last24h = await this.sensorLogRepository.count({
-      where: { ts: MoreThanOrEqual(new Date(Date.now() - 24 * 60 * 60 * 1000)) },
-    });
+    // Recent activity - last 24h
+    const last24hQuery = this.sensorLogRepository
+      .createQueryBuilder('log')
+      .where('log.ts >= :date', { date: new Date(Date.now() - 24 * 60 * 60 * 1000) });
+    
+    if (ownerId) {
+      last24hQuery.andWhere('log.idOwner = :ownerId', { ownerId });
+    }
+    
+    const last24h = await last24hQuery.getCount();
 
-    const lastHour = await this.sensorLogRepository.count({
-      where: { ts: MoreThanOrEqual(new Date(Date.now() - 60 * 60 * 1000)) },
-    });
+    // Recent activity - last hour
+    const lastHourQuery = this.sensorLogRepository
+      .createQueryBuilder('log')
+      .where('log.ts >= :date', { date: new Date(Date.now() - 60 * 60 * 1000) });
+    
+    if (ownerId) {
+      lastHourQuery.andWhere('log.idOwner = :ownerId', { ownerId });
+    }
+    
+    const lastHour = await lastHourQuery.getCount();
 
     // Top channels
-    const topChannels = await this.sensorLogRepository
+    const topChannelsQuery = this.sensorLogRepository
       .createQueryBuilder('log')
       .leftJoin('log.sensorChannel', 'channel')
       .select('log.idSensorChannel', 'idSensorChannel')
@@ -308,9 +343,14 @@ export class SensorLogsService {
       .addSelect('MAX(log.ts)', 'latestTimestamp')
       .groupBy('log.idSensorChannel')
       .addGroupBy('channel.metricCode')
-      .orderBy('logCount', 'DESC')
-      .limit(10)
-      .getRawMany();
+      .orderBy('"logCount"', 'DESC')
+      .limit(10);
+    
+    if (ownerId) {
+      topChannelsQuery.where('log.idOwner = :ownerId', { ownerId });
+    }
+    
+    const topChannels = await topChannelsQuery.getRawMany();
 
     return {
       totalLogs,

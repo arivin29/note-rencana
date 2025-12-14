@@ -175,7 +175,7 @@ export class OwnersService extends BaseService {
   /**
    * Delete owner.
    *
-   * Permanently deletes an owner and all related data (cascade)
+   * Permanently deletes an owner and all related data (cascade). Admin only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `ownersControllerRemove()` instead.
@@ -189,7 +189,7 @@ export class OwnersService extends BaseService {
   /**
    * Delete owner.
    *
-   * Permanently deletes an owner and all related data (cascade)
+   * Permanently deletes an owner and all related data (cascade). Admin only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `ownersControllerRemove$Response()` instead.

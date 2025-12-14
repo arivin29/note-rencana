@@ -166,6 +166,11 @@ export class GetTelemetryTrendsQueryDto {
   @IsString()
   channelIds?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by owner ID' })
+  @IsOptional()
+  @IsUUID()
+  ownerId?: string;
+
   @ApiPropertyOptional({ description: 'Data point interval in minutes', minimum: 1, maximum: 60, default: 10 })
   @IsOptional()
   @IsNumber()

@@ -13,7 +13,7 @@ export interface ProjectsControllerFindAll$Params {
   page?: number;
   limit?: number;
   search?: string;
-  idOwner?: string;
+  ownerId?: string;
   areaType?: string;
   status?: string;
 }
@@ -24,7 +24,7 @@ export function projectsControllerFindAll(http: HttpClient, rootUrl: string, par
     rb.query('page', params.page, {});
     rb.query('limit', params.limit, {});
     rb.query('search', params.search, {});
-    rb.query('idOwner', params.idOwner, {});
+    rb.query('ownerId', params.ownerId, {});
     rb.query('areaType', params.areaType, {});
     rb.query('status', params.status, {});
   }

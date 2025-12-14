@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { OwnersService } from '../../../../../sdk/core/services/owners.service';
+import { UsersService } from '../../../../../sdk/core/services/users.service';
 import { OwnerDetailResponseDto } from '../../../../../sdk/core/models/owner-detail-response-dto';
 import { ForwardingWebhookResponseDto } from '../../../../../sdk/core/models/forwarding-webhook-response-dto';
 import { ForwardingDatabaseResponseDto } from '../../../../../sdk/core/models/forwarding-database-response-dto';
+import { UserResponseDto } from '../../../../../sdk/core/models/user-response-dto';
+import { UserModal } from '../user-modal/user-modal';
 
 interface OwnerProfile {
   name: string;
@@ -164,42 +168,52 @@ export class OwnersDetailPage implements OnInit {
     }
   ];
 
-  forwardingLogs: ForwardingLog[] = [
-    {
-      id: 'LOG-20240526-01',
-      target: 'Command Center Webhook',
-      type: 'webhook',
-      status: 'success',
-      timestamp: '2024-05-26 09:12',
-      attempts: 1,
-      message: 'Delivered 37 telemetry rows',
-      durationMs: 220
-    },
-    {
-      id: 'LOG-20240526-02',
-      target: 'MySQL Warehouse',
-      type: 'mysql',
-      status: 'success',
-      timestamp: '2024-05-26 09:10',
-      attempts: 1,
-      message: 'Batch insert (200 rows)',
-      durationMs: 410
-    },
-    {
-      id: 'LOG-20240526-03',
-      target: 'PostgreSQL Ops DB',
-      type: 'postgres',
-      status: 'failed',
-      timestamp: '2024-05-26 08:55',
-      attempts: 3,
-      message: 'Target disabled – skipping execution',
-      durationMs: 35
-    }
-  ];
+  // TODO: Dummy data - hidden in template until real endpoint implemented
+  // forwardingLogs: ForwardingLog[] = [
+  //   {
+  //     id: 'LOG-20240526-01',
+  //     target: 'Command Center Webhook',
+  //     type: 'webhook',
+  //     status: 'success',
+  //     timestamp: '2024-05-26 09:12',
+  //     attempts: 1,
+  //     message: 'Delivered 37 telemetry rows',
+  //     durationMs: 220
+  //   },
+  //   {
+  //     id: 'LOG-20240526-02',
+  //     target: 'MySQL Warehouse',
+  //     type: 'mysql',
+  //     status: 'success',
+  //     timestamp: '2024-05-26 09:10',
+  //     attempts: 1,
+  //     message: 'Batch insert (200 rows)',
+  //     durationMs: 410
+  //   },
+  //   {
+  //     id: 'LOG-20240526-03',
+  //     target: 'PostgreSQL Ops DB',
+  //     type: 'postgres',
+  //     status: 'failed',
+  //     timestamp: '2024-05-26 08:55',
+  //     attempts: 3,
+  //     message: 'Target disabled – skipping execution',
+  //     durationMs: 35
+  //   }
+  // ];
+  forwardingLogs: ForwardingLog[] = []; // Empty until real endpoint ready
+
+  // User Management
+  ownerUsers: UserResponseDto[] = [];
+  loadingUsers = false;
+  usersError = '';
 
   constructor(
     private route: ActivatedRoute,
-    private ownersService: OwnersService
+    private router: Router,
+    private modalService: NgbModal,
+    private ownersService: OwnersService,
+    private usersService: UsersService
   ) {
     this.route.paramMap.subscribe((params) => {
       this.ownerId = params.get('ownerId') ?? '';
@@ -224,6 +238,8 @@ export class OwnersDetailPage implements OnInit {
           this.ownerData = data;
           this.mapOwnerDataToProfile(data);
           this.loading = false;
+          // Load users after owner details are loaded
+          this.loadOwnerUsers();
         },
         error: (err) => {
           console.error('Error loading owner detail:', err);
@@ -305,31 +321,32 @@ export class OwnersDetailPage implements OnInit {
       this.postgresDatabaseId = null;
     }
 
+    // TODO: Forwarding logs - disabled until backend endpoint ready
     // Map forwarding logs from API
-    if (data.forwardingLogs && data.forwardingLogs.length > 0) {
-      this.forwardingLogs = data.forwardingLogs.map(log => {
-        // Find target name from webhook or database config
-        let targetName = 'Unknown Target';
-        if (log.configType === 'webhook') {
-          const webhook = data.forwardingWebhooks?.find(w => w.idOwnerForwardingWebhook === log.configId);
-          targetName = webhook?.label || 'Webhook';
-        } else if (log.configType === 'database') {
-          const db = data.forwardingDatabases?.find(d => d.idOwnerForwardingDb === log.configId);
-          targetName = db?.label || 'Database';
-        }
+    // if (data.forwardingLogs && data.forwardingLogs.length > 0) {
+    //   this.forwardingLogs = data.forwardingLogs.map(log => {
+    //     // Find target name from webhook or database config
+    //     let targetName = 'Unknown Target';
+    //     if (log.configType === 'webhook') {
+    //       const webhook = data.forwardingWebhooks?.find(w => w.idOwnerForwardingWebhook === log.configId);
+    //       targetName = webhook?.label || 'Webhook';
+    //     } else if (log.configType === 'database') {
+    //       const db = data.forwardingDatabases?.find(d => d.idOwnerForwardingDb === log.configId);
+    //       targetName = db?.label || 'Database';
+    //     }
 
-        return {
-          id: log.idOwnerForwardingLog,
-          target: targetName,
-          type: (log.configType as 'webhook' | 'mysql' | 'postgres'),
-          status: (log.status as 'success' | 'failed' | 'pending'),
-          timestamp: new Date(log.createdAt).toLocaleString(),
-          attempts: log.attempts || 1,
-          message: log.errorMessage || `${log.status === 'success' ? 'Delivered successfully' : 'Delivery failed'}`,
-          durationMs: log.durationMs || 0
-        };
-      });
-    }
+    //     return {
+    //       id: log.idOwnerForwardingLog,
+    //       target: targetName,
+    //       type: (log.configType as 'webhook' | 'mysql' | 'postgres'),
+    //       status: (log.status as 'success' | 'failed' | 'pending'),
+    //       timestamp: new Date(log.createdAt).toLocaleString(),
+    //       attempts: log.attempts || 1,
+    //       message: log.errorMessage || `${log.status === 'success' ? 'Delivered successfully' : 'Delivery failed'}`,
+    //       durationMs: log.durationMs || 0
+    //     };
+    //   });
+    // }
   }
 
   determineForwardingStatus(data: OwnerDetailResponseDto): string {
@@ -678,5 +695,102 @@ export class OwnersDetailPage implements OnInit {
           }
         });
     }
+  }
+
+  // ===========================
+  // User Management Methods
+  // ===========================
+
+  loadOwnerUsers(): void {
+    this.loadingUsers = true;
+    this.usersError = '';
+
+    this.usersService
+      .usersControllerFindAll({
+        idOwner: this.ownerId
+      })
+      .subscribe({
+        next: (response) => {
+          this.ownerUsers = response.data || [];
+          this.loadingUsers = false;
+        },
+        error: (err) => {
+          console.error('Error loading owner users:', err);
+          this.usersError = 'Failed to load users';
+          this.loadingUsers = false;
+        }
+      });
+  }
+
+  openUserModal(mode: 'create' | 'edit', user: UserResponseDto | null): void {
+    if (mode === 'edit' && user) {
+      // Navigate to existing user detail page
+      this.router.navigate(['/admin/users', user.idUser]);
+      return;
+    }
+
+    // Open modal for create new user
+    const modalRef = this.modalService.open(UserModal, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    modalRef.componentInstance.mode = 'create';
+    modalRef.componentInstance.user = null;
+    modalRef.componentInstance.ownerId = this.ownerId;
+    modalRef.componentInstance.ownerName = this.ownerProfile?.name || this.ownerData?.name || 'Unknown';
+
+    modalRef.result.then(
+      (result) => {
+        if (result === 'saved') {
+          console.log('User saved successfully, refreshing list...');
+          this.loadOwnerUsers(); // Refresh user list
+        }
+      },
+      (reason) => {
+        console.log('Modal dismissed:', reason);
+      }
+    );
+  }
+
+  toggleUserStatus(user: UserResponseDto): void {
+    if (!confirm(`Are you sure you want to ${user.isActive ? 'deactivate' : 'activate'} user "${user.name || user.email}"?`)) {
+      return;
+    }
+
+    this.usersService
+      .usersControllerToggleActive({ id: user.idUser })
+      .subscribe({
+        next: () => {
+          // Update local state
+          user.isActive = !user.isActive;
+          console.log('User status toggled successfully');
+        },
+        error: (err: any) => {
+          console.error('Error toggling user status:', err);
+          alert('Failed to toggle user status. Please try again.');
+        }
+      });
+  }
+
+  deleteUser(user: UserResponseDto): void {
+    if (!confirm(`Are you sure you want to delete user "${user.name || user.email}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    this.usersService
+      .usersControllerDelete({ id: user.idUser })
+      .subscribe({
+        next: () => {
+          // Remove from local array
+          this.ownerUsers = this.ownerUsers.filter(u => u.idUser !== user.idUser);
+          console.log('User deleted successfully');
+        },
+        error: (err: any) => {
+          console.error('Error deleting user:', err);
+          alert('Failed to delete user. Please try again.');
+        }
+      });
   }
 }

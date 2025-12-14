@@ -16,6 +16,11 @@ export interface AlertEventsControllerFindAll$Params {
   status?: string;
   startDate?: string;
   endDate?: string;
+
+/**
+ * Filter by owner UUID
+ */
+  ownerId?: string;
 }
 
 export function alertEventsControllerFindAll(http: HttpClient, rootUrl: string, params?: AlertEventsControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -27,6 +32,7 @@ export function alertEventsControllerFindAll(http: HttpClient, rootUrl: string, 
     rb.query('status', params.status, {});
     rb.query('startDate', params.startDate, {});
     rb.query('endDate', params.endDate, {});
+    rb.query('ownerId', params.ownerId, {});
   }
 
   return http.request(

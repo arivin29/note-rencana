@@ -20,6 +20,11 @@ export interface NodesControllerFindAll$Params {
   idProject?: string;
   idNodeModel?: string;
   connectivityStatus?: string;
+
+/**
+ * Filter by owner ID
+ */
+  ownerId?: string;
 }
 
 export function nodesControllerFindAll(http: HttpClient, rootUrl: string, params?: NodesControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -31,6 +36,7 @@ export function nodesControllerFindAll(http: HttpClient, rootUrl: string, params
     rb.query('idProject', params.idProject, {});
     rb.query('idNodeModel', params.idNodeModel, {});
     rb.query('connectivityStatus', params.connectivityStatus, {});
+    rb.query('ownerId', params.ownerId, {});
   }
 
   return http.request(

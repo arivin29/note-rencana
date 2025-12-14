@@ -59,7 +59,7 @@ export class ProjectsListPage implements OnInit {
         page: 1,
         limit: 200,
         search: this.searchTerm?.trim() || undefined,
-        idOwner: this.filters.ownerId || undefined,
+        ownerId: this.filters.ownerId || undefined,
         status: this.filters.status !== 'All Status' ? this.filters.status : undefined
       })
       .subscribe({

@@ -1,2 +1,36 @@
 // KPI Cards styles are inherited from parent dashboard
 // Additional specific styles can be added here if needed
+
+.metric-body {
+  &.chart-enhanced {
+    flex-direction: column;
+    gap: 1rem;
+    
+    > div:first-child {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+}
+
+.metric-chart {
+  &.chart-large {
+    width: 100%;
+    min-height: 120px;
+    margin-top: 0.5rem;
+  }
+}
+
+// Make first card (connectivity) full width on larger screens
+.col-xxl-3.col-lg-6:first-child {
+  @media (min-width: 1400px) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  @media (min-width: 992px) and (max-width: 1399px) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}

@@ -11,10 +11,14 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { authControllerChangePassword } from '../fn/authentication/auth-controller-change-password';
+import { AuthControllerChangePassword$Params } from '../fn/authentication/auth-controller-change-password';
 import { authControllerForgotPassword } from '../fn/authentication/auth-controller-forgot-password';
 import { AuthControllerForgotPassword$Params } from '../fn/authentication/auth-controller-forgot-password';
 import { authControllerGetProfile } from '../fn/authentication/auth-controller-get-profile';
 import { AuthControllerGetProfile$Params } from '../fn/authentication/auth-controller-get-profile';
+import { authControllerGetProfileAlias } from '../fn/authentication/auth-controller-get-profile-alias';
+import { AuthControllerGetProfileAlias$Params } from '../fn/authentication/auth-controller-get-profile-alias';
 import { authControllerLogin } from '../fn/authentication/auth-controller-login';
 import { AuthControllerLogin$Params } from '../fn/authentication/auth-controller-login';
 import { authControllerLogout } from '../fn/authentication/auth-controller-logout';
@@ -25,6 +29,8 @@ import { authControllerRegister } from '../fn/authentication/auth-controller-reg
 import { AuthControllerRegister$Params } from '../fn/authentication/auth-controller-register';
 import { authControllerResetPassword } from '../fn/authentication/auth-controller-reset-password';
 import { AuthControllerResetPassword$Params } from '../fn/authentication/auth-controller-reset-password';
+import { authControllerUpdateProfile } from '../fn/authentication/auth-controller-update-profile';
+import { AuthControllerUpdateProfile$Params } from '../fn/authentication/auth-controller-update-profile';
 
 
 /**
@@ -131,6 +137,105 @@ export class AuthenticationService extends BaseService {
    */
   authControllerGetProfile(params?: AuthControllerGetProfile$Params, context?: HttpContext): Observable<void> {
     return this.authControllerGetProfile$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `authControllerGetProfileAlias()` */
+  static readonly AuthControllerGetProfileAliasPath = '/api/auth/profile';
+
+  /**
+   * Get current user profile (alias for /me).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerGetProfileAlias()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  authControllerGetProfileAlias$Response(params?: AuthControllerGetProfileAlias$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return authControllerGetProfileAlias(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get current user profile (alias for /me).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerGetProfileAlias$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  authControllerGetProfileAlias(params?: AuthControllerGetProfileAlias$Params, context?: HttpContext): Observable<void> {
+    return this.authControllerGetProfileAlias$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `authControllerUpdateProfile()` */
+  static readonly AuthControllerUpdateProfilePath = '/api/auth/profile';
+
+  /**
+   * Update current user profile.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerUpdateProfile()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerUpdateProfile$Response(params: AuthControllerUpdateProfile$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return authControllerUpdateProfile(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Update current user profile.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerUpdateProfile$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerUpdateProfile(params: AuthControllerUpdateProfile$Params, context?: HttpContext): Observable<void> {
+    return this.authControllerUpdateProfile$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `authControllerChangePassword()` */
+  static readonly AuthControllerChangePasswordPath = '/api/auth/change-password';
+
+  /**
+   * Change current user password.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerChangePassword()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerChangePassword$Response(params: AuthControllerChangePassword$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return authControllerChangePassword(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Change current user password.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerChangePassword$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerChangePassword(params: AuthControllerChangePassword$Params, context?: HttpContext): Observable<void> {
+    return this.authControllerChangePassword$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }

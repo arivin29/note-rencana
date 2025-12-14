@@ -51,6 +51,7 @@ export class StepPayloadMappingComponent implements OnInit, OnChanges {
 
     selectedSensor: AddedSensor | null = null;
     selectedPayload: SamplePayload | null = null;
+    selectedPayloadIndex = 0; // Track which payload is selected from history
     payloadFields: PayloadField[] = [];
     metaMappings: Record<string, PayloadField | undefined> = {};
 
@@ -127,35 +128,64 @@ export class StepPayloadMappingComponent implements OnInit, OnChanges {
     }
 
     private loadPayloadFromDevice(): void {
-        if (!this.unpairedDevice?.lastPayload) {
+        // Check if we have payloadHistory (new format with array)
+        const payloadHistory = (this.unpairedDevice as any)?.payloadHistory;
+        
+        if (payloadHistory && Array.isArray(payloadHistory) && payloadHistory.length > 0) {
+            // New format: array of {payload, timestamp}
+            this.samplePayloads = payloadHistory.map((item: any, index: number) => ({
+                id: `payload-${index + 1}`,
+                receivedAt: item.timestamp,
+                topic: (this.unpairedDevice?.lastTopic as any) || 'unknown',
+                rawData: item.payload
+            }));
+        } else if (this.unpairedDevice?.lastPayload) {
+            // Fallback: lastPayload could be array or single object
+            try {
+                console.log('Loaded sample payload from lastPayload:', this.unpairedDevice.lastPayload);
+                let payloadData: any = this.unpairedDevice.lastPayload;
+                
+                // Parse if string
+                if (typeof payloadData === 'string') {
+                    payloadData = JSON.parse(payloadData);
+                }
+
+                // Check if it's an array
+                if (Array.isArray(payloadData)) {
+                    console.log('lastPayload is array, length:', payloadData.length);
+                    // Loop through array and create SamplePayload for each item
+                    this.samplePayloads = payloadData.map((item: any, index: number) => ({
+                        id: `payload-${index + 1}`,
+                        receivedAt: item.timestamp || this.unpairedDevice?.lastSeenAt || new Date().toISOString(),
+                        topic: (this.unpairedDevice?.lastTopic as any) || 'unknown',
+                        rawData: item.payload || item
+                    }));
+                } else {
+                    console.log('lastPayload is single object');
+                    // Single payload object
+                    const samplePayload: SamplePayload = {
+                        id: this.unpairedDevice.idNodeUnpairedDevice || 'payload-001',
+                        receivedAt: this.unpairedDevice.lastSeenAt || new Date().toISOString(),
+                        topic: (this.unpairedDevice.lastTopic as any) || 'unknown',
+                        rawData: payloadData
+                    };
+                    this.samplePayloads = [samplePayload];
+                }
+                
+                console.log('✅ Final samplePayloads:', this.samplePayloads);
+            } catch (err) {
+                console.error('Failed to parse lastPayload:', err);
+                this.samplePayloads = [];
+                return;
+            }
+        } else {
             this.samplePayloads = [];
             return;
         }
 
-        try {
-            // Parse last_payload if it's a string
-            let payloadData = this.unpairedDevice.lastPayload;
-            if (typeof payloadData === 'string') {
-                payloadData = JSON.parse(payloadData);
-            }
-
-            // Create single SamplePayload from unpaired device's last_payload
-            const samplePayload: SamplePayload = {
-                id: this.unpairedDevice.idNodeUnpairedDevice || 'payload-001',
-                receivedAt: this.unpairedDevice.lastSeenAt || new Date().toISOString(),
-                topic: (this.unpairedDevice.lastTopic as any) || 'unknown',
-                rawData: payloadData
-            };
-
-            this.samplePayloads = [samplePayload];
-
-            // Auto-select this payload
-            if (this.samplePayloads.length > 0) {
-                this.selectPayload(this.samplePayloads[0]);
-            }
-        } catch (error) {
-            console.error('Failed to parse last_payload from unpaired device', error);
-            this.samplePayloads = [];
+        // Auto-select first payload if available
+        if (this.samplePayloads.length > 0) {
+            this.selectPayload(this.samplePayloads[0]);
         }
     }
 
@@ -167,6 +197,18 @@ export class StepPayloadMappingComponent implements OnInit, OnChanges {
         this.selectedPayload = payload;
         this.payloadFields = this.extractFields(payload.rawData);
         this.computeProfileMatches();
+    }
+
+    onPayloadSelectionChange(index: number): void {
+        this.selectedPayloadIndex = index;
+        if (this.samplePayloads[index]) {
+            this.selectPayload(this.samplePayloads[index]);
+        }
+    }
+
+    countPayloadFields(payload: SamplePayload): number {
+        if (!payload?.rawData) return 0;
+        return this.extractFields(payload.rawData).length;
     }
 
     private extractFields(obj: any, parentPath: string = ''): PayloadField[] {

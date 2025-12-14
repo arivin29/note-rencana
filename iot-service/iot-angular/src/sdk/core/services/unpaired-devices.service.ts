@@ -46,7 +46,7 @@ export class UnpairedDevicesService extends BaseService {
   /**
    * Get all unpaired devices.
    *
-   * List all unpaired devices with optional filters
+   * List all unpaired devices with optional filters. Non-admin users filtered by owner code prefix.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `unpairedDevicesControllerFindAll()` instead.
@@ -60,7 +60,7 @@ export class UnpairedDevicesService extends BaseService {
   /**
    * Get all unpaired devices.
    *
-   * List all unpaired devices with optional filters
+   * List all unpaired devices with optional filters. Non-admin users filtered by owner code prefix.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `unpairedDevicesControllerFindAll$Response()` instead.
@@ -145,7 +145,7 @@ export class UnpairedDevicesService extends BaseService {
   /**
    * Get unpaired devices statistics.
    *
-   * Get statistics about unpaired devices (total, by status, recent activity)
+   * Get statistics about unpaired devices (total, by status, recent activity). Filtered by owner for non-admin.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `unpairedDevicesControllerGetStats()` instead.
@@ -159,7 +159,7 @@ export class UnpairedDevicesService extends BaseService {
   /**
    * Get unpaired devices statistics.
    *
-   * Get statistics about unpaired devices (total, by status, recent activity)
+   * Get statistics about unpaired devices (total, by status, recent activity). Filtered by owner for non-admin.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `unpairedDevicesControllerGetStats$Response()` instead.

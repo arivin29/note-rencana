@@ -65,6 +65,7 @@ import { ThemePanelComponent } from './components/theme-panel/theme-panel.compon
 import { WidgetsModule } from './components/widgets/widgets-module';
 
 import { IotAlertsPage } from './pages/iot/alerts/iot-alerts'; 
+import { AlertCenterComponent } from './pages/iot/alerts/alert-center.component';
 import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showcase';
 
 // IoT Dashboard Module (contains IotDashboardPage + 8 widget components)
@@ -74,6 +75,7 @@ import { IotDashboardModule } from './pages/iot/dashboard/dashboard.module';
 import { DashboardKeduaModule } from './pages/iot/dashboard-kedua/dashboard-kedua.module';
 
 import { SharedComponentsModule } from './shared/shared-components.module';
+import { AlertService } from './service/alert.service';
  
 @NgModule({
     declarations: [
@@ -85,6 +87,7 @@ import { SharedComponentsModule } from './shared/shared-components.module';
         FooterComponent,
         ThemePanelComponent,
         IotAlertsPage, 
+        AlertCenterComponent,
         WidgetsShowcasePage,
         ProfileComponent,
         LoginPage,
@@ -134,6 +137,7 @@ import { SharedComponentsModule } from './shared/shared-components.module';
         Title,
         AuthGuard,
         GuestGuard,
+        AlertService,
         {
             provide: HTTP_INTERCEPTORS,
             useClass: JwtInterceptor,

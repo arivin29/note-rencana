@@ -211,7 +211,7 @@ export class StepNodeConfigComponent implements OnInit {
             .projectsControllerFindAll$Response({ 
                 page: 1, 
                 limit: 200,
-                idOwner: ownerId  // Filter by owner
+                ownerId: ownerId  // Filter by owner
             })
             .subscribe({
                 next: (response) => {

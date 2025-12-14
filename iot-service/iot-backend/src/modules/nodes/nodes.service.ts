@@ -85,36 +85,48 @@ export class NodesService {
     idProject?: string;
     idNodeModel?: string;
     connectivityStatus?: string;
+    ownerId?: string;
   }): Promise<{ data: NodeResponseDto[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 10));
     const skip = (page - 1) * limit;
 
-    const where: FindOptionsWhere<Node> = {};
+    // Use QueryBuilder for owner filtering via JOIN
+    const queryBuilder = this.nodeRepository
+      .createQueryBuilder('node')
+      .leftJoinAndSelect('node.project', 'project')
+      .leftJoinAndSelect('node.nodeModel', 'nodeModel')
+      .leftJoinAndSelect('node.currentLocation', 'currentLocation');
+
+    // Apply owner filter via project relationship
+    if (params.ownerId) {
+      queryBuilder.andWhere('project.idOwner = :ownerId', { ownerId: params.ownerId });
+    }
 
     if (params.idProject) {
-      where.idProject = params.idProject;
+      queryBuilder.andWhere('node.idProject = :idProject', { idProject: params.idProject });
     }
 
     if (params.idNodeModel) {
-      where.idNodeModel = params.idNodeModel;
+      queryBuilder.andWhere('node.idNodeModel = :idNodeModel', { idNodeModel: params.idNodeModel });
     }
 
     if (params.connectivityStatus) {
-      where.connectivityStatus = params.connectivityStatus;
+      queryBuilder.andWhere('node.connectivityStatus = :connectivityStatus', { 
+        connectivityStatus: params.connectivityStatus 
+      });
     }
 
     if (params.search) {
-      where.code = ILike(`%${params.search}%`);
+      queryBuilder.andWhere('node.code ILIKE :search', { search: `%${params.search}%` });
     }
 
-    const [items, total] = await this.nodeRepository.findAndCount({
-      where,
-      relations: ['project', 'nodeModel', 'currentLocation'],
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    queryBuilder
+      .orderBy('node.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [items, total] = await queryBuilder.getManyAndCount();
 
     return {
       data: items.map((item) => this.toResponseDto(item)),
@@ -292,29 +304,67 @@ export class NodesService {
   }
 
   // Statistics & Aggregation Methods
-  async getStatisticsOverview(): Promise<any> {
-    const totalNodes = await this.nodeRepository.count();
+  async getStatisticsOverview(ownerId?: string): Promise<any> {
+    // Base query builder for filtering by owner
+    const baseQuery = this.nodeRepository.createQueryBuilder('node');
+    
+    if (ownerId) {
+      baseQuery
+        .innerJoin('node.project', 'project')
+        .andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+
+    const totalNodes = await baseQuery.getCount();
 
     // Count by connectivity status
-    const onlineNodes = await this.nodeRepository.count({
-      where: { connectivityStatus: 'online' },
-    });
+    const onlineQuery = this.nodeRepository
+      .createQueryBuilder('node')
+      .where('node.connectivityStatus = :status', { status: 'online' });
+    
+    if (ownerId) {
+      onlineQuery
+        .innerJoin('node.project', 'project')
+        .andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+    const onlineNodes = await onlineQuery.getCount();
 
-    const offlineNodes = await this.nodeRepository.count({
-      where: { connectivityStatus: 'offline' },
-    });
+    const offlineQuery = this.nodeRepository
+      .createQueryBuilder('node')
+      .where('node.connectivityStatus = :status', { status: 'offline' });
+    
+    if (ownerId) {
+      offlineQuery
+        .innerJoin('node.project', 'project')
+        .andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+    const offlineNodes = await offlineQuery.getCount();
 
-    const degradedNodes = await this.nodeRepository.count({
-      where: { connectivityStatus: 'degraded' },
-    });
+    const degradedQuery = this.nodeRepository
+      .createQueryBuilder('node')
+      .where('node.connectivityStatus = :status', { status: 'degraded' });
+    
+    if (ownerId) {
+      degradedQuery
+        .innerJoin('node.project', 'project')
+        .andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+    const degradedNodes = await degradedQuery.getCount();
 
     // Get nodes by model
-    const nodesByModel = await this.nodeRepository
+    const modelQuery = this.nodeRepository
       .createQueryBuilder('node')
       .leftJoin('node.nodeModel', 'model')
       .select('model.modelName', 'modelName')
       .addSelect('COUNT(node.idNode)', 'count')
-      .where('model.modelName IS NOT NULL')
+      .where('model.modelName IS NOT NULL');
+    
+    if (ownerId) {
+      modelQuery
+        .innerJoin('node.project', 'project')
+        .andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+    
+    const nodesByModel = await modelQuery
       .groupBy('model.modelName')
       .orderBy('COUNT(node.idNode)', 'DESC')
       .limit(10)
@@ -327,13 +377,19 @@ export class NodesService {
     }));
 
     // Get nodes by project
-    const nodesByProject = await this.nodeRepository
+    const projectQuery = this.nodeRepository
       .createQueryBuilder('node')
       .leftJoin('node.project', 'project')
       .select('project.idProject', 'idProject')
       .addSelect('project.name', 'projectName')
       .addSelect('COUNT(node.idNode)', 'nodeCount')
-      .where('project.name IS NOT NULL')
+      .where('project.name IS NOT NULL');
+    
+    if (ownerId) {
+      projectQuery.andWhere('project.idOwner = :ownerId', { ownerId });
+    }
+    
+    const nodesByProject = await projectQuery
       .groupBy('project.idProject')
       .addGroupBy('project.name')
       .orderBy('COUNT(node.idNode)', 'DESC')

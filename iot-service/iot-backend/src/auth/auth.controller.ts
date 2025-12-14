@@ -114,15 +114,14 @@ export class AuthController {
     return this.authService.refreshToken(user.idUser);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout() {
-    // In production, you might want to invalidate the token here
-    // For now, just return success
+    // Logout is public - client will clear token on their side
+    // No need to verify token since client might have already cleared it
     return { message: 'Logged out successfully' };
   }
 }

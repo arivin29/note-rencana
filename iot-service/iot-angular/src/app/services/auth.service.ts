@@ -15,7 +15,8 @@ import {
   PasswordResetConfirm,
   RefreshTokenRequest,
   RefreshTokenResponse,
-  ChangePasswordRequest
+  ChangePasswordRequest,
+  OwnerContext
 } from '../models/auth.model';
 
 /**
@@ -179,6 +180,15 @@ export class AuthService {
   }
 
   /**
+   * Get current user's role
+   * @returns 'admin' | 'tenant' | 'unknown'
+   */
+  getCurrentUserRole(): string {
+    const user = this.currentUserValue;
+    return user?.role || 'tenant'; // Default to tenant if role not found
+  }
+
+  /**
    * Check if user has specific role
    */
   hasRole(role: string): boolean {
@@ -198,6 +208,44 @@ export class AuthService {
    */
   isTenant(): boolean {
     return this.hasRole('tenant');
+  }
+
+  /**
+   * Get current owner ID from logged-in user
+   * Returns null for super_admin users (they can see all owners)
+   */
+  getCurrentOwnerId(): string | null {
+    const user = this.currentUserValue;
+    return user?.idOwner || null;
+  }
+
+  /**
+   * Check if current user is a super admin (no owner association)
+   */
+  isSuperAdmin(): boolean {
+    const user = this.currentUserValue;
+    return user !== null && user.role === 'admin' && !user.idOwner;
+  }
+
+  /**
+   * Check if current user belongs to an owner (tenant user or owner-admin)
+   */
+  hasOwnerContext(): boolean {
+    const user = this.currentUserValue;
+    return user !== null && !!user.idOwner;
+  }
+
+  /**
+   * Get complete owner context for data filtering
+   * Returns comprehensive context with ownerId and user type flags
+   */
+  getOwnerContext(): OwnerContext {
+    const user = this.currentUserValue;
+    return {
+      ownerId: user?.idOwner || null,
+      isSuperAdmin: user !== null && user.role === 'admin' && !user.idOwner,
+      hasOwnerContext: user !== null && !!user.idOwner
+    };
   }
 
   // ========== Private Helper Methods ==========
