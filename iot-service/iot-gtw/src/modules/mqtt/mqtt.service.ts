@@ -384,26 +384,50 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                 }
             }
 
-            // Check if device already tracked
-            const existing = await this.unpairedDeviceRepository.findOne({
-                where: { hardwareId: deviceId },
-            });
+            // Check if device already tracked - USE RAW QUERY to preserve JSONB array type
+            const rawResult = await this.unpairedDeviceRepository.query(
+                `SELECT id_node_unpaired_device, hardware_id, last_seen_at, last_topic, 
+                        seen_count, suggested_owner, last_payload
+                 FROM node_unpaired_devices 
+                 WHERE hardware_id = $1 
+                 LIMIT 1`,
+                [deviceId]
+            );
+
+            const existing = rawResult && rawResult.length > 0 ? rawResult[0] : null;
+            
+            if (existing) {
+                this.logger.debug(`🔍 RAW last_payload type: ${typeof existing.last_payload}, isArray: ${Array.isArray(existing.last_payload)}`);
+                if (Array.isArray(existing.last_payload)) {
+                    this.logger.log(`✅ Array detected with ${existing.last_payload.length} items`);
+                } else {
+                    this.logger.warn(`⚠️  Not an array! Type: ${typeof existing.last_payload}`);
+                }
+            }
 
             if (existing) {
                 // Update existing record
-                existing.lastSeenAt = new Date();
-                existing.lastTopic = topic;
-                existing.seenCount += 1;
+                const newSeenCount = (existing.seen_count || 0) + 1;
 
                 // Update payload history (keep last 10)
-                // Ensure existing.lastPayload is array, even if it was stored as object before
+                // With raw query, lastPayload should correctly be array from JSONB
                 let payloadHistory: any[] = [];
-                if (Array.isArray(existing.lastPayload)) {
-                    payloadHistory = existing.lastPayload;
-                } else if (existing.lastPayload && typeof existing.lastPayload === 'object') {
-                    // If it's an object (old format), convert to array with single item
-                    payloadHistory = [existing.lastPayload];
+                
+                this.logger.debug(`🔍 DEBUG: existing.last_payload type: ${typeof existing.last_payload}, isArray: ${Array.isArray(existing.last_payload)}`);
+                
+                if (Array.isArray(existing.last_payload)) {
+                    payloadHistory = existing.last_payload;
+                    this.logger.debug(`✅ Using existing array with ${payloadHistory.length} items`);
+                } else if (existing.last_payload && typeof existing.last_payload === 'object') {
+                    // OLD FORMAT DETECTED: Database has object, not array
+                    // RESET to empty array and start fresh (don't convert old object)
+                    payloadHistory = [];
+                    this.logger.warn(`🔄 OLD FORMAT DETECTED! Resetting to empty array (old object discarded)`);
+                } else {
+                    this.logger.debug(`⚠️  last_payload is null/undefined, starting fresh array`);
                 }
+
+                this.logger.debug(`📊 Before unshift: array length = ${payloadHistory.length}`);
 
                 // Add new payload at the beginning (index 0 = newest)
                 payloadHistory.unshift({
@@ -411,16 +435,40 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                     timestamp: new Date(),
                 });
 
+                this.logger.debug(`📊 After unshift: array length = ${payloadHistory.length}`);
+
                 // Keep only last 10 payloads
-                existing.lastPayload = payloadHistory.slice(0, 10) as any;
+                const finalPayload = payloadHistory.slice(0, 10);
 
-                // Update suggested owner if found
-                if (suggestedOwner) {
-                    existing.suggestedOwner = suggestedOwner;
-                }
+                this.logger.debug(`📊 Final payload array length = ${finalPayload.length}`);
 
-                await this.unpairedDeviceRepository.save(existing);
-                this.logger.log(`📝 Updated unpaired device: ${deviceId} (seen ${existing.seenCount} times, history: ${payloadHistory.length}/10)`);
+                // Update suggested owner if found (keep existing if no new suggestion)
+                const finalSuggestedOwner = suggestedOwner || existing.suggested_owner;
+
+                // CRITICAL FIX: Use direct SQL query to force JSONB array type
+                // TypeORM's .save() and QueryBuilder .set() both convert array back to object
+                const payloadJson = JSON.stringify(finalPayload);
+                
+                await this.unpairedDeviceRepository.query(
+                    `UPDATE node_unpaired_devices 
+                     SET last_seen_at = $1,
+                         last_topic = $2,
+                         seen_count = $3,
+                         suggested_owner = $4,
+                         last_payload = $5::jsonb
+                     WHERE id_node_unpaired_device = $6`,
+                    [
+                        new Date(),
+                        topic,
+                        newSeenCount,
+                        finalSuggestedOwner,
+                        payloadJson,
+                        existing.id_node_unpaired_device,
+                    ]
+                );
+
+                this.logger.debug(`✅ Saved with direct SQL query - payload: ${payloadJson.substring(0, 150)}...`);
+                this.logger.log(`📝 Updated unpaired device: ${deviceId} (seen ${newSeenCount} times, history: ${finalPayload.length}/10)`);
             } else {
                 // Create new record with payload in array format
                 const unpaired = this.unpairedDeviceRepository.create({
@@ -430,7 +478,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                     lastPayload: [{
                         payload,
                         timestamp: new Date(),
-                    }] as any,
+                    }],
                     lastTopic: topic,
                     seenCount: 1,
                     suggestedOwner,

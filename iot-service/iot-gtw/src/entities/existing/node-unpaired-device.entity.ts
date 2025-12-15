@@ -20,8 +20,27 @@ export class NodeUnpairedDevice {
   @Column('timestamp with time zone', { name: 'last_seen_at', default: () => 'now()' })
   lastSeenAt: Date;
 
-  @Column('jsonb', { name: 'last_payload', nullable: true })
-  lastPayload: Record<string, any>;
+  @Column({
+    type: 'jsonb',
+    name: 'last_payload',
+    nullable: true,
+    transformer: {
+      to: (value: any) => value, // To database: keep as is
+      from: (value: any) => {
+        // From database: ensure it's array
+        if (Array.isArray(value)) {
+          return value;
+        }
+        // If it's object (old format), return empty array
+        if (value && typeof value === 'object') {
+          return [];
+        }
+        // If null/undefined, return empty array
+        return [];
+      },
+    },
+  })
+  lastPayload: any[]; // Array of payload history (keeping last 10)
 
   @Column('text', { name: 'last_topic', nullable: true })
   lastTopic: string;

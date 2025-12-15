@@ -343,7 +343,7 @@ export class UnpairedDevicesService {
    * Map entity to response DTO
    */
   private mapToResponseDto(device: NodeUnpairedDevice): UnpairedDeviceResponseDto {
-    // console.log('Mapping unpaired device to response DTO:', device);
+    console.log('Mapping unpaired device to response DTO:', device);
     return {
       idNodeUnpairedDevice: device.idNodeUnpairedDevice,
       hardwareId: device.hardwareId,
