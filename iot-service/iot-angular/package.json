@@ -10,7 +10,13 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "generate-api": "ng-openapi-gen"
+    "generate-api": "ng-openapi-gen",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop iot-angular",
+    "pm2:restart": "pm2 restart iot-angular",
+    "pm2:delete": "pm2 delete iot-angular",
+    "pm2:logs": "pm2 logs iot-angular",
+    "deploy": "npm run build && npm run pm2:restart"
   },
   "private": true,
   "dependencies": {
@@ -98,6 +104,7 @@
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
+    "http-server": "^14.1.1",
     "ng-openapi-gen": "^1.0.4"
   }
 }
