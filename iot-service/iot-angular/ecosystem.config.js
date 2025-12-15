@@ -4,7 +4,7 @@ module.exports = {
       name: 'iot-angular',
       script: 'npx',
       args: 'http-server dist -p 3002 -g',
-      cwd: '/Users/arivin29macmini/Documents/DEVETEK/pra-project/iot-service/iot-angular',
+      cwd: './dist',
       instances: 1,
       autorestart: true,
       watch: false,
