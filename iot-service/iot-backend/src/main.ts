@@ -55,7 +55,12 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = Number(configService.get<string>('PORT')) || 3000;
+  const portFromEnv = configService.get<string>('PORT');
+  const port = Number(portFromEnv) || 3000;
+  
+  console.log(`📋 PORT from .env: ${portFromEnv}`);
+  console.log(`📋 PORT parsed as number: ${port}`);
+  
   await app.listen(port);
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);

@@ -2,8 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'iot-angular',
-      script: 'node_modules/.bin/http-server',
-      args: './dist -p 3002 -g',
+      script: 'http-server',
+      args: 'dist -p 3002 -g',
+      interpreter: 'none',
       // cwd will default to the directory where ecosystem.config.js is located
       instances: 1,
       autorestart: true,
