@@ -396,13 +396,23 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                 existing.seenCount += 1;
 
                 // Update payload history (keep last 10)
-                const payloadHistory = Array.isArray(existing.lastPayload) ? existing.lastPayload : [];
+                // Ensure existing.lastPayload is array, even if it was stored as object before
+                let payloadHistory: any[] = [];
+                if (Array.isArray(existing.lastPayload)) {
+                    payloadHistory = existing.lastPayload;
+                } else if (existing.lastPayload && typeof existing.lastPayload === 'object') {
+                    // If it's an object (old format), convert to array with single item
+                    payloadHistory = [existing.lastPayload];
+                }
+
+                // Add new payload at the beginning (index 0 = newest)
                 payloadHistory.unshift({
                     payload,
                     timestamp: new Date(),
                 });
+
                 // Keep only last 10 payloads
-                existing.lastPayload = payloadHistory.slice(0, 10);
+                existing.lastPayload = payloadHistory.slice(0, 10) as any;
 
                 // Update suggested owner if found
                 if (suggestedOwner) {
@@ -410,7 +420,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                 }
 
                 await this.unpairedDeviceRepository.save(existing);
-                this.logger.log(`📝 Updated unpaired device: ${deviceId} (seen ${existing.seenCount} times)`);
+                this.logger.log(`📝 Updated unpaired device: ${deviceId} (seen ${existing.seenCount} times, history: ${payloadHistory.length}/10)`);
             } else {
                 // Create new record with payload in array format
                 const unpaired = this.unpairedDeviceRepository.create({
@@ -420,7 +430,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                     lastPayload: [{
                         payload,
                         timestamp: new Date(),
-                    }],
+                    }] as any,
                     lastTopic: topic,
                     seenCount: 1,
                     suggestedOwner,

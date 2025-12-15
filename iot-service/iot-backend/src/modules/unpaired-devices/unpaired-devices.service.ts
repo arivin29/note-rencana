@@ -164,27 +164,7 @@ export class UnpairedDevicesService {
       throw new NotFoundException(`Unpaired device with ID '${id}' not found`);
     }
 
-    const response = this.mapToResponseDto(device);
-    
-    // Extract payload history from last_payload field (which is now an array)
-    if (device.lastPayload && Array.isArray(device.lastPayload)) {
-      response.payloadHistory = device.lastPayload;
-      // Also set lastPayload to the most recent one for backward compatibility
-      if (device.lastPayload.length > 0) {
-        response.lastPayload = device.lastPayload[0].payload;
-      }
-    } else {
-      // Fallback for old format (single object)
-      response.payloadHistory = [];
-      if (device.lastPayload) {
-        response.payloadHistory.push({
-          payload: device.lastPayload,
-          timestamp: device.lastSeenAt,
-        });
-      }
-    }
-
-    return response;
+    return this.mapToResponseDto(device);
   }
 
   /**
@@ -203,22 +183,22 @@ export class UnpairedDevicesService {
     const response = this.mapToResponseDto(device);
     
     // Extract payload history from last_payload field (which is now an array)
-    if (device.lastPayload && Array.isArray(device.lastPayload)) {
-      response.payloadHistory = device.lastPayload;
-      // Also set lastPayload to the most recent one for backward compatibility
-      if (device.lastPayload.length > 0) {
-        response.lastPayload = device.lastPayload[0].payload;
-      }
-    } else {
-      // Fallback for old format (single object)
-      response.payloadHistory = [];
-      if (device.lastPayload) {
-        response.payloadHistory.push({
-          payload: device.lastPayload,
-          timestamp: device.lastSeenAt,
-        });
-      }
-    }
+    // if (device.lastPayload && Array.isArray(device.lastPayload)) {
+    //   response.payloadHistory = device.lastPayload;
+    //   // Also set lastPayload to the most recent one for backward compatibility
+    //   if (device.lastPayload.length > 0) {
+    //     response.lastPayload = device.lastPayload[0].payload;
+    //   }
+    // } else {
+    //   // Fallback for old format (single object)
+    //   response.payloadHistory = [];
+    //   if (device.lastPayload) {
+    //     response.payloadHistory.push({
+    //       payload: device.lastPayload,
+    //       timestamp: device.lastSeenAt,
+    //     });
+    //   }
+    // }
 
     return response;
   }
