@@ -1,0 +1,398 @@
+<!-- BEGIN container -->
+<div class="container">
+  <!-- BEGIN row -->
+  <div class="row justify-content-center">
+    <!-- BEGIN col-10 -->
+    <div class="col-xl-10">
+      <!-- BEGIN row -->
+      <div class="row">
+        <!-- BEGIN col-9 -->
+        <div class="col-xl-9">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/iot/document/getting-started">GETTING STARTED</a></li>
+            <li class="breadcrumb-item active">LOGIN TUTORIAL</li>
+          </ul>
+          
+          <h1 class="page-header">
+            Getting Started: Login to System <small>Learn how to access the IoT Monitoring System</small>
+          </h1>
+          
+          <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+            <span class="badge bg-success">beginner</span>
+            <span class="text-muted">
+              <i class="bi bi-clock me-1"></i>
+              5 minutes
+            </span>
+            <span class="text-muted">
+              <i class="bi bi-person me-1"></i>
+              IoT Support Team
+            </span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress mb-4" style="height: 4px;">
+            <div class="progress-bar bg-primary" 
+                 [style.width.%]="getProgressPercentage()">
+            </div>
+          </div>
+          
+          <hr class="mb-4">
+          
+          <!-- BEGIN #accessLogin -->
+          <div id="accessLogin" class="mb-5">
+            <h4><i class="bi bi-1-circle me-2 text-primary"></i>Access the Login Page</h4>
+            <p>Open your web browser and navigate to the IoT Monitoring System URL provided by your administrator.</p>
+            <card>
+              <card-body>
+                <div class="alert alert-info mb-3">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>URL Format:</strong> https://iot.yourcompany.com
+                </div>
+                
+                <h5>What You'll See:</h5>
+                <ul>
+                  <li>IoT Monitoring System logo and branding</li>
+                  <li>Login form with email and password fields</li>
+                  <li>"Forgot Password?" link</li>
+                  <li>System version information (footer)</li>
+                </ul>
+
+                <div class="bg-dark bg-opacity-10 p-3 rounded mt-3">
+                  <p class="mb-1"><i class="bi bi-lightbulb text-warning me-2"></i><strong>Pro Tip:</strong></p>
+                  <p class="mb-0 small">Bookmark the login URL for quick access in the future.</p>
+                </div>
+              </card-body>
+            </card>
+          </div>
+          <!-- END #accessLogin -->
+          
+          <!-- BEGIN #enterCredentials -->
+          <div id="enterCredentials" class="mb-5">
+            <h4><i class="bi bi-2-circle me-2 text-primary"></i>Enter Your Credentials</h4>
+            <p>Input your login information carefully. Both fields are required.</p>
+            <card>
+              <card-body>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <h5>Email/Username Field</h5>
+                    <div class="form-group mb-3">
+                      <label class="form-label">Email Address</label>
+                      <input type="email" class="form-control" placeholder="user@example.com" disabled>
+                      <small class="form-text text-muted">Enter your registered email address</small>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <h5>Password Field</h5>
+                    <div class="form-group mb-3">
+                      <label class="form-label">Password</label>
+                      <input type="password" class="form-control" placeholder="••••••••" disabled>
+                      <small class="form-text text-muted">Case-sensitive password</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Important:</strong> Passwords are case-sensitive. Ensure Caps Lock is OFF.
+                </div>
+              </card-body>
+            </card>
+          </div>
+          <!-- END #enterCredentials -->
+          
+          <!-- BEGIN #loginOptions -->
+          <div id="loginOptions" class="mb-5">
+            <h4><i class="bi bi-3-circle me-2 text-primary"></i>Login Options</h4>
+            <p>Configure your login preferences before signing in.</p>
+            <card>
+              <card-body>
+                <h5 class="mb-3">Available Options:</h5>
+                
+                <div class="form-check form-switch mb-3">
+                  <input type="checkbox" class="form-check-input" id="rememberMe" checked disabled>
+                  <label class="form-check-label" for="rememberMe">
+                    <strong>Remember Me</strong> - Stay logged in for 30 days
+                  </label>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th width="30%">Option</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Remember Me</strong></td>
+                        <td>Keeps you logged in on this device</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Forgot Password</strong></td>
+                        <td>Reset password via email</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Need Help?</strong></td>
+                        <td>Contact support team</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </card-body>
+            </card>
+          </div>
+          <!-- END #loginOptions -->
+          
+          <!-- BEGIN #completeLogin -->
+          <div id="completeLogin" class="mb-5">
+            <h4><i class="bi bi-4-circle me-2 text-primary"></i>Complete Login</h4>
+            <p>Click the "Sign In" button to access the system.</p>
+            <card>
+              <card-body>
+                <div class="d-grid gap-2 d-md-block mb-4">
+                  <button class="btn btn-primary btn-lg px-5" disabled>
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                  </button>
+                </div>
+
+                <h5>What Happens Next:</h5>
+                <ol>
+                  <li>System validates your credentials</li>
+                  <li>If successful, you'll see a loading screen</li>
+                  <li>You'll be redirected to your dashboard</li>
+                  <li>First-time users: Profile setup wizard appears</li>
+                </ol>
+
+                <div class="alert alert-success">
+                  <i class="bi bi-check-circle me-2"></i>
+                  <strong>Success!</strong> You'll be redirected to the dashboard within 2-3 seconds.
+                </div>
+              </card-body>
+            </card>
+          </div>
+          <!-- END #completeLogin -->
+          
+          <!-- BEGIN #forgotPassword -->
+          <div id="forgotPassword" class="mb-5">
+            <h4><i class="bi bi-5-circle me-2 text-primary"></i>Forgot Password</h4>
+            <p>If you forgot your password, follow these steps to reset it.</p>
+            <card>
+              <card-body>
+                <h5 class="mb-3">Password Reset Process:</h5>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <div class="card bg-light border-0 mb-3">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                              <strong>1</strong>
+                            </div>
+                          </div>
+                          <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Click "Forgot Password?"</h6>
+                            <small class="text-muted">Find the link below login form</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card bg-light border-0 mb-3">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                              <strong>2</strong>
+                            </div>
+                          </div>
+                          <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Enter Your Email</h6>
+                            <small class="text-muted">Type registered email address</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card bg-light border-0 mb-3">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                              <strong>3</strong>
+                            </div>
+                          </div>
+                          <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Check Your Email</h6>
+                            <small class="text-muted">Look for reset email (check spam)</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card bg-light border-0 mb-3">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                              <strong>4</strong>
+                            </div>
+                          </div>
+                          <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Click Reset Link</h6>
+                            <small class="text-muted">Open email and click the link</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-12">
+                    <div class="card bg-light border-0">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                              <strong>5</strong>
+                            </div>
+                          </div>
+                          <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Set New Password</h6>
+                            <small class="text-muted">Enter your new password twice and submit</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Note:</strong> Reset links expire after 24 hours. If expired, request a new one.
+                </div>
+              </card-body>
+            </card>
+          </div>
+          <!-- END #forgotPassword -->
+          
+          <!-- BEGIN #troubleshooting -->
+          <div id="troubleshooting" class="mb-5">
+            <h4><i class="bi bi-6-circle me-2 text-primary"></i>Troubleshooting</h4>
+            <p>Common login issues and their solutions.</p>
+            <card>
+              <card-body>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead class="table-light">
+                      <tr>
+                        <th width="30%">Problem</th>
+                        <th>Solution</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Invalid credentials</strong></td>
+                        <td>
+                          <ul class="mb-0">
+                            <li>Check Caps Lock is OFF</li>
+                            <li>Verify email spelling</li>
+                            <li>Try password reset</li>
+                          </ul>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Account locked</strong></td>
+                        <td>Contact administrator - too many failed attempts</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Page won't load</strong></td>
+                        <td>
+                          <ul class="mb-0">
+                            <li>Check internet connection</li>
+                            <li>Clear browser cache</li>
+                            <li>Try different browser</li>
+                          </ul>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Reset email not received</strong></td>
+                        <td>Check spam folder, wait 5-10 minutes, or request new link</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="bg-dark bg-opacity-10 p-3 rounded">
+                  <h6><i class="bi bi-headset me-2"></i>Need Help?</h6>
+                  <p class="mb-0">Contact Support: <a href="mailto:support@example.com">support@example.com</a></p>
+                </div>
+              </card-body>
+            </card>
+          </div>
+          <!-- END #troubleshooting -->
+
+          <!-- Navigation Buttons -->
+          <div class="d-flex justify-content-between mt-5 mb-4">
+            <a href="/iot/document/getting-started" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-2"></i>Back to Tutorials
+            </a>
+            <a href="/iot/document/getting-started/first-login" class="btn btn-primary">
+              Next: First Login <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+          </div>
+
+        </div>
+        <!-- END col-9-->
+        
+        <!-- BEGIN col-3 -->
+        <div class="col-xl-3">
+          <!-- BEGIN #sidebar-sections -->
+          <nav-scroll>
+            <div class="mb-3">
+              <small class="text-muted fw-bold">SECTIONS</small>
+            </div>
+            <a class="nav-link" href="#accessLogin">
+              <i class="bi bi-1-circle me-2"></i>Access Login Page
+            </a>
+            <a class="nav-link" href="#enterCredentials">
+              <i class="bi bi-2-circle me-2"></i>Enter Credentials
+            </a>
+            <a class="nav-link" href="#loginOptions">
+              <i class="bi bi-3-circle me-2"></i>Login Options
+            </a>
+            <a class="nav-link" href="#completeLogin">
+              <i class="bi bi-4-circle me-2"></i>Complete Login
+            </a>
+            <a class="nav-link" href="#forgotPassword">
+              <i class="bi bi-5-circle me-2"></i>Forgot Password
+            </a>
+            <a class="nav-link" href="#troubleshooting">
+              <i class="bi bi-6-circle me-2"></i>Troubleshooting
+            </a>
+            
+            <hr class="my-3">
+            
+            <div class="mb-2">
+              <small class="text-muted fw-bold">PROGRESS</small>
+            </div>
+            <div class="mb-2">
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar" [style.width.%]="getProgressPercentage()"></div>
+              </div>
+              <small class="text-muted">{{ getProgressPercentage() }}% Complete</small>
+            </div>
+          </nav-scroll>
+          <!-- END #sidebar-sections -->
+        </div>
+        <!-- END col-3 -->
+      </div>
+      <!-- END row -->
+    </div>
+    <!-- END col-10 -->
+  </div>
+  <!-- END row -->
+</div>
+<!-- END container -->

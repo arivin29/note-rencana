@@ -1,0 +1,692 @@
+<!-- Tutorial Header -->
+<div class="tutorial-header mb-4">
+  <div class="d-flex align-items-center mb-3">
+    <i [class]="metadata.icon + ' fs-1 text-primary me-3'"></i>
+    <div>
+      <h1 class="mb-1">{{ metadata.title }}</h1>
+      <p class="text-muted mb-0">{{ metadata.description }}</p>
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <span class="badge" [ngClass]="getDifficultyClass()">
+      {{ metadata.difficulty }}
+    </span>
+    <span class="text-muted">
+      <i class="bi bi-clock me-1"></i>
+      {{ metadata.estimatedTime }} minutes
+    </span>
+    <span class="text-muted">
+      <i class="bi bi-person me-1"></i>
+      {{ metadata.author }}
+    </span>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress mt-3" style="height: 4px;">
+    <div class="progress-bar bg-primary" 
+         [style.width.%]="getProgressPercentage()">
+    </div>
+  </div>
+  <small class="text-muted">{{ getProgressPercentage() }}% complete</small>
+</div>
+
+<!-- Tutorial Content -->
+<div class="tutorial-content">
+
+  <!-- Section 1: Welcome Screen -->
+  <div class="tutorial-section" *ngIf="currentSection === 0">
+    <h2><i class="bi bi-1-circle me-2"></i>Welcome Screen</h2>
+    
+    <div class="content-block">
+      <div class="alert alert-success">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-check-circle fs-3 me-3"></i>
+          <div>
+            <h4 class="mb-1">Welcome to IoT Monitoring System!</h4>
+            <p class="mb-0">You're about to complete your profile setup.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>First Login Welcome</h3>
+      <p>When you log in for the first time, you'll be greeted with a welcome screen that guides you through the initial setup process.</p>
+
+      <div class="welcome-card">
+        <div class="welcome-icon">
+          <i class="bi bi-rocket-takeoff fs-1 text-primary"></i>
+        </div>
+        <h4>Let's Get Started!</h4>
+        <p>This one-time setup ensures your account is secure and personalized. The process takes about 5 minutes.</p>
+        
+        <div class="setup-checklist">
+          <div class="checklist-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Change your password</span>
+          </div>
+          <div class="checklist-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Complete your profile</span>
+          </div>
+          <div class="checklist-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Set notification preferences</span>
+          </div>
+          <div class="checklist-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Accept terms and policies</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tips-box">
+        <h5><i class="bi bi-lightbulb me-2"></i>What You'll Need:</h5>
+        <ul>
+          <li>Your temporary password (provided by administrator)</li>
+          <li>A strong new password</li>
+          <li>Your phone number (for notifications)</li>
+          <li>Optional: Profile picture (JPG/PNG, max 2MB)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Change Default Password -->
+  <div class="tutorial-section" *ngIf="currentSection === 1">
+    <h2><i class="bi bi-2-circle me-2"></i>Change Default Password</h2>
+    
+    <div class="content-block">
+      <div class="alert alert-warning">
+        <i class="bi bi-shield-exclamation me-2"></i>
+        <strong>Security First!</strong> For your account security, you must change the temporary password.
+      </div>
+
+      <h3>Step 1: Update Your Password</h3>
+      <p>You'll be prompted to change your password immediately after the welcome screen.</p>
+
+      <div class="password-requirements-box">
+        <h4><i class="bi bi-shield-lock me-2"></i>Password Requirements</h4>
+        <div class="requirements-grid">
+          <div class="requirement-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Minimum 8 characters</span>
+          </div>
+          <div class="requirement-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>At least one uppercase (A-Z)</span>
+          </div>
+          <div class="requirement-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>At least one lowercase (a-z)</span>
+          </div>
+          <div class="requirement-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>At least one number (0-9)</span>
+          </div>
+          <div class="requirement-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>At least one special character (!@#$%^&*)</span>
+          </div>
+          <div class="requirement-item">
+            <i class="bi bi-x-circle text-danger"></i>
+            <span>Cannot contain your name or email</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-box mt-4">
+        <h4>Password Change Form:</h4>
+        <div class="form-demo">
+          <div class="mb-3">
+            <label class="form-label">Current Password</label>
+            <input type="password" class="form-control" placeholder="Temporary password from admin" disabled>
+            <small class="text-muted">Enter the password provided by your administrator</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" class="form-control" placeholder="Enter new password" disabled>
+            <div class="password-strength mt-2">
+              <div class="strength-bar strength-medium"></div>
+              <small class="text-warning">Medium strength</small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" class="form-control" placeholder="Re-enter new password" disabled>
+          </div>
+        </div>
+      </div>
+
+      <div class="tips-box">
+        <h5><i class="bi bi-shield-check me-2"></i>Password Tips:</h5>
+        <ul>
+          <li><strong>Use a passphrase:</strong> "MyIoT@Device2025!" is easier to remember than "xK9#mP2$"</li>
+          <li><strong>Unique password:</strong> Don't reuse passwords from other websites</li>
+          <li><strong>Password manager:</strong> Consider using LastPass, 1Password, or Bitwarden</li>
+          <li><strong>Avoid personal info:</strong> No birthdays, names, or common words</li>
+        </ul>
+      </div>
+
+      <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Good to know:</strong> You can change your password anytime from your profile settings.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Complete Your Profile -->
+  <div class="tutorial-section" *ngIf="currentSection === 2">
+    <h2><i class="bi bi-3-circle me-2"></i>Complete Your Profile</h2>
+    
+    <div class="content-block">
+      <h3>Step 2: Fill Profile Information</h3>
+      <p>Provide your details to personalize your account and help team members identify you.</p>
+
+      <div class="profile-form-demo">
+        <div class="profile-section">
+          <h4><i class="bi bi-star-fill text-warning me-2"></i>Required Fields</h4>
+          <div class="form-demo">
+            <div class="mb-3">
+              <label class="form-label">Full Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" placeholder="e.g., John Doe" disabled>
+              <small class="text-muted">Your complete name as you want it to appear</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email Address <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" placeholder="john.doe@company.com" disabled>
+              <small class="text-success">
+                <i class="bi bi-check-circle me-1"></i>Already verified
+              </small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">+62</span>
+                <input type="tel" class="form-control" placeholder="812-3456-7890" disabled>
+              </div>
+              <small class="text-muted">Used for SMS alerts and notifications</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section mt-4">
+          <h4><i class="bi bi-info-circle text-info me-2"></i>Optional Fields</h4>
+          <div class="form-demo">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Job Title</label>
+                <input type="text" class="form-control" placeholder="e.g., IoT Engineer" disabled>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Department</label>
+                <input type="text" class="form-control" placeholder="e.g., Operations" disabled>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Company</label>
+              <input type="text" class="form-control" placeholder="e.g., ABC Industries" disabled>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-control" placeholder="e.g., Jakarta, Indonesia" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section mt-4">
+          <h4><i class="bi bi-image me-2"></i>Profile Picture</h4>
+          <div class="profile-picture-upload">
+            <div class="upload-area">
+              <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+              <p class="mb-1">Click to upload or drag and drop</p>
+              <small class="text-muted">JPG or PNG, max 2MB</small>
+            </div>
+            <div class="upload-tips">
+              <h6>Tips for good profile picture:</h6>
+              <ul>
+                <li>Use a clear, professional photo</li>
+                <li>Face should be clearly visible</li>
+                <li>Good lighting</li>
+                <li>Square crop works best</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-4">
+        <i class="bi bi-pencil me-2"></i>
+        <strong>Note:</strong> You can update your profile information anytime from Account Settings.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Notification Preferences -->
+  <div class="tutorial-section" *ngIf="currentSection === 3">
+    <h2><i class="bi bi-4-circle me-2"></i>Notification Preferences</h2>
+    
+    <div class="content-block">
+      <h3>Step 3: Configure Notifications</h3>
+      <p>Choose how and when you want to receive system alerts and updates.</p>
+
+      <div class="notification-settings">
+        <div class="notification-group">
+          <div class="notification-header">
+            <i class="bi bi-envelope fs-4 text-primary me-3"></i>
+            <div>
+              <h4>Email Notifications</h4>
+              <p class="text-muted mb-0">Receive alerts and updates via email</p>
+            </div>
+          </div>
+          <div class="notification-options">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">
+                <strong>System alerts</strong>
+                <span class="badge bg-danger ms-2">Critical</span>
+                <br>
+                <small class="text-muted">Critical system events (cannot be disabled)</small>
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">
+                <strong>Node offline notifications</strong>
+                <span class="badge bg-warning ms-2">Important</span>
+                <br>
+                <small class="text-muted">When monitored devices go offline</small>
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">
+                <strong>Daily summary reports</strong>
+                <br>
+                <small class="text-muted">Daily digest of system activity</small>
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">
+                <strong>Weekly analytics digest</strong>
+                <br>
+                <small class="text-muted">Weekly insights and trends</small>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="notification-group mt-4">
+          <div class="notification-header">
+            <i class="bi bi-phone fs-4 text-success me-3"></i>
+            <div>
+              <h4>SMS Notifications</h4>
+              <p class="text-muted mb-0">Receive urgent alerts via text message</p>
+            </div>
+          </div>
+          <div class="notification-options">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">
+                <strong>Critical alerts only</strong>
+                <span class="badge bg-danger ms-2">Urgent</span>
+                <br>
+                <small class="text-muted">System failures, security breaches</small>
+              </label>
+            </div>
+            <div class="alert alert-warning mt-2 mb-0">
+              <small>
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                SMS notifications may incur additional charges depending on your plan
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="notification-group mt-4">
+          <div class="notification-header">
+            <i class="bi bi-app-indicator fs-4 text-info me-3"></i>
+            <div>
+              <h4>In-App Notifications</h4>
+              <p class="text-muted mb-0">Browser and desktop notifications</p>
+            </div>
+          </div>
+          <div class="notification-options">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" checked disabled>
+              <label class="form-check-label">
+                <strong>Browser notifications</strong>
+                <br>
+                <small class="text-muted">Real-time alerts while using the platform</small>
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">
+                <strong>Desktop notifications</strong>
+                <br>
+                <small class="text-muted">System tray notifications (requires browser permission)</small>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tips-box mt-4">
+        <h5><i class="bi bi-lightbulb me-2"></i>Recommendation:</h5>
+        <ul>
+          <li>Keep <strong>critical alerts</strong> enabled via email and SMS</li>
+          <li>Enable <strong>daily summaries</strong> to stay informed without being overwhelmed</li>
+          <li>Use <strong>in-app notifications</strong> for real-time updates during work hours</li>
+          <li>You can fine-tune these settings anytime from your preferences</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Accept Terms & Policies -->
+  <div class="tutorial-section" *ngIf="currentSection === 4">
+    <h2><i class="bi bi-5-circle me-2"></i>Accept Terms & Policies</h2>
+    
+    <div class="content-block">
+      <h3>Step 4: Review and Accept</h3>
+      <p>Before accessing the system, please review and accept our terms and policies.</p>
+
+      <div class="terms-section">
+        <div class="terms-card">
+          <div class="terms-header">
+            <i class="bi bi-file-text fs-3 text-primary me-3"></i>
+            <div>
+              <h4>Terms of Service</h4>
+              <p class="text-muted mb-0">Last updated: December 23, 2025</p>
+            </div>
+            <a href="#" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-download me-1"></i>
+              Download PDF
+            </a>
+          </div>
+          <div class="terms-content">
+            <h5>Overview</h5>
+            <p>The Terms of Service outline:</p>
+            <ul>
+              <li><strong>Acceptable Use Policy:</strong> How you may use the platform</li>
+              <li><strong>User Responsibilities:</strong> Your obligations as a user</li>
+              <li><strong>Data Access Rights:</strong> What data you can access</li>
+              <li><strong>Account Security:</strong> Your security responsibilities</li>
+              <li><strong>Prohibited Activities:</strong> What's not allowed</li>
+            </ul>
+            <div class="terms-scroll-box">
+              <h6>Key Points:</h6>
+              <div class="key-points">
+                <div class="point-item">
+                  <i class="bi bi-check-circle text-success"></i>
+                  <span>Use the platform only for authorized business purposes</span>
+                </div>
+                <div class="point-item">
+                  <i class="bi bi-check-circle text-success"></i>
+                  <span>Keep your login credentials confidential</span>
+                </div>
+                <div class="point-item">
+                  <i class="bi bi-check-circle text-success"></i>
+                  <span>Report security incidents immediately</span>
+                </div>
+                <div class="point-item">
+                  <i class="bi bi-x-circle text-danger"></i>
+                  <span>Do not share your account with others</span>
+                </div>
+                <div class="point-item">
+                  <i class="bi bi-x-circle text-danger"></i>
+                  <span>Do not attempt to breach system security</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="terms-card mt-4">
+          <div class="terms-header">
+            <i class="bi bi-shield-check fs-3 text-success me-3"></i>
+            <div>
+              <h4>Privacy Policy</h4>
+              <p class="text-muted mb-0">Last updated: December 23, 2025</p>
+            </div>
+            <a href="#" class="btn btn-sm btn-outline-success">
+              <i class="bi bi-download me-1"></i>
+              Download PDF
+            </a>
+          </div>
+          <div class="terms-content">
+            <h5>Your Privacy Matters</h5>
+            <p>Our Privacy Policy explains:</p>
+            <ul>
+              <li><strong>Data Collection:</strong> What information we collect</li>
+              <li><strong>Data Usage:</strong> How we use your information</li>
+              <li><strong>Data Storage:</strong> Where and how data is stored</li>
+              <li><strong>Data Sharing:</strong> Who has access to your data</li>
+              <li><strong>Your Rights:</strong> Your privacy rights and controls</li>
+            </ul>
+            <div class="privacy-highlights">
+              <div class="highlight-item">
+                <i class="bi bi-lock-fill text-primary"></i>
+                <div>
+                  <h6>We collect:</h6>
+                  <p>Account info, usage data, device data, sensor readings</p>
+                </div>
+              </div>
+              <div class="highlight-item">
+                <i class="bi bi-eye-slash-fill text-success"></i>
+                <div>
+                  <h6>We do NOT:</h6>
+                  <p>Sell your data, track you outside the platform, or share without consent</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acceptance-box mt-4">
+        <h5>Required Agreements</h5>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="agreeTerms" required disabled>
+          <label class="form-check-label" for="agreeTerms">
+            <strong>I have read and agree to the Terms of Service</strong>
+            <br>
+            <small class="text-muted">Required to proceed</small>
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="agreePrivacy" required disabled>
+          <label class="form-check-label" for="agreePrivacy">
+            <strong>I have read and understand the Privacy Policy</strong>
+            <br>
+            <small class="text-muted">Required to proceed</small>
+          </label>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Note:</strong> You can review these documents anytime from the footer links or help center.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Finish Setup -->
+  <div class="tutorial-section" *ngIf="currentSection === 5">
+    <h2><i class="bi bi-6-circle me-2"></i>Finish Setup</h2>
+    
+    <div class="content-block">
+      <h3>Step 5: Complete Setup</h3>
+      <p>Review your information and complete the setup process.</p>
+
+      <div class="review-summary">
+        <h4><i class="bi bi-clipboard-check me-2"></i>Setup Summary</h4>
+        <div class="summary-grid">
+          <div class="summary-item completed">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <div>
+              <h6>Password Changed</h6>
+              <p class="text-muted mb-0">Your account is now secured</p>
+            </div>
+          </div>
+          <div class="summary-item completed">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <div>
+              <h6>Profile Completed</h6>
+              <p class="text-muted mb-0">John Doe • IoT Engineer</p>
+            </div>
+          </div>
+          <div class="summary-item completed">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <div>
+              <h6>Notifications Set</h6>
+              <p class="text-muted mb-0">Email & in-app enabled</p>
+            </div>
+          </div>
+          <div class="summary-item completed">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <div>
+              <h6>Terms Accepted</h6>
+              <p class="text-muted mb-0">All agreements signed</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="completion-action text-center my-5">
+        <button class="btn btn-primary btn-lg" disabled>
+          <i class="bi bi-check-lg me-2"></i>
+          Complete Setup
+        </button>
+        <p class="text-muted mt-2">Click to finish and access your dashboard</p>
+      </div>
+
+      <div class="alert alert-success">
+        <div class="d-flex align-items-start">
+          <i class="bi bi-check-circle fs-3 me-3"></i>
+          <div>
+            <h5 class="mb-2">Setup Complete! 🎉</h5>
+            <p class="mb-2">Welcome aboard! You'll be redirected to your dashboard in 3 seconds...</p>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                   style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="next-steps-box mt-4">
+        <h4><i class="bi bi-arrow-right-circle me-2"></i>What's Next?</h4>
+        <p>After setup, you can:</p>
+        <div class="next-steps-grid">
+          <div class="next-step-card">
+            <i class="bi bi-speedometer2 fs-3 text-primary"></i>
+            <h5>Explore Dashboard</h5>
+            <p>View KPIs, widgets, and real-time data</p>
+          </div>
+          <div class="next-step-card">
+            <i class="bi bi-router fs-3 text-success"></i>
+            <h5>Check Nodes</h5>
+            <p>See your assigned devices and their status</p>
+          </div>
+          <div class="next-step-card">
+            <i class="bi bi-bell fs-3 text-warning"></i>
+            <h5>View Alerts</h5>
+            <p>Monitor active alerts and notifications</p>
+          </div>
+          <div class="next-step-card">
+            <i class="bi bi-gear fs-3 text-info"></i>
+            <h5>Customize Settings</h5>
+            <p>Personalize your experience</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section mt-4">
+        <h5><i class="bi bi-question-circle me-2"></i>Need Help Getting Started?</h5>
+        <div class="help-links">
+          <a href="#" class="help-link">
+            <i class="bi bi-book"></i>
+            <span>Read User Guide</span>
+          </a>
+          <a href="#" class="help-link">
+            <i class="bi bi-play-circle"></i>
+            <span>Watch Tutorial Videos</span>
+          </a>
+          <a href="#" class="help-link">
+            <i class="bi bi-chat-dots"></i>
+            <span>Contact Support</span>
+          </a>
+          <a href="#" class="help-link">
+            <i class="bi bi-question-octagon"></i>
+            <span>View FAQs</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="tips-box mt-4">
+        <h5><i class="bi bi-lightbulb me-2"></i>Pro Tips:</h5>
+        <ul>
+          <li>Bookmark the platform URL for quick access</li>
+          <li>Download the mobile app for on-the-go monitoring</li>
+          <li>Join our user community forum for tips and tricks</li>
+          <li>Schedule a 1-on-1 onboarding session with your admin</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation Footer -->
+<div class="tutorial-footer mt-5 pt-4 border-top">
+  <div class="d-flex justify-content-between align-items-center">
+    <button class="btn btn-outline-secondary" 
+            (click)="previousSection()" 
+            [disabled]="currentSection === 0">
+      <i class="bi bi-chevron-left me-2"></i>
+      Previous
+    </button>
+
+    <div class="text-center">
+      <small class="text-muted">
+        Section {{ currentSection + 1 }} of {{ sections.length }}
+      </small>
+    </div>
+
+    <button class="btn btn-primary" 
+            (click)="nextSection()" 
+            *ngIf="currentSection < sections.length - 1">
+      Next
+      <i class="bi bi-chevron-right ms-2"></i>
+    </button>
+
+    <button class="btn btn-success" 
+            (click)="markAsCompleted()" 
+            *ngIf="currentSection === sections.length - 1">
+      <i class="bi bi-check-lg me-2"></i>
+      Complete Tutorial
+    </button>
+  </div>
+</div>
+
+<!-- Sections Overview Sidebar -->
+<div class="sections-sidebar">
+  <h6 class="mb-3">Setup Steps</h6>
+  <div class="section-list">
+    <div *ngFor="let section of sections; let i = index" 
+         class="section-item"
+         [class.active]="i === currentSection"
+         [class.completed]="isSectionCompleted(i)"
+         (click)="goToSection(i)">
+      <div class="section-icon">
+        <i class="bi" 
+           [class.bi-check-circle-fill]="isSectionCompleted(i)"
+           [class.bi-circle]="!isSectionCompleted(i) && i !== currentSection"
+           [class.bi-circle-fill]="i === currentSection && !isSectionCompleted(i)"></i>
+      </div>
+      <span class="section-title">{{ section.title }}</span>
+    </div>
+  </div>
+</div>

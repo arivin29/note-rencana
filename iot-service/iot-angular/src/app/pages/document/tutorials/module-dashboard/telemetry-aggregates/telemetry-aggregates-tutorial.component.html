@@ -1,0 +1,1114 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-dashboard">Module: Dashboard</a></li>
+        <li class="breadcrumb-item active">Telemetry Aggregates</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-graph-up-arrow text-theme me-2"></i>
+        Telemetry Aggregates - Real-Time Monitoring
+        <small class="d-block mt-2 text-white-transparent-7">Monitor aggregated sensor data dengan time windows, cascading filters & auto-refresh</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Introduction -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Telemetry Aggregates?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Telemetry Aggregates</strong> adalah halaman <strong>monitoring real-time untuk melihat aggregated sensor data</strong> dari semua channels dengan time-based windows (5 menit, 15 menit, 1 jam, 1 hari, 1 bulan). 
+                  Berbeda dengan Sensor Detail View yang fokus pada satu channel, halaman ini menampilkan <strong>overview semua channels sekaligus</strong>.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-database fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Aggregation = Summarized Telemetry Data</h6>
+                      <p class="mb-2">
+                        Sistem mengumpulkan raw telemetry readings dan menghitung statistik per time window:
+                      </p>
+                      <ul class="mb-0">
+                        <li><strong>Window Start/End:</strong> Time range untuk aggregation (e.g., 09:00-10:00 untuk 1 hour window)</li>
+                        <li><strong>MIN:</strong> Nilai minimum dalam window</li>
+                        <li><strong>MAX:</strong> Nilai maximum dalam window</li>
+                        <li><strong>AVG:</strong> Nilai rata-rata (average)</li>
+                        <li><strong>LATEST:</strong> Nilai terakhir di window</li>
+                        <li><strong>Points:</strong> Jumlah data points yang di-aggregate</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kenapa Penting?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Wide Monitoring:</strong> Monitor hundreds of channels sekaligus dalam satu view</li>
+                    <li><strong>Time-Based Analysis:</strong> Compare data across different time windows (5m vs 1h vs 1d)</li>
+                    <li><strong>Trend Detection:</strong> Identify increasing/decreasing trends dengan visual indicators</li>
+                    <li><strong>Quality Assurance:</strong> Quick health check dengan color-coded quality badges</li>
+                    <li><strong>Filtering Flexibility:</strong> Cascading filters (Owner → Project → Node → Sensor → Channel)</li>
+                    <li><strong>Auto-Refresh:</strong> Live monitoring seperti Grafana dengan configurable intervals</li>
+                    <li><strong>Data Export:</strong> Export raw data atau aggregated data (5min/1hour) ke CSV</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Access Methods -->
+          <div id="access" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Telemetry Aggregates</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Ada beberapa cara untuk mengakses <strong>Telemetry Aggregates</strong> page:</p>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Main Navigation (Recommended)</h6>
+                  <ol class="mb-0">
+                    <li>Klik menu <strong>Telemetry Logs</strong> di sidebar kiri</li>
+                    <li>Atau navigate via breadcrumb: <strong>IoT → Telemetry</strong></li>
+                    <li>Halaman Telemetry Aggregates langsung terbuka</li>
+                    <li>Default: aggregation <strong>1 Jam</strong>, no filters</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Dashboard Widgets (With Filters)</h6>
+                  <ol class="mb-0">
+                    <li><strong>Owner Detail View:</strong> Click "View Telemetry" button → pre-filtered by Owner</li>
+                    <li><strong>Project Detail View:</strong> Click "View Telemetry" button → pre-filtered by Project</li>
+                    <li><strong>Node Detail View:</strong> Click "View All Telemetry" → pre-filtered by Node</li>
+                    <li><strong>Sensor Detail:</strong> Link to view all channels in sensor → pre-filtered by Sensor</li>
+                  </ol>
+                  <p class="mb-0 mt-2 text-info">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Filters dari widget akan otomatis terisi di cascading filters
+                  </p>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Via Direct URL with Query Params</h6>
+                  <pre class="bg-dark text-white p-2 rounded mb-2"><code>http://localhost:4200/iot/telemetry?idOwner={{ '{' }}ownerId{{ '}' }}&idProject={{ '{' }}projectId{{ '}' }}</code></pre>
+                  <p class="mb-2"><strong>Supported Query Parameters:</strong></p>
+                  <ul class="mb-0">
+                    <li><code>idOwner</code> - Filter by owner UUID</li>
+                    <li><code>idProject</code> - Filter by project UUID</li>
+                    <li><code>idNode</code> - Filter by node UUID</li>
+                    <li><code>idSensor</code> - Filter by sensor UUID</li>
+                    <li><code>idSensorChannel</code> - Filter by channel UUID</li>
+                    <li><code>range</code> - Time range (default: 24h)</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface Overview -->
+          <div id="interface" class="mb-5">
+            <h4><i class="bi bi-window text-theme me-2"></i>Interface & Features Overview</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Interface <strong>Telemetry Aggregates</strong> dibagi menjadi beberapa section:</p>
+
+                <!-- Screenshot -->
+                <div class="mb-4">
+                  <img src="assets/img/documentation/module-dashboard/telemetry-aggregates/screenshot.png" 
+                       alt="Telemetry Aggregates Page Interface" 
+                       class="img-fluid rounded border">
+                  <p class="text-center text-white-transparent-7 mt-2 mb-0">
+                    <small>
+                      <i class="bi bi-image me-1"></i>
+                      Tampilan halaman Telemetry Aggregates dengan time window tabs, cascading filters, statistics cards, dan data table
+                    </small>
+                  </p>
+                </div>
+
+                <!-- Page Header -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Page Header & Action Buttons</h6>
+                  <ul class="mb-0">
+                    <li><strong>Page Title:</strong> "Telemetry Aggregates" dengan subtitle "Monitoring label agrega sensor channel per window 1 Bulan"</li>
+                    <li><strong>Filter Badges:</strong> Show active filters (Owner/Project/Node/Sensor/Channel)</li>
+                    <li><strong>Auto Refresh Toggle:</strong> Enable/disable auto-refresh dengan ON/OFF switch</li>
+                    <li><strong>Refresh Interval Dropdown:</strong> Select interval (5s/10s/30s/1m/5m/15m)</li>
+                    <li><strong>Sync Aggregation Button:</strong> Manual refresh data</li>
+                    <li><strong>Configure Alerts Button:</strong> Quick link to alert configuration</li>
+                    <li><strong>Export CSV Dropdown:</strong> Export options (Raw/5min aggregate/1hour aggregate)</li>
+                  </ul>
+                </div>
+
+                <!-- Time Window Tabs -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Time Window Tabs (Aggregation Selection)</h6>
+                  <ul class="mb-0">
+                    <li><strong>5m (5 Menit):</strong> Data aggregated per 5-minute windows</li>
+                    <li><strong>15m (15 Menit):</strong> Data aggregated per 15-minute windows</li>
+                    <li><strong>1h (1 Jam):</strong> Data aggregated per 1-hour windows (DEFAULT)</li>
+                    <li><strong>1d (1 Hari):</strong> Data aggregated per daily windows</li>
+                    <li><strong>1M (1 Bulan):</strong> Data aggregated per monthly windows</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Each tab shows badge dengan aggregation label (e.g., "1 Jam" for 1h)
+                  </p>
+                </div>
+
+                <!-- Cascading Filters -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Cascading Filters Section</h6>
+                  <p class="mb-2">5 filter dropdowns dengan dependency chain:</p>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Filter</th>
+                        <th>Depends On</th>
+                        <th>Effect</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Owner</strong></td>
+                        <td>None (independent)</td>
+                        <td>Loads Projects for selected Owner</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Project</strong></td>
+                        <td>Owner (optional)</td>
+                        <td>Loads Nodes for selected Project</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Node</strong></td>
+                        <td>Project (optional)</td>
+                        <td>Loads Sensors for selected Node</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Sensor</strong></td>
+                        <td>Node (optional)</td>
+                        <td>Loads Channels for selected Sensor</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Channel</strong></td>
+                        <td>Sensor (required)</td>
+                        <td>Filters to single channel telemetry</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-4-circle me-2"></i>Statistics Summary Cards (3 Cards)</h6>
+                  <ul class="mb-0">
+                    <li><strong>Total Records:</strong> Count of aggregated records in selected time range</li>
+                    <li><strong>Total Data Points:</strong> Global count (all pages) of telemetry points</li>
+                    <li><strong>Unique Nodes:</strong> Number of distinct nodes in current page</li>
+                  </ul>
+                </div>
+
+                <!-- Data Quality Badges -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-5-circle me-2"></i>Data Quality Summary</h6>
+                  <ul class="mb-0">
+                    <li><strong>0 Healthy (Green):</strong> Values within normal thresholds</li>
+                    <li><strong>0 Warning (Yellow):</strong> Values approaching threshold limits (within 10%)</li>
+                    <li><strong>60 Critical (Red):</strong> Values outside threshold range</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    "Current page only" - counts based on visible records
+                  </p>
+                </div>
+
+                <!-- Active Filter Scope Card -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-6-circle me-2"></i>Active Filter Scope Info Card</h6>
+                  <p class="mb-2">Shows current filter context:</p>
+                  <ul class="mb-0">
+                    <li><strong>Time Range:</strong> "Last 1 Jam" (based on aggregation)</li>
+                    <li><strong>Active Filter Scope:</strong>
+                      <ul>
+                        <li>"All Data (No Filters)" - no filters applied</li>
+                        <li>"Single Channel" - filtered to one channel</li>
+                        <li>"All Channels in Sensor" - filtered to one sensor</li>
+                        <li>"All Sensors in Node" - filtered to one node</li>
+                        <li>"All Nodes in Project" - filtered to one project</li>
+                        <li>"All Projects in Owner" - filtered to one owner</li>
+                      </ul>
+                    </li>
+                    <li><strong>Records displayed:</strong> "Showing 1 to 50 of 4736 records (4,736 data points)"</li>
+                  </ul>
+                </div>
+
+                <!-- Telemetry Table -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-7-circle me-2"></i>Telemetry Aggregates Table</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>CHANNEL / SENSOR</strong></td>
+                        <td>Channel label (e.g., "pressure") + Sensor type badge (e.g., "LLT198")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>NODE</strong></td>
+                        <td>Node name (e.g., "DEMO1-00D42390A994")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>PROJECT / OWNER</strong></td>
+                        <td>Project name (e.g., "Demo-project") + Owner code (e.g., "PT DEVELOPMENT")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>UNIT</strong></td>
+                        <td>Measurement unit (e.g., "bar")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>WINDOW</strong></td>
+                        <td>Time range for aggregation (e.g., "16:56 - 16:57" for 5m window)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>MIN / MAX</strong></td>
+                        <td>Minimum and maximum values in window dengan 2 decimal precision</td>
+                      </tr>
+                      <tr>
+                        <td><strong>AVG</strong></td>
+                        <td>Average value dengan 2 decimal precision</td>
+                      </tr>
+                      <tr>
+                        <td><strong>LATEST</strong></td>
+                        <td>Most recent value in window dengan large font emphasis</td>
+                      </tr>
+                      <tr>
+                        <td><strong>PTS</strong></td>
+                        <td>Number of data points aggregated (e.g., "1 pt")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>QUALITY</strong></td>
+                        <td>Color-coded badge (Good=Green, Warning=Yellow, Critical=Red)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>TREND</strong></td>
+                        <td>Icon indicator (↑ Up, ↓ Down, → Flat)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Usage Guide -->
+          <div id="usage" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- View All Telemetry -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-eye me-2"></i>View All Telemetry Data (No Filters)
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li><strong>Access Page:</strong> Navigate to IoT → Telemetry</li>
+                  <li><strong>Default View:</strong>
+                    <ul>
+                      <li>Aggregation: 1 Jam (last 1 hour of data)</li>
+                      <li>Filters: None (all owners, projects, nodes, sensors)</li>
+                      <li>Page size: 50 records per page</li>
+                    </ul>
+                  </li>
+                  <li><strong>Review Statistics Cards:</strong>
+                    <ul>
+                      <li>Total Records: e.g., 4,736 aggregated windows</li>
+                      <li>Total Data Points: e.g., 4,736 telemetry points</li>
+                      <li>Unique Nodes: e.g., 1 node on current page</li>
+                    </ul>
+                  </li>
+                  <li><strong>Check Data Quality:</strong> Review Healthy/Warning/Critical counts</li>
+                  <li><strong>Browse Table:</strong> Scroll through paginated results</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Use Case:</strong> System-wide health check, identify all critical sensors
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Change Time Window -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-clock-history me-2"></i>Change Time Window (Aggregation)
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik salah satu <strong>Aggregation Tab</strong> di atas filter section:
+                    <ul>
+                      <li><strong>5m:</strong> See last 5 minutes, grouped by 5-minute windows</li>
+                      <li><strong>15m:</strong> See last 15 minutes, grouped by 15-minute windows</li>
+                      <li><strong>1h:</strong> See last 1 hour, grouped by 1-hour windows (DEFAULT)</li>
+                      <li><strong>1d:</strong> See last 24 hours, grouped by daily windows</li>
+                      <li><strong>1M:</strong> See last month, grouped by monthly windows</li>
+                    </ul>
+                  </li>
+                  <li>Page automatically reloads with new time range</li>
+                  <li>Table shows aggregated data for selected window size</li>
+                  <li><strong>Statistics cards</strong> update to show counts for new time range</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Tip:</strong> Use 5m/15m for real-time monitoring, 1d/1M for trend analysis
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Apply Cascading Filters -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-funnel me-2"></i>Apply Cascading Filters
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Scenario:</strong> View telemetry untuk specific project</p>
+                <ol class="mb-2">
+                  <li><strong>Select Owner:</strong> Choose owner dari dropdown (e.g., "PT DEVELOPMENT")</li>
+                  <li>Project dropdown automatically loads projects for that owner</li>
+                  <li><strong>Select Project:</strong> Choose project (e.g., "Demo-project")</li>
+                  <li>Node dropdown automatically loads nodes in that project</li>
+                  <li><strong>Optional:</strong> Select specific Node, Sensor, or Channel untuk narrow down further</li>
+                  <li>Table filters automatically to show only matching telemetry</li>
+                  <li><strong>Active Filter Scope card</strong> updates to show current filter context</li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Note:</strong> Filters cascade - clearing parent filter clears child filters automatically
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Search Telemetry -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-search me-2"></i>Search Telemetry Records
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Find <strong>Search input box</strong> (usually above table)</li>
+                  <li>Type search term:
+                    <ul>
+                      <li>Channel label (e.g., "pressure", "volt_l1")</li>
+                      <li>Node name (e.g., "DEMO1")</li>
+                      <li>Project name (e.g., "Demo-project")</li>
+                      <li>Owner name (e.g., "DEVELOPMENT")</li>
+                      <li>Sensor type (e.g., "LLT198")</li>
+                    </ul>
+                  </li>
+                  <li>Table filters client-side (instant search, no reload)</li>
+                  <li>Statistics update to reflect filtered results</li>
+                  <li>Clear search to see all records again</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Tip:</strong> Combine search dengan filters untuk precise targeting
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Enable Auto-Refresh -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-arrow-clockwise me-2"></i>Enable Auto-Refresh (Live Monitoring)
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>Auto Refresh toggle</strong> di page header (switch OFF → ON)</li>
+                  <li>Toggle turns green when enabled</li>
+                  <li><strong>Optional:</strong> Klik refresh interval dropdown dan select interval:
+                    <ul>
+                      <li>5s - Very fast refresh (high CPU usage)</li>
+                      <li>10s - Fast refresh</li>
+                      <li>30s - Default balanced refresh</li>
+                      <li>1m - Moderate refresh</li>
+                      <li>5m - Slow refresh (low CPU)</li>
+                      <li>15m - Very slow refresh</li>
+                    </ul>
+                  </li>
+                  <li>Data automatically refreshes at selected interval</li>
+                  <li><strong>Last Refresh Time</strong> updates after each refresh</li>
+                  <li>Klik toggle again to disable auto-refresh</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Use Case:</strong> Operations center monitoring, NOC dashboard, live troubleshooting
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Manual Sync -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-arrow-repeat me-2"></i>Manual Sync / Refresh Data
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>"Sync Aggregation"</strong> button di page header</li>
+                  <li>Page reloads with latest telemetry data</li>
+                  <li>Current page resets to page 1</li>
+                  <li>Last refresh timestamp updates</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Use Case:</strong> Verify latest data after sensor calibration, check if issue resolved
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Export CSV -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-download me-2"></i>Export Telemetry to CSV
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>"Export CSV"</strong> dropdown button</li>
+                  <li>Select export format:
+                    <ul>
+                      <li><strong>Raw Data:</strong> Export all filtered telemetry records as-is (no aggregation)</li>
+                      <li><strong>5min Aggregate:</strong> Group data into 5-minute buckets before export</li>
+                      <li><strong>1hour Aggregate:</strong> Group data into 1-hour buckets before export</li>
+                    </ul>
+                  </li>
+                  <li>Browser downloads CSV file:
+                    <ul>
+                      <li>Filename: <code>telemetry-raw-{{ '{' }}timestamp{{ '}' }}.csv</code> (or -5min, -1hour)</li>
+                      <li>Headers: Channel, Sensor, Sensor Type, Node, Project, Owner, Unit, Window Start, Window End, Min, Max, Avg, Latest, Points, Quality, Trend</li>
+                    </ul>
+                  </li>
+                  <li><strong>Use Cases:</strong>
+                    <ul>
+                      <li>Import to Excel for charts</li>
+                      <li>Python/R data analysis</li>
+                      <li>Client reporting</li>
+                      <li>Compliance documentation</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Note:</strong> Export respects current filters - apply filters before export untuk targeted data
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Navigate Pagination -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-files me-2"></i>Navigate Pagination
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li><strong>View Pagination Controls:</strong> Bottom of table shows:
+                    <ul>
+                      <li>"Showing 1 to 50 of 4736 records"</li>
+                      <li>Previous / Next buttons</li>
+                      <li>Page numbers (1, 2, 3, ... 95)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Navigate Pages:</strong>
+                    <ul>
+                      <li>Klik <strong>Next</strong> button untuk next page</li>
+                      <li>Klik <strong>Previous</strong> untuk previous page</li>
+                      <li>Klik <strong>page number</strong> untuk jump to specific page</li>
+                    </ul>
+                  </li>
+                  <li>Page size fixed at 50 records (configurable in component)</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Tip:</strong> Use filters/search untuk reduce total pages instead of browsing all pages
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 5: Understanding Data -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-database text-theme me-2"></i>Memahami Aggregated Data</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Aggregation Concept -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>Aggregation Concept</h6>
+                  <p class="mb-2">Backend mengumpulkan raw sensor readings dan menghitung statistik per time window:</p>
+                  <pre class="bg-dark text-white p-3 rounded mb-2" style="font-size: 0.85rem;"><code>Example: 1-hour window (09:00 - 10:00)
+Raw readings: 9:05 → 25.2°C, 9:15 → 26.1°C, 9:30 → 24.8°C, 9:45 → 25.5°C
+
+Aggregated result:
+{{ '{' }}
+  "windowStart": "2025-12-24T09:00:00Z",
+  "windowEnd": "2025-12-24T10:00:00Z",
+  "min": 24.8,        // Minimum value in window
+  "max": 26.1,        // Maximum value in window
+  "avg": 25.4,        // Average: (25.2 + 26.1 + 24.8 + 25.5) / 4
+  "latest": 25.5,     // Last reading in window
+  "points": 4         // Number of readings aggregated
+{{ '}' }}</code></pre>
+                </div>
+
+                <!-- Time Windows -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-clock me-2"></i>Time Window Sizes</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Aggregation</th>
+                        <th>Window Size</th>
+                        <th>Time Range</th>
+                        <th>Use Case</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>5m</strong></td>
+                        <td>5 minutes</td>
+                        <td>Last 5 minutes</td>
+                        <td>Real-time troubleshooting, live monitoring</td>
+                      </tr>
+                      <tr>
+                        <td><strong>15m</strong></td>
+                        <td>15 minutes</td>
+                        <td>Last 15 minutes</td>
+                        <td>Recent activity review</td>
+                      </tr>
+                      <tr>
+                        <td><strong>1h</strong></td>
+                        <td>1 hour</td>
+                        <td>Last 1 hour</td>
+                        <td>Hourly trends, shift monitoring (DEFAULT)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>1d</strong></td>
+                        <td>1 day</td>
+                        <td>Last 24 hours</td>
+                        <td>Daily performance analysis</td>
+                      </tr>
+                      <tr>
+                        <td><strong>1M</strong></td>
+                        <td>1 month</td>
+                        <td>Last 30 days</td>
+                        <td>Monthly reporting, long-term trends</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Quality Determination -->
+                <div class="alert alert-warning mb-3">
+                  <h6 class="mb-2"><i class="bi bi-shield-check me-2"></i>Quality Badge Logic</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Quality</th>
+                        <th>Condition</th>
+                        <th>Badge</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Good</strong></td>
+                        <td>value ≥ minThreshold AND value ≤ maxThreshold<br/>AND not near limits</td>
+                        <td><span class="badge bg-success">Good</span></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Warning</strong></td>
+                        <td>value within 10% of threshold limits<br/>(approaching min or max)</td>
+                        <td><span class="badge bg-warning text-dark">Warning</span></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Critical</strong></td>
+                        <td>value < minThreshold OR value > maxThreshold</td>
+                        <td><span class="badge bg-danger">Critical</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Thresholds configured per channel in Sensor Channel configuration
+                  </p>
+                </div>
+
+                <!-- Trend Indicators -->
+                <div class="alert alert-success mb-0">
+                  <h6 class="mb-2"><i class="bi bi-graph-up me-2"></i>Trend Icons Explained</h6>
+                  <ul class="mb-0">
+                    <li><strong>↑ Up (Green):</strong> Latest value > Average value (increasing trend)</li>
+                    <li><strong>↓ Down (Red):</strong> Latest value < Average value (decreasing trend)</li>
+                    <li><strong>→ Flat (Gray):</strong> Latest value ≈ Average value (stable)</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Useful untuk quick visual assessment of sensor behavior
+                  </p>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Scenarios -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-text text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Monitor All Critical Sensors in Real-Time
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Operations team perlu monitor semua sensors 24/7 di NOC dashboard</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Navigate to Telemetry Aggregates page</li>
+                  <li>Select aggregation: <strong>5m</strong> (real-time view)</li>
+                  <li>Clear all filters (monitor all projects/nodes)</li>
+                  <li>Enable <strong>Auto-Refresh</strong> dengan interval <strong>10s</strong></li>
+                  <li>Display page on large NOC screen</li>
+                  <li>Monitor Data Quality summary:
+                    <ul>
+                      <li>If <strong>Critical count > 0</strong> → Alert badge shows red</li>
+                      <li>Click to filter/search critical sensors</li>
+                    </ul>
+                  </li>
+                  <li>Investigate critical channels immediately via Sensor Detail View</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Real-time visibility of system health, immediate issue detection
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Generate Monthly Report for Client
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Client meminta monthly performance report untuk their project</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Navigate to Telemetry Aggregates</li>
+                  <li>Select aggregation: <strong>1M</strong> (monthly view)</li>
+                  <li>Apply filters:
+                    <ul>
+                      <li>Owner: Select client's owner account</li>
+                      <li>Project: Select specific project (if multiple)</li>
+                    </ul>
+                  </li>
+                  <li>Review statistics:
+                    <ul>
+                      <li>Total Records: Shows how many monthly aggregates</li>
+                      <li>Total Data Points: Shows volume of telemetry collected</li>
+                    </ul>
+                  </li>
+                  <li>Review Data Quality:
+                    <ul>
+                      <li>Healthy: X channels operating normally</li>
+                      <li>Warning: Y channels approaching limits</li>
+                      <li>Critical: Z channels exceeded thresholds</li>
+                    </ul>
+                  </li>
+                  <li>Export CSV with <strong>1hour Aggregate</strong> format</li>
+                  <li>Import to Excel:
+                    <ul>
+                      <li>Create pivot tables untuk per-sensor summary</li>
+                      <li>Generate charts (min/max/avg trends)</li>
+                      <li>Add comments untuk critical incidents</li>
+                    </ul>
+                  </li>
+                  <li>Package as PDF report dengan executive summary</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Benefit:</strong> Professional monthly reporting dengan data-driven insights
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Troubleshoot Intermittent Sensor Issue
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Pressure sensor reporting intermittent warnings, need to analyze pattern</p>
+                <p class="mb-2"><strong>Langkah Investigation:</strong></p>
+                <ol class="mb-2">
+                  <li>Navigate to Telemetry Aggregates</li>
+                  <li>Select aggregation: <strong>1d</strong> (daily view untuk see full day pattern)</li>
+                  <li>Apply filters:
+                    <ul>
+                      <li>Node: Select node dengan problematic sensor</li>
+                      <li>Sensor: Select pressure sensor</li>
+                      <li>Channel: Select specific pressure channel</li>
+                    </ul>
+                  </li>
+                  <li>Analyze table data:
+                    <ul>
+                      <li>Check <strong>Window</strong> column → identify time periods dengan warnings</li>
+                      <li>Check <strong>MIN/MAX</strong> → see if values spiking or dropping</li>
+                      <li>Check <strong>Points</strong> → if low, possible connectivity issue</li>
+                      <li>Check <strong>Quality</strong> badges → count warning vs critical vs good</li>
+                      <li>Check <strong>Trend</strong> icons → identify if consistently up/down/unstable</li>
+                    </ul>
+                  </li>
+                  <li><strong>Pattern Analysis:</strong>
+                    <ul>
+                      <li>Warnings at same time daily? → scheduled process causing spike</li>
+                      <li>Random warnings? → sensor calibration drift</li>
+                      <li>Low points count? → connectivity/power issue</li>
+                      <li>Trend consistently up? → pressure buildup, equipment malfunction</li>
+                    </ul>
+                  </li>
+                  <li>Drill down to Sensor Detail View untuk minute-by-minute analysis</li>
+                  <li>Export CSV untuk detailed offline analysis dengan Python/R</li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Action:</strong> Based on pattern, schedule maintenance, adjust thresholds, or replace sensor
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Compare Performance Across Multiple Projects
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Owner has 5 projects, wants to compare overall performance</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Navigate to Telemetry Aggregates</li>
+                  <li>Select aggregation: <strong>1d</strong> (daily comparison)</li>
+                  <li>Apply filter: <strong>Owner only</strong> (don't select specific project)</li>
+                  <li>Review table:
+                    <ul>
+                      <li>Sort by <strong>PROJECT / OWNER</strong> column untuk group by project</li>
+                      <li>Count critical sensors per project</li>
+                      <li>Compare average quality across projects</li>
+                    </ul>
+                  </li>
+                  <li><strong>Findings Example:</strong>
+                    <ul>
+                      <li>Project A: 50 channels, 5 critical (10% failure rate)</li>
+                      <li>Project B: 30 channels, 0 critical (0% failure rate - BEST)</li>
+                      <li>Project C: 80 channels, 20 critical (25% failure rate - WORST)</li>
+                    </ul>
+                  </li>
+                  <li>Drill down to Project C untuk investigate why high failure rate</li>
+                  <li>Export comparison data untuk management presentation</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Data-driven decision on where to focus maintenance resources
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 7: Tips -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Common Pitfalls -->
+                <div class="alert alert-danger mb-3">
+                  <h6 class="mb-2"><i class="bi bi-x-circle me-2"></i>Common Pitfalls:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Auto-refresh too fast:</strong> 5s interval on slow network causes constant loading - use 30s minimum</li>
+                    <li><strong>Browsing all 95 pages:</strong> Use filters/search instead of clicking through pages</li>
+                    <li><strong>Wrong aggregation for use case:</strong> Using 1M for real-time monitoring - use 5m/15m instead</li>
+                    <li><strong>Ignoring quality badges:</strong> All critical sensors missed - always check Data Quality summary first</li>
+                    <li><strong>Exporting without filters:</strong> Downloading 10,000 records when only need one project - filter first</li>
+                    <li><strong>Not clearing filters:</strong> Confused why no data showing - check Active Filter Scope card</li>
+                    <li><strong>Comparing different windows:</strong> Comparing 5m avg vs 1d avg - use same aggregation untuk fair comparison</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Bookmark filtered URLs:</strong> Save frequently used filter combinations as browser bookmarks</li>
+                    <li><strong>Use 1h aggregation as default:</strong> Good balance between detail and overview</li>
+                    <li><strong>Monitor trend icons:</strong> Quick visual scan - all ↑ = system warming up, all ↓ = cooling down</li>
+                    <li><strong>Check points count:</strong> Low points (< 10) may indicate connectivity issues</li>
+                    <li><strong>Compare MIN vs MAX:</strong> Large gap = high variance = unstable sensor/process</li>
+                    <li><strong>Use LATEST for current status:</strong> AVG shows historical, LATEST shows now</li>
+                    <li><strong>Export 1hour aggregate for reporting:</strong> Reduces file size while maintaining insights</li>
+                    <li><strong>Combine with Dashboard widgets:</strong> Use Telemetry Streams widget untuk overview, then drill here for details</li>
+                    <li><strong>Set auto-refresh before meetings:</strong> Display live data during project review meetings</li>
+                    <li><strong>Use search untuk quick sensor lookup:</strong> Type sensor name instead of navigating filters</li>
+                    <li><strong>Monitor unique nodes count:</strong> Sudden drop may indicate multiple nodes offline</li>
+                    <li><strong>Schedule CSV exports:</strong> Document monthly exports untuk compliance audit trail</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Related -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Pelajari lebih lanjut tentang topik terkait:</p>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-graph-up me-2"></i>
+                        <a routerLink="/iot/document/module-sensors/sensor-detail" class="text-decoration-none">
+                          Sensor Detail View
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Drill down to single channel telemetry stream with minute-level detail
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-broadcast me-2"></i>
+                        <a routerLink="/iot/document/module-dashboard/telemetry-streams" class="text-decoration-none">
+                          Telemetry Streams Widget
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Dashboard widget showing hourly telemetry ingestion chart
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-hdd-network me-2"></i>
+                        <a routerLink="/iot/document/module-nodes/node-detail-view" class="text-decoration-none">
+                          Node Detail View
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Access telemetry filters from node detail page
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-folder me-2"></i>
+                        <a routerLink="/iot/document/module-projects/project-details" class="text-decoration-none">
+                          Project Detail View
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Access project-filtered telemetry from project detail
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-sliders me-2"></i>
+                        <a routerLink="/iot/document/module-sensors/sensor-channels" class="text-decoration-none">
+                          Sensor Channels Configuration
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Configure channel thresholds for quality determination
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-bell me-2"></i>
+                        <a routerLink="/iot/document/module-alerts/alert-rules" class="text-decoration-none">
+                          Alert Rules Setup
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Configure alerts based on aggregated telemetry thresholds
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 9: Quick Reference -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-bookmark text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Aggregation Periods -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-clock me-2"></i>Aggregation Periods</h6>
+                  <ul class="mb-0">
+                    <li><strong>5m:</strong> Last 5 minutes, real-time troubleshooting</li>
+                    <li><strong>15m:</strong> Last 15 minutes, recent activity</li>
+                    <li><strong>1h:</strong> Last 1 hour, shift monitoring (DEFAULT)</li>
+                    <li><strong>1d:</strong> Last 24 hours, daily analysis</li>
+                    <li><strong>1M:</strong> Last 30 days, monthly reporting</li>
+                  </ul>
+                </div>
+
+                <!-- Quality Badges -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-shield-check me-2"></i>Quality Badge Colors</h6>
+                  <ul class="mb-0">
+                    <li><span class="badge bg-success">Good</span> - Within thresholds, safe range</li>
+                    <li><span class="badge bg-warning text-dark">Warning</span> - Approaching limits (within 10%)</li>
+                    <li><span class="badge bg-danger">Critical</span> - Outside threshold range, needs attention</li>
+                  </ul>
+                </div>
+
+                <!-- Trend Icons -->
+                <div class="alert alert-warning mb-3">
+                  <h6 class="mb-2"><i class="bi bi-graph-up me-2"></i>Trend Icons</h6>
+                  <ul class="mb-0">
+                    <li><strong>↑ Up (Green):</strong> Latest > Average (increasing)</li>
+                    <li><strong>↓ Down (Red):</strong> Latest < Average (decreasing)</li>
+                    <li><strong>→ Flat (Gray):</strong> Latest ≈ Average (stable)</li>
+                  </ul>
+                </div>
+
+                <!-- Auto-Refresh Intervals -->
+                <div class="alert alert-success mb-0">
+                  <h6 class="mb-2"><i class="bi bi-arrow-clockwise me-2"></i>Auto-Refresh Intervals</h6>
+                  <ul class="mb-0">
+                    <li><strong>5s:</strong> Very fast (high CPU, real-time monitoring)</li>
+                    <li><strong>10s:</strong> Fast (NOC dashboards)</li>
+                    <li><strong>30s:</strong> Default balanced (recommended)</li>
+                    <li><strong>1m:</strong> Moderate (normal operations)</li>
+                    <li><strong>5m:</strong> Slow (background monitoring)</li>
+                    <li><strong>15m:</strong> Very slow (minimal updates)</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            <card>
+              <card-body>
+                <h5 class="mb-3">Daftar Isi</h5>
+                <nav-scroll class="nav flex-column">
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Telemetry Aggregates?
+                    </a>
+                    <a href="#access" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Akses
+                    </a>
+                    <a href="#interface" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Interface & Features
+                    </a>
+                    <a href="#usage" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Aggregated Data
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+              </card-body>
+            </card>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

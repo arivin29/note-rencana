@@ -1,0 +1,324 @@
+<div class="tutorial-base-component">
+  <!-- Breadcrumb -->
+  <ol class="breadcrumb float-xl-end">
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document">Documentation</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document/user-guide">User Guide</a></li>
+    <li class="breadcrumb-item active">View Projects</li>
+  </ol>
+  
+  <!-- Page Header -->
+  <h1 class="page-header">
+    <i class="bi bi-folder2-open me-2"></i> View Projects
+    <small class="d-block mt-2 text-white-transparent-7">Panduan menggunakan halaman Projects untuk mengelola project IoT Anda</small>
+  </h1>
+
+  <!-- Progress Bar -->
+  <div class="progress mb-4" style="height: 6px;">
+    <div class="progress-bar bg-success" role="progressbar" 
+         [style.width]="getProgressPercentage() + '%'" 
+         [attr.aria-valuenow]="getProgressPercentage()" 
+         aria-valuemin="0" 
+         aria-valuemax="100">
+    </div>
+  </div>
+
+  <!-- Tutorial Content -->
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-9">
+      <!-- Section 1: Introduction -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-info-circle me-2"></i> Apa itu Projects?</h3>
+          
+          <p class="mb-3">
+            <strong>Projects</strong> adalah container logis untuk mengelompokkan beberapa Nodes (perangkat IoT) yang terkait 
+            dalam satu kesatuan proyek. Misalnya, jika Anda menginstal perangkat IoT di beberapa lokasi berbeda 
+            (Gedung A, Gudang B, Pabrik C), masing-masing dapat diorganisir dalam project terpisah untuk memudahkan manajemen.
+          </p>
+
+          <div class="mb-4">
+            <img src="assets/img/documentation/user-guide/view-projects/img-01-28.png" 
+                 alt="Projects List Overview" 
+                 class="img-fluid rounded border">
+            <p class="text-center text-white-transparent-7 mt-2">
+              Halaman Projects List dengan filters, project cards, dan node counts
+            </p>
+          </div>
+
+          <div class="alert alert-success">
+            <h5 class="mb-2"><i class="bi bi-box-seam me-2"></i> Komponen Project</h5>
+            <ul class="mb-0">
+              <li><strong>Project Code:</strong> Identifier unik project (e.g., PROJ-001)</li>
+              <li><strong>Project Name:</strong> Nama deskriptif (e.g., "Smart Building HQ")</li>
+              <li><strong>Owner:</strong> Tenant yang memiliki project</li>
+              <li><strong>Nodes:</strong> Jumlah perangkat yang assigned ke project</li>
+              <li><strong>Location:</strong> Lokasi fisik instalasi (alamat atau GPS)</li>
+              <li><strong>Status:</strong> Active, Inactive, Archived</li>
+              <li><strong>Description:</strong> Deskripsi tujuan project</li>
+            </ul>
+          </div>
+
+          <h5 class="mt-4 mb-3"><i class="bi bi-star me-2"></i> Kenapa Penting?</h5>
+          <ul>
+            <li><strong>Organisasi Efisien:</strong> Kelompokkan devices berdasarkan lokasi, fungsi, atau department</li>
+            <li><strong>Permission Management:</strong> Assign user access per-project untuk control granular</li>
+            <li><strong>Reporting:</strong> Generate laporan telemetry dan statistik per-project</li>
+            <li><strong>Maintenance Scheduling:</strong> Jadwalkan maintenance devices berdasarkan project lifecycle</li>
+            <li><strong>Budgeting:</strong> Track biaya operasional dan ROI per-project</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 2: Getting Started -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-play-circle me-2"></i> Cara Mengakses Projects</h3>
+          
+          <div class="alert alert-info">
+            <h5 class="mb-3"><i class="bi bi-list-ul me-2"></i> 4 Cara Akses Halaman Projects</h5>
+            
+            <ol class="mb-0">
+              <li class="mb-3">
+                <strong>Via Main Navigation</strong><br>
+                Klik menu <code>Projects</code> di sidebar kiri → Halaman Projects List terbuka → 
+                Tampil semua projects dengan default sorting by created date (newest first)
+              </li>
+              
+              <li class="mb-3">
+                <strong>Via Dashboard Widget</strong><br>
+                Dari Dashboard → Widget <code>Platform Statistics</code> → Klik <strong>"Projects"</strong> card → 
+                Navigate ke Projects List OR klik <strong>"View All Projects"</strong> button
+              </li>
+              
+              <li class="mb-3">
+                <strong>Via Owner Detail</strong><br>
+                Klik <code>Owners</code> menu → Select Owner → Dalam Owner Detail terdapat section 
+                <strong>"Projects in This Owner"</strong> → Klik project name untuk detail OR "View All Projects"
+              </li>
+              
+              <li class="mb-0">
+                <strong>Via Direct URL</strong><br>
+                Akses langsung: <code>http://localhost:4200/iot/projects</code>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Features -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-gear me-2"></i> Fitur Projects</h3>
+          
+          <!-- Project Filters -->
+          <h5 class="mb-3"><i class="bi bi-funnel me-2"></i> 1. Project Filters</h5>
+          <p>Filter untuk mempersempit daftar projects:</p>
+          <ul>
+            <li><strong>Owner:</strong> Filter by tenant/owner (multi-tenant support)</li>
+            <li><strong>Status:</strong> All / Active / Inactive / Archived</li>
+            <li><strong>Location:</strong> Filter by installation location</li>
+            <li><strong>Created Date:</strong> Filter by date range (Last 7 days / 30 days / Custom)</li>
+            <li><strong>Search:</strong> Cari by Project Code, Name, atau Description</li>
+          </ul>
+
+          <!-- Projects Data Table -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-table me-2"></i> 2. Projects Data Table</h5>
+          <p>Tabel menampilkan semua projects dengan columns berikut:</p>
+          
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th>Column</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Status Badge</strong></td>
+                  <td>Color-coded badge: <span class="badge bg-success">Active</span> (green), 
+                      <span class="badge bg-secondary">Inactive</span> (gray), 
+                      <span class="badge bg-warning">Archived</span> (yellow)</td>
+                </tr>
+                <tr>
+                  <td><strong>Project Code</strong></td>
+                  <td>Unique identifier (clickable link ke Project Detail)</td>
+                </tr>
+                <tr>
+                  <td><strong>Project Name</strong></td>
+                  <td>Friendly name (e.g., "Smart Building HQ", "Factory Monitoring")</td>
+                </tr>
+                <tr>
+                  <td><strong>Owner</strong></td>
+                  <td>Tenant yang memiliki project (dengan badge owner code)</td>
+                </tr>
+                <tr>
+                  <td><strong>Nodes Count</strong></td>
+                  <td>Jumlah nodes assigned (clickable link ke Nodes filtered by project)</td>
+                </tr>
+                <tr>
+                  <td><strong>Location</strong></td>
+                  <td>Physical location (address atau GPS coordinates)</td>
+                </tr>
+                <tr>
+                  <td><strong>Created At</strong></td>
+                  <td>Tanggal project dibuat (e.g., "2023-12-15 08:30:00")</td>
+                </tr>
+                <tr>
+                  <td><strong>Last Activity</strong></td>
+                  <td>Timestamp last telemetry received from project nodes</td>
+                </tr>
+                <tr>
+                  <td><strong>Actions</strong></td>
+                  <td>Buttons: <button class="btn btn-sm btn-primary">View Detail</button> 
+                      <button class="btn btn-sm btn-warning">Edit</button> 
+                      <button class="btn btn-sm btn-danger">Delete</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mb-4">
+            <img src="assets/img/documentation/user-guide/view-projects/img-01-39.png" 
+                 alt="Projects Table Detail" 
+                 class="img-fluid rounded border">
+            <p class="text-center text-white-transparent-7 mt-2">
+              Projects table dengan status badges, nodes count, dan action buttons
+            </p>
+          </div>
+
+          <!-- Project Actions -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-lightning me-2"></i> 3. Project Actions</h5>
+          <ul>
+            <li>
+              <strong>View Detail:</strong> Klik Project Code atau button "View Detail" → 
+              Navigate ke Project Detail Page (tampil project info, nodes list, telemetry summary, alerts)
+            </li>
+            <li>
+              <strong>Edit Project:</strong> Update Project Name, Description, Location, Status
+            </li>
+            <li>
+              <strong>Delete Project:</strong> Hapus project (dengan confirmation, hanya jika tidak ada nodes)
+            </li>
+            <li>
+              <strong>Archive Project:</strong> Set status ke "Archived" (retain data, tidak aktif di dashboard)
+            </li>
+            <li>
+              <strong>View Nodes:</strong> Quick link ke Nodes List filtered by project
+            </li>
+            <li>
+              <strong>Export CSV:</strong> Download projects list sebagai CSV untuk reporting
+            </li>
+          </ul>
+
+          <!-- Create New Project -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-plus-circle me-2"></i> 4. Create New Project</h5>
+          <p>Klik button <strong>"+ New Project"</strong> di top-right untuk membuat project baru:</p>
+          <ul>
+            <li><strong>Project Code:</strong> Auto-generated (e.g., PROJ-001) atau manual input</li>
+            <li><strong>Project Name:</strong> Required (e.g., "Smart Office Jakarta")</li>
+            <li><strong>Owner:</strong> Select dari dropdown owners (required)</li>
+            <li><strong>Location:</strong> Address atau GPS coordinates (optional)</li>
+            <li><strong>Description:</strong> Tujuan dan scope project (optional)</li>
+            <li><strong>Status:</strong> Active (default) / Inactive</li>
+          </ul>
+
+          <!-- Bulk Actions -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-check2-square me-2"></i> 5. Bulk Actions</h5>
+          <p>Kelola beberapa projects sekaligus:</p>
+          <ul>
+            <li><strong>Select Multiple:</strong> Checkbox di tiap row untuk select multiple projects</li>
+            <li><strong>Bulk Archive:</strong> Archive selected projects sekaligus</li>
+            <li><strong>Bulk Export:</strong> Export selected projects to CSV</li>
+            <li><strong>Bulk Change Owner:</strong> Transfer multiple projects ke owner lain (admin only)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 4: Next Steps -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-arrow-right-circle me-2"></i> Langkah Selanjutnya</h3>
+          
+          <div class="alert alert-warning">
+            <h5 class="mb-3"><i class="bi bi-book me-2"></i> Tutorial Terkait</h5>
+            <ul class="mb-0">
+              <li>
+                <a routerLink="/iot/document/user-guide/view-nodes" class="text-decoration-none">
+                  <i class="bi bi-cpu me-1"></i> View Nodes
+                </a> - Explore devices dalam project
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/view-sensors" class="text-decoration-none">
+                  <i class="bi bi-thermometer-half me-1"></i> View Sensors
+                </a> - Monitor sensor details per-project
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/view-telemetry" class="text-decoration-none">
+                  <i class="bi bi-graph-up me-1"></i> View Telemetry
+                </a> - Analyze project telemetry data
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/view-alerts" class="text-decoration-none">
+                  <i class="bi bi-exclamation-triangle me-1"></i> View Alerts
+                </a> - Check project alerts
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/dashboard-overview" class="text-decoration-none">
+                  <i class="bi bi-speedometer2 me-1"></i> Dashboard Overview
+                </a> - Kembali ke Dashboard
+              </li>
+            </ul>
+          </div>
+
+          <div class="alert alert-success">
+            <h5 class="mb-3"><i class="bi bi-lightbulb me-2"></i> Pro Tips</h5>
+            <ul class="mb-0">
+              <li>
+                <strong>Organize by Location:</strong> Create separate projects untuk tiap lokasi fisik 
+                (e.g., "Jakarta Office", "Surabaya Warehouse") untuk maintenance yang lebih efisien
+              </li>
+              <li>
+                <strong>Archive Completed Projects:</strong> Jangan delete project yang sudah selesai, 
+                gunakan status "Archived" untuk retain historical data
+              </li>
+              <li>
+                <strong>Monitor Last Activity:</strong> Projects dengan "Last Activity > 7 days ago" 
+                mungkin memiliki node connectivity issues
+              </li>
+              <li>
+                <strong>Use Descriptive Names:</strong> Gunakan naming convention yang jelas 
+                (e.g., "[Location] - [Purpose]" seperti "Jakarta - Temperature Monitoring")
+              </li>
+              <li>
+                <strong>Regular Exports:</strong> Export projects list quarterly untuk inventory auditing 
+                dan budgeting reports
+              </li>
+              <li>
+                <strong>Check Nodes Count:</strong> Projects dengan 0 nodes mungkin perlu setup atau archiving
+              </li>
+              <li>
+                <strong>Bookmark Filters:</strong> Save filtered URLs untuk quick access 
+                (e.g., ?owner=OWNER-001&status=active)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-xl-3">
+      <nav-scroll class="nav">
+        <a class="nav-link" 
+           *ngFor="let section of sections; let i = index"
+           [class.active]="currentSection === i"
+           (click)="goToSection(i)"
+           style="cursor: pointer;">
+          {{ section.title }}
+        </a>
+      </nav-scroll>
+    </div>
+  </div>
+</div>

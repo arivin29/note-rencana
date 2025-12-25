@@ -1,0 +1,86 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/documentation">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/documentation/admin-guide">Admin Guide</a></li>
+        <li class="breadcrumb-item active">Audit Logs</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        Audit Logs <small>View system logs and user activities</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Introduction -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Introduction</h4>
+            <p class="text-white-transparent-7 mb-3">
+              This tutorial will guide you through view system logs and user activities
+            </p>
+
+            <card>
+              <card-body>
+                <div class="alert alert-theme mb-0">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-lightbulb fs-3 me-3"></i>
+                    <div>
+                      <h5 class="mb-1">📝 Coming Soon</h5>
+                      <p class="mb-0 opacity-75">
+                        This tutorial content is currently being developed. 
+                        Check back soon for detailed step-by-step instructions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-outline-theme" (click)="previousSection()" [disabled]="currentSection === 0">
+              <i class="bi bi-arrow-left me-2"></i>Previous
+            </button>
+            <button class="btn btn-theme" (click)="nextSection()" [disabled]="currentSection === sections.length - 1">
+              Next<i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <nav-scroll class="nav">
+            <a class="nav-link" 
+               *ngFor="let section of sections; let i = index"
+               [class.active]="currentSection === i"
+               (click)="goToSection(i)"
+               style="cursor: pointer;">
+              {{ section.title }}
+            </a>
+          </nav-scroll>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

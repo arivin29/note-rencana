@@ -1,0 +1,992 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-owners">Module: Owners</a></li>
+        <li class="breadcrumb-item active">Owner List & Overview</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-building text-theme me-2"></i>
+        Owner List & Overview 
+        <small class="d-block mt-2 text-white-transparent-7">Kelola dan monitor semua owner dalam sistem IoT</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Apa itu Owner List? -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Owner List?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Owner List</strong> adalah halaman untuk melihat dan mengelola semua <strong>Owner</strong> (pemilik/klien) 
+                  yang terdaftar dalam sistem IoT.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-building fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Apa itu Owner?</h6>
+                      <p class="mb-0 text-white-transparent-8">
+                        Owner adalah <strong>perusahaan atau organisasi</strong> yang memiliki IoT devices dalam sistem. 
+                        Setiap owner dapat memiliki multiple projects, nodes, dan sensors.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <h6 class="mb-2">Fungsi Utama:</h6>
+                <ul class="mb-0">
+                  <li>Melihat daftar lengkap semua owner</li>
+                  <li>Monitor status owner (Active, Trial, Suspended)</li>
+                  <li>Filter owner berdasarkan industry dan status</li>
+                  <li>Search owner by nama, ID, atau kontak</li>
+                  <li>Lihat summary resource setiap owner (projects, nodes, sensors)</li>
+                  <li>Quick access ke detail owner</li>
+                </ul>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Navigasi ke Owner List -->
+          <div id="getting-started" class="mb-5">
+            <h4><i class="bi bi-compass text-theme me-2"></i>Cara Mengakses</h4>
+            
+            <card>
+              <card-body>
+                <h6 class="mb-3">Navigasi:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-3">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-menu-button-wide text-theme me-2"></i>
+                    <span class="text-white-transparent-7">Sidebar Menu</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-white">IoT</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-theme fw-bold">Owners</span>
+                  </div>
+                </div>
+
+                <div class="alert alert-info mb-3">
+                  <i class="bi bi-shield-check me-2"></i>
+                  <strong>Role Access:</strong> Halaman ini dapat diakses oleh <code>Super Admin</code> dan <code>Admin</code>
+                </div>
+
+                <p class="mb-2"><strong>URL Path:</strong></p>
+                <div class="bg-dark bg-opacity-50 p-2 rounded font-monospace text-white-transparent-8 mb-0">
+                  /iot/owners
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface Overview dengan Screenshot -->
+          <div id="features" class="mb-5">
+            <h4><i class="bi bi-layout-text-window text-theme me-2"></i>Memahami Interface</h4>
+            
+            <card>
+              <card-body>
+                <!-- Screenshot -->
+                <div class="mb-4 text-center">
+                  <img src="assets/tutorials/images/module-owners/owner-list-interface.png" 
+                       alt="Owner List Interface" 
+                       class="img-fluid border border-white-transparent-2 rounded shadow-lg">
+                  <p class="text-white-transparent-6 small mt-2 mb-0">
+                    <i class="bi bi-image me-1"></i>Screenshot: Owner List Interface
+                  </p>
+                </div>
+
+                <!-- Interface Components -->
+                <h6 class="mb-3">Komponen Interface:</h6>
+                
+                <!-- 1. Header Area -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">1</span>
+                    <h6 class="mb-0">Header Area</h6>
+                  </div>
+                  <div class="ps-4">
+                    <ul class="mb-0">
+                      <li><strong>Breadcrumb:</strong> IoT › Owners (untuk navigasi)</li>
+                      <li><strong>Page Title:</strong> "IoT Owners"</li>
+                      <li><strong>Add Owner Button:</strong> 
+                        <span class="badge bg-outline-theme ms-1">
+                          <i class="bi bi-plus-circle me-1"></i>Add Owner
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- 2. Action Bar -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">2</span>
+                    <h6 class="mb-0">Action Bar</h6>
+                  </div>
+                  <div class="ps-4">
+                    <table class="table table-sm table-dark table-bordered">
+                      <thead>
+                        <tr>
+                          <th width="30%">Action</th>
+                          <th>Fungsi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><i class="bi bi-download me-1"></i> Export Owners</td>
+                          <td>Download data owner ke Excel/CSV</td>
+                        </tr>
+                        <tr>
+                          <td><i class="bi bi-envelope me-1"></i> Invite Owner Admin</td>
+                          <td>Kirim email undangan ke admin owner</td>
+                        </tr>
+                        <tr>
+                          <td><i class="bi bi-three-dots me-1"></i> More Actions</td>
+                          <td>
+                            Menu tambahan:<br>
+                            • Assign SLA<br>
+                            • Generate Contract<br>
+                            • Archive Owner
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 3. Status Tabs -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">3</span>
+                    <h6 class="mb-0">Status Filter Tabs</h6>
+                  </div>
+                  <div class="ps-4">
+                    <p class="mb-2">Tab untuk filter owner berdasarkan status:</p>
+                    <div class="d-flex gap-2 flex-wrap mb-2">
+                      <span class="badge bg-secondary">All <span class="badge bg-dark ms-1">25</span></span>
+                      <span class="badge bg-success">Active <span class="badge bg-dark ms-1">18</span></span>
+                      <span class="badge bg-info">Trial <span class="badge bg-dark ms-1">5</span></span>
+                      <span class="badge bg-secondary">Suspended <span class="badge bg-dark ms-1">2</span></span>
+                    </div>
+                    <p class="text-white-transparent-6 small mb-0">
+                      <i class="bi bi-info-circle me-1"></i>Badge angka menunjukkan jumlah owner per status
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 4. Filter & Search -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">4</span>
+                    <h6 class="mb-0">Filter & Search Controls</h6>
+                  </div>
+                  <div class="ps-4">
+                    <table class="table table-sm table-dark table-bordered">
+                      <tbody>
+                        <tr>
+                          <td width="30%"><strong>Industry Dropdown</strong></td>
+                          <td>Filter owner by jenis industri (Manufacturing, Water Treatment, dll)</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Search Box</strong></td>
+                          <td>Cari owner by nama, ID, atau kontak (real-time search)</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 5. Data Table -->
+                <div class="mb-0">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">5</span>
+                    <h6 class="mb-0">Tabel Data Owner</h6>
+                  </div>
+                  <div class="ps-4">
+                    <p class="mb-2">Setiap kolom menampilkan informasi penting:</p>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-dark table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Kolom</th>
+                            <th>Informasi yang Ditampilkan</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><i class="bi bi-check-square"></i> Checkbox</td>
+                            <td>Select owner untuk bulk action</td>
+                          </tr>
+                          <tr>
+                            <td><i class="bi bi-building"></i> Owner</td>
+                            <td>
+                              • <strong>Nama Owner</strong> (clickable link ke detail)<br>
+                              • Industry (Manufacturing, Oil & Gas, dll)<br>
+                              • ID Owner (unique identifier)
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><i class="bi bi-diagram-3"></i> Projects/Nodes/Sensors</td>
+                            <td>
+                              • <strong>X Projects</strong> - Jumlah project<br>
+                              • <strong>Y Nodes</strong> - Total IoT devices<br>
+                              • <strong>Z Sensors</strong> - Total sensors
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><i class="bi bi-award"></i> SLA & Status</td>
+                            <td>
+                              • SLA Level (PLATINUM/GOLD/SILVER/BRONZE)<br>
+                              • Status Badge: 
+                              <span class="badge bg-success ms-1">Active</span>
+                              <span class="badge bg-info ms-1">Trial</span>
+                              <span class="badge bg-secondary ms-1">Suspended</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><i class="bi bi-person-vcard"></i> Contact</td>
+                            <td>
+                              • Contact Person<br>
+                              • Email<br>
+                              • Phone Number
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><i class="bi bi-bell text-danger"></i> Alerts</td>
+                            <td>Jumlah alert aktif (merah jika ada alert)</td>
+                          </tr>
+                          <tr>
+                            <td><i class="bi bi-clock-history"></i> Last Activity</td>
+                            <td>Waktu terakhir ada aktivitas dari owner</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Cara Menggunakan -->
+          <div id="next-steps" class="mb-5">
+            <h4><i class="bi bi-play-circle text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- Filter by Status -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-funnel me-2"></i>Filter Owner by Status
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Klik tab status yang diinginkan di bagian atas tabel</li>
+                  <li>Pilih salah satu:
+                    <ul>
+                      <li><strong>All</strong> - Tampilkan semua owner</li>
+                      <li><strong>Active</strong> - Owner dengan akses penuh dan aktif</li>
+                      <li><strong>Trial</strong> - Owner dalam masa percobaan (limited time)</li>
+                      <li><strong>Suspended</strong> - Owner yang sementara ditangguhkan</li>
+                    </ul>
+                  </li>
+                  <li>Tabel otomatis ter-filter sesuai status</li>
+                  <li>Badge angka menunjukkan jumlah owner per kategori</li>
+                </ol>
+
+                <div class="alert alert-success mb-0">
+                  <i class="bi bi-lightbulb me-2"></i>
+                  <strong>Tip:</strong> Gunakan filter status untuk quick monitoring, 
+                  misalnya cek owner Trial yang perlu follow-up untuk convert ke Active.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Filter by Industry -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-filter me-2"></i>Filter Owner by Industry
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Klik dropdown <strong>"Industry"</strong> di area filter</li>
+                  <li>Pilih jenis industri (contoh: Manufacturing, Water Treatment, Oil & Gas, dll)</li>
+                  <li>Tabel otomatis menampilkan owner dari industri tersebut</li>
+                  <li>Pilih "All Industry" untuk reset filter</li>
+                </ol>
+
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Info:</strong> List industry di-generate otomatis dari data owner yang ada di sistem.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Search Owner -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-search me-2"></i>Search Owner
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Ketik di <strong>Search Box</strong> yang ada di sebelah kanan filter Industry</li>
+                  <li>Anda bisa search by:
+                    <ul>
+                      <li>Nama owner</li>
+                      <li>ID owner</li>
+                      <li>Kontak (person/email/phone)</li>
+                    </ul>
+                  </li>
+                  <li>Hasil muncul secara <strong>real-time</strong> saat Anda mengetik</li>
+                  <li>Hapus text untuk reset search</li>
+                </ol>
+
+                <div class="alert alert-warning mb-0">
+                  <i class="bi bi-lightning me-2"></i>
+                  <strong>Pro Tip:</strong> Kombinasikan filter Status + Industry + Search untuk hasil yang sangat spesifik!
+                </div>
+              </card-body>
+            </card>
+
+            <!-- View Owner Details -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-eye me-2"></i>Lihat Detail Owner
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Cari owner yang ingin dilihat detailnya</li>
+                  <li>Klik <strong>nama owner</strong> (link biru) di kolom "Owner"</li>
+                  <li>Anda akan diarahkan ke halaman <strong>Owner Detail</strong></li>
+                  <li>Di halaman detail, Anda bisa lihat:
+                    <ul>
+                      <li>Informasi lengkap owner</li>
+                      <li>List projects milik owner</li>
+                      <li>Data forwarding configuration</li>
+                      <li>User management</li>
+                    </ul>
+                  </li>
+                </ol>
+              </card-body>
+            </card>
+
+            <!-- Pagination -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-files me-2"></i>Navigasi Pagination
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Mengatur Rows per Page:</strong></p>
+                <ol class="mb-3">
+                  <li>Lihat dropdown "Rows" di bagian bawah tabel</li>
+                  <li>Pilih jumlah: <code>10</code>, <code>20</code>, atau <code>50</code></li>
+                  <li>Tabel akan reload dengan jumlah row sesuai pilihan</li>
+                </ol>
+
+                <p class="mb-2"><strong>Navigasi Page:</strong></p>
+                <ol class="mb-0">
+                  <li>Gunakan button <strong>Previous</strong> / <strong>Next</strong></li>
+                  <li>Atau klik nomor page langsung (1, 2, 3, ...)</li>
+                  <li>Info "Showing X to Y of Z owners" menunjukkan posisi data saat ini</li>
+                </ol>
+              </card-body>
+            </card>
+
+          </div>
+
+          <!-- Section 5: Understanding Data -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-graph-up text-theme me-2"></i>Memahami Data Owner</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Resource Hierarchy -->
+                <h6 class="mb-3">Hierarki Resource Owner:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-4">
+                  <pre class="text-white-transparent-8 mb-0" style="font-family: 'Courier New', monospace; font-size: 13px;">
+<span class="text-theme">Owner</span> (PT ABC Manufacturing)
+├── <span class="text-info">5 Projects</span>
+│   ├── Project Alpha
+│   │   ├── 10 Nodes (IoT Devices)
+│   │   └── 50 Sensors
+│   └── Project Beta
+│       ├── 8 Nodes
+│       └── 40 Sensors
+└── <span class="text-warning">Total: 5 Projects, 18 Nodes, 90 Sensors</span>
+                  </pre>
+                </div>
+
+                <!-- SLA Levels -->
+                <h6 class="mb-3">SLA (Service Level Agreement) Tiers:</h6>
+                <div class="table-responsive mb-4">
+                  <table class="table table-sm table-dark table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Level</th>
+                        <th>Description</th>
+                        <th>Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="badge bg-warning text-dark">PLATINUM</span></td>
+                        <td>Highest tier - Premium support & features</td>
+                        <td><i class="bi bi-star-fill text-warning"></i> Highest</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-warning">GOLD</span></td>
+                        <td>High tier - Advanced support</td>
+                        <td><i class="bi bi-star-fill text-warning"></i> High</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-secondary">SILVER</span></td>
+                        <td>Standard tier - Standard support</td>
+                        <td><i class="bi bi-star text-white-transparent-6"></i> Medium</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-secondary">BRONZE</span></td>
+                        <td>Basic tier - Basic support (default)</td>
+                        <td><i class="bi bi-star text-white-transparent-4"></i> Basic</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Status Badges -->
+                <h6 class="mb-3">Status Badge Meanings:</h6>
+                <div class="table-responsive mb-4">
+                  <table class="table table-sm table-dark table-bordered">
+                    <thead>
+                      <tr>
+                        <th width="20%">Status</th>
+                        <th width="50%">Deskripsi</th>
+                        <th width="30%">Access Level</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>Owner aktif dengan akses penuh ke sistem</td>
+                        <td><span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Full Access</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-info">Trial</span></td>
+                        <td>Owner dalam masa percobaan (limited time)</td>
+                        <td><span class="text-info"><i class="bi bi-clock-fill me-1"></i>Time-Limited</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-secondary">Suspended</span></td>
+                        <td>Owner sementara ditangguhkan</td>
+                        <td><span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>No Access</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Alert Count -->
+                <h6 class="mb-3">Alert Count Indicator:</h6>
+                <div class="alert alert-danger">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-bell-fill fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Angka Merah di Kolom Alerts</h6>
+                      <p class="mb-2">
+                        Menunjukkan jumlah <strong>alert aktif</strong> yang perlu perhatian dari owner tersebut.
+                      </p>
+                      <ul class="mb-0">
+                        <li><code>0</code> = Tidak ada alert, semua normal</li>
+                        <li><code class="text-danger">5</code> = Ada 5 alert aktif yang perlu ditindaklanjuti</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Last Activity -->
+                <h6 class="mb-3">Last Activity Time Format:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded">
+                  <table class="table table-sm table-borderless text-white-transparent-8 mb-0">
+                    <tbody>
+                      <tr>
+                        <td width="30%"><code>09:15 UTC</code></td>
+                        <td>→ Hari ini (jam:menit)</td>
+                      </tr>
+                      <tr>
+                        <td><code>Yesterday</code></td>
+                        <td>→ Kemarin</td>
+                      </tr>
+                      <tr>
+                        <td><code>Dec 20</code></td>
+                        <td>→ Tanggal spesifik (lebih dari 2 hari)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Common Scenarios -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-check text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Cari Owner Tertentu
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Anda ingin mencari owner "PT Adhi Water"</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Ketik <code>Adhi</code> di search box</li>
+                  <li>Hasil otomatis muncul dengan owner yang match</li>
+                  <li>Klik nama owner untuk lihat detail</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Quick access ke owner yang dicari tanpa scroll panjang
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Monitor Owner dengan Alert
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Anda perlu cek owner mana yang punya alert aktif</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Lihat kolom <strong>"Alerts"</strong> di tabel</li>
+                  <li>Cari angka merah (ada alert)</li>
+                  <li>Klik nama owner tersebut untuk investigasi</li>
+                  <li>Di halaman detail, cek alert yang perlu ditindaklanjuti</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Identifikasi cepat owner dengan masalah yang perlu perhatian
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Review Trial Owners untuk Follow-up
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Anda ingin follow-up owner Trial untuk convert ke Active</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik tab <span class="badge bg-info">Trial</span></li>
+                  <li>Lihat list owner yang masih trial</li>
+                  <li>Check badge count untuk tahu berapa owner trial</li>
+                  <li>Review contact info untuk follow-up</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Sales team bisa fokus follow-up trial owners
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Export Data untuk Reporting
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Anda perlu data owner untuk laporan bulanan</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Filter sesuai kebutuhan (status/industry)</li>
+                  <li>Klik button <strong>"Export Owners"</strong></li>
+                  <li>Download file Excel/CSV</li>
+                  <li>Gunakan data untuk reporting</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Data owner siap untuk analisis & reporting
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 5 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-5-circle me-2"></i>Scenario: Filter Owner by Industry
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Anda ingin lihat semua owner dari industri Manufacturing</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik dropdown <strong>"Industry"</strong></li>
+                  <li>Pilih <code>Manufacturing</code></li>
+                  <li>Tabel otomatis filter owner Manufacturing saja</li>
+                  <li>Review resource stats (projects/nodes/sensors)</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Segmentasi owner by industry untuk analisis spesifik
+                </p>
+              </card-body>
+            </card>
+
+          </div>
+
+          <!-- Section 7: Tips & Best Practices -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Quick Tips -->
+                <div class="alert alert-success mb-3">
+                  <h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>Quick Tips:</h6>
+                  <ul class="mb-0">
+                    <li>Gunakan <strong>search</strong> untuk akses cepat ke owner tertentu</li>
+                    <li>Badge angka di tab status = overview cepat distribusi owner</li>
+                    <li>Alert merah = prioritas tinggi, perlu tindakan segera</li>
+                    <li>Last Activity = monitoring aktivitas owner secara berkala</li>
+                    <li>Kombinasi filter untuk hasil yang sangat spesifik</li>
+                  </ul>
+                </div>
+
+                <!-- Warnings -->
+                <div class="alert alert-warning mb-3">
+                  <h6 class="mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Perhatian:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Suspended</strong> owner tidak bisa akses sistem sama sekali</li>
+                    <li><strong>Trial</strong> owner punya batas waktu, follow-up sebelum expired</li>
+                    <li>Alert perlu ditindaklanjuti segera untuk mencegah downtime</li>
+                    <li>SLA level menentukan prioritas support yang diterima owner</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li>Export data secara berkala untuk backup & analisis trend</li>
+                    <li>Monitor trial owners weekly untuk conversion rate</li>
+                    <li>Gunakan industry filter untuk segment-specific campaigns</li>
+                    <li>Check alert count daily untuk proactive support</li>
+                    <li>Review resource stats untuk capacity planning</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Related Tutorials -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Setelah memahami Owner List, lanjutkan dengan tutorial berikut:</p>
+                
+                <div class="row g-3">
+                  <!-- Owner Details -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Owner Details & Management
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Pelajari cara melihat detail lengkap owner, manage projects, dan konfigurasi data forwarding
+                      </p>
+                      <a routerLink="/iot/document/module-owners/owner-details" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Create Owner -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Create New Owner
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Step-by-step cara menambahkan owner baru ke sistem
+                      </p>
+                      <a routerLink="/iot/document/module-owners/create-owner" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Edit Owner -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Edit Owner Information
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Update informasi owner, contact details, dan SLA level
+                      </p>
+                      <a routerLink="/iot/document/module-owners/edit-owner" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Owner Projects -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Manage Owner Projects
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Kelola projects yang dimiliki oleh owner
+                      </p>
+                      <a routerLink="/iot/document/module-owners/owner-projects" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Quick Reference Card -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-card-checklist text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                <div class="bg-dark bg-opacity-75 p-4 rounded border border-theme">
+                  <h5 class="text-center text-theme mb-4">
+                    <i class="bi bi-bookmark-star me-2"></i>OWNER LIST QUICK REFERENCE
+                  </h5>
+                  
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-search text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Search:</strong>
+                          <span class="text-white-transparent-7 d-block small">Name / ID / Contact</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-funnel text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Filter:</strong>
+                          <span class="text-white-transparent-7 d-block small">Status + Industry</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-download text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Export:</strong>
+                          <span class="text-white-transparent-7 d-block small">Download owner data</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-plus-circle text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Add:</strong>
+                          <span class="text-white-transparent-7 d-block small">Create new owner</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-eye text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>View:</strong>
+                          <span class="text-white-transparent-7 d-block small">Click owner name</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-bell text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Alerts:</strong>
+                          <span class="text-white-transparent-7 d-block small">Red = Need attention</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <hr class="border-theme my-3">
+                  
+                  <div class="text-center">
+                    <small class="text-white-transparent-6">
+                      <i class="bi bi-link me-1"></i>
+                      URL: <code class="text-theme">/iot/owners</code>
+                    </small>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Completion Badge -->
+          <div class="text-center mb-5">
+            <div class="alert alert-success d-inline-block">
+              <i class="bi bi-check-circle fs-3 me-2"></i>
+              <strong>Tutorial Complete!</strong>
+              <p class="mb-0 mt-2 text-white-transparent-8">
+                Anda sekarang sudah memahami cara menggunakan Owner List module
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sidebar - Tutorial Info -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            
+            <!-- Tutorial Info Card -->
+            <card class="mb-3">
+              <card-body>
+                <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>Tutorial Info</h6>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Category</small>
+                  <span class="badge bg-theme">Module: Owners</span>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Difficulty</small>
+                  <span class="badge bg-success">Beginner</span>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Estimated Time</small>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-clock text-theme me-2"></i>
+                    <span>8 minutes</span>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Role Access</small>
+                  <div>
+                    <span class="badge bg-danger me-1">Super Admin</span>
+                    <span class="badge bg-warning">Admin</span>
+                  </div>
+                </div>
+
+                <hr class="border-white-transparent-2">
+
+                <div>
+                  <small class="text-white-transparent-6 d-block mb-2">Tags</small>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span class="badge bg-secondary">owners</span>
+                    <span class="badge bg-secondary">list</span>
+                    <span class="badge bg-secondary">filter</span>
+                    <span class="badge bg-secondary">search</span>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Table of Contents -->
+            
+                <nav-scroll>
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Owner List?
+                    </a>
+                    <a href="#getting-started" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Mengakses
+                    </a>
+                    <a href="#features" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Interface
+                    </a>
+                    <a href="#next-steps" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Data Owner
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+               
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

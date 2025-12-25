@@ -1,0 +1,59 @@
+.tutorial-categories {
+  .category-section {
+    padding: 8px 0;
+
+    h3 {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      padding: 8px 16px 4px 16px;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .category-list {
+      .category-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        color: rgba(255,255,255,0.7);
+        font-size: 14px;
+
+        i {
+          font-size: 18px;
+          width: 20px;
+          text-align: center;
+        }
+
+        .category-label {
+          flex: 1;
+        }
+
+        &:hover {
+          background-color: rgba(255,255,255,0.05);
+          border-left-color: var(--bs-primary);
+          color: rgba(255,255,255,0.9);
+        }
+
+        .count-badge {
+          background: var(--bs-primary);
+          color: white;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 600;
+          min-width: 24px;
+          text-align: center;
+        }
+      }
+    }
+  }
+
+  hr {
+    border-color: rgba(255,255,255,0.1);
+    opacity: 1;
+  }
+}

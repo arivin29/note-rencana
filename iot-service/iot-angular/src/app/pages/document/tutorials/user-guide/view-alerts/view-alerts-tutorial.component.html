@@ -1,0 +1,286 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/user-guide">User Guide</a></li>
+        <li class="breadcrumb-item active">View Alerts</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-bell text-theme me-2"></i>
+        View Alerts
+        <small class="d-block mt-2 text-white-transparent-7">Monitor and manage active alerts from sensors</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Introduction -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Alerts?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Alerts</strong> adalah notifikasi otomatis yang di-trigger ketika sensor values melewati threshold yang sudah dikonfigurasi. 
+                  Alerts membantu Anda untuk <strong>quick detection of anomalies</strong> dan <strong>proactive issue resolution</strong>.
+                </p>
+                
+                <!-- Screenshot -->
+                <div class="mb-4">
+                  <img src="assets/img/documentation/user-guide/view-alerts/alerts-list.png" 
+                       alt="Alerts List Page" 
+                       class="img-fluid rounded border">
+                  <p class="text-center text-white-transparent-7 mt-2 mb-0">
+                    <small>
+                      <i class="bi bi-image me-1"></i>
+                      Halaman Alerts dengan filter, severity badges, dan action buttons
+                    </small>
+                  </p>
+                </div>
+
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-exclamation-triangle fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Alert Components</h6>
+                      <ul class="mb-0">
+                        <li><strong>Alert Rule:</strong> Konfigurasi threshold dan condition (min/max value)</li>
+                        <li><strong>Triggered Alert:</strong> Event yang terjadi saat condition terpenuhi</li>
+                        <li><strong>Severity Level:</strong> Critical (red), Warning (yellow), Info (blue)</li>
+                        <li><strong>Status:</strong> Active (ongoing), Acknowledged (seen), Resolved (fixed)</li>
+                        <li><strong>Notification:</strong> Email, SMS, webhook, atau database forwarding</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kenapa Penting?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Early Warning:</strong> Detect issues sebelum jadi critical failures</li>
+                    <li><strong>Reduce Downtime:</strong> Quick response untuk minimize equipment downtime</li>
+                    <li><strong>Compliance:</strong> Meet regulatory requirements untuk safety monitoring</li>
+                    <li><strong>Cost Savings:</strong> Prevent expensive repairs dengan preventive maintenance</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Getting Started -->
+          <div id="getting-started" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Alerts</h4>
+            
+            <card>
+              <card-body>
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Main Navigation</h6>
+                  <ol class="mb-0">
+                    <li>Klik menu <strong>Alerts</strong> di sidebar kiri</li>
+                    <li>Alerts list page langsung terbuka</li>
+                    <li>Default: Show all active alerts, sorted by newest first</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Dashboard Widget</h6>
+                  <ol class="mb-0">
+                    <li>Di Dashboard, lihat widget <strong>"Top Anomalies"</strong> atau <strong>"Critical Alerts"</strong></li>
+                    <li>Klik alert item untuk view detail</li>
+                    <li>Atau klik <strong>"View All Alerts"</strong> link</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Via Direct URL</h6>
+                  <div class="bg-dark p-2 rounded">
+                    <code class="text-success">http://localhost:4200/iot/alerts</code>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Features -->
+          <div id="features" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Key Features</h4>
+            
+            <card>
+              <card-body>
+                <!-- Feature 1: Filters -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-funnel text-primary me-2"></i>
+                    1. Alert Filters
+                  </h6>
+                  <ul class="mb-0">
+                    <li><strong>Severity Filter:</strong> All / Critical / Warning / Info</li>
+                    <li><strong>Status Filter:</strong> All / Active / Acknowledged / Resolved</li>
+                    <li><strong>Owner Filter:</strong> Filter by specific owner/tenant</li>
+                    <li><strong>Project Filter:</strong> Filter by specific project</li>
+                    <li><strong>Node Filter:</strong> Filter by specific node/device</li>
+                    <li><strong>Date Range:</strong> Filter by time period (Last 24h, 7d, 30d, Custom)</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 2: Alert Table -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-table text-success me-2"></i>
+                    2. Alerts Data Table
+                  </h6>
+                  <p class="mb-2"><strong>Columns:</strong></p>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Severity</strong></td>
+                        <td>Badge: Critical (red), Warning (yellow), Info (blue)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Alert Title</strong></td>
+                        <td>Alert name/description (clickable link to detail)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Sensor/Channel</strong></td>
+                        <td>Source sensor channel yang trigger alert</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Node</strong></td>
+                        <td>Device/node name</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Value</strong></td>
+                        <td>Current sensor value yang trigger alert</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Threshold</strong></td>
+                        <td>Min/Max threshold yang di-exceed</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Triggered At</strong></td>
+                        <td>Timestamp when alert was triggered</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Status</strong></td>
+                        <td>Active / Acknowledged / Resolved</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>Acknowledge / Resolve / View Detail buttons</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Feature 3: Actions -->
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2">
+                    <i class="bi bi-lightning text-warning me-2"></i>
+                    3. Alert Actions
+                  </h6>
+                  <ul class="mb-0">
+                    <li><strong>Acknowledge:</strong> Mark alert as "seen" (status → Acknowledged)</li>
+                    <li><strong>Resolve:</strong> Mark alert as "fixed" (status → Resolved)</li>
+                    <li><strong>View Detail:</strong> Navigate to alert detail page dengan full history</li>
+                    <li><strong>Bulk Actions:</strong> Select multiple alerts, acknowledge/resolve semua sekaligus</li>
+                    <li><strong>Export:</strong> Download alerts data ke CSV/Excel</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Next Steps -->
+          <div id="next-steps" class="mb-5">
+            <h4><i class="bi bi-signpost text-theme me-2"></i>Next Steps</h4>
+            
+            <card>
+              <card-body>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-hdd-network text-primary me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-nodes" class="text-decoration-none">View Nodes</a>
+                      </h6>
+                      <p class="mb-0 small">Check which nodes are generating alerts</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-activity text-success me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-telemetry" class="text-decoration-none">View Telemetry</a>
+                      </h6>
+                      <p class="mb-0 small">Analyze sensor data that triggered alerts</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Pro Tips</h6>
+                  <ul class="mb-0">
+                    <li><strong>Prioritize Critical:</strong> Always handle Critical alerts first (red badges)</li>
+                    <li><strong>Acknowledge Quickly:</strong> Mark alerts as acknowledged untuk track yang sudah dilihat</li>
+                    <li><strong>Root Cause Analysis:</strong> Click "View Detail" untuk see alert history & patterns</li>
+                    <li><strong>Set Notifications:</strong> Configure email/SMS untuk critical alerts</li>
+                    <li><strong>Regular Review:</strong> Check alerts daily untuk stay on top of issues</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-outline-theme" (click)="previousSection()" [disabled]="currentSection === 0">
+              <i class="bi bi-arrow-left me-2"></i>Previous
+            </button>
+            <button class="btn btn-theme" (click)="nextSection()" [disabled]="currentSection === sections.length - 1">
+              Next<i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <nav-scroll class="nav">
+            <a class="nav-link" 
+               *ngFor="let section of sections; let i = index"
+               [class.active]="currentSection === i"
+               (click)="goToSection(i)"
+               style="cursor: pointer;">
+              {{ section.title }}
+            </a>
+          </nav-scroll>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

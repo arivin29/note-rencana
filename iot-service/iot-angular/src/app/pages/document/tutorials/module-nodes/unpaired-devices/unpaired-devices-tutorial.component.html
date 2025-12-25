@@ -1,0 +1,617 @@
+<div class="tutorial-base-component">
+  <!-- Breadcrumb -->
+  <ol class="breadcrumb float-xl-end">
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document">Documentation</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document/module-nodes">Module: Nodes</a></li>
+    <li class="breadcrumb-item active">Unpaired Devices</li>
+  </ol>
+  
+  <!-- Page Header -->
+  <h1 class="page-header">
+    <i class="bi bi-link-45deg me-2"></i> Unpaired Devices Management
+    <small class="d-block mt-2 text-white-transparent-7">Tutorial mengelola dan pairing devices yang belum terassign</small>
+  </h1>
+
+  <!-- Progress Bar -->
+  <div class="progress mb-4" style="height: 6px;">
+    <div class="progress-bar bg-success" role="progressbar" 
+         [style.width]="getProgressPercentage() + '%'" 
+         [attr.aria-valuenow]="getProgressPercentage()" 
+         aria-valuemin="0" 
+         aria-valuemax="100">
+    </div>
+  </div>
+
+  <!-- Tutorial Content -->
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-9">
+      <!-- Section 1: Introduction -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-info-circle me-2"></i> Apa itu Unpaired Devices?</h3>
+          
+          <p class="mb-3">
+            <strong>Unpaired Devices</strong> adalah module untuk mengelola perangkat IoT (nodes) yang sudah terdeteksi 
+            oleh platform tetapi belum di-assign ke project manapun. Module ini menyediakan interface untuk melihat 
+            list unpaired devices, detail device information, dan melakukan bulk pairing operations. Berbeda dengan 
+            User-Guide Unpaired Devices (end-user view), module ini fokus pada administrative operations dan bulk management.
+          </p>
+
+          <div class="mb-4">
+            <img src="assets/img/documentation/module-nodes/unpaired-devices/screenshot.png" 
+                 alt="Unpaired Devices Management Interface" 
+                 class="img-fluid rounded border">
+            <p class="text-center text-white-transparent-7 mt-2">
+              Module Unpaired Devices dengan advanced filters, bulk selection, device preview, dan pairing wizard
+            </p>
+          </div>
+
+          <div class="alert alert-success">
+            <h5 class="mb-2"><i class="bi bi-cpu me-2"></i> Module Features</h5>
+            <ul class="mb-0">
+              <li><strong>Auto-Discovery:</strong> Automatically detect devices connecting ke network (MQTT/HTTP)</li>
+              <li><strong>Device Information:</strong> MAC Address, Model, Serial Number, Firmware Version, First/Last Seen</li>
+              <li><strong>Advanced Filters:</strong> Status (Ready/Pending/Offline), Model, Date Range, Search</li>
+              <li><strong>Bulk Operations:</strong> Select multiple devices → Bulk Pair, Bulk Ignore, Bulk Export</li>
+              <li><strong>Pairing Wizard:</strong> Step-by-step wizard untuk configure device sebelum pairing</li>
+              <li><strong>Device Preview:</strong> Real-time sensor detection dan channel mapping preview</li>
+              <li><strong>Ignore List:</strong> Manage ignored devices untuk prevent unauthorized access</li>
+              <li><strong>Historical Tracking:</strong> Track device pairing history dan status changes</li>
+            </ul>
+          </div>
+
+          <h5 class="mt-4 mb-3"><i class="bi bi-star me-2"></i> Kenapa Penting?</h5>
+          <ul>
+            <li><strong>Automated Onboarding:</strong> Streamline device registration tanpa manual configuration</li>
+            <li><strong>Security:</strong> Admin review & approval sebelum device granted access ke production</li>
+            <li><strong>Inventory Management:</strong> Track unpaired devices untuk procurement dan deployment planning</li>
+            <li><strong>Bulk Efficiency:</strong> Large-scale deployments (100+ devices) dengan bulk pairing wizard</li>
+            <li><strong>Troubleshooting:</strong> Identify connectivity issues dari First Seen / Last Seen timestamps</li>
+            <li><strong>Firmware Compatibility:</strong> Pre-pairing firmware version check untuk prevent incompatibility</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 2: Getting Started -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-play-circle me-2"></i> Cara Menggunakan Module</h3>
+          
+          <div class="alert alert-info">
+            <h5 class="mb-3"><i class="bi bi-list-ol me-2"></i> Access & Navigation</h5>
+            
+            <ol class="mb-0">
+              <li class="mb-3">
+                <strong>Via Main Navigation</strong><br>
+                Sidebar → <code>Nodes</code> section → <code>Unpaired Devices</code> submenu → 
+                Module page terbuka dengan list unpaired devices (default filter: Status = Ready)
+              </li>
+              
+              <li class="mb-3">
+                <strong>Via Dashboard Widget</strong><br>
+                Dashboard → Widget <code>Unpaired Devices Count</code> → 
+                Click count number atau "View All" button → Navigate ke Unpaired Devices module
+              </li>
+              
+              <li class="mb-3">
+                <strong>Via Node Pairing Workflow</strong><br>
+                Nodes List → Button <code>+ Add Node</code> → Select <code>From Unpaired Devices</code> → 
+                Redirect ke Unpaired Devices module dengan pairing mode enabled
+              </li>
+              
+              <li class="mb-0">
+                <strong>Direct URL</strong><br>
+                <code>http://localhost:4200/iot/nodes/unpaired-devices</code>
+              </li>
+            </ol>
+          </div>
+
+          <div class="alert alert-warning mt-3">
+            <h5 class="mb-2"><i class="bi bi-shield-lock me-2"></i> Admin Access Only</h5>
+            <p class="mb-0">
+              <strong>Permission Required:</strong> Module ini hanya accessible untuk users dengan role 
+              <strong>Admin</strong> atau <strong>Device Manager</strong>. Regular users (Viewer, Operator) 
+              tidak dapat access unpaired devices module untuk security reasons (prevent unauthorized device pairing).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Module Features -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-gear me-2"></i> Module Features Detail</h3>
+          
+          <!-- Device List View -->
+          <h5 class="mb-3"><i class="bi bi-table me-2"></i> 1. Device List View</h5>
+          <p>Tabel menampilkan unpaired devices dengan columns:</p>
+          
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="20%">Column</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Selection Checkbox</strong></td>
+                  <td>Multi-select untuk bulk operations (Select All checkbox di header)</td>
+                </tr>
+                <tr>
+                  <td><strong>Status Badge</strong></td>
+                  <td>
+                    Color-coded status:
+                    <ul class="mb-0 mt-1">
+                      <li><span class="badge bg-success">Ready</span> - Device online, ready untuk pair</li>
+                      <li><span class="badge bg-warning">Pending</span> - Device initializing, wait untuk ready state</li>
+                      <li><span class="badge bg-secondary">Offline</span> - No heartbeat > 5 minutes (connectivity issue)</li>
+                      <li><span class="badge bg-danger">Error</span> - Device error state (firmware crash, config invalid)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>MAC Address</strong></td>
+                  <td>Unique hardware identifier (e.g., <code>AA:BB:CC:DD:EE:FF</code>) - Primary key</td>
+                </tr>
+                <tr>
+                  <td><strong>Device Model</strong></td>
+                  <td>Hardware type dengan icon (📟 ESP32-WROOM, 🔧 Arduino Mega, 🍓 Raspberry Pi 4)</td>
+                </tr>
+                <tr>
+                  <td><strong>Serial Number</strong></td>
+                  <td>Manufacturer SN (jika available via device info broadcast, otherwise "N/A")</td>
+                </tr>
+                <tr>
+                  <td><strong>Firmware Version</strong></td>
+                  <td>
+                    Version dengan compatibility indicator:
+                    <ul class="mb-0 mt-1">
+                      <li><span class="badge bg-success">✅ v1.5.3</span> - Compatible dengan platform</li>
+                      <li><span class="badge bg-warning">⚠️ v1.2.1</span> - Update recommended (minor version lag)</li>
+                      <li><span class="badge bg-danger">❌ v0.9.8</span> - Incompatible (major version mismatch)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>First Seen</strong></td>
+                  <td>Timestamp pertama detected (e.g., "2025-12-24 08:30:15") - Untuk track device age</td>
+                </tr>
+                <tr>
+                  <td><strong>Last Seen</strong></td>
+                  <td>Last heartbeat timestamp dengan relative time (e.g., "2 minutes ago", "1 hour ago")</td>
+                </tr>
+                <tr>
+                  <td><strong>Sensors Detected</strong></td>
+                  <td>
+                    Auto-detected sensors count dengan preview tooltip:
+                    <ul class="mb-0 mt-1">
+                      <li><code>3 sensors</code> → Hover shows: DHT22 (Temp+Humidity), BMP280 (Pressure)</li>
+                      <li>Preview helps verify device type sebelum pairing</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Actions</strong></td>
+                  <td>
+                    Quick action buttons:
+                    <ul class="mb-0 mt-1">
+                      <li><button class="btn btn-xs btn-primary">Pair</button> - Open pairing wizard</li>
+                      <li><button class="btn btn-xs btn-info">Preview</button> - View device detail tanpa pairing</li>
+                      <li><button class="btn btn-xs btn-danger">Ignore</button> - Add ke ignore list</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Advanced Filters -->
+          <h5 class="mb-3"><i class="bi bi-funnel me-2"></i> 2. Advanced Filters</h5>
+          <p>Filter unpaired devices dengan multiple criteria:</p>
+          <ul>
+            <li>
+              <strong>Status Filter:</strong> Multi-select dropdown (All / Ready / Pending / Offline / Error) - 
+              Default: Ready only (most common use case)
+            </li>
+            <li>
+              <strong>Device Model Filter:</strong> Checkbox list dengan device count 
+              (e.g., ☑ ESP32 (15), ☑ Arduino (8), ☐ Raspberry Pi (3))
+            </li>
+            <li>
+              <strong>Firmware Version Filter:</strong> Range selector atau dropdown 
+              (Compatible only / All versions / Specific version)
+            </li>
+            <li>
+              <strong>Date Range Filter:</strong> First Seen date picker 
+              (Today / Last 7 days / Last 30 days / Custom range) - 
+              Useful untuk identify old unpaired devices (> 30 days = probably forgotten/abandoned)
+            </li>
+            <li>
+              <strong>Search:</strong> Real-time search by MAC Address atau Serial Number 
+              (useful ketika pairing specific device dari hardware inventory)
+            </li>
+            <li>
+              <strong>Sensors Filter:</strong> Filter by detected sensor types 
+              (e.g., "Has Temperature Sensor", "Has Humidity Sensor") - 
+              Useful ketika need specific sensor type untuk project
+            </li>
+          </ul>
+
+          <!-- Bulk Operations -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-check2-square me-2"></i> 3. Bulk Operations</h5>
+          <p>Manage multiple devices sekaligus (efficient untuk large deployments):</p>
+          
+          <div class="alert alert-primary">
+            <h6 class="mb-2">Bulk Pairing Workflow:</h6>
+            <ol class="mb-0">
+              <li class="mb-2">
+                <strong>Select Devices:</strong> Checkbox individual devices atau "Select All" (max 50 devices per batch)
+              </li>
+              <li class="mb-2">
+                <strong>Click "Bulk Pair" Button:</strong> Top action bar → Pairing wizard opens
+              </li>
+              <li class="mb-2">
+                <strong>Common Configuration:</strong> Wizard prompts untuk shared settings:
+                <ul class="mt-1">
+                  <li>Owner selection (required)</li>
+                  <li>Project assignment (required)</li>
+                  <li>Location (optional - same location untuk all devices)</li>
+                  <li>Auto-naming pattern (e.g., "NODE- counter " → NODE-001, NODE-002, etc.)</li>
+                  <li>Sensor configuration template (apply same sensor mapping ke all)</li>
+                </ul>
+              </li>
+              <li class="mb-2">
+                <strong>Review List:</strong> Preview table shows generated Node Codes, assigned sensors, validation status
+              </li>
+              <li class="mb-0">
+                <strong>Execute Pairing:</strong> Click "Pair All" → Progress bar shows pairing status → 
+                Success notification dengan summary (e.g., "45/50 devices paired successfully, 5 failed")
+              </li>
+            </ol>
+          </div>
+
+          <div class="mt-3">
+            <h6 class="mb-2">Other Bulk Operations:</h6>
+            <ul class="mb-0">
+              <li>
+                <strong>Bulk Ignore:</strong> Move selected devices ke ignore list → 
+                Prevents automatic detection (useful untuk test devices yang should not be paired)
+              </li>
+              <li>
+                <strong>Bulk Export:</strong> Download selected devices info to CSV → 
+                For inventory documentation atau offline review
+              </li>
+              <li>
+                <strong>Bulk Firmware Check:</strong> Trigger firmware version check untuk selected devices → 
+                Update firmware recommendations displayed
+              </li>
+            </ul>
+          </div>
+
+          <!-- Pairing Wizard -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-magic me-2"></i> 4. Pairing Wizard (Single Device)</h5>
+          <p>Step-by-step wizard untuk pair individual device dengan full configuration:</p>
+          
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="15%">Step</th>
+                  <th width="25%">Title</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Step 1</strong></td>
+                  <td>Device Information</td>
+                  <td>
+                    Review auto-detected device info (MAC, Model, Firmware, Sensors). 
+                    Non-editable, for verification only. 
+                    <strong>Firmware warning</strong> displayed if incompatible.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Step 2</strong></td>
+                  <td>Owner & Project</td>
+                  <td>
+                    Select Owner dari dropdown (required) → Project dropdown cascades (shows projects dari selected owner). 
+                    Button "Create New Project" available if project tidak exist.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Step 3</strong></td>
+                  <td>Node Configuration</td>
+                  <td>
+                    Configure node settings:
+                    <ul class="mb-0 mt-1">
+                      <li><strong>Node Code:</strong> Auto-generated atau manual input (validation: uniqueness)</li>
+                      <li><strong>Node Name:</strong> Friendly label (required, e.g., "Temperature Sensor - Room 101")</li>
+                      <li><strong>Location:</strong> Text address atau map picker (optional)</li>
+                      <li><strong>Description:</strong> Notes (optional, max 500 chars)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Step 4</strong></td>
+                  <td>Sensor Mapping</td>
+                  <td>
+                    Map detected sensors ke sensor catalog:
+                    <ul class="mb-0 mt-1">
+                      <li>Auto-detected sensors listed (e.g., "Unknown Sensor 0", "Unknown Sensor 1")</li>
+                      <li>For each sensor → Select dari sensor catalog dropdown (e.g., DHT22 Temperature, DHT22 Humidity)</li>
+                      <li>Configure channel mapping untuk multi-channel sensors</li>
+                      <li>Set calibration offsets (e.g., Temperature +0.5°C correction)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Step 5</strong></td>
+                  <td>Review & Confirm</td>
+                  <td>
+                    Summary preview:
+                    <ul class="mb-0 mt-1">
+                      <li>Device info (MAC, Model, Firmware)</li>
+                      <li>Assignment (Owner, Project)</li>
+                      <li>Node settings (Code, Name, Location)</li>
+                      <li>Sensor configuration (Types, Channels, Calibration)</li>
+                      <li>Validation status (all green checkmarks = ready to pair)</li>
+                    </ul>
+                    Click <strong>"Pair Device"</strong> button → Execute pairing → Success/Error notification
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Device Preview -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-eye me-2"></i> 5. Device Preview</h5>
+          <p>View device details tanpa pairing (inspection mode):</p>
+          <ul>
+            <li><strong>Hardware Info:</strong> MAC Address, Serial Number, Manufacturer (if available)</li>
+            <li><strong>Network Info:</strong> IP Address (if DHCP assigned), Signal Strength (WiFi RSSI)</li>
+            <li><strong>Firmware Details:</strong> Version, Build Date, Checksum (untuk verify integrity)</li>
+            <li><strong>Sensor Detection:</strong> List detected sensors dengan raw channel data preview</li>
+            <li><strong>Logs:</strong> Recent device logs (heartbeat, initialization messages, errors)</li>
+            <li><strong>Actions:</strong> Reboot device (trigger remote reboot via MQTT command if online)</li>
+          </ul>
+
+          <!-- Ignore List Management -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-x-circle me-2"></i> 6. Ignore List Management</h5>
+          <p>Manage ignored devices (security feature):</p>
+          <div class="alert alert-secondary">
+            <h6 class="mb-2">Ignore List Tab:</h6>
+            <ul class="mb-0">
+              <li><strong>View Ignored:</strong> Separate tab shows all ignored devices (MAC, Ignored Date, Reason)</li>
+              <li><strong>Add to Ignore:</strong> Click "Ignore" button on device → Optional reason field → Device removed from unpaired list</li>
+              <li><strong>Remove from Ignore:</strong> In Ignore List tab → Click "Un-Ignore" → Device returns to unpaired list</li>
+              <li><strong>Use Case:</strong> Block unauthorized devices (e.g., unknown MAC detected di network), 
+                  Temporarily ignore test devices (e.g., development boards yang should not be paired to production)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Best Practices -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-star-fill me-2"></i> Best Practices</h3>
+          
+          <h5 class="mb-3">Operational Guidelines:</h5>
+          <ul>
+            <li class="mb-2">
+              <strong>Regular Review:</strong> Check unpaired devices list daily (atau weekly untuk small deployments). 
+              Devices dengan "First Seen > 7 days ago" should be investigated (might be forgotten devices atau test units).
+            </li>
+            <li class="mb-2">
+              <strong>Firmware Check First:</strong> Always verify firmware version before pairing. 
+              Incompatible firmware dapat cause telemetry failures atau system crashes. 
+              Update firmware on device before pairing if version check shows <span class="badge bg-danger">❌ Incompatible</span>.
+            </li>
+            <li class="mb-2">
+              <strong>Bulk Pairing for Large Deployments:</strong> For 10+ identical devices (same model, same sensors), 
+              use bulk pairing dengan configuration template to save time. 
+              Estimated time: ~30 seconds per device manual pairing vs ~5 seconds per device bulk pairing (6x faster).
+            </li>
+            <li class="mb-2">
+              <strong>Use Device Preview:</strong> Before pairing, click "Preview" untuk verify sensor detection correct. 
+              If detected sensors tidak match expected configuration (e.g., expected 3 sensors but only 2 detected), 
+              investigate device wiring atau firmware before pairing.
+            </li>
+            <li class="mb-2">
+              <strong>Security Review:</strong> Regularly check Ignore List untuk unauthorized devices. 
+              If unknown MAC addresses muncul frequently, investigate network security (potential unauthorized access attempts).
+            </li>
+            <li class="mb-2">
+              <strong>Naming Conventions:</strong> Use consistent Node Code pattern untuk easier inventory management. 
+              Examples: <code>[Location]-[Type]-[Counter]</code> → "JKT-TEMP-001", "SBY-HUMID-002", etc.
+            </li>
+            <li class="mb-0">
+              <strong>Monitor Offline Devices:</strong> Devices dengan status <span class="badge bg-secondary">Offline</span> 
+              for > 24 hours should be investigated (power issue, network connectivity problem, atau device malfunction).
+            </li>
+          </ul>
+
+          <h5 class="mt-4 mb-3">Troubleshooting Common Issues:</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th>Issue</th>
+                  <th>Possible Cause</th>
+                  <th>Solution</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Device tidak muncul di unpaired list</td>
+                  <td>
+                    <ul class="mb-0">
+                      <li>Device belum connect ke network</li>
+                      <li>MQTT broker down</li>
+                      <li>Device firmware tidak broadcast discovery message</li>
+                    </ul>
+                  </td>
+                  <td>
+                    Verify device power & network connection → Check MQTT broker status → 
+                    Update device firmware ke latest version → Reboot device
+                  </td>
+                </tr>
+                <tr>
+                  <td>Pairing fails dengan error "Timeout"</td>
+                  <td>
+                    <ul class="mb-0">
+                      <li>Device offline saat pairing initiated</li>
+                      <li>Network latency high</li>
+                    </ul>
+                  </td>
+                  <td>
+                    Verify device status = <span class="badge bg-success">Ready</span> sebelum pair → 
+                    Check Last Seen timestamp (should be < 1 minute ago) → Retry pairing
+                  </td>
+                </tr>
+                <tr>
+                  <td>Sensors tidak detected correctly</td>
+                  <td>
+                    <ul class="mb-0">
+                      <li>Sensor wiring incorrect</li>
+                      <li>Firmware sensor driver issue</li>
+                      <li>I2C/SPI address conflict</li>
+                    </ul>
+                  </td>
+                  <td>
+                    Check device preview → View sensor logs → Verify hardware wiring → 
+                    Update firmware sensor drivers → Reboot device untuk re-detect sensors
+                  </td>
+                </tr>
+                <tr>
+                  <td>Device paired tapi tidak send telemetry</td>
+                  <td>
+                    <ul class="mb-0">
+                      <li>Sensor mapping incorrect</li>
+                      <li>Project status = Inactive</li>
+                      <li>Network connectivity issue post-pairing</li>
+                    </ul>
+                  </td>
+                  <td>
+                    Navigate to Node Detail → Verify sensor mapping correct → 
+                    Check Project status (must be Active) → Test network connectivity → 
+                    Review node telemetry logs untuk error messages
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Next Steps -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-arrow-right-circle me-2"></i> After Pairing Devices</h3>
+          
+          <div class="alert alert-warning">
+            <h5 class="mb-3"><i class="bi bi-list-check me-2"></i> Post-Pairing Checklist</h5>
+            <ol class="mb-0">
+              <li class="mb-2">
+                <strong>Verify Pairing Success:</strong> Navigate to Nodes List → Filter by Project → 
+                Verify newly paired nodes visible dengan status <span class="badge bg-success">Online</span>
+              </li>
+              <li class="mb-2">
+                <strong>Check Telemetry:</strong> Click node → View telemetry data → 
+                Verify sensor readings arriving (check Last Telemetry timestamp < 5 minutes ago)
+              </li>
+              <li class="mb-2">
+                <strong>Configure Alerts:</strong> Set threshold alerts untuk critical sensors 
+                (e.g., Temperature > 35°C, Humidity < 20%)
+              </li>
+              <li class="mb-2">
+                <strong>Test Remote Actions:</strong> Try remote reboot command → Verify node responds → 
+                Confirm bidirectional communication working
+              </li>
+              <li class="mb-0">
+                <strong>Update Documentation:</strong> Export paired nodes list → 
+                Update inventory spreadsheet → Notify operations team device now active
+              </li>
+            </ol>
+          </div>
+
+          <h5 class="mb-3 mt-4"><i class="bi bi-book me-2"></i> Related Tutorials</h5>
+          <ul class="mb-0">
+            <li>
+              <a routerLink="/iot/document/module-nodes/node-pairing" class="text-decoration-none">
+                <i class="bi bi-link-45deg me-1"></i> Node Pairing Process
+              </a> - Detailed pairing workflow documentation
+            </li>
+            <li>
+              <a routerLink="/iot/document/module-nodes/node-configuration" class="text-decoration-none">
+                <i class="bi bi-gear me-1"></i> Node Configuration
+              </a> - Configure node settings post-pairing
+            </li>
+            <li>
+              <a routerLink="/iot/document/module-nodes/node-detail-view" class="text-decoration-none">
+                <i class="bi bi-eye me-1"></i> Node Detail View
+              </a> - View paired node details
+            </li>
+            <li>
+              <a routerLink="/iot/document/module-projects/project-nodes" class="text-decoration-none">
+                <i class="bi bi-folder2-open me-1"></i> Manage Project Nodes
+              </a> - Project-level node management
+            </li>
+            <li>
+              <a routerLink="/iot/document/user-guide/view-telemetry" class="text-decoration-none">
+                <i class="bi bi-graph-up me-1"></i> View Telemetry
+              </a> - Monitor sensor data dari paired nodes
+            </li>
+          </ul>
+
+          <div class="alert alert-success mt-4">
+            <h5 class="mb-3"><i class="bi bi-lightbulb me-2"></i> Pro Tips</h5>
+            <ul class="mb-0">
+              <li>
+                <strong>Pre-Deployment Testing:</strong> Before large deployment, test pairing workflow dengan 1-2 sample devices first. 
+                Verify sensor detection, telemetry flow, dan alert configuration working correctly before bulk pairing.
+              </li>
+              <li>
+                <strong>Firmware Standardization:</strong> Maintain consistent firmware version across all devices untuk easier troubleshooting. 
+                Create firmware update SOP (Standard Operating Procedure) sebelum pairing new batches.
+              </li>
+              <li>
+                <strong>Inventory Reconciliation:</strong> Export unpaired devices list weekly → 
+                Cross-check dengan procurement records → Identify missing devices atau unauthorized additions.
+              </li>
+              <li>
+                <strong>Automated Alerts:</strong> Set system alert untuk "Unpaired Devices Count > 10 for > 7 days" → 
+                Notify admin automatically → Ensure unpaired devices tidak forgotten.
+              </li>
+              <li>
+                <strong>MAC Address Whitelist:</strong> For high-security environments, implement MAC address whitelist → 
+                Only whitelisted MACs can appear in unpaired devices → Prevent unauthorized device auto-discovery.
+              </li>
+              <li>
+                <strong>Backup Configuration Templates:</strong> Save sensor mapping configurations as templates → 
+                Reuse untuk identical device models → Reduce pairing time by 50% (no need manual sensor mapping each time).
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-xl-3">
+      <nav-scroll class="nav">
+        <a class="nav-link" 
+           *ngFor="let section of sections; let i = index"
+           [class.active]="currentSection === i"
+           (click)="goToSection(i)"
+           style="cursor: pointer;">
+          {{ section.title }}
+        </a>
+      </nav-scroll>
+    </div>
+  </div>
+</div>
