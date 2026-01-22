@@ -121,7 +121,7 @@ export class TeltonikaGateway implements OnModuleInit, OnModuleDestroy {
       });
 
       socket.on('end', () => {
-        this.logger.debug(`Connection ended [${clientId}]`);
+        // Connection closed, will be logged in 'close' event
         socket.destroy();
       });
     });
