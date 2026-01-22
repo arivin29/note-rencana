@@ -48,11 +48,40 @@
             <h4 class="section-title">Node Details</h4>
 
             <div class="row g-3">
-                <!-- Owner (Read-only from unpaired device) -->
-                <div class="col-md-6" *ngIf="suggestedOwnerName">
-                    <label class="form-label text-uppercase small text-muted">Owner</label>
-                    <input type="text" class="form-control" [value]="suggestedOwnerName" disabled>
-                    <small class="text-muted">Auto-detected from device data</small>
+                <!-- Owner Field: Conditional rendering for HELIO devices -->
+                <div class="col-md-6">
+                    <label class="form-label text-uppercase small text-muted">
+                        Owner 
+                        <span class="text-danger" *ngIf="isHelioDevice && ownerFieldEnabled">*</span>
+                        <span *ngIf="isHelioDevice" class="badge bg-primary ms-2">
+                            <i class="fa fa-lock me-1"></i>HELIO Device
+                        </span>
+                    </label>
+                    
+                    <!-- ADMIN + HELIO: Dropdown enabled -->
+                    <select *ngIf="isHelioDevice && ownerFieldEnabled" 
+                            class="form-select" 
+                            [(ngModel)]="nodeConfig.newNode!.ownerId"
+                            (ngModelChange)="onOwnerChange($event)">
+                        <option value="">-- Select Owner --</option>
+                        <option *ngFor="let owner of ownerOptions" [value]="owner.id">
+                            {{ owner.code }} - {{ owner.name }}
+                        </option>
+                    </select>
+                    
+                    <!-- Non-HELIO or Non-Admin: Read-only -->
+                    <input *ngIf="!isHelioDevice || !ownerFieldEnabled" 
+                           type="text" 
+                           class="form-control" 
+                           [value]="suggestedOwnerName" 
+                           disabled>
+                    
+                    <small class="text-muted" *ngIf="isHelioDevice && ownerFieldEnabled">
+                        Select owner for this HELIO device (Admin only)
+                    </small>
+                    <small class="text-muted" *ngIf="!isHelioDevice || !ownerFieldEnabled">
+                        Auto-detected from device data
+                    </small>
                 </div>
 
                 <!-- Project (Required dropdown) -->
@@ -73,8 +102,8 @@
                     <select class="form-select" [(ngModel)]="nodeConfig.newNode!.nodeModelId"
                         (ngModelChange)="onFormChange()">
                         <option value="">-- Select Node Model --</option>
-                        <option *ngFor="let model of nodeModels" [value]="model.idNodeModel">
-                            {{ model.name }} – {{ model.manufacturer }}
+                        <option *ngFor="let model of nodeModelOptions" [value]="model.idNodeModel">
+                            {{ model.modelName }} – {{ model.vendor }}
                         </option>
                     </select>
                     <small class="text-muted">Choose the hardware model for this node</small>

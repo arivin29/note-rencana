@@ -3,7 +3,9 @@ import { NodeConfig, NodeModel, ExistingNode } from '../../pairing-workspace.typ
 import { NodesService } from 'src/sdk/core/services';
 import { ProjectsService } from '../../../../../../../sdk/core/services/projects.service';
 import { NodeModelsService } from '../../../../../../../sdk/core/services/node-models.service';
-import { UnpairedDeviceResponseDto } from 'src/sdk/core/models';
+import { OwnersService } from '../../../../../../../sdk/core/services/owners.service';
+import { NodeModelResponseDto, UnpairedDeviceResponseDto } from 'src/sdk/core/models';
+import { AuthService } from '../../../../../../services/auth.service';
 
 interface ProjectOption {
     id: string;
@@ -15,6 +17,13 @@ interface NodeModelOption {
     id: string;
     vendor: string;
     model: string;
+}
+
+interface OwnerOption {
+    id: string;
+    code: string;
+    name: string;
+    status: string;
 }
 
 @Component({
@@ -37,32 +46,133 @@ export class StepNodeConfigComponent implements OnInit {
 
     // Dropdown options
     projectOptionsAll: ProjectOption[] = [];
-    nodeModelOptions: NodeModelOption[] = [];
+    nodeModelOptions: NodeModelResponseDto[] = [];
+    ownerOptions: OwnerOption[] = [];  // For HELIO devices (admin only)
 
     // Form dropdowns
     telemetryModes: Array<'push' | 'pull'> = ['push', 'pull'];
     batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains'];
     locationTypes: Array<'manual' | 'gps'> = ['manual', 'gps'];
 
+    // HELIO device detection
+    isHelioDevice = false;
+    currentUserRole = '';
+    ownerFieldEnabled = false;
+
     constructor(
         private nodesService: NodesService,
         private projectsService: ProjectsService,
-        private nodeModelsService: NodeModelsService
+        private nodeModelsService: NodeModelsService,
+        private ownersService: OwnersService,
+        private authService: AuthService
     ) { }
 
     ngOnInit(): void {
         this.loadExistingNodes();
         
-        // Set ownerId from unpairedDevice's suggestedOwner FIRST
-        if (this.unpairedDevice && this.nodeConfig.newNode) {
-            const suggestedOwnerId = this.unpairedDevice.suggestedOwner as any;
-            this.nodeConfig.newNode.ownerId = typeof suggestedOwnerId === 'string' ? suggestedOwnerId : '';
+        // Get current user role
+        this.currentUserRole = this.authService.getCurrentUserRole();
+        
+        // Check if this is a HELIO device
+        if (this.unpairedDevice && this.unpairedDevice.hardwareId) {
+            this.isHelioDevice = this.unpairedDevice.hardwareId.toUpperCase().startsWith('HELIO-');
         }
+        
+        // HELIO device logic for ADMIN
+        if (this.isHelioDevice && this.isAdmin()) {
+            console.log('🔒 HELIO Device detected - Admin access enabled');
+            this.ownerFieldEnabled = true;
+            this.loadAllOwners();  // Load all owners for admin to choose
+            
+            // Do NOT set ownerId from suggestedOwner - let admin choose manually
+            if (this.nodeConfig.newNode) {
+                this.nodeConfig.newNode.ownerId = '';  // Reset to empty
+            }
+        } 
+        // Regular device or non-admin: Use suggested owner
+        else {
+            this.ownerFieldEnabled = false;
+            
+            // Set ownerId from unpairedDevice's suggestedOwner
+            if (this.unpairedDevice && this.nodeConfig.newNode) {
+                const suggestedOwnerId = this.unpairedDevice.suggestedOwner as any;
+                this.nodeConfig.newNode.ownerId = typeof suggestedOwnerId === 'string' ? suggestedOwnerId : '';
+                
+                // Load projects for this owner
+                this.loadProjectOptions();
+                this.loadNodeModelOptions();
+            }
+        }
+    }
 
-         
+    /**
+     * Check if current user is admin
+     */
+    isAdmin(): boolean {
+        return this.currentUserRole === 'admin' || this.currentUserRole === 'ADMIN';
+    }
+
+    /**
+     * Load all owners (for HELIO devices - admin only)
+     */
+    private loadAllOwners(): void {
+        console.log('🔄 Loading all owners for HELIO device...');
+        this.ownersService
+            .ownersControllerFindAll({ 
+                page: 1, 
+                limit: 200
+                // No owner filter - get all owners
+            })
+            .subscribe({
+                next: (response: any) => {
+                    console.log('✅ Owners response received:', response);
+                    
+                    // Parse response (might be string or object)
+                    const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+                    console.log('📦 Parsed response:', parsed);
+                    
+                    // Extract data array
+                    const items = parsed?.data || parsed?.items || (Array.isArray(parsed) ? parsed : []);
+                    console.log('📋 Extracted items:', items.length);
+                    
+                    this.ownerOptions = items
+                        .map((owner: any) => ({
+                            id: owner?.idOwner || owner?.id || '',
+                            code: owner?.code || '',
+                            name: owner?.name || 'Owner',
+                            status: owner?.status || 'active'
+                        }))
+                        .filter((owner: OwnerOption) => owner.id && owner.status === 'active');  // Only active owners
+                    
+                    console.log('✅ Loaded owners for HELIO device:', this.ownerOptions.length, this.ownerOptions);
+                },
+                error: (error) => {
+                    console.error('❌ Failed to load owners:', error);
+                }
+            });
+    }
+
+    /**
+     * Handle owner selection change (for HELIO devices)
+     */
+    onOwnerChange(ownerId: string): void {
+        console.log('Owner changed to:', ownerId);
         
-        // Load projects AFTER ownerId is set (so we can filter by owner)
+        // Set the ownerId in newNode config
+        if (this.nodeConfig.newNode) {
+            this.nodeConfig.newNode.ownerId = ownerId;
+        }
         
+        // Clear project selection
+        if (this.nodeConfig.newNode) {
+            this.nodeConfig.newNode.projectId = '';
+        }
+        
+        // Reload projects for selected owner
+        this.loadProjectOptions();
+        this.loadNodeModelOptions();
+        
+        this.emitChanges();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -254,12 +364,7 @@ export class StepNodeConfigComponent implements OnInit {
                     const body = this.parseBody(response.body);
                     const items = this.extractDataArray(body);
                     this.nodeModelOptions = items
-                        .map((model: any) => ({
-                            id: model?.idNodeModel || model?.id || '',
-                            vendor: model?.vendor || '',
-                            model: model?.modelName || model?.model || ''
-                        }))
-                        .filter((model: NodeModelOption) => model.id);
+                         
                 },
                 error: (error) => {
                     console.error('Failed to load node models', error);

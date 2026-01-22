@@ -35,14 +35,13 @@
     </card>
 
     <!-- Step Content -->
-    <div class="step-content">
+    <div class="step-content" *ngIf="unpairedDevice">
         <!-- ============================================ -->
         <!-- STEP 1: NODE CONFIGURATION -->
         <!-- ============================================ -->
         <pw-step-node-config
             *ngIf="currentStep === 1"
-            [nodeConfig]="nodeConfig"
-            [nodeModels]="nodeModels"
+            [nodeConfig]="nodeConfig" 
             [unpairedDevice]="unpairedDevice"
             (configChange)="onNodeConfigChange($event)"
             (validationChange)="onStep1ValidationChange($event)"
@@ -78,14 +77,13 @@
         <!-- ============================================ -->
         <pw-step-review-submit
             *ngIf="currentStep === 4"
-            [nodeConfig]="nodeConfig"
-            [nodeModels]="nodeModels"
+            [nodeConfig]="nodeConfig" 
             [addedSensors]="addedSensors"
             [ownerId]="ownerId"
             [projectId]="projectId"
             [idSensorProfile]="sensorProfileId"
             [hardwareId]="hardwareId"
-            [unpairedDeviceId]="unpairedDevice?.idNodeUnpairedDevice"
+            [unpairedDeviceId]="unpairedDevice.idNodeUnpairedDevice"
             (submit)="onSubmitPairing($event)">
         </pw-step-review-submit>
     </div>
