@@ -1,0 +1,289 @@
+<div class="tutorial-base-component">
+  <!-- Breadcrumb -->
+  <ol class="breadcrumb float-xl-end">
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document">Documentation</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document/user-guide">User Guide</a></li>
+    <li class="breadcrumb-item active">View Sensors</li>
+  </ol>
+  
+  <!-- Page Header -->
+  <h1 class="page-header">
+    <i class="bi bi-thermometer-half me-2"></i> View Sensors
+    <small class="d-block mt-2 text-white-transparent-7">Panduan menggunakan halaman Sensors untuk memonitor sensor types dan specifications</small>
+  </h1>
+
+  <!-- Progress Bar -->
+  <div class="progress mb-4" style="height: 6px;">
+    <div class="progress-bar bg-success" role="progressbar" 
+         [style.width]="getProgressPercentage() + '%'" 
+         [attr.aria-valuenow]="getProgressPercentage()" 
+         aria-valuemin="0" 
+         aria-valuemax="100">
+    </div>
+  </div>
+
+  <!-- Tutorial Content -->
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-9">
+      <!-- Section 1: Introduction -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-info-circle me-2"></i> Apa itu Sensors?</h3>
+          
+          <p class="mb-3">
+            <strong>Sensors</strong> adalah komponen yang attached ke Nodes (perangkat IoT) untuk mengukur parameter fisik 
+            seperti suhu, kelembaban, tekanan, getaran, dll. Setiap sensor memiliki spesifikasi yang menentukan 
+            range pengukuran, akurasi, dan unit of measurement. Halaman Sensors memungkinkan Anda melihat catalog 
+            semua sensor types yang tersedia dalam sistem dan spesifikasinya.
+          </p>
+
+          <div class="mb-4">
+            <img src="assets/img/documentation/user-guide/view-sensors/img-10-22.png" 
+                 alt="Sensors Catalog Overview" 
+                 class="img-fluid rounded border">
+            <p class="text-center text-white-transparent-7 mt-2">
+              Halaman Sensors Catalog dengan sensor types, specifications, dan channel details
+            </p>
+          </div>
+
+          <div class="alert alert-success">
+            <h5 class="mb-2"><i class="bi bi-gear-fill me-2"></i> Komponen Sensor</h5>
+            <ul class="mb-0">
+              <li><strong>Sensor Type:</strong> Kategori sensor (e.g., Temperature, Humidity, Pressure)</li>
+              <li><strong>Sensor Code:</strong> Identifier unik (e.g., TEMP-DHT22, HUMID-BME280)</li>
+              <li><strong>Sensor Name:</strong> Nama deskriptif (e.g., "DHT22 Temperature Sensor")</li>
+              <li><strong>Unit of Measurement:</strong> Satuan ukur (°C, %, kPa, m/s²)</li>
+              <li><strong>Min/Max Range:</strong> Range pengukuran valid (-40°C to 80°C)</li>
+              <li><strong>Accuracy:</strong> Akurasi sensor (±0.5°C, ±2%)</li>
+              <li><strong>Channels:</strong> Jumlah channel output (single channel atau multi-channel)</li>
+              <li><strong>Formula:</strong> Rumus konversi raw value → actual value (optional)</li>
+            </ul>
+          </div>
+
+          <h5 class="mt-4 mb-3"><i class="bi bi-star me-2"></i> Kenapa Penting?</h5>
+          <ul>
+            <li><strong>Sensor Selection:</strong> Pilih sensor yang tepat untuk use case Anda berdasarkan spesifikasi</li>
+            <li><strong>Calibration:</strong> Pahami range dan akurasi untuk kalibrasi yang akurat</li>
+            <li><strong>Data Validation:</strong> Validasi telemetry data berdasarkan min/max range sensor</li>
+            <li><strong>Troubleshooting:</strong> Identifikasi sensor yang menghasilkan out-of-range readings</li>
+            <li><strong>Documentation:</strong> Reference catalog untuk dokumentasi sistem</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 2: Getting Started -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-play-circle me-2"></i> Cara Mengakses Sensors Catalog</h3>
+          
+          <div class="alert alert-info">
+            <h5 class="mb-3"><i class="bi bi-list-ul me-2"></i> 3 Cara Akses Halaman Sensors</h5>
+            
+            <ol class="mb-0">
+              <li class="mb-3">
+                <strong>Via Main Navigation</strong><br>
+                Klik menu <code>Sensors</code> di sidebar kiri → Halaman Sensors Catalog terbuka → 
+                Tampil semua sensor types dengan default sorting by category
+              </li>
+              
+              <li class="mb-3">
+                <strong>Via Node Detail</strong><br>
+                Dari Nodes List → Select Node → Dalam Node Detail terdapat section <strong>"Attached Sensors"</strong> → 
+                Klik sensor name untuk lihat specifications OR "View Sensor Catalog"
+              </li>
+              
+              <li class="mb-0">
+                <strong>Via Direct URL</strong><br>
+                Akses langsung: <code>http://localhost:4200/iot/sensors</code>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Features -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-gear me-2"></i> Fitur Sensors Catalog</h3>
+          
+          <!-- Sensor Filters -->
+          <h5 class="mb-3"><i class="bi bi-funnel me-2"></i> 1. Sensor Filters</h5>
+          <p>Filter untuk mempersempit daftar sensors:</p>
+          <ul>
+            <li><strong>Sensor Type:</strong> Filter by category (Temperature, Humidity, Pressure, Gas, Motion, Light, Sound, etc.)</li>
+            <li><strong>Unit:</strong> Filter by unit of measurement (°C, %, kPa, ppm, lux, dB)</li>
+            <li><strong>Channels:</strong> Single-channel atau Multi-channel</li>
+            <li><strong>Search:</strong> Cari by Sensor Code, Name, atau Description</li>
+          </ul>
+
+          <!-- Sensors Data Table -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-table me-2"></i> 2. Sensors Data Table</h5>
+          <p>Tabel menampilkan semua sensor types dengan columns berikut:</p>
+          
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th>Column</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Sensor Code</strong></td>
+                  <td>Unique identifier (clickable link ke Sensor Detail)</td>
+                </tr>
+                <tr>
+                  <td><strong>Sensor Name</strong></td>
+                  <td>Friendly name (e.g., "DHT22 Temperature & Humidity Sensor")</td>
+                </tr>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Category dengan icon: 🌡️ Temperature, 💧 Humidity, 📊 Pressure, etc.</td>
+                </tr>
+                <tr>
+                  <td><strong>Unit</strong></td>
+                  <td>Unit of measurement (°C, %, kPa, ppm, m/s², lux, dB)</td>
+                </tr>
+                <tr>
+                  <td><strong>Min Range</strong></td>
+                  <td>Minimum measurement value (e.g., -40°C, 0%, 300 hPa)</td>
+                </tr>
+                <tr>
+                  <td><strong>Max Range</strong></td>
+                  <td>Maximum measurement value (e.g., 80°C, 100%, 1100 hPa)</td>
+                </tr>
+                <tr>
+                  <td><strong>Accuracy</strong></td>
+                  <td>Sensor accuracy (e.g., ±0.5°C, ±2%, ±1 hPa)</td>
+                </tr>
+                <tr>
+                  <td><strong>Channels</strong></td>
+                  <td>Number of output channels (e.g., 1 for single, 2+ for multi)</td>
+                </tr>
+                <tr>
+                  <td><strong>Nodes Using</strong></td>
+                  <td>Count nodes yang attached sensor ini (clickable link ke Nodes filtered by sensor)</td>
+                </tr>
+                <tr>
+                  <td><strong>Actions</strong></td>
+                  <td>Buttons: <button class="btn btn-sm btn-primary">View Detail</button> 
+                      <button class="btn btn-sm btn-info">View Nodes</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Sensor Detail -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-info-square me-2"></i> 3. Sensor Detail</h5>
+          <p>Klik Sensor Code atau "View Detail" untuk melihat:</p>
+          <ul>
+            <li><strong>Full Specifications:</strong> Detailed specs (range, accuracy, resolution, response time)</li>
+            <li><strong>Channel Mapping:</strong> Jika multi-channel, tampil mapping tiap channel (e.g., Channel 0: Temperature, Channel 1: Humidity)</li>
+            <li><strong>Formula:</strong> Conversion formula jika ada (e.g., <code>celsius = (rawValue - 32) * 5/9</code>)</li>
+            <li><strong>Calibration Info:</strong> Calibration offset/multiplier jika configured</li>
+            <li><strong>Nodes List:</strong> List nodes yang attached sensor ini dengan status connectivity</li>
+            <li><strong>Recent Telemetry:</strong> Sample recent readings dari sensor ini</li>
+          </ul>
+
+          <!-- Sensor Types -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-grid-3x3 me-2"></i> 4. Sensor Types Categories</h5>
+          <p>Katalog sensor types yang tersedia:</p>
+          <ul>
+            <li>🌡️ <strong>Temperature:</strong> DHT22, DS18B20, BME280 (range: -40°C to 125°C)</li>
+            <li>💧 <strong>Humidity:</strong> DHT11, SHT31 (range: 0% to 100% RH)</li>
+            <li>📊 <strong>Pressure:</strong> BMP280, MPL3115A2 (range: 300 hPa to 1100 hPa)</li>
+            <li>💨 <strong>Gas:</strong> MQ-2 (smoke), MQ-135 (air quality), CCS811 (CO₂, TVOC)</li>
+            <li>🏃 <strong>Motion:</strong> PIR (presence), MPU6050 (accelerometer/gyroscope)</li>
+            <li>💡 <strong>Light:</strong> BH1750, TSL2561 (range: 1 lux to 65535 lux)</li>
+            <li>🔊 <strong>Sound:</strong> KY-038 (sound level in dB)</li>
+            <li>📏 <strong>Distance:</strong> HC-SR04 (ultrasonic, range: 2cm to 400cm)</li>
+            <li>⚡ <strong>Current/Voltage:</strong> INA219, ACS712</li>
+          </ul>
+
+          <!-- Export -->
+          <h5 class="mt-4 mb-3"><i class="bi bi-download me-2"></i> 5. Export Sensor Catalog</h5>
+          <p>Download sensor catalog sebagai CSV untuk:</p>
+          <ul>
+            <li><strong>Documentation:</strong> Generate technical documentation untuk project proposals</li>
+            <li><strong>Procurement:</strong> Reference untuk procurement department saat order sensors</li>
+            <li><strong>Training:</strong> Material training untuk field technicians</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 4: Next Steps -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-arrow-right-circle me-2"></i> Langkah Selanjutnya</h3>
+          
+          <div class="alert alert-warning">
+            <h5 class="mb-3"><i class="bi bi-book me-2"></i> Tutorial Terkait</h5>
+            <ul class="mb-0">
+              <li>
+                <a routerLink="/iot/document/user-guide/view-nodes" class="text-decoration-none">
+                  <i class="bi bi-cpu me-1"></i> View Nodes
+                </a> - Explore nodes yang attached sensors ini
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/view-telemetry" class="text-decoration-none">
+                  <i class="bi bi-graph-up me-1"></i> View Telemetry
+                </a> - Monitor sensor readings data
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/view-projects" class="text-decoration-none">
+                  <i class="bi bi-folder2-open me-1"></i> View Projects
+                </a> - Sensors per-project
+              </li>
+              <li>
+                <a routerLink="/iot/document/user-guide/view-alerts" class="text-decoration-none">
+                  <i class="bi bi-exclamation-triangle me-1"></i> View Alerts
+                </a> - Check sensor alerts
+              </li>
+            </ul>
+          </div>
+
+          <div class="alert alert-success">
+            <h5 class="mb-3"><i class="bi bi-lightbulb me-2"></i> Pro Tips</h5>
+            <ul class="mb-0">
+              <li>
+                <strong>Check Accuracy:</strong> Pilih sensors dengan accuracy sesuai requirement 
+                (industrial: ±0.1°C, general: ±0.5°C sufficient)
+              </li>
+              <li>
+                <strong>Verify Range:</strong> Pastikan sensor range cover expected conditions 
+                (e.g., outdoor temperature sensor: -20°C to 50°C di Indonesia)
+              </li>
+              <li>
+                <strong>Multi-Channel Efficiency:</strong> Gunakan multi-channel sensors (e.g., BME280: temp + humidity + pressure) 
+                untuk reduce node complexity dan cost
+              </li>
+              <li>
+                <strong>Calibration:</strong> Sensors yang menunjukkan drift (offset dari expected value) 
+                perlu re-calibration atau replacement
+              </li>
+              <li>
+                <strong>Unit Consistency:</strong> Ensure semua sensors untuk parameter yang sama use consistent units 
+                (e.g., semua temperature in °C, jangan mix dengan °F)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-xl-3">
+      <nav-scroll class="nav">
+        <a class="nav-link" 
+           *ngFor="let section of sections; let i = index"
+           [class.active]="currentSection === i"
+           (click)="goToSection(i)"
+           style="cursor: pointer;">
+          {{ section.title }}
+        </a>
+      </nav-scroll>
+    </div>
+  </div>
+</div>

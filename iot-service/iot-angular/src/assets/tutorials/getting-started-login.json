@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "id": "getting-started-login",
+    "title": "Getting Started: Login to System",
+    "description": "Learn how to login to IoT Monitoring System and navigate the dashboard",
+    "category": "getting-started",
+    "difficulty": "beginner",
+    "estimatedTime": 5,
+    "roles": ["super_admin", "admin", "owner", "user"],
+    "tags": ["login", "authentication", "basics"],
+    "order": 1,
+    "icon": "bi bi-box-arrow-in-right",
+    "author": "System Administrator",
+    "lastUpdated": "2025-12-22T00:00:00Z"
+  },
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Accessing the Login Page",
+      "content": "<h3>Step 1: Open Your Browser</h3><p>Navigate to the IoT Monitoring System URL provided by your administrator.</p><p>The login page will display with the following fields:</p><ul><li>Username or Email</li><li>Password</li><li>Remember Me checkbox (optional)</li></ul>",
+      "order": 1,
+      "images": []
+    },
+    {
+      "id": "section-2",
+      "title": "Entering Your Credentials",
+      "content": "<h3>Step 2: Enter Login Information</h3><p>Enter your <strong>username</strong> or <strong>email address</strong> in the first field.</p><p>Enter your <strong>password</strong> in the second field.</p><blockquote>Tip: Make sure your Caps Lock is off to avoid password errors.</blockquote>",
+      "order": 2,
+      "images": []
+    },
+    {
+      "id": "section-3",
+      "title": "Logging In",
+      "content": "<h3>Step 3: Click Login Button</h3><p>Click the <strong>Login</strong> button to access the system.</p><p>If your credentials are correct, you will be redirected to the dashboard.</p><p>If there's an error, you'll see a message indicating the problem.</p>",
+      "order": 3,
+      "images": []
+    },
+    {
+      "id": "section-4",
+      "title": "First Time Setup",
+      "content": "<h3>Step 4: Complete Profile (First Login)</h3><p>If this is your first login, you may be prompted to:</p><ul><li>Change your password</li><li>Complete your profile information</li><li>Accept terms and conditions</li></ul><p>Follow the on-screen instructions to complete the setup.</p>",
+      "order": 4,
+      "images": []
+    }
+  ]
+}

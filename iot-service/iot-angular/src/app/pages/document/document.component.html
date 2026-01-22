@@ -1,0 +1,40 @@
+<div class="document-container">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.expanded]="sidebarExpanded">
+    <div class="sidebar-header">
+      <h2>
+        <i class="bi bi-book me-2"></i>
+        <span *ngIf="sidebarExpanded">Documentation</span>
+      </h2>
+      <button class="btn btn-sm btn-link text-white" (click)="toggleSidebar()">
+        <i [class]="sidebarExpanded ? 'bi bi-chevron-left' : 'bi bi-chevron-right'"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-search" *ngIf="sidebarExpanded">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-transparent border-secondary">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          class="form-control bg-transparent border-secondary text-white" 
+          placeholder="Search tutorials..." 
+          [(ngModel)]="searchQuery" 
+          (keyup.enter)="onSearch()">
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" *ngIf="sidebarExpanded">
+      <app-tutorial-sidebar></app-tutorial-sidebar>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="content-wrapper">
+      <!-- Router outlet for child routes (tutorial components) -->
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

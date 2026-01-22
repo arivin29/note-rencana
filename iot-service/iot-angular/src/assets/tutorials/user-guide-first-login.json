@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "id": "user-guide-first-login",
+    "title": "User Guide: First Time Login Setup",
+    "description": "Step-by-step guide for new users logging in for the first time",
+    "category": "user-guide",
+    "difficulty": "beginner",
+    "estimatedTime": 5,
+    "roles": ["user", "admin", "owner", "super_admin"],
+    "tags": ["first login", "setup", "profile", "password change"],
+    "order": 2,
+    "icon": "bi bi-person-check",
+    "author": "IoT Support Team",
+    "lastUpdated": "2025-12-22T00:00:00Z"
+  },
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Welcome Screen",
+      "content": "<h3>First Login Welcome</h3><p>When you log in for the first time, you'll be greeted with a welcome screen.</p><div class='alert alert-success'><i class='bi bi-check-circle'></i> <strong>Welcome to IoT Monitoring System!</strong><br>You're about to complete your profile setup.</div><p>This one-time setup ensures your account is secure and personalized.</p>",
+      "order": 1,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-2",
+      "title": "Change Default Password",
+      "content": "<h3>Step 1: Update Your Password</h3><p>For security reasons, you must change the temporary password provided by your administrator.</p><h4>Password Requirements:</h4><ul><li>✓ Minimum 8 characters</li><li>✓ At least one uppercase letter (A-Z)</li><li>✓ At least one lowercase letter (a-z)</li><li>✓ At least one number (0-9)</li><li>✓ At least one special character (!@#$%^&*)</li></ul><p><strong>Enter:</strong></p><ol><li>Current temporary password</li><li>New password</li><li>Confirm new password</li></ol><div class='alert alert-warning'><i class='bi bi-shield-lock'></i> <strong>Password Tips:</strong><ul><li>Use a unique password (don't reuse from other sites)</li><li>Avoid personal information (birthdate, name)</li><li>Consider using a password manager</li></ul></div>",
+      "order": 2,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-3",
+      "title": "Complete Your Profile",
+      "content": "<h3>Step 2: Fill Profile Information</h3><p>Complete your user profile with the following information:</p><h4>Required Fields:</h4><ul><li><strong>Full Name:</strong> Your complete name</li><li><strong>Email:</strong> Already filled (verify it's correct)</li><li><strong>Phone Number:</strong> For alert notifications</li></ul><h4>Optional Fields:</h4><ul><li><strong>Job Title:</strong> Your role in the organization</li><li><strong>Department:</strong> Your department name</li><li><strong>Profile Picture:</strong> Upload a photo (JPG/PNG, max 2MB)</li></ul><p>Click <button class='btn btn-sm btn-success'>Save Profile</button> when complete.</p>",
+      "order": 3,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-4",
+      "title": "Notification Preferences",
+      "content": "<h3>Step 3: Configure Notifications</h3><p>Choose how you want to receive system alerts and notifications:</p><h4>Email Notifications:</h4><div class='form-check'><input type='checkbox' checked disabled> <label>System alerts (Critical events)</label></div><div class='form-check'><input type='checkbox' checked disabled> <label>Node offline notifications</label></div><div class='form-check'><input type='checkbox' disabled> <label>Daily summary reports</label></div><div class='form-check'><input type='checkbox' disabled> <label>Weekly analytics digest</label></div><h4>SMS Notifications:</h4><div class='form-check'><input type='checkbox' disabled> <label>Critical alerts only</label></div><p class='text-muted'><small>Note: SMS notifications may incur additional charges</small></p>",
+      "order": 4,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-5",
+      "title": "Accept Terms & Policies",
+      "content": "<h3>Step 4: Review and Accept</h3><p>Before accessing the system, you must agree to the following:</p><h4>Terms of Service</h4><p>Review the <a href='#'>Terms of Service</a> document that outlines:</p><ul><li>Acceptable use policy</li><li>User responsibilities</li><li>Data access rights</li><li>Account security obligations</li></ul><h4>Privacy Policy</h4><p>Review the <a href='#'>Privacy Policy</a> that explains:</p><ul><li>How your data is collected</li><li>How your data is used</li><li>Data retention policies</li><li>Your privacy rights</li></ul><div class='form-check mt-3'><input type='checkbox' required> <label>I have read and agree to the Terms of Service</label></div><div class='form-check'><input type='checkbox' required> <label>I have read and understand the Privacy Policy</label></div>",
+      "order": 5,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-6",
+      "title": "Finish Setup",
+      "content": "<h3>Step 5: Complete Setup</h3><p>Once all steps are completed:</p><ol><li>Review all information entered</li><li>Click <button class='btn btn-sm btn-primary'><i class='bi bi-check-lg'></i> Complete Setup</button></li><li>Wait for confirmation message</li></ol><div class='alert alert-success mt-3'><i class='bi bi-check-circle'></i> <strong>Setup Complete!</strong><br>Welcome aboard! You'll be redirected to your dashboard in 3 seconds...</div><h4>What's Next?</h4><p>After setup, you can:</p><ul><li>Explore your dashboard</li><li>View assigned nodes and sensors</li><li>Check active alerts</li><li>Customize your dashboard widgets</li></ul><p>Need help? Check out our <a href='/iot/document/user-guide'>User Guide tutorials</a>.</p>",
+      "order": 6,
+      "images": [],
+      "codeSnippets": []
+    }
+  ]
+}

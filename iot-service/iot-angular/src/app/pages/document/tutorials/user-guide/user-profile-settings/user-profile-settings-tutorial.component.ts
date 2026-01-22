@@ -1,0 +1,31 @@
+import { Component } from '@angular/core';
+import { TutorialBaseComponent } from '../../shared/tutorial-base.component';
+import { TutorialMetadataConfig } from '../../shared/tutorial-metadata.interface';
+
+@Component({
+  standalone: false,
+  selector: 'app-user-profile-settings-tutorial',
+  templateUrl: './user-profile-settings-tutorial.component.html',
+  styleUrls: ['./user-profile-settings-tutorial.component.scss']
+})
+export class UserProfileSettingsTutorialComponent extends TutorialBaseComponent {
+  
+  override metadata: TutorialMetadataConfig = {
+    id: 'user-profile-settings',
+    title: 'User Profile Settings',
+    category: 'User Guide',
+    difficulty: 'beginner',
+    estimatedTime: 4,
+    description: 'Update profile and change password',
+    sections: [
+      { id: 'introduction', title: 'Introduction', duration: 2 },
+      { id: 'getting-started', title: 'Getting Started', duration: 3 },
+      { id: 'features', title: 'Key Features', duration: 3 },
+      { id: 'next-steps', title: 'Next Steps', duration: 2 }
+    ]
+  };
+
+  constructor() {
+    super();
+  }
+}

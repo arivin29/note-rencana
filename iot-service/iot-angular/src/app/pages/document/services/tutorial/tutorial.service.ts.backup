@@ -1,0 +1,185 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, forkJoin } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { Tutorial, TutorialCategory, TutorialMetadata, TutorialProgress, TutorialDifficulty, UserRole } from '../../models/tutorial.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TutorialService {
+  private tutorials: Tutorial[] = [];
+  private tutorialsLoaded = false;
+
+  // Tutorial metadata registry - map tutorial IDs to their metadata
+  private tutorialMetadataRegistry: TutorialMetadata[] = [
+    {
+      id: 'login',
+      title: 'Login Tutorial',
+      description: 'Learn how to login to the IoT Service platform',
+      category: TutorialCategory.GETTING_STARTED,
+      difficulty: TutorialDifficulty.BEGINNER,
+      estimatedTime: 5,
+      roles: [UserRole.USER, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPER_ADMIN],
+      tags: ['login', 'authentication', 'getting-started'],
+      order: 1,
+      icon: 'bi-box-arrow-in-right',
+    },
+    {
+      id: 'first-login',
+      title: 'First Login Setup',
+      description: 'Complete your profile and configure settings after first login',
+      category: TutorialCategory.GETTING_STARTED,
+      difficulty: TutorialDifficulty.BEGINNER,
+      estimatedTime: 10,
+      roles: [UserRole.USER, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPER_ADMIN],
+      tags: ['first-login', 'profile', 'setup', 'getting-started'],
+      order: 2,
+      icon: 'bi-person-check',
+    },
+  ];
+
+  constructor(private http: HttpClient) {
+    this.initializeTutorials();
+  }
+
+  /**
+   * Initialize tutorials from metadata registry
+   */
+  private initializeTutorials(): void {
+    // Create Tutorial objects from metadata (without sections, as those are in components)
+    this.tutorials = this.tutorialMetadataRegistry.map(metadata => ({
+      metadata,
+      sections: [] // Sections are handled by individual components
+    }));
+    this.tutorialsLoaded = true;
+  }
+
+  /**
+   * Get all tutorials
+   */
+  getAllTutorials(): Observable<Tutorial[]> {
+    return of(this.tutorials);
+  }
+
+  /**
+   * Get tutorials by category
+   */
+  getTutorialsByCategory(category: TutorialCategory): Observable<Tutorial[]> {
+    const filtered = this.tutorials.filter(t => t.metadata.category === category);
+    return of(filtered);
+  }
+
+  /**
+   * Get tutorial by ID
+   */
+  getTutorialById(id: string): Observable<Tutorial | undefined> {
+    const tutorial = this.tutorials.find(t => t.metadata.id === id);
+    return of(tutorial);
+  }
+
+  /**
+   * Search tutorials
+   */
+  searchTutorials(query: string): Observable<Tutorial[]> {
+    const lowerQuery = query.toLowerCase();
+    const results = this.tutorials.filter(t =>
+      t.metadata.title.toLowerCase().includes(lowerQuery) ||
+      t.metadata.description.toLowerCase().includes(lowerQuery) ||
+      t.metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerQuery))
+    );
+    return of(results);
+  }
+
+  /**
+   * Get user's tutorial progress
+   */
+  getTutorialProgress(tutorialId: string): Observable<TutorialProgress | null> {
+    // TODO: Get from localStorage or API
+    const stored = localStorage.getItem(`tutorial-progress-${tutorialId}`);
+    if (stored) {
+      return of(JSON.parse(stored));
+    }
+    return of(null);
+  }
+
+  /**
+   * Get tutorial progress
+   */
+  getProgress(userId: string, tutorialId: string): TutorialProgress {
+    const key = `tutorial-progress-${tutorialId}`;
+    const stored = localStorage.getItem(key);
+
+    if (stored) {
+      const progress = JSON.parse(stored);
+      return {
+        ...progress,
+        lastAccessedAt: new Date(progress.lastAccessedAt),
+      };
+    }
+
+    // Return default progress
+    return {
+      userId,
+      tutorialId,
+      completedSections: [],
+      currentSection: 0,
+      lastAccessedAt: new Date(),
+      completed: false,
+    };
+  }
+
+  /**
+   * Update tutorial progress
+   */
+  updateProgress(progress: TutorialProgress): void {
+    localStorage.setItem(`tutorial-progress-${progress.tutorialId}`, JSON.stringify(progress));
+  }
+
+  /**
+   * Mark section as completed
+   */
+  markSectionCompleted(userId: string, tutorialId: string): void {
+    const key = `tutorial-progress-${tutorialId}`;
+    const stored = localStorage.getItem(key);
+    let progress: TutorialProgress;
+
+    if (stored) {
+      progress = JSON.parse(stored);
+    } else {
+      progress = {
+        userId,
+        tutorialId,
+        completedSections: [],
+        currentSection: 0,
+        lastAccessedAt: new Date(),
+        completed: false,
+      };
+    }
+
+    // Note: We track completed sections at the tutorial component level
+    // This method just updates the progress timestamp
+    progress.lastAccessedAt = new Date();
+
+    this.updateProgress(progress);
+  }
+
+  /**
+   * Get categories with tutorial count
+   */
+  getCategoriesWithCount(): Observable<{ category: TutorialCategory; count: number }[]> {
+    const categoryMap = new Map<TutorialCategory, number>();
+    
+    this.tutorials.forEach(tutorial => {
+      const count = categoryMap.get(tutorial.metadata.category) || 0;
+      categoryMap.set(tutorial.metadata.category, count + 1);
+    });
+
+    const result = Array.from(categoryMap.entries()).map(([category, count]) => ({
+      category,
+      count,
+    }));
+
+    return of(result);
+  }
+}

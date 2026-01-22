@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "id": "admin-add-user",
+    "title": "Admin Guide: Adding New Users",
+    "description": "Step-by-step guide for administrators to add new users to the system",
+    "category": "admin-guide",
+    "difficulty": "intermediate",
+    "estimatedTime": 10,
+    "roles": ["super_admin", "admin"],
+    "tags": ["user management", "admin", "users"],
+    "order": 1,
+    "icon": "bi bi-person-plus",
+    "author": "System Administrator",
+    "lastUpdated": "2025-12-22T00:00:00Z"
+  },
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Navigate to User Management",
+      "content": "<h3>Step 1: Access User Management Module</h3><p>From the main dashboard, click on the <strong>Users</strong> menu item in the sidebar.</p><p>This will open the User Management page showing a list of existing users.</p>",
+      "order": 1
+    },
+    {
+      "id": "section-2",
+      "title": "Open Add User Dialog",
+      "content": "<h3>Step 2: Click Add User Button</h3><p>In the User Management page, locate and click the <strong>Add User</strong> button in the top-right corner.</p><p>A dialog will appear with a form containing the following fields:</p><ul><li>Full Name (required)</li><li>Email (required)</li><li>Username (required)</li><li>Password (required)</li><li>Role (required)</li><li>Owner/Company (for non-admin users)</li><li>Status (Active/Inactive)</li></ul>",
+      "order": 2
+    },
+    {
+      "id": "section-3",
+      "title": "Fill User Information",
+      "content": "<h3>Step 3: Enter User Details</h3><p>Fill in all required fields:</p><ol><li><strong>Full Name:</strong> Enter the user's full name</li><li><strong>Email:</strong> Enter a valid email address</li><li><strong>Username:</strong> Choose a unique username (no spaces)</li><li><strong>Password:</strong> Enter a secure password (min 8 characters)</li><li><strong>Role:</strong> Select appropriate role:<ul><li><code>Super Admin</code> - Full system access</li><li><code>Admin</code> - Company-wide access</li><li><code>Owner</code> - Multi-project access</li><li><code>User</code> - Limited access</li></ul></li></ol><blockquote>Important: For Owner and User roles, you must select their company/owner.</blockquote>",
+      "order": 3,
+      "codeSnippets": [
+        {
+          "language": "text",
+          "code": "Password Requirements:\n- Minimum 8 characters\n- At least 1 uppercase letter\n- At least 1 lowercase letter\n- At least 1 number\n- At least 1 special character",
+          "description": "Password must meet these security requirements"
+        }
+      ]
+    },
+    {
+      "id": "section-4",
+      "title": "Save and Verify",
+      "content": "<h3>Step 4: Create User</h3><p>After filling all required fields:</p><ol><li>Review all information for accuracy</li><li>Click the <strong>Save</strong> button</li><li>Wait for confirmation message</li></ol><p>Upon successful creation:</p><ul><li>The new user will appear in the user list</li><li>A confirmation email will be sent to the user's email address</li><li>The user can now login with their credentials</li></ul><blockquote>Tip: You can edit user details later by clicking the edit icon next to their name.</blockquote>",
+      "order": 4
+    },
+    {
+      "id": "section-5",
+      "title": "Common Issues and Solutions",
+      "content": "<h3>Troubleshooting</h3><h4>Email Already Exists</h4><p>If you see \"Email already exists\" error, the email is already registered. Use a different email or check if the user already exists.</p><h4>Username Taken</h4><p>Choose a different username if you get \"Username already taken\" error.</p><h4>Permission Denied</h4><p>Ensure you have admin privileges. Contact your Super Admin if you can't add users.</p><h4>Owner Not Available</h4><p>If you can't select an owner, make sure at least one owner record exists in the system.</p>",
+      "order": 5
+    }
+  ]
+}

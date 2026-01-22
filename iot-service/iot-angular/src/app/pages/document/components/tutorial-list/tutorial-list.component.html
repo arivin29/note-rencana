@@ -1,0 +1,59 @@
+<div class="tutorial-list-container">
+  <div class="list-header">
+    <h1>{{ category ? (category | titlecase) : 'All Tutorials' }}</h1>
+    <p class="subtitle">{{ tutorials.length }} tutorial(s) available</p>
+  </div>
+
+  <div class="tutorials-grid">
+    <div 
+      *ngFor="let tutorial of tutorials" 
+      class="tutorial-card"
+      (click)="openTutorial(tutorial)">
+      <div class="card-header">
+        <div class="d-flex align-items-center mb-3">
+          <i [class]="(tutorial.metadata.icon || 'bi bi-file-text') + ' fs-3 me-3 text-primary'"></i>
+          <div class="flex-grow-1">
+            <h3 class="card-title mb-1">{{ tutorial.metadata.title }}</h3>
+            <span class="badge" [ngClass]="'badge-' + tutorial.metadata.difficulty">
+              {{ tutorial.metadata.difficulty }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <p class="description">{{ tutorial.metadata.description }}</p>
+        
+        <div class="metadata">
+          <span class="meta-item">
+            <i class="bi bi-clock me-1"></i>
+            {{ tutorial.metadata.estimatedTime }} min
+          </span>
+          <span class="meta-item">
+            <i class="bi bi-list-ol me-1"></i>
+            {{ tutorial.sections.length }} sections
+          </span>
+        </div>
+
+        <div class="tags" *ngIf="tutorial.metadata.tags.length > 0">
+          <span class="tag-badge" *ngFor="let tag of tutorial.metadata.tags.slice(0, 3)">
+            {{ tag }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn btn-sm btn-primary">
+          <i class="bi bi-play-fill me-1"></i>
+          Start Tutorial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="tutorials.length === 0">
+    <i class="bi bi-search fs-1"></i>
+    <h3>No tutorials found</h3>
+    <p>Try adjusting your search or browse different categories</p>
+  </div>
+</div>

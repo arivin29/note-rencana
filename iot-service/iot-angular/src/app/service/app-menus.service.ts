@@ -24,6 +24,9 @@ export class AppMenuService {
 			{ 'path': '/iot/telemetry', 'icon': 'bi bi-activity', 'text': 'Telemetry Logs' },
 			{ 'path': '/iot/widgets-showcase', 'icon': 'bi bi-grid-1x2', 'text': 'Widget Showcase' },
 			{ 'path': '/iot/config', 'icon': 'bi bi-sliders', 'text': 'IoT Config', 'roles': ['admin'] },
+			{ 'is_divider': true },
+			{ 'text': 'Help & Support', 'is_header': true },
+			{ 'path': '/iot/document', 'icon': 'bi bi-book', 'text': 'Documentation', 'badge': 'NEW', 'badge_bg': 'bg-primary' },
 			// { 'icon': 'bi bi-envelope', 'text': 'Email', 'children': [
 			// 		{ 'path': '/template/email/inbox', 'action': 'Inbox', 'text': 'Inbox' },
 			// 		{ 'path': '/template/email/compose', 'action': 'Compose', 'text': 'Compose' },

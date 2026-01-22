@@ -1,0 +1,1031 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-node-models">Module: Node Models</a></li>
+        <li class="breadcrumb-item active">Node Models List</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-cpu text-theme me-2"></i>
+        Node Models List
+        <small class="d-block mt-2 text-white-transparent-7">Kelola metadata device models, toolchain, dan firmware repository</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Apa itu Node Models? -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Node Models?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Node Models</strong> adalah halaman untuk mengelola <strong>metadata hardware device models</strong> 
+                  (seperti ESP32, STM32, dll) yang digunakan dalam sistem IoT platform.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-cpu fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Apa itu Node Model?</h6>
+                      <p class="mb-0 text-white-transparent-8">
+                        Node Model adalah <strong>blueprint/template hardware device</strong> yang berisi informasi: 
+                        vendor (Espressif, ST), hardware class (MCU/Gateway/Tracker), toolchain (ESP-IDF, Arduino), 
+                        firmware repository, flash protocol, dan code generation support.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <h6 class="mb-2">Fungsi Utama:</h6>
+                <ul class="mb-3">
+                  <li>Melihat semua device models yang tersedia di platform</li>
+                  <li>Add new device model untuk expand platform support</li>
+                  <li>Edit existing model untuk update toolchain/firmware settings</li>
+                  <li>Search models by vendor, toolchain, atau model code</li>
+                  <li>View which models support automatic code generation</li>
+                  <li>Manage firmware repository locations & build agents</li>
+                </ul>
+
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Use Case:</strong> Ketika deploy node baru, Anda pilih Node Model (contoh: ESP32-DEVKIT-V1) 
+                  yang kemudian menentukan firmware template, build process, dan flash protocol yang digunakan.
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Navigasi ke Node Models -->
+          <div id="getting-started" class="mb-5">
+            <h4><i class="bi bi-compass text-theme me-2"></i>Cara Mengakses</h4>
+            
+            <card>
+              <card-body>
+                <h6 class="mb-3">Navigasi:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-3">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-menu-button-wide text-theme me-2"></i>
+                    <span class="text-white-transparent-7">Sidebar Menu</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-white">IoT</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-white">Configuration</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-theme fw-bold">Node Models</span>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-3">
+                  <i class="bi bi-shield-lock me-2"></i>
+                  <strong>Role Access:</strong> Halaman ini hanya dapat diakses oleh <code>Super Admin</code> dan <code>Admin</code>
+                  <br>
+                  <small class="text-white-transparent-7">Owner users tidak bisa manage node models (system-wide config)</small>
+                </div>
+
+                <p class="mb-2"><strong>URL Path:</strong></p>
+                <div class="bg-dark bg-opacity-50 p-2 rounded font-monospace text-white-transparent-8 mb-0">
+                  /iot/config/node-models
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface Overview dengan Screenshot -->
+          <div id="features" class="mb-5">
+            <h4><i class="bi bi-layout-text-window text-theme me-2"></i>Memahami Interface</h4>
+            
+            <card>
+              <card-body>
+                <!-- Screenshot -->
+                <div class="mb-4 text-center">
+                  <img src="assets/tutorials/images/module-node-models/node-models-list-interface.png" 
+                       alt="Node Models List Interface" 
+                       class="img-fluid border border-white-transparent-2 rounded shadow-lg">
+                  <p class="text-white-transparent-6 small mt-2 mb-0">
+                    <i class="bi bi-image me-1"></i>Screenshot: Node Models List Interface (Table View)
+                  </p>
+                </div>
+
+                <!-- Interface Components -->
+                <h6 class="mb-3">Komponen Interface:</h6>
+                
+                <!-- 1. Header Area -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">1</span>
+                    <h6 class="mb-0">Header Area</h6>
+                  </div>
+                  <div class="ps-4">
+                    <ul class="mb-0">
+                      <li><strong>Page Title:</strong> "Node Models"</li>
+                      <li><strong>Description:</strong> "Kelola metadata platform, toolchain, dan build agent"</li>
+                      <li><strong>Statistics Badge:</strong> 
+                        <span class="text-muted ms-1">
+                          "X / Y model mendukung code generator"
+                        </span>
+                        <br>
+                        <small class="text-white-transparent-6">Menunjukkan berapa model yang support automatic firmware code generation</small>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- 2. Search & Action Bar -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">2</span>
+                    <h6 class="mb-0">Search & Action Bar</h6>
+                  </div>
+                  <div class="ps-4">
+                    <table class="table table-sm table-dark table-bordered">
+                      <tbody>
+                        <tr>
+                          <td width="30%"><strong>Search Box</strong></td>
+                          <td>
+                            Search by: Model code, Vendor name, atau Toolchain<br>
+                            <small class="text-muted">Contoh: "ESP32", "Espressif", "ESP-IDF"</small>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td><strong>Add Model Button</strong></td>
+                          <td>
+                            <span class="badge bg-outline-theme">
+                              <i class="fa fa-plus me-1"></i>Add Model
+                            </span>
+                            <br>
+                            Buka drawer untuk create new node model
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 3. Models Table -->
+                <div class="mb-0">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">3</span>
+                    <h6 class="mb-0">Node Models Table</h6>
+                  </div>
+                  <div class="ps-4">
+                    <p class="mb-2">Table columns dengan informasi lengkap setiap model:</p>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-dark table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Column</th>
+                            <th>Deskripsi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><strong>Model</strong></td>
+                            <td>
+                              • Model Code (bold, clickable) - contoh: ESP32-DEVKIT-V1<br>
+                              • Model Name (small text) - contoh: "ESP32 DevKit V1 Board"<br>
+                              • Hardware Class Badge - <span class="badge bg-secondary">MCU</span> / <span class="badge bg-secondary">GATEWAY</span> / <span class="badge bg-secondary">TRACKER</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><strong>Vendor</strong></td>
+                            <td>Manufacturer name (Espressif, STMicroelectronics, dll)</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Toolchain</strong></td>
+                            <td>Development toolchain (ESP-IDF, Arduino, PlatformIO, dll)</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Build Agent</strong></td>
+                            <td>Build agent name untuk compile firmware</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Firmware Repo</strong></td>
+                            <td>Git repository URL atau path ke firmware template (truncated untuk panjang text)</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Supports Codegen</strong></td>
+                            <td>
+                              • Badge: <span class="badge bg-success">Yes</span> / <span class="badge bg-secondary">No</span><br>
+                              • Flash Protocol (small text) - contoh: esptool, st-flash
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><strong>Actions</strong></td>
+                            <td>
+                              • <button class="btn btn-sm btn-outline-warning"><i class="fa fa-edit"></i></button> Edit model<br>
+                              • <button class="btn btn-sm btn-outline-theme"><i class="fa fa-eye"></i></button> View detail
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Cara Menggunakan -->
+          <div id="next-steps" class="mb-5">
+            <h4><i class="bi bi-play-circle text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- Search Models -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-search me-2"></i>Search Node Models
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Ketik di <strong>Search Box</strong></li>
+                  <li>Anda bisa search by:
+                    <ul>
+                      <li><strong>Model Code:</strong> "ESP32", "STM32", dll</li>
+                      <li><strong>Vendor:</strong> "Espressif", "STMicroelectronics"</li>
+                      <li><strong>Toolchain:</strong> "ESP-IDF", "Arduino", "PlatformIO"</li>
+                    </ul>
+                  </li>
+                  <li>Table otomatis filter real-time saat mengetik</li>
+                  <li>Hapus text untuk show all models</li>
+                </ol>
+
+                <div class="alert alert-success mb-0">
+                  <i class="bi bi-lightbulb me-2"></i>
+                  <strong>Tip:</strong> Search "ESP" untuk quick find semua ESP-based models!
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Add New Model -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-plus-circle me-2"></i>Add New Node Model
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Klik button <strong>"Add Model"</strong> di kanan atas</li>
+                  <li>Drawer akan slide-in dari kanan</li>
+                  <li>Fill in form fields:
+                    <ul>
+                      <li><strong>Model Code:</strong> Unique identifier (contoh: ESP32-C3-MINI)</li>
+                      <li><strong>Model Name:</strong> Descriptive name</li>
+                      <li><strong>Vendor:</strong> Manufacturer name</li>
+                      <li><strong>Hardware Class:</strong> Pilih MCU / Gateway / Tracker / Custom</li>
+                      <li><strong>Toolchain:</strong> Development toolchain name</li>
+                      <li><strong>Build Agent:</strong> Agent name untuk compile</li>
+                      <li><strong>Firmware Repo:</strong> Git URL atau path</li>
+                      <li><strong>Flash Protocol:</strong> Protocol untuk upload firmware (esptool, st-flash, dll)</li>
+                      <li><strong>Supports Codegen:</strong> ✅ if model support code generation</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>"Save"</strong></li>
+                  <li>New model muncul di table</li>
+                </ol>
+
+                <div class="alert alert-warning mb-0">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Note:</strong> Model Code harus unique! System akan reject jika duplicate.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Edit Existing Model -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-pencil me-2"></i>Edit Existing Model
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Cari model yang ingin di-edit di table</li>
+                  <li>Klik button <strong>Edit</strong> (icon pensil kuning) di kolom Actions</li>
+                  <li>Drawer akan open dengan form pre-filled dengan data existing</li>
+                  <li>Update field yang diperlukan</li>
+                  <li>Klik <strong>"Save"</strong> untuk apply changes</li>
+                  <li>Table akan refresh dengan data terbaru</li>
+                </ol>
+
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Common Edit:</strong> Update firmware repo URL ketika migrate ke repository baru atau update toolchain version.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- View Model Details -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-eye me-2"></i>View Model Details
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Pada table, cari model yang ingin dilihat</li>
+                  <li><strong>Option 1:</strong> Klik pada <strong>Model Code</strong> (anywhere di row)</li>
+                  <li><strong>Option 2:</strong> Klik button <strong>View</strong> (icon mata) di kolom Actions</li>
+                  <li>Navigate ke detail page dengan informasi lengkap:
+                    <ul>
+                      <li>Full model specifications</li>
+                      <li>Associated firmware templates</li>
+                      <li>Build configuration details</li>
+                      <li>Deployment history (jika ada)</li>
+                    </ul>
+                  </li>
+                </ol>
+              </card-body>
+            </card>
+
+            <!-- Filter by Codegen Support -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-code-square me-2"></i>Check Codegen Support
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Lihat statistics di header:</strong></p>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-3">
+                  <code class="text-white-transparent-8">
+                    5 / 12 model mendukung code generator
+                  </code>
+                  <p class="mb-0 mt-2 small text-white-transparent-6">
+                    → 5 models support automatic firmware code generation<br>
+                    → 12 total models di system
+                  </p>
+                </div>
+
+                <p class="mb-2"><strong>Lihat per-model di table:</strong></p>
+                <ul class="mb-3">
+                  <li>Badge <span class="badge bg-success">Yes</span> = Model support codegen</li>
+                  <li>Badge <span class="badge bg-secondary">No</span> = Manual firmware development required</li>
+                </ul>
+
+                <div class="alert alert-success mb-0">
+                  <i class="bi bi-stars me-2"></i>
+                  <strong>Pro Tip:</strong> Prefer models dengan codegen support untuk rapid deployment & easier maintenance!
+                </div>
+              </card-body>
+            </card>
+
+          </div>
+
+          <!-- Section 5: Understanding Data -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-graph-up text-theme me-2"></i>Memahami Data Node Model</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Node Model Structure -->
+                <h6 class="mb-3">Node Model Data Structure:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-4">
+                  <pre class="text-white-transparent-8 mb-0" style="font-family: 'Courier New', monospace; font-size: 13px;">
+<span class="text-theme">Node Model</span> (Hardware Blueprint)
+├── <span class="text-info">Model Code:</span> ESP32-DEVKIT-V1 (unique identifier)
+├── <span class="text-info">Model Name:</span> ESP32 DevKit V1 Development Board
+├── <span class="text-success">Vendor:</span> Espressif Systems
+├── <span class="text-warning">Hardware Class:</span> MCU (Microcontroller)
+│
+├── <span class="text-info">Development Stack:</span>
+│   ├── Toolchain: ESP-IDF v5.0
+│   ├── Build Agent: esp32-builder-01
+│   └── Flash Protocol: esptool.py
+│
+├── <span class="text-info">Firmware:</span>
+│   ├── Repository: https://github.com/company/esp32-firmware
+│   └── Supports Codegen: ✅ Yes
+│
+└── <span class="text-success">Used By:</span> Multiple deployed nodes in projects
+                  </pre>
+                </div>
+
+                <!-- Hardware Class Explained -->
+                <h6 class="mb-3">Hardware Class Types:</h6>
+                <div class="table-responsive mb-4">
+                  <table class="table table-sm table-dark table-bordered">
+                    <thead>
+                      <tr>
+                        <th width="20%">Class</th>
+                        <th width="50%">Deskripsi</th>
+                        <th width="30%">Contoh Device</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="badge bg-primary">MCU</span></td>
+                        <td>Microcontroller / DevKit - single-board development platform</td>
+                        <td>ESP32 DevKit, Arduino Mega, STM32 Nucleo</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-success">Gateway</span></td>
+                        <td>Gateway devices - router/hub untuk collect data dari multiple sensors</td>
+                        <td>LoRa Gateway, WiFi Gateway, Cellular Gateway</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-warning">Tracker</span></td>
+                        <td>GPS/location tracking devices dengan mobility features</td>
+                        <td>GPS Tracker, Asset Tracker, Vehicle Tracker</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-secondary">Custom</span></td>
+                        <td>Custom hardware tidak fit ke kategori lain</td>
+                        <td>Proprietary boards, hybrid devices</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Toolchain Examples -->
+                <h6 class="mb-3">Common Toolchains:</h6>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-info mb-2">ESP-IDF</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>For:</strong> ESP32, ESP8266 family<br>
+                        <strong>Type:</strong> Official Espressif framework<br>
+                        <strong>Language:</strong> C/C++
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-success mb-2">Arduino</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>For:</strong> Arduino boards, ESP32 (Arduino core)<br>
+                        <strong>Type:</strong> Easy-to-use framework<br>
+                        <strong>Language:</strong> C/C++ (simplified)
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-warning mb-2">PlatformIO</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>For:</strong> Multi-platform support<br>
+                        <strong>Type:</strong> Unified build system<br>
+                        <strong>Language:</strong> C/C++
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-danger mb-2">STM32Cube</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>For:</strong> STM32 microcontrollers<br>
+                        <strong>Type:</strong> ST official framework<br>
+                        <strong>Language:</strong> C/C++
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Codegen Support -->
+                <h6 class="mb-3">Code Generation Support:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <h6 class="text-success mb-2">
+                        <span class="badge bg-success me-2">Yes</span>
+                        Supports Codegen
+                      </h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>Meaning:</strong> Platform dapat automatically generate firmware code untuk model ini
+                      </p>
+                      <p class="small text-white-transparent-7 mb-0">
+                        <strong>Benefits:</strong>
+                      </p>
+                      <ul class="small text-white-transparent-7 mb-0">
+                        <li>Faster deployment</li>
+                        <li>Less manual coding</li>
+                        <li>Standardized firmware structure</li>
+                        <li>Easier maintenance</li>
+                      </ul>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="text-secondary mb-2">
+                        <span class="badge bg-secondary me-2">No</span>
+                        Manual Development
+                      </h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>Meaning:</strong> Firmware harus di-develop manually oleh developer
+                      </p>
+                      <p class="small text-white-transparent-7 mb-0">
+                        <strong>When Used:</strong>
+                      </p>
+                      <ul class="small text-white-transparent-7 mb-0">
+                        <li>Custom hardware requirements</li>
+                        <li>Specialized functionality</li>
+                        <li>Legacy device support</li>
+                        <li>Prototype/experimental boards</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Common Scenarios -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-check text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Add New ESP32 Model
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Company beli ESP32-C3 baru untuk project deployment</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik "Add Model"</li>
+                  <li>Fill form:
+                    <ul>
+                      <li>Model Code: <code>ESP32-C3-DEVKIT</code></li>
+                      <li>Model Name: <code>ESP32-C3 Development Kit</code></li>
+                      <li>Vendor: <code>Espressif Systems</code></li>
+                      <li>Hardware Class: <code>MCU</code></li>
+                      <li>Toolchain: <code>ESP-IDF v5.1</code></li>
+                      <li>Build Agent: <code>esp32-builder-02</code></li>
+                      <li>Firmware Repo: <code>https://github.com/company/esp32-c3-fw</code></li>
+                      <li>Flash Protocol: <code>esptool</code></li>
+                      <li>Supports Codegen: <code>✅ Yes</code></li>
+                    </ul>
+                  </li>
+                  <li>Save → New model available untuk node deployment!</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> ESP32-C3 model ready untuk deploy nodes
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Update Firmware Repository
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Team migrate firmware repository ke GitHub organization baru</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Search model yang perlu update (contoh: "ESP32")</li>
+                  <li>Klik Edit button pada model</li>
+                  <li>Update Firmware Repo field:
+                    <ul>
+                      <li>Old: <code>https://github.com/oldorg/esp32-fw</code></li>
+                      <li>New: <code>https://github.com/neworg/esp32-fw</code></li>
+                    </ul>
+                  </li>
+                  <li>Save changes</li>
+                  <li>Future firmware builds akan use new repository!</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Firmware repository updated untuk all future builds
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Check Codegen Compatible Models
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Planning new project, want to use models dengan automatic code generation</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open Node Models page</li>
+                  <li>Check header statistics: "5 / 12 model mendukung code generator"</li>
+                  <li>Scan "Supports Codegen" column untuk badge <span class="badge bg-success">Yes</span></li>
+                  <li>Filter by search (contoh: "ESP") untuk specific vendor</li>
+                  <li>Select model dengan codegen support untuk faster deployment</li>
+                  <li>Click view detail untuk confirm firmware template availability</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Identified best models untuk rapid project deployment
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Find Models by Toolchain
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Developer familiar dengan Arduino, want to use Arduino-based models</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Ketik <code>Arduino</code> di search box</li>
+                  <li>Table filtered untuk models using Arduino toolchain</li>
+                  <li>Review available options (ESP32 with Arduino, Arduino Mega, dll)</li>
+                  <li>Check hardware class untuk ensure fit dengan use case</li>
+                  <li>Select model dan proceed dengan deployment</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Found Arduino-compatible models untuk leverage existing expertise
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 5 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-5-circle me-2"></i>Scenario: Add Custom Hardware
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Company develop proprietary IoT board untuk specific application</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik "Add Model"</li>
+                  <li>Fill form dengan custom specs:
+                    <ul>
+                      <li>Model Code: <code>COMPANY-IOT-V1</code></li>
+                      <li>Model Name: <code>Company IoT Board V1</code></li>
+                      <li>Vendor: <code>Company Name</code></li>
+                      <li>Hardware Class: <code>Custom</code></li>
+                      <li>Toolchain: <code>Custom Build System</code></li>
+                      <li>Build Agent: <code>custom-builder</code></li>
+                      <li>Firmware Repo: <code>https://github.com/company/custom-fw</code></li>
+                      <li>Flash Protocol: <code>custom-flash-tool</code></li>
+                      <li>Supports Codegen: <code>❌ No</code> (manual development)</li>
+                    </ul>
+                  </li>
+                  <li>Save → Custom board registered!</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Proprietary hardware integrated ke platform
+                </p>
+              </card-body>
+            </card>
+
+          </div>
+
+          <!-- Section 7: Tips & Best Practices -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Quick Tips -->
+                <div class="alert alert-success mb-3">
+                  <h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>Quick Tips:</h6>
+                  <ul class="mb-0">
+                    <li>Use descriptive Model Codes - include vendor & version (ESP32-C3-V1)</li>
+                    <li>Keep firmware repos organized - separate repo per model family</li>
+                    <li>Document toolchain versions untuk reproducible builds</li>
+                    <li>Prefer models dengan codegen support untuk easier scaling</li>
+                    <li>Test new models di staging environment before production use</li>
+                    <li>Maintain consistent build agent naming conventions</li>
+                  </ul>
+                </div>
+
+                <!-- Warnings -->
+                <div class="alert alert-warning mb-3">
+                  <h6 class="mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Perhatian:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Model Code uniqueness:</strong> Cannot have duplicate codes - plan naming scheme carefully</li>
+                    <li><strong>Firmware repo access:</strong> Ensure build agents can access repositories (credentials, network)</li>
+                    <li><strong>Flash protocol compatibility:</strong> Must match actual hardware flashing method</li>
+                    <li><strong>Toolchain versions:</strong> Mismatched versions = build failures</li>
+                    <li><strong>Cannot delete models:</strong> If models sudah digunakan by deployed nodes (protect data integrity)</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li>Create "template" models untuk common platforms (ESP32-TEMPLATE) untuk quick cloning</li>
+                    <li>Use hardware class strategically untuk easy filtering (MCU for sensors, Gateway untuk hubs)</li>
+                    <li>Document external dependencies di model name atau notes (WiFi required, BLE support, dll)</li>
+                    <li>Setup CI/CD untuk firmware repos linked to models</li>
+                    <li>Version firmware repos dengan tags (v1.0.0, v2.0.0) untuk rollback capability</li>
+                    <li>Monitor codegen statistics - aim untuk high percentage untuk faster scaling</li>
+                    <li>Keep vendor consistency - standardize vendor names (Espressif vs Espressif Systems)</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Related Tutorials -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Setelah memahami Node Models List, lanjutkan dengan tutorial berikut:</p>
+                
+                <div class="row g-3">
+                  <!-- Model Details -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Node Model Details
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Deep dive ke model configuration, firmware templates, dan build settings
+                      </p>
+                      <a routerLink="/iot/document/module-node-models/model-details" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Deploy Node -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Deploy Node with Model
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Cara deploy IoT node menggunakan node model yang sudah configured
+                      </p>
+                      <a routerLink="/iot/document/module-nodes/deploy-node" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Firmware Management -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Firmware Management
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Build, upload, dan deploy firmware ke nodes berdasarkan model
+                      </p>
+                      <a routerLink="/iot/document/firmware/management" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Build Agents -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Configure Build Agents
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Setup dan manage build agents untuk compile firmware
+                      </p>
+                      <a routerLink="/iot/document/admin-guide/build-agents" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Quick Reference Card -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-card-checklist text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                <div class="bg-dark bg-opacity-75 p-4 rounded border border-theme">
+                  <h5 class="text-center text-theme mb-4">
+                    <i class="bi bi-bookmark-star me-2"></i>NODE MODELS QUICK REFERENCE
+                  </h5>
+                  
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-search text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Search:</strong>
+                          <span class="text-white-transparent-7 d-block small">Model / Vendor / Toolchain</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-plus-circle text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Add Model:</strong>
+                          <span class="text-white-transparent-7 d-block small">Create new device model</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-cpu text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Classes:</strong>
+                          <span class="text-white-transparent-7 d-block small">MCU / Gateway / Tracker / Custom</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-code-square text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Codegen:</strong>
+                          <span class="text-white-transparent-7 d-block small">Auto firmware generation support</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-pencil text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Edit:</strong>
+                          <span class="text-white-transparent-7 d-block small">Update model configuration</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-eye text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Details:</strong>
+                          <span class="text-white-transparent-7 d-block small">View full model specs</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <hr class="border-theme my-3">
+                  
+                  <div class="text-center">
+                    <small class="text-white-transparent-6">
+                      <i class="bi bi-link me-1"></i>
+                      URL: <code class="text-theme">/iot/config/node-models</code>
+                    </small>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Completion Badge -->
+          <div class="text-center mb-5">
+            <div class="alert alert-success d-inline-block">
+              <i class="bi bi-check-circle fs-3 me-2"></i>
+              <strong>Tutorial Complete!</strong>
+              <p class="mb-0 mt-2 text-white-transparent-8">
+                Anda sekarang sudah memahami cara menggunakan Node Models List module
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sidebar - Tutorial Info -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            
+            <!-- Tutorial Info Card -->
+            <card class="mb-3">
+              <card-body>
+                <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>Tutorial Info</h6>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Category</small>
+                  <span class="badge bg-theme">Module: Node Models</span>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Difficulty</small>
+                  <span class="badge bg-warning">Intermediate</span>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Estimated Time</small>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-clock text-theme me-2"></i>
+                    <span>12 minutes</span>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Role Access</small>
+                  <div>
+                    <span class="badge bg-danger me-1">Super Admin</span>
+                    <span class="badge bg-warning">Admin</span>
+                  </div>
+                </div>
+
+                <hr class="border-white-transparent-2">
+
+                <div>
+                  <small class="text-white-transparent-6 d-block mb-2">Tags</small>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span class="badge bg-secondary">models</span>
+                    <span class="badge bg-secondary">hardware</span>
+                    <span class="badge bg-secondary">firmware</span>
+                    <span class="badge bg-secondary">toolchain</span>
+                    <span class="badge bg-secondary">codegen</span>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Table of Contents -->
+            <card>
+              <card-header class="fw-bold">
+                <i class="bi bi-list-ul me-2"></i>Sections
+              </card-header>
+              <card-body class="p-0">
+                <nav-scroll>
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Node Models?
+                    </a>
+                    <a href="#getting-started" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Mengakses
+                    </a>
+                    <a href="#features" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Interface
+                    </a>
+                    <a href="#next-steps" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Data Node Model
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+              </card-body>
+            </card>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

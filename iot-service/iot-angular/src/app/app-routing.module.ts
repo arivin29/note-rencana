@@ -159,6 +159,12 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/owners/owners.module').then((m) => m.OwnersModule)
     },
     {
+        path: 'iot/document',
+        loadChildren: () => import('./pages/document/document.module').then((m) => m.DocumentModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Documentation & Tutorials' }
+    },
+    {
         path: 'iot/telemetry',
         loadChildren: () => import('./pages/iot/telemetry/telemetry.module').then((m) => m.TelemetryModule)
     },

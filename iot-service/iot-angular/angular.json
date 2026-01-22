@@ -29,7 +29,8 @@
             ],
             "styles": [
               "src/styles.css",
-              "src/scss/styles.scss"
+              "src/scss/styles.scss",
+              "node_modules/highlight.js/styles/github.css"
             ],
             "scripts": [
             	"node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",

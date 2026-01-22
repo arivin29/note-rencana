@@ -1,0 +1,389 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/user-guide">User Guide</a></li>
+        <li class="breadcrumb-item active">Dashboard Overview</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-speedometer2 text-theme me-2"></i>
+        Dashboard Overview
+        <small class="d-block mt-2 text-white-transparent-7">Understanding widgets, KPIs, and real-time monitoring dashboard</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Introduction -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu IoT Dashboard?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>IoT Dashboard</strong> adalah halaman utama untuk <strong>monitoring real-time</strong> semua IoT devices, sensors, dan telemetry data dalam satu tampilan. 
+                  Dashboard menampilkan <strong>KPI cards, charts, statistics</strong>, dan <strong>widget-widget interaktif</strong> untuk memberikan overview lengkap sistem IoT.
+                </p>
+                
+                <!-- Screenshot -->
+                <div class="mb-4">
+                  <img src="assets/img/documentation/user-guide/dashboard-overview/screenshot.png" 
+                       alt="IoT Dashboard Overview" 
+                       class="img-fluid rounded border">
+                  <p class="text-center text-white-transparent-7 mt-2 mb-0">
+                    <small>
+                      <i class="bi bi-image me-1"></i>
+                      Dashboard utama dengan System Overview, Node Health Trends, Platform Statistics, dan widgets lainnya
+                    </small>
+                  </p>
+                </div>
+
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-layout-three-columns fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Dashboard Layout</h6>
+                      <p class="mb-0">Dashboard terbagi menjadi beberapa widget section yang masing-masing menampilkan data specific:</p>
+                      <ul class="mb-0 mt-2">
+                        <li><strong>Filter Section:</strong> Owner & Project filters dengan time range selector (24h/7d/30d)</li>
+                        <li><strong>System Overview:</strong> 4 KPI metrics (Active Nodes, Online Sensors, Critical Alerts, Data Throughput)</li>
+                        <li><strong>Node Health Trends:</strong> Line chart showing node status over time (Online/Degraded/Offline)</li>
+                        <li><strong>Platform Statistics:</strong> Total counts dengan breakdown (Owners, Projects, Nodes, Sensors)</li>
+                        <li><strong>Top Anomalies:</strong> List of nodes dengan critical alerts</li>
+                        <li><strong>Ingestion & Forwarding:</strong> Telemetry rate dan forwarding success rate</li>
+                        <li><strong>Recent Activities:</strong> Timeline of recent events</li>
+                        <li><strong>IoT Logs Stats:</strong> Log statistics (Total logs, Active channels, Error rate)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kenapa Penting?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Single Pane of Glass:</strong> Lihat semua metrics penting dalam satu halaman</li>
+                    <li><strong>Real-Time Monitoring:</strong> Data di-refresh secara berkala untuk monitoring live</li>
+                    <li><strong>Quick Health Check:</strong> Identify issues dengan color-coded status (green/yellow/red)</li>
+                    <li><strong>Contextual Filters:</strong> Filter by Owner/Project untuk melihat data specific tenant</li>
+                    <li><strong>Drill-Down Navigation:</strong> Klik widgets untuk navigate ke detail pages</li>
+                    <li><strong>Time-Based Analysis:</strong> Compare metrics across 24h, 7d, atau 30d time ranges</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Getting Started -->
+          <div id="getting-started" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Dashboard</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Ada beberapa cara untuk mengakses <strong>Dashboard</strong>:</p>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Main Navigation (Recommended)</h6>
+                  <ol class="mb-0">
+                    <li>Klik menu <strong>Dashboard</strong> di sidebar kiri</li>
+                    <li>Atau navigate via breadcrumb: <strong>IoT → Dashboard</strong></li>
+                    <li>Dashboard page langsung terbuka</li>
+                    <li>Default: No filters (show all data), time range = 24h</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Direct URL</h6>
+                  <p class="mb-2">Akses langsung via browser:</p>
+                  <div class="bg-dark p-2 rounded mb-0">
+                    <code class="text-success">http://localhost:4200/iot/dashboard</code>
+                  </div>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Default Behavior</h6>
+                  <p class="mb-0">Saat pertama kali membuka Dashboard:</p>
+                  <ul class="mb-0 mt-2">
+                    <li><strong>Filters:</strong> Tidak ada filter (show all owners/projects)</li>
+                    <li><strong>Time Range:</strong> 24 hours (default)</li>
+                    <li><strong>Auto-Refresh:</strong> Tidak aktif (manual refresh saja)</li>
+                    <li><strong>View:</strong> Global view (semua data dari semua tenants jika Super Admin)</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Features -->
+          <div id="features" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Key Features & Widgets</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Dashboard memiliki 8 widget utama yang masing-masing punya fungsi spesifik:</p>
+
+                <!-- Feature 1: Filters -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-funnel text-primary me-2"></i>
+                    1. Owner & Project Filters
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Filter semua widgets by Owner atau Project specific</p>
+                  <ul class="mb-2">
+                    <li><strong>Owner Dropdown:</strong> Select specific owner (cascading: auto-load projects milik owner)</li>
+                    <li><strong>Project Dropdown:</strong> Select specific project (depends on owner filter)</li>
+                    <li><strong>Time Range Selector:</strong> 24h (Last 24 hours) / 7d (Last 7 days) / 30d (Last 30 days)</li>
+                    <li><strong>Apply Button:</strong> Klik untuk apply filters ke semua widgets</li>
+                  </ul>
+                  <p class="mb-0 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Semua widgets akan refresh dan menampilkan data sesuai filter yang dipilih
+                  </p>
+                </div>
+
+                <!-- Feature 2: System Overview -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-speedometer text-success me-2"></i>
+                    2. System Overview (4 KPI Cards)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Tampilkan 4 metrics utama dengan trend indicators</p>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Metric</th>
+                        <th>Description</th>
+                        <th>Trend</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Active Nodes</strong></td>
+                        <td>Total nodes dengan status "Online"</td>
+                        <td>↑ ↓ → (Up/Down/Flat)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Online Sensors</strong></td>
+                        <td>Total sensors yang sedang aktif</td>
+                        <td>↑ ↓ → (Up/Down/Flat)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Critical Alerts</strong></td>
+                        <td>Active alerts dengan severity "critical"</td>
+                        <td>Red badge (high priority)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Data Throughput</strong></td>
+                        <td>Telemetry ingestion rate (data points/min)</td>
+                        <td>↑ ↓ → (Up/Down/Flat)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Feature 3: Node Health Trends -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-graph-up text-info me-2"></i>
+                    3. Node Health Trends (Line Chart)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Visualisasi node status over time (time-series chart)</p>
+                  <ul class="mb-0">
+                    <li><strong>3 Lines:</strong> Online (green), Degraded (yellow), Offline (red)</li>
+                    <li><strong>X-Axis:</strong> Time (per hour dalam 24h, per day dalam 7d/30d)</li>
+                    <li><strong>Y-Axis:</strong> Count of nodes per status</li>
+                    <li><strong>Hover:</strong> Tooltip menampilkan exact count pada waktu tertentu</li>
+                    <li><strong>Legend:</strong> Status summary (total count per status)</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 4: Platform Statistics -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-bar-chart text-warning me-2"></i>
+                    4. Platform Statistics (Breakdown Cards)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Tampilkan total counts dengan percentage breakdown</p>
+                  <ul class="mb-0">
+                    <li><strong>Total Owners:</strong> Active/Suspended breakdown</li>
+                    <li><strong>Total Projects:</strong> Active/Archived breakdown</li>
+                    <li><strong>Total Nodes:</strong> Online/Degraded/Offline breakdown</li>
+                    <li><strong>Total Sensors:</strong> Active/Faulty/Calibration Due breakdown</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Color-coded: Green (good), Yellow (warning), Red (critical)
+                  </p>
+                </div>
+
+                <!-- Feature 5: Top Anomalies -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                    5. Top Anomalies (Critical Nodes List)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> List of nodes dengan most critical alerts</p>
+                  <ul class="mb-0">
+                    <li><strong>Node Name:</strong> Link to node detail page</li>
+                    <li><strong>Status:</strong> Current health status (Degraded/Offline/Critical)</li>
+                    <li><strong>Active Alerts:</strong> Count of alerts (Critical/Warning)</li>
+                    <li><strong>Last Seen:</strong> Timestamp of last telemetry data received</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 6: Ingestion & Forwarding -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-arrows-move text-theme me-2"></i>
+                    6. Ingestion & Forwarding (Rate Metrics)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Monitor telemetry ingestion dan forwarding success rate</p>
+                  <ul class="mb-0">
+                    <li><strong>Ingestion Rate:</strong> Telemetry data points per minute (sparkline chart)</li>
+                    <li><strong>Forwarding Success:</strong> Webhook/Database forwarding success percentage</li>
+                    <li><strong>Failed Deliveries:</strong> Count of failed forwarding attempts</li>
+                    <li><strong>Trend:</strong> Increase/Decrease indicator</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 7: Recent Activities -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-clock-history text-secondary me-2"></i>
+                    7. Recent Activities (Event Timeline)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Timeline of recent system events</p>
+                  <ul class="mb-0">
+                    <li><strong>Event Type:</strong> Node registered, Alert triggered, Config changed, etc.</li>
+                    <li><strong>Timestamp:</strong> When event occurred (relative time: "2 hours ago")</li>
+                    <li><strong>Description:</strong> Brief description of the event</li>
+                    <li><strong>Icon:</strong> Color-coded icon based on event severity</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 8: IoT Logs Stats -->
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2">
+                    <i class="bi bi-file-text text-muted me-2"></i>
+                    8. IoT Logs Stats (Log Summary)
+                  </h6>
+                  <p class="mb-2"><strong>Fungsi:</strong> Summary statistik untuk raw IoT logs</p>
+                  <ul class="mb-0">
+                    <li><strong>Total Logs:</strong> Count of all log entries in time range</li>
+                    <li><strong>Active Channels:</strong> Number of sensor channels yang generating logs</li>
+                    <li><strong>Error Rate:</strong> Percentage of logs dengan error status</li>
+                    <li><strong>Last Update:</strong> Timestamp of most recent log entry</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Next Steps -->
+          <div id="next-steps" class="mb-5">
+            <h4><i class="bi bi-signpost text-theme me-2"></i>Next Steps</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Setelah memahami Dashboard Overview, lanjutkan ke tutorial berikut:</p>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-hdd-network text-primary me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-nodes" class="text-decoration-none">View Nodes</a>
+                      </h6>
+                      <p class="mb-0 small">Learn how to view and manage IoT nodes (devices)</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-activity text-success me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-telemetry" class="text-decoration-none">View Telemetry</a>
+                      </h6>
+                      <p class="mb-0 small">Monitor real-time sensor telemetry data</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-bell text-warning me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-alerts" class="text-decoration-none">View Alerts</a>
+                      </h6>
+                      <p class="mb-0 small">Manage active alerts and notifications</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-cpu text-info me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-sensors" class="text-decoration-none">View Sensors</a>
+                      </h6>
+                      <p class="mb-0 small">Explore sensor catalogs and configurations</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Pro Tips</h6>
+                  <ul class="mb-0">
+                    <li><strong>Use Filters Wisely:</strong> Start dengan no filters untuk see global view, lalu apply specific owner/project filter untuk drill-down</li>
+                    <li><strong>Monitor Trends:</strong> Check trend indicators (↑↓→) pada KPI cards untuk identify increasing/decreasing patterns</li>
+                    <li><strong>Time Range Context:</strong> 24h untuk real-time monitoring, 7d untuk weekly analysis, 30d untuk monthly reports</li>
+                    <li><strong>Critical Alerts First:</strong> Always check Top Anomalies widget untuk identify urgent issues yang perlu immediate action</li>
+                    <li><strong>Drill-Down Navigation:</strong> Klik node names atau chart elements untuk navigate ke detail pages</li>
+                    <li><strong>Refresh Regularly:</strong> Dashboard tidak auto-refresh, gunakan browser refresh (F5) untuk update data</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-outline-theme" (click)="previousSection()" [disabled]="currentSection === 0">
+              <i class="bi bi-arrow-left me-2"></i>Previous
+            </button>
+            <button class="btn btn-theme" (click)="nextSection()" [disabled]="currentSection === sections.length - 1">
+              Next<i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <nav-scroll class="nav">
+            <a class="nav-link" 
+               *ngFor="let section of sections; let i = index"
+               [class.active]="currentSection === i"
+               (click)="goToSection(i)"
+               style="cursor: pointer;">
+              {{ section.title }}
+            </a>
+          </nav-scroll>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,381 @@
+<!-- BEGIN container -->
+<div class="container">
+  <!-- BEGIN row -->
+  <div class="row justify-content-center">
+    <!-- BEGIN col-10 -->
+    <div class="col-xl-10">
+      <!-- BEGIN row -->
+      <div class="row">
+        <!-- BEGIN col-9 -->
+        <div class="col-xl-9">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/iot/document/getting-started">GETTING STARTED</a></li>
+            <li class="breadcrumb-item active">LOGIN TUTORIAL</li>
+          </ul>
+          
+          <h1 class="page-header">
+            {{ metadata.title }} <small>{{ metadata.description }}</small>
+          </h1>
+          
+          <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+            <span class="badge" [ngClass]="getDifficultyClass()">
+              {{ metadata.difficulty }}
+            </span>
+            <span class="text-muted">
+              <i class="bi bi-clock me-1"></i>
+              {{ metadata.estimatedTime }} minutes
+            </span>
+            <span class="text-muted">
+              <i class="bi bi-person me-1"></i>
+              {{ metadata.author }}
+            </span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress mb-4" style="height: 4px;">
+            <div class="progress-bar bg-primary" 
+                 [style.width.%]="getProgressPercentage()">
+            </div>
+          </div>
+          
+          <hr class="mb-4">
+  <small class="text-muted">{{ getProgressPercentage() }}% complete</small>
+</div>
+
+<!-- Tutorial Content -->
+<div class="tutorial-content">
+
+  <!-- Section 1: Access the Login Page -->
+  <div class="tutorial-section" *ngIf="currentSection === 0">
+    <h2><i class="bi bi-1-circle me-2"></i>Access the Login Page</h2>
+    
+    <div class="content-block">
+      <h3>Step 1: Navigate to Login Page</h3>
+      <p>Open your web browser (Chrome, Firefox, Safari, or Edge) and enter the IoT Monitoring System URL:</p>
+      
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>URL:</strong> Your administrator will provide the specific URL<br>
+        <strong>Example:</strong> https://iot.yourcompany.com
+      </div>
+
+      <p>The login page will display automatically. If you're already logged in, you'll be redirected to the dashboard.</p>
+
+      <div class="screenshot-placeholder">
+        <i class="bi bi-image fs-1 text-muted"></i>
+        <p class="text-muted">Screenshot: Login Page</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Enter Your Credentials -->
+  <div class="tutorial-section" *ngIf="currentSection === 1">
+    <h2><i class="bi bi-2-circle me-2"></i>Enter Your Credentials</h2>
+    
+    <div class="content-block">
+      <h3>Step 2: Input Login Information</h3>
+      <p>On the login page, you'll see two input fields:</p>
+      
+      <ol class="numbered-list">
+        <li>
+          <strong>Email/Username:</strong> Enter the email address or username provided by your administrator
+        </li>
+        <li>
+          <strong>Password:</strong> Enter your password (case-sensitive)
+        </li>
+      </ol>
+
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Important Tips:</strong>
+        <ul class="mb-0 mt-2">
+          <li>Make sure Caps Lock is OFF</li>
+          <li>Check your keyboard language settings</li>
+          <li>Passwords are case-sensitive</li>
+        </ul>
+      </div>
+
+      <div class="example-box">
+        <h4>Example Login Form:</h4>
+        <div class="form-demo">
+          <div class="mb-3">
+            <label class="form-label">Email or Username</label>
+            <input type="text" class="form-control" placeholder="user@example.com" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" placeholder="••••••••" disabled>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Login Options -->
+  <div class="tutorial-section" *ngIf="currentSection === 2">
+    <h2><i class="bi bi-3-circle me-2"></i>Login Options</h2>
+    
+    <div class="content-block">
+      <h3>Step 3: Configure Login Settings</h3>
+      <p>Before clicking the Login button, you may see additional options:</p>
+      
+      <h4><i class="bi bi-check-square me-2"></i>Remember Me Checkbox</h4>
+      <p>Check this box if you want the system to remember your login for 30 days on this device.</p>
+
+      <div class="form-demo mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="rememberMe" disabled>
+          <label class="form-check-label" for="rememberMe">
+            Remember me on this device
+          </label>
+        </div>
+      </div>
+
+      <div class="alert alert-danger">
+        <i class="bi bi-shield-exclamation me-2"></i>
+        <strong>Security Warning:</strong><br>
+        Only use 'Remember Me' on your personal device. Never use it on public or shared computers.
+      </div>
+
+      <div class="tips-box">
+        <h5><i class="bi bi-lightbulb me-2"></i>Best Practices:</h5>
+        <ul>
+          <li>Use strong, unique passwords</li>
+          <li>Enable two-factor authentication if available</li>
+          <li>Always logout from shared devices</li>
+          <li>Never share your credentials</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Complete Login -->
+  <div class="tutorial-section" *ngIf="currentSection === 3">
+    <h2><i class="bi bi-4-circle me-2"></i>Complete Login</h2>
+    
+    <div class="content-block">
+      <h3>Step 4: Submit and Access Dashboard</h3>
+      <p>Click the Login button to proceed:</p>
+      
+      <button class="btn btn-primary btn-lg mb-4" disabled>
+        <i class="bi bi-box-arrow-in-right me-2"></i>
+        Login
+      </button>
+
+      <h4><i class="bi bi-check-circle text-success me-2"></i>Successful Login</h4>
+      <p>If your credentials are correct, you'll be redirected to your dashboard automatically within 2-3 seconds.</p>
+
+      <h4 class="mt-4"><i class="bi bi-x-circle text-danger me-2"></i>Failed Login</h4>
+      <p>If you see an error message:</p>
+
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Error Message</th>
+            <th>Meaning</th>
+            <th>Solution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge bg-danger">Invalid credentials</span></td>
+            <td>Wrong email/password</td>
+            <td>Check and re-enter</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-warning">Account locked</span></td>
+            <td>Too many failed attempts</td>
+            <td>Wait 15 minutes or contact admin</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-secondary">Account disabled</span></td>
+            <td>Account deactivated</td>
+            <td>Contact administrator</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 5: Forgot Password -->
+  <div class="tutorial-section" *ngIf="currentSection === 4">
+    <h2><i class="bi bi-5-circle me-2"></i>Forgot Password</h2>
+    
+    <div class="content-block">
+      <h3>Step 5: Reset Password (If Needed)</h3>
+      <p>If you forgot your password, follow these steps:</p>
+      
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h5>Click "Forgot Password?"</h5>
+            <p>Find and click the "Forgot Password?" link below the login form</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h5>Enter Your Email</h5>
+            <p>Type your registered email address in the form</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h5>Check Your Email</h5>
+            <p>Look for the reset email (check spam folder too)</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h5>Click Reset Link</h5>
+            <p>Click the link in the email to open reset page</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <h5>Set New Password</h5>
+            <p>Enter your new password twice and submit</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-3">
+        <i class="bi bi-clock-history me-2"></i>
+        Reset links expire after 24 hours. If expired, request a new one.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Troubleshooting -->
+  <div class="tutorial-section" *ngIf="currentSection === 5">
+    <h2><i class="bi bi-6-circle me-2"></i>Troubleshooting</h2>
+    
+    <div class="content-block">
+      <h3>Common Login Issues</h3>
+      
+      <div class="troubleshoot-grid">
+        <div class="issue-card">
+          <div class="issue-header">
+            <i class="bi bi-wifi-off text-danger"></i>
+            <h5>Can't access login page</h5>
+          </div>
+          <ul>
+            <li>Check internet connection</li>
+            <li>Verify URL is correct</li>
+            <li>Clear browser cache (Ctrl+Shift+Delete)</li>
+            <li>Try different browser</li>
+          </ul>
+        </div>
+
+        <div class="issue-card">
+          <div class="issue-header">
+            <i class="bi bi-person-x text-warning"></i>
+            <h5>Forgot email/username</h5>
+          </div>
+          <ul>
+            <li>Check your welcome email</li>
+            <li>Contact your administrator</li>
+            <li>Check with your IT department</li>
+          </ul>
+        </div>
+
+        <div class="issue-card">
+          <div class="issue-header">
+            <i class="bi bi-key text-primary"></i>
+            <h5>Password not working</h5>
+          </div>
+          <ul>
+            <li>Verify Caps Lock is off</li>
+            <li>Check keyboard language</li>
+            <li>Use "Forgot Password"</li>
+            <li>Contact administrator</li>
+          </ul>
+        </div>
+
+        <div class="issue-card">
+          <div class="issue-header">
+            <i class="bi bi-hourglass-split text-info"></i>
+            <h5>Page keeps loading</h5>
+          </div>
+          <ul>
+            <li>Refresh the page (F5)</li>
+            <li>Clear cookies and cache</li>
+            <li>Check firewall settings</li>
+            <li>Try incognito mode</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="support-box mt-4">
+        <h5><i class="bi bi-headset me-2"></i>Need More Help?</h5>
+        <p>If you're still having issues:</p>
+        <ul>
+          <li>Contact your system administrator</li>
+          <li>Email: support@yourcompany.com</li>
+          <li>Phone: +XX XXX-XXX-XXXX</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation Footer -->
+<div class="tutorial-footer mt-5 pt-4 border-top">
+  <div class="d-flex justify-content-between align-items-center">
+    <button class="btn btn-outline-secondary" 
+            (click)="previousSection()" 
+            [disabled]="currentSection === 0">
+      <i class="bi bi-chevron-left me-2"></i>
+      Previous
+    </button>
+
+    <div class="text-center">
+      <small class="text-muted">
+        Section {{ currentSection + 1 }} of {{ sections.length }}
+      </small>
+    </div>
+
+    <button class="btn btn-primary" 
+            (click)="nextSection()" 
+            *ngIf="currentSection < sections.length - 1">
+      Next
+      <i class="bi bi-chevron-right ms-2"></i>
+    </button>
+
+    <button class="btn btn-success" 
+            (click)="markAsCompleted()" 
+            *ngIf="currentSection === sections.length - 1">
+      <i class="bi bi-check-lg me-2"></i>
+      Complete Tutorial
+    </button>
+  </div>
+</div>
+
+<!-- Sections Overview Sidebar -->
+<div class="sections-sidebar">
+  <h6 class="mb-3">Sections</h6>
+  <div class="section-list">
+    <div *ngFor="let section of sections; let i = index" 
+         class="section-item"
+         [class.active]="i === currentSection"
+         [class.completed]="isSectionCompleted(i)"
+         (click)="goToSection(i)">
+      <div class="section-icon">
+        <i class="bi" 
+           [class.bi-check-circle-fill]="isSectionCompleted(i)"
+           [class.bi-circle]="!isSectionCompleted(i) && i !== currentSection"
+           [class.bi-circle-fill]="i === currentSection && !isSectionCompleted(i)"></i>
+      </div>
+      <span class="section-title">{{ section.title }}</span>
+    </div>
+  </div>
+</div>

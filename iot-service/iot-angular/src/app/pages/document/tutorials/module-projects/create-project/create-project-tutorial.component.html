@@ -1,0 +1,632 @@
+<div class="tutorial-base-component">
+  <!-- Breadcrumb -->
+  <ol class="breadcrumb float-xl-end">
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document">Documentation</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/document/module-projects">Module: Projects</a></li>
+    <li class="breadcrumb-item active">Create New Project</li>
+  </ol>
+  
+  <!-- Page Header -->
+  <h1 class="page-header">
+    <i class="bi bi-plus-circle me-2"></i> Create New Project
+    <small class="d-block mt-2 text-white-transparent-7">Tutorial membuat project baru dan konfigurasi settings</small>
+  </h1>
+
+  <!-- Progress Bar -->
+  <div class="progress mb-4" style="height: 6px;">
+    <div class="progress-bar bg-success" role="progressbar" 
+         [style.width]="getProgressPercentage() + '%'" 
+         [attr.aria-valuenow]="getProgressPercentage()" 
+         aria-valuemin="0" 
+         aria-valuemax="100">
+    </div>
+  </div>
+
+  <!-- Tutorial Content -->
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-9">
+      <!-- Section 1: Introduction -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-info-circle me-2"></i> Apa itu Create Project?</h3>
+          
+          <p class="mb-3">
+            <strong>Create Project</strong> adalah fitur untuk menambahkan project baru ke dalam sistem IoT platform. 
+            Project berfungsi sebagai container logis untuk mengelompokkan beberapa Nodes (perangkat IoT) yang terkait, 
+            memudahkan manajemen, monitoring, dan reporting berdasarkan project scope. Proses create project meliputi 
+            input informasi dasar project, assign owner (tenant), set location, dan configure initial settings.
+          </p>
+
+          <div class="mb-4">
+            <img src="assets/img/documentation/module-projects/create-project/screenshot.png" 
+                 alt="Create Project Form Interface" 
+                 class="img-fluid rounded border">
+            <p class="text-center text-white-transparent-7 mt-2">
+              Form Create New Project dengan field Project Code, Name, Owner selection, Location, Description, dan Status configuration
+            </p>
+          </div>
+
+          <div class="alert alert-success">
+            <h5 class="mb-2"><i class="bi bi-card-checklist me-2"></i> Form Fields</h5>
+            <ul class="mb-0">
+              <li><strong>Project Code:</strong> Unique identifier (auto-generated atau manual input, e.g., PROJ-001)</li>
+              <li><strong>Project Name:</strong> Nama deskriptif project (required, e.g., "Smart Building Jakarta")</li>
+              <li><strong>Owner:</strong> Tenant yang memiliki project (dropdown selection, required untuk multi-tenant)</li>
+              <li><strong>Location:</strong> Physical location instalasi (address atau GPS coordinates, optional)</li>
+              <li><strong>Description:</strong> Tujuan, scope, dan notes project (optional, textarea field)</li>
+              <li><strong>Status:</strong> Active (default) / Inactive (radio button atau toggle)</li>
+              <li><strong>Tags:</strong> Category labels untuk filtering (optional, multi-select chips)</li>
+            </ul>
+          </div>
+
+          <h5 class="mt-4 mb-3"><i class="bi bi-star me-2"></i> Kenapa Penting?</h5>
+          <ul>
+            <li><strong>Structured Organization:</strong> Group related devices by project untuk easier management</li>
+            <li><strong>Access Control:</strong> Assign user permissions per-project untuk granular security</li>
+            <li><strong>Reporting & Analytics:</strong> Generate project-specific telemetry reports dan KPIs</li>
+            <li><strong>Budget Tracking:</strong> Monitor operational costs dan ROI per-project</li>
+            <li><strong>Lifecycle Management:</strong> Track project dari deployment hingga decommissioning</li>
+            <li><strong>Scalability:</strong> Support multi-tenant environments dengan clear project boundaries</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 2: Getting Started -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-play-circle me-2"></i> Cara Membuat Project Baru</h3>
+          
+          <div class="alert alert-info">
+            <h5 class="mb-3"><i class="bi bi-list-ol me-2"></i> Langkah-langkah Create Project</h5>
+            
+            <ol class="mb-0">
+              <li class="mb-3">
+                <strong>Access Projects List</strong><br>
+                Navigate ke <code>Projects</code> menu di sidebar → Projects List page terbuka
+              </li>
+              
+              <li class="mb-3">
+                <strong>Click "Create New Project" Button</strong><br>
+                Di top-right corner, klik button <button class="btn btn-sm btn-primary">+ New Project</button> → 
+                Modal dialog atau form page terbuka dengan Create Project form
+              </li>
+              
+              <li class="mb-3">
+                <strong>Fill Project Information</strong><br>
+                Complete form fields (details explained di section Features below)
+              </li>
+              
+              <li class="mb-3">
+                <strong>Select Owner (Multi-Tenant)</strong><br>
+                Dari dropdown <strong>Owner</strong>, pilih tenant yang akan own project ini → 
+                Required untuk multi-tenant environment, auto-filled untuk single-tenant
+              </li>
+              
+              <li class="mb-3">
+                <strong>Configure Location (Optional)</strong><br>
+                Input installation address atau klik map picker untuk set GPS coordinates
+              </li>
+              
+              <li class="mb-3">
+                <strong>Set Status</strong><br>
+                Pilih initial status:
+                <ul class="mt-2">
+                  <li><strong>Active:</strong> Project ready untuk assign nodes (recommended for new projects)</li>
+                  <li><strong>Inactive:</strong> Project created but not operational yet (untuk pre-deployment setup)</li>
+                </ul>
+              </li>
+              
+              <li class="mb-0">
+                <strong>Submit & Verify</strong><br>
+                Klik <button class="btn btn-sm btn-success">Create Project</button> button → 
+                System validates input → Success notification muncul → 
+                Redirect ke Project Detail page atau kembali ke Projects List → 
+                New project visible dengan status badge
+              </li>
+            </ol>
+          </div>
+
+          <div class="alert alert-warning mt-3">
+            <h5 class="mb-2"><i class="bi bi-shield-lock me-2"></i> Permission Required</h5>
+            <p class="mb-0">
+              <strong>Note:</strong> Only users dengan role <strong>Admin</strong>, <strong>Project Manager</strong>, 
+              atau <strong>Owner Admin</strong> yang dapat create projects. Regular users tidak memiliki permission 
+              untuk create projects untuk security dan data integrity reasons.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Features & Form Fields -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-gear me-2"></i> Form Fields Detail</h3>
+          
+          <!-- Project Code -->
+          <h5 class="mb-3"><i class="bi bi-hash me-2"></i> 1. Project Code</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="25%">Property</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Text input (alphanumeric, uppercase recommended)</td>
+                </tr>
+                <tr>
+                  <td><strong>Required</strong></td>
+                  <td>✅ Yes (must be unique across all projects)</td>
+                </tr>
+                <tr>
+                  <td><strong>Auto-Generation</strong></td>
+                  <td>✅ Available - System generates PROJ-001, PROJ-002, etc. (sequential counter)</td>
+                </tr>
+                <tr>
+                  <td><strong>Manual Input</strong></td>
+                  <td>✅ Allowed - User can override auto-generated code dengan custom format (e.g., JKT-HQ-2025)</td>
+                </tr>
+                <tr>
+                  <td><strong>Validation</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li>Min length: 3 characters</li>
+                      <li>Max length: 20 characters</li>
+                      <li>Allowed: A-Z, 0-9, dash (-), underscore (_)</li>
+                      <li>No spaces, no special chars (except dash/underscore)</li>
+                      <li>Uniqueness check (real-time validation saat typing)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Example</strong></td>
+                  <td><code>PROJ-001</code>, <code>JKT-SMART-BUILDING</code>, <code>FACTORY_A</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Project Name -->
+          <h5 class="mb-3"><i class="bi bi-pencil me-2"></i> 2. Project Name</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="25%">Property</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Text input (free text, user-friendly label)</td>
+                </tr>
+                <tr>
+                  <td><strong>Required</strong></td>
+                  <td>✅ Yes (cannot be empty)</td>
+                </tr>
+                <tr>
+                  <td><strong>Validation</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li>Min length: 3 characters</li>
+                      <li>Max length: 100 characters</li>
+                      <li>Allowed: All characters (UTF-8 support untuk international names)</li>
+                      <li>No uniqueness requirement (dapat duplicate names, karena Code yang unique)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Best Practices</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li>Use descriptive names: "Smart Building Jakarta HQ" vs "Project 1"</li>
+                      <li>Include location: "[Location] - [Purpose]" format</li>
+                      <li>Consistent naming convention: All caps, Title Case, atau lowercase</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Example</strong></td>
+                  <td>
+                    "Smart Office Jakarta", "Factory Temperature Monitoring", 
+                    "Warehouse IoT Deployment - Surabaya"
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Owner Selection -->
+          <h5 class="mb-3"><i class="bi bi-building me-2"></i> 3. Owner (Tenant)</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="25%">Property</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Dropdown select (populated from Owners/Tenants list)</td>
+                </tr>
+                <tr>
+                  <td><strong>Required</strong></td>
+                  <td>✅ Yes (multi-tenant) / Auto-filled (single-tenant)</td>
+                </tr>
+                <tr>
+                  <td><strong>Options</strong></td>
+                  <td>
+                    List semua active owners dengan format: <br>
+                    <code>[Owner Code] - [Owner Name]</code> (e.g., "OWN-001 - PT. Smart IoT Indonesia")
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Permission</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li><strong>Super Admin:</strong> Can select any owner</li>
+                      <li><strong>Owner Admin:</strong> Can only select their own owner</li>
+                      <li><strong>Project Manager:</strong> Can select owners they're authorized for</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Dependency</strong></td>
+                  <td>
+                    Owner selection affects:
+                    <ul class="mb-0 mt-1">
+                      <li>Available nodes untuk assignment (only nodes owned by selected owner)</li>
+                      <li>User access permissions (users assigned to owner dapat access project)</li>
+                      <li>Billing & reporting (costs attributed to selected owner)</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Location -->
+          <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i> 4. Location</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="25%">Property</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Text input atau Map Picker (dual input mode)</td>
+                </tr>
+                <tr>
+                  <td><strong>Required</strong></td>
+                  <td>⚠️ Optional (recommended untuk field deployments)</td>
+                </tr>
+                <tr>
+                  <td><strong>Input Methods</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li><strong>Text Input:</strong> Type address manually (e.g., "Jl. Sudirman No. 123, Jakarta")</li>
+                      <li><strong>Map Picker:</strong> Click map icon → Interactive map opens → 
+                          Click location → Lat/Long auto-filled → Address reverse-geocoded (if API available)</li>
+                      <li><strong>GPS Coordinates:</strong> Direct input format <code>lat, long</code> (e.g., "-6.2088, 106.8456")</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Validation</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li>Max length: 255 characters (untuk text address)</li>
+                      <li>GPS format validation: <code>-90 to 90</code> (lat), <code>-180 to 180</code> (long)</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Use Cases</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li>Field technician navigation untuk maintenance</li>
+                      <li>Geographic reporting (projects by region)</li>
+                      <li>Disaster recovery planning (proximity analysis)</li>
+                      <li>Map visualization di dashboard</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Description -->
+          <h5 class="mb-3"><i class="bi bi-card-text me-2"></i> 5. Description</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="25%">Property</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Textarea (multi-line text input)</td>
+                </tr>
+                <tr>
+                  <td><strong>Required</strong></td>
+                  <td>⚠️ Optional (recommended untuk documentation purposes)</td>
+                </tr>
+                <tr>
+                  <td><strong>Validation</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li>Max length: 1000 characters</li>
+                      <li>Markdown support (jika implemented) untuk formatting</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>What to Include</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li><strong>Purpose:</strong> Tujuan project (e.g., "Monitor temperature & humidity di warehouse")</li>
+                      <li><strong>Scope:</strong> Coverage area atau number of nodes (e.g., "10 nodes covering 5 floors")</li>
+                      <li><strong>Timeline:</strong> Deployment schedule (e.g., "Phase 1: Jan 2025, Phase 2: Mar 2025")</li>
+                      <li><strong>Stakeholders:</strong> Key contacts atau departments involved</li>
+                      <li><strong>Notes:</strong> Special considerations atau limitations</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Example</strong></td>
+                  <td>
+                    "IoT monitoring system untuk mengawasi suhu & kelembaban di 3 gudang penyimpanan. 
+                    Target: 15 nodes (5 per gudang). Deployment: Q1 2025. PIC: Ahmad (Ops Manager)."
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Status -->
+          <h5 class="mb-3"><i class="bi bi-toggle-on me-2"></i> 6. Status</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th width="25%">Property</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Type</strong></td>
+                  <td>Radio buttons atau Toggle switch</td>
+                </tr>
+                <tr>
+                  <td><strong>Required</strong></td>
+                  <td>✅ Yes (default: Active)</td>
+                </tr>
+                <tr>
+                  <td><strong>Options</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li><strong>Active:</strong> Project operational, dapat assign nodes, telemetry flows normally</li>
+                      <li><strong>Inactive:</strong> Project created tapi not operational, nodes tidak dapat send telemetry</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Behavior</strong></td>
+                  <td>
+                    <ul class="mb-0 mt-1">
+                      <li><strong>Active:</strong> Visible di dashboard, included in reports, alerts enabled</li>
+                      <li><strong>Inactive:</strong> Hidden dari dashboard (optional), excluded dari active reports, alerts disabled</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Recommendation</strong></td>
+                  <td>
+                    Set to <strong>Active</strong> untuk new projects yang ready untuk deployment. 
+                    Use <strong>Inactive</strong> hanya untuk pre-deployment testing atau temporarily disable project.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Tags (Optional) -->
+          <h5 class="mb-3"><i class="bi bi-tags me-2"></i> 7. Tags (Optional)</h5>
+          <div class="alert alert-secondary">
+            <p class="mb-2"><strong>Feature:</strong> Multi-select chips untuk category labels</p>
+            <p class="mb-2"><strong>Purpose:</strong> Filter projects by tags (e.g., "Production", "Testing", "Temperature Monitoring")</p>
+            <p class="mb-0"><strong>Example Tags:</strong> <span class="badge bg-primary">Production</span> 
+              <span class="badge bg-warning">Critical</span> 
+              <span class="badge bg-info">IoT</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Validation & Error Handling -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-exclamation-triangle me-2"></i> Validation & Error Handling</h3>
+          
+          <h5 class="mb-3">Common Validation Errors:</h5>
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered table-dark">
+              <thead>
+                <tr>
+                  <th>Error</th>
+                  <th>Cause</th>
+                  <th>Solution</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge bg-danger">Project Code already exists</span></td>
+                  <td>Duplicate code detected (codes must be unique)</td>
+                  <td>Change code ke nilai yang unique atau use auto-generation</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger">Project Name required</span></td>
+                  <td>Name field empty</td>
+                  <td>Fill name field dengan descriptive project name</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger">Owner not selected</span></td>
+                  <td>Multi-tenant environment requires owner selection</td>
+                  <td>Select owner dari dropdown</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger">Invalid GPS coordinates</span></td>
+                  <td>Latitude/Longitude out of valid range</td>
+                  <td>Verify coordinates: Lat (-90 to 90), Long (-180 to 180)</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger">Description too long</span></td>
+                  <td>Description exceeds 1000 characters</td>
+                  <td>Shorten description atau move details to project documentation</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-danger">Permission denied</span></td>
+                  <td>User role tidak authorized untuk create projects</td>
+                  <td>Contact admin untuk request Project Manager role</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-info">
+            <h5 class="mb-2"><i class="bi bi-check-circle me-2"></i> Real-Time Validation</h5>
+            <ul class="mb-0">
+              <li><strong>Project Code:</strong> Uniqueness check saat typing (debounced API call every 500ms)</li>
+              <li><strong>Field Indicators:</strong> Green checkmark (✅ valid), Red X (❌ invalid) beside fields</li>
+              <li><strong>Error Messages:</strong> Displayed below field dengan specific guidance</li>
+              <li><strong>Submit Button:</strong> Disabled until all required fields valid</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Next Steps -->
+      <div class="card bg-dark text-white mb-4">
+        <div class="card-body">
+          <h3 class="mb-3"><i class="bi bi-arrow-right-circle me-2"></i> After Creating Project</h3>
+          
+          <div class="alert alert-warning">
+            <h5 class="mb-3"><i class="bi bi-list-check me-2"></i> Recommended Next Steps</h5>
+            <ol class="mb-0">
+              <li class="mb-2">
+                <strong>Assign Nodes to Project</strong><br>
+                Navigate ke Project Detail → "Nodes" tab → Click "Assign Nodes" → 
+                Select unpaired nodes atau move existing nodes dari other projects
+              </li>
+              <li class="mb-2">
+                <strong>Configure Sensors</strong><br>
+                For each assigned node → Configure sensor types, channels, calibration settings
+              </li>
+              <li class="mb-2">
+                <strong>Set Alert Rules</strong><br>
+                Configure threshold-based alerts untuk sensor readings (e.g., Temperature > 30°C)
+              </li>
+              <li class="mb-2">
+                <strong>Assign Users</strong><br>
+                Grant access permissions ke users yang need to monitor or manage project
+              </li>
+              <li class="mb-0">
+                <strong>Monitor Dashboard</strong><br>
+                View Project Detail dashboard untuk real-time telemetry, node health, dan alerts
+              </li>
+            </ol>
+          </div>
+
+          <h5 class="mb-3 mt-4"><i class="bi bi-book me-2"></i> Related Tutorials</h5>
+          <ul class="mb-0">
+            <li>
+              <a routerLink="/iot/document/module-projects/project-details" class="text-decoration-none">
+                <i class="bi bi-folder-open me-1"></i> View Project Details
+              </a> - Explore project info, nodes, telemetry
+            </li>
+            <li>
+              <a routerLink="/iot/document/module-projects/edit-project" class="text-decoration-none">
+                <i class="bi bi-pencil-square me-1"></i> Edit Project
+              </a> - Update project information
+            </li>
+            <li>
+              <a routerLink="/iot/document/module-projects/project-nodes" class="text-decoration-none">
+                <i class="bi bi-cpu me-1"></i> Manage Project Nodes
+              </a> - Assign/unassign nodes
+            </li>
+            <li>
+              <a routerLink="/iot/document/user-guide/view-unpaired-devices" class="text-decoration-none">
+                <i class="bi bi-link-45deg me-1"></i> Pair Devices
+              </a> - Add new nodes to project
+            </li>
+            <li>
+              <a routerLink="/iot/document/user-guide/view-alerts" class="text-decoration-none">
+                <i class="bi bi-exclamation-triangle me-1"></i> Configure Alerts
+              </a> - Set threshold alerts
+            </li>
+          </ul>
+
+          <div class="alert alert-success mt-4">
+            <h5 class="mb-3"><i class="bi bi-lightbulb me-2"></i> Pro Tips</h5>
+            <ul class="mb-0">
+              <li>
+                <strong>Use Consistent Naming:</strong> Adopt company-wide naming convention untuk Project Codes dan Names 
+                (e.g., "[Location]-[Type]-[Year]" → JKT-MONITORING-2025)
+              </li>
+              <li>
+                <strong>Plan Project Structure:</strong> Group nodes by logical criteria (location, function, department) 
+                untuk easier management di large deployments
+              </li>
+              <li>
+                <strong>Document Thoroughly:</strong> Fill Description field dengan comprehensive info untuk future reference 
+                (especially useful ketika handover ke new team members)
+              </li>
+              <li>
+                <strong>Use Tags Wisely:</strong> Create standardized tag taxonomy untuk consistent filtering across projects 
+                (e.g., "Critical", "Production", "Testing", "Temperature", "Humidity")
+              </li>
+              <li>
+                <strong>Start with Inactive:</strong> For large deployments, create project dengan status "Inactive", 
+                assign & configure all nodes first, then activate project ketika ready untuk production
+              </li>
+              <li>
+                <strong>Verify Owner:</strong> Double-check owner selection before submit (changing owner later may require admin intervention)
+              </li>
+              <li>
+                <strong>Save Location Data:</strong> Even jika optional, always input location data untuk future operational needs 
+                (maintenance, expansion planning, disaster recovery)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="col-xl-3">
+      <nav-scroll class="nav">
+        <a class="nav-link" 
+           *ngFor="let section of sections; let i = index"
+           [class.active]="currentSection === i"
+           (click)="goToSection(i)"
+           style="cursor: pointer;">
+          {{ section.title }}
+        </a>
+      </nav-scroll>
+    </div>
+  </div>
+</div>

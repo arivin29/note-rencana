@@ -1,0 +1,1051 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-sensors">Module: Sensors</a></li>
+        <li class="breadcrumb-item active">Sensor Detail View (Channel Telemetry)</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-graph-up text-theme me-2"></i>
+        Sensor Detail View - Channel Telemetry Stream
+        <small class="d-block mt-2 text-white-transparent-7">Monitor real-time sensor channel readings dengan filtering, pagination & export capabilities</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Apa itu Sensor Detail View? -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Sensor Detail View?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Sensor Detail View</strong> (atau <strong>Channel Telemetry Stream</strong>) adalah halaman untuk <strong>monitoring telemetry readings dari satu sensor channel specific</strong>. 
+                  Menampilkan time-series data dengan filtering period, status, pagination, dan export CSV capabilities.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-broadcast fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Channel = Single Measurement Metric</h6>
+                      <p class="mb-2">
+                        Dalam IoT hierarchy, channel adalah lowest level measurement unit:
+                      </p>
+                      <ul class="mb-0">
+                        <li><strong>Node</strong> (ESP32 Device: DEMO1-00D42390A994) → contains multiple Sensors</li>
+                        <li><strong>Sensor</strong> (Power Meter via RS485) → contains multiple Channels</li>
+                        <li><strong>Channel</strong> (volt l1, current l1, power l1) → individual metric measurement</li>
+                        <li><strong>Reading</strong> (220.5V at 2025-12-24 09:27:15) → timestamped data point</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kenapa Penting?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Real-Time Monitoring:</strong> Track single metric over time (voltage, temperature, pressure, etc)</li>
+                    <li><strong>Threshold Alerts:</strong> Identify values outside normal range (error/warning status)</li>
+                    <li><strong>Data Quality Check:</strong> Monitor signal quality percentage (70-100%)</li>
+                    <li><strong>Historical Analysis:</strong> View telemetry history (today, 7 days, 30 days, custom range)</li>
+                    <li><strong>Troubleshooting:</strong> Diagnose sensor malfunctions via reading patterns</li>
+                    <li><strong>Export for Analytics:</strong> Download CSV untuk offline analysis/reporting</li>
+                    <li><strong>Channel Management:</strong> Edit thresholds, delete channel</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Cara Akses Sensor Detail View -->
+          <div id="access" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Sensor Detail View</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Ada beberapa cara untuk mengakses <strong>Sensor Detail View</strong>:</p>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Node Detail View (Most Common)</h6>
+                  <ol class="mb-0">
+                    <li>Open <strong>Node Detail View</strong> (via Nodes list)</li>
+                    <li>Scroll to <strong>Sensors section</strong></li>
+                    <li>Each sensor shows list of channels (e.g., Power Meter → volt_l1, current_l1, power_l1)</li>
+                    <li>Klik <strong>channel row</strong> atau <strong>View button</strong> (eye icon) pada channel</li>
+                    <li>Channel Telemetry Stream page terbuka</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Telemetry Streams Dashboard</h6>
+                  <ol class="mb-0">
+                    <li>Navigate to <strong>IoT → Telemetry Streams</strong></li>
+                    <li>Find channel di list (dapat filter by node, sensor type, metric)</li>
+                    <li>Klik channel name atau View Detail button</li>
+                    <li>Direct link ke channel telemetry view</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Via Direct URL</h6>
+                  <p class="mb-2">Akses langsung via browser (if you know nodeId & channelId):</p>
+                  <pre class="bg-dark text-white p-2 rounded mb-0"><code>https://your-domain.com/iot/nodes/{{ '{' }}nodeId{{ '}' }}/sensor/{{ '{' }}channelId{{ '}' }}</code></pre>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Example: <code>/iot/nodes/e3edc0d9-8167-4f50-bee3-06d37bcde3b9/sensor/9f0290bc-1f00-4192-973c-40efecc8f872</code>
+                  </p>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface & Features -->
+          <div id="interface" class="mb-5">
+            <h4><i class="bi bi-window text-theme me-2"></i>Interface & Features Overview</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Interface <strong>Sensor Detail View</strong> menampilkan telemetry stream table dengan filter & pagination:</p>
+
+                <!-- Screenshot -->
+                <div class="mb-4">
+                  <img src="assets/tutorials/images/module-sensors/sensor-detail-main-view.png" 
+                       alt="Sensor Detail View - Channel Telemetry Stream" 
+                       class="img-fluid rounded border border-theme"
+                       style="max-width: 100%; height: auto;">
+                  <p class="text-center text-white-transparent-7 mt-2 small">
+                    <i class="bi bi-image me-1"></i>
+                    Channel Telemetry Stream - Monitoring volt l1 sensor readings dengan filtering & pagination
+                  </p>
+                </div>
+
+                <!-- Header Section -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Page Header</h6>
+                  <ul class="mb-0">
+                    <li><strong>Breadcrumb:</strong> IoT → Nodes → Sensor Detail</li>
+                    <li><strong>Channel Title:</strong> Channel metric code (e.g., "volt l1")</li>
+                    <li><strong>Channel Subtitle:</strong> Channel type + Metric name + Node location</li>
+                    <li><strong>Action Buttons:</strong>
+                      <ul>
+                        <li><code>Sync Telemetry</code> - Force refresh data dari backend</li>
+                        <li><code>Set Threshold</code> - Configure min/max alert thresholds</li>
+                        <li><code>Edit Channel</code> - Modify channel configuration</li>
+                        <li><code>Delete Channel</code> - Remove channel (with confirmation)</li>
+                        <li><code>Export CSV</code> - Download telemetry data</li>
+                      </ul>
+                    </li>
+                    <li><strong>Quick Actions:</strong>
+                      <ul>
+                        <li><code>View Node Detail</code> - Navigate to parent node</li>
+                        <li><code>Configure Alerts</code> - Setup alert rules</li>
+                        <li><code>Assign Sensor Profile</code> - Link to sensor catalog</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Info Cards Section -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Information Cards (Top Row)</h6>
+                  <ul class="mb-0">
+                    <li><strong>Channel Code Card:</strong>
+                      <ul>
+                        <li>Metric code display (e.g., "volt l1")</li>
+                        <li>Last sample timestamp</li>
+                      </ul>
+                    </li>
+                    <li><strong>Node Location Card:</strong>
+                      <ul>
+                        <li>Node: Device code (DEMO1-00D42390A994)</li>
+                        <li>Sensor type: Category (voltage)</li>
+                        <li>Metric: Channel measurement type (volt l1)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Total Records Card:</strong>
+                      <ul>
+                        <li>Record count in selected period</li>
+                        <li>Period label (7 Hari Terakhir)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Unit & Thresholds Card:</strong>
+                      <ul>
+                        <li>Measurement unit (VOLT)</li>
+                        <li>MIN threshold badge (e.g., MIN 0 VOLT)</li>
+                        <li>MAX threshold badge (e.g., MAX 100 VOLT)</li>
+                        <li>Alert message (Auto alert di luar rentang aman)</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Status Tabs -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Status Filter Tabs</h6>
+                  <ul class="mb-0">
+                    <li><strong>All Status (0):</strong> Show all readings regardless of status</li>
+                    <li><strong>Online (0):</strong> Readings within normal range (green)</li>
+                    <li><strong>Warning (0):</strong> Readings approaching threshold limits (yellow)</li>
+                    <li><strong>Error (0):</strong> Readings outside threshold range (red)</li>
+                    <li><strong>Offline (0):</strong> No data received / sensor disconnected (gray)</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Counts update automatically based on filtered data
+                  </p>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-4-circle me-2"></i>Filter Section (Data Pembacaan Sensor)</h6>
+                  <ul class="mb-0">
+                    <li><strong>Period Dropdown:</strong> Select time range
+                      <ul>
+                        <li>Hari Ini (today)</li>
+                        <li>Kemarin (yesterday)</li>
+                        <li>7 Hari Terakhir (last 7 days) - Default</li>
+                        <li>30 Hari Terakhir (last 30 days)</li>
+                        <li>Bulan Ini (this month)</li>
+                        <li>Bulan Lalu (last month)</li>
+                        <li>Custom Range (manual date picker)</li>
+                      </ul>
+                    </li>
+                    <li><strong>Display Filter Indicators:</strong>
+                      <ul>
+                        <li>Window data aktif: Time range being displayed</li>
+                        <li>Menampilkan: Status filter (All/Online/Warning/Error/Offline)</li>
+                        <li>Status filter: Current selection</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Telemetry Table -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-5-circle me-2"></i>Channel Telemetry Stream Table</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>SAMPLE</strong></td>
+                        <td>Sequential reading ID/number (descending, latest first)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>TIMESTAMP</strong></td>
+                        <td>Date & time of reading (YYYY-MM-DD HH:mm:ss format)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>NILAI</strong></td>
+                        <td>Measurement value dengan unit (e.g., 220.5 VOLT)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>STATUS</strong></td>
+                        <td>Reading status badge (Online/Warning/Error/Offline dengan color coding)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>KUALITAS</strong></td>
+                        <td>Signal quality percentage badge (70-100%, color-coded)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>CATATAN</strong></td>
+                        <td>Notes/alerts if value out of range atau quality degraded</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Pagination & Actions -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-6-circle me-2"></i>Bottom Section (Pagination & Actions)</h6>
+                  <ul class="mb-0">
+                    <li><strong>Records Count:</strong> "Showing X to Y of Z records"</li>
+                    <li><strong>Rows Dropdown:</strong> Select page size (10, 25, 50, 100)</li>
+                    <li><strong>Pagination Buttons:</strong> Previous, Page numbers, Next</li>
+                    <li><strong>Refresh Button:</strong> Reload current page data</li>
+                    <li><strong>Export CSV Button:</strong> Download filtered data to CSV file</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Cara Menggunakan -->
+          <div id="usage" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- View Telemetry Data -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-eye me-2"></i>View Channel Telemetry Data
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li><strong>Navigate to Channel:</strong>
+                    <ul>
+                      <li>Via Node Detail → Click channel dalam sensor list</li>
+                      <li>Or via Telemetry Streams → Click channel name</li>
+                    </ul>
+                  </li>
+                  <li><strong>Review Information Cards:</strong>
+                    <ul>
+                      <li><strong>Channel Code:</strong> Verify metric code correct (volt_l1)</li>
+                      <li><strong>Location:</strong> Check node & sensor type</li>
+                      <li><strong>Total Records:</strong> Count of readings in period</li>
+                      <li><strong>Thresholds:</strong> Note MIN/MAX range untuk context</li>
+                    </ul>
+                  </li>
+                  <li><strong>Check Status Tabs:</strong>
+                    <ul>
+                      <li>If <strong>Error count > 0</strong> → indicates readings outside range</li>
+                      <li>If <strong>Warning count > 0</strong> → approaching limits</li>
+                      <li>If <strong>Offline count > 0</strong> → sensor connectivity issues</li>
+                    </ul>
+                  </li>
+                  <li><strong>Browse Telemetry Table:</strong>
+                    <ul>
+                      <li>Latest readings at top (descending timestamp)</li>
+                      <li>Check NILAI column untuk measurement values</li>
+                      <li>Check STATUS badges (Green/Yellow/Red/Gray)</li>
+                      <li>Check KUALITAS percentage (< 90% may indicate signal issues)</li>
+                      <li>Read CATATAN untuk error/warning messages</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Default view:</strong> Last 7 days, All status, 10 rows per page
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Filter by Period -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-calendar-range me-2"></i>Filter Telemetry by Time Period
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>Period Dropdown</strong> (default: "7 Hari Terakhir")</li>
+                  <li>Select desired period:
+                    <ul>
+                      <li><strong>Hari Ini:</strong> See today's readings only</li>
+                      <li><strong>7 Hari Terakhir:</strong> Last week (good untuk trend analysis)</li>
+                      <li><strong>30 Hari Terakhir:</strong> Monthly overview</li>
+                      <li><strong>Custom Range:</strong> Choose specific start & end dates</li>
+                    </ul>
+                  </li>
+                  <li>Table automatically reloads dengan filtered time range</li>
+                  <li><strong>Total Records card</strong> updates to show count in period</li>
+                  <li><strong>Status tabs</strong> recalculate counts</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Tip:</strong> Use "Hari Ini" untuk real-time monitoring, "7 Hari" untuk troubleshooting
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Filter by Status -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-funnel me-2"></i>Filter by Reading Status
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Click <strong>Status Tab</strong> to filter:
+                    <ul>
+                      <li><strong>All Status:</strong> Show everything (default)</li>
+                      <li><strong>Online:</strong> Only normal readings (green badges)</li>
+                      <li><strong>Warning:</strong> Only warning readings (yellow badges)</li>
+                      <li><strong>Error:</strong> Only error readings (red badges) - **Most important for troubleshooting**</li>
+                      <li><strong>Offline:</strong> Only offline/missing readings (gray badges)</li>
+                    </ul>
+                  </li>
+                  <li>Table filters client-side (instant, no reload)</li>
+                  <li>Pagination resets to page 1</li>
+                  <li>Filter indicator shows: "Status filter: Error" (or selected status)</li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Use Case:</strong> Klik "Error" tab untuk quickly find problematic readings
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Pagination -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-files me-2"></i>Navigate Pagination
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li><strong>Change Page Size:</strong>
+                    <ul>
+                      <li>Klik <strong>ROWS dropdown</strong> (default: 10)</li>
+                      <li>Select 10, 25, 50, or 100 rows per page</li>
+                      <li>Larger page size = less page flipping, more scrolling</li>
+                    </ul>
+                  </li>
+                  <li><strong>Navigate Pages:</strong>
+                    <ul>
+                      <li>Klik <strong>Previous/Next</strong> buttons</li>
+                      <li>Or klik <strong>page number</strong> directly</li>
+                      <li>Ellipsis (...) indicates skipped pages</li>
+                    </ul>
+                  </li>
+                  <li><strong>Monitor Progress:</strong>
+                    <ul>
+                      <li>Bottom shows: "Showing 1 to 10 of 150 records"</li>
+                      <li>Current page highlighted in blue</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Tip:</strong> Use 100 rows/page untuk quick scan, 10 rows untuk detailed inspection
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Export CSV -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-download me-2"></i>Export Telemetry Data to CSV
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Apply desired filters (period, status)</li>
+                  <li>Klik <strong>"Export CSV"</strong> button (bottom right)</li>
+                  <li>Browser downloads CSV file:
+                    <ul>
+                      <li>Filename: <code>sensor-{{ '{' }}metricCode{{ '}' }}-{{ '{' }}timestamp{{ '}' }}.csv</code></li>
+                      <li>Example: <code>sensor-volt_l1-2025-12-24T09:27:15.csv</code></li>
+                    </ul>
+                  </li>
+                  <li><strong>CSV Contains:</strong>
+                    <ul>
+                      <li>Headers: ID, Timestamp, Value, Unit, Status, Quality, Notes</li>
+                      <li>All filtered records (not just current page)</li>
+                      <li>Comma-separated values</li>
+                    </ul>
+                  </li>
+                  <li><strong>Use Cases:</strong>
+                    <ul>
+                      <li>Import ke Excel/Google Sheets untuk charts</li>
+                      <li>Offline analysis dengan Python/R</li>
+                      <li>Backup telemetry data</li>
+                      <li>Client reporting/documentation</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Complete dataset export untuk external analysis
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Edit Channel Threshold -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-sliders me-2"></i>Edit Channel Threshold Settings
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>"Set Threshold"</strong> button di header</li>
+                  <li>Threshold configuration drawer opens</li>
+                  <li>Modify fields:
+                    <ul>
+                      <li><strong>Min Threshold:</strong> Lower alert limit (e.g., 0 VOLT)</li>
+                      <li><strong>Max Threshold:</strong> Upper alert limit (e.g., 100 VOLT)</li>
+                      <li><strong>Precision:</strong> Decimal places (e.g., 0.01 untuk 2 decimal)</li>
+                      <li><strong>Unit:</strong> Measurement unit (VOLT/AMPERE/WATT/etc)</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Save</strong></li>
+                  <li>System akan:
+                    <ul>
+                      <li>Update channel configuration</li>
+                      <li>Recalculate status for all readings (Error/Warning/Online)</li>
+                      <li>Reload telemetry view dengan new status badges</li>
+                      <li>Update threshold card (MIN/MAX displays)</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Important:</strong> Changing thresholds affects alert triggering - coordinate with ops team
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Delete Channel -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-trash me-2"></i>Delete Channel (Permanent Removal)
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>"Delete Channel"</strong> button (red button di header)</li>
+                  <li>Confirmation dialog appears:
+                    <ul>
+                      <li>"Are you sure you want to delete channel "volt_l1"?"</li>
+                      <li>Lists what will be deleted:
+                        <ul>
+                          <li>Channel configuration</li>
+                          <li>All telemetry data</li>
+                          <li>Alert rules</li>
+                        </ul>
+                      </li>
+                      <li>"This action cannot be undone."</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>OK</strong> to confirm, or <strong>Cancel</strong> to abort</li>
+                  <li>If confirmed, system:
+                    <ul>
+                      <li>Deletes channel & all related data</li>
+                      <li>Redirects to <strong>Node Detail View</strong></li>
+                      <li>Shows success notification</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-danger">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Warning:</strong> Deletion is permanent - all historical telemetry data will be lost!
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 5: Understanding Telemetry Data -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-database text-theme me-2"></i>Memahami Telemetry Data Structure</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Reading Structure -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-code-square me-2"></i>Sensor Reading Data Model</h6>
+                  <pre class="bg-dark text-white p-3 rounded mb-2" style="font-size: 0.85rem;"><code>{{ '{' }}
+  "id": 150,                              // Sequential reading number
+  "timestamp": "2025-12-24T09:27:15Z",   // UTC timestamp
+  "value": 220.5,                         // Measurement value
+  "unit": "VOLT",                         // Measurement unit
+  "status": "online",                     // Calculated status based on thresholds
+  "quality": 95,                          // Signal quality percentage
+  "notes": "Mendekati batas warning"     // Optional notes/alerts
+{{ '}' }}</code></pre>
+                </div>
+
+                <!-- Status Determination Logic -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>Status Determination Logic</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Status</th>
+                        <th>Condition</th>
+                        <th>Badge Color</th>
+                        <th>Example (Min=0, Max=100)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="badge bg-success">Online</span></td>
+                        <td>Min ≤ value ≤ Max<br/>AND quality > 90%</td>
+                        <td>Green</td>
+                        <td>Value = 50V (normal range)</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-warning text-dark">Warning</span></td>
+                        <td>Approaching thresholds<br/>(within 10% of limits)</td>
+                        <td>Yellow</td>
+                        <td>Value = 92V (approaching max 100V)</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-danger">Error</span></td>
+                        <td>value < Min OR value > Max</td>
+                        <td>Red</td>
+                        <td>Value = 110V (exceeds max 100V)</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-secondary">Offline</span></td>
+                        <td>No data received<br/>OR quality < 70%</td>
+                        <td>Gray</td>
+                        <td>No reading for 5+ minutes</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Quality Percentage -->
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-signal me-2"></i>Quality Percentage Explained</h6>
+                  <ul class="mb-0">
+                    <li><strong>90-100% (Green):</strong> Excellent signal - reliable data</li>
+                    <li><strong>75-89% (Blue):</strong> Good signal - acceptable data quality</li>
+                    <li><strong>60-74% (Yellow):</strong> Degraded signal - may indicate sensor issues</li>
+                    <li><strong>< 60% (Red):</strong> Poor signal - data unreliable, check sensor/wiring</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Quality affected by: signal noise, wiring issues, sensor drift, interference
+                  </p>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Contoh Penggunaan (Scenarios) -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-text text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Investigate Voltage Spike Alert
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Received alert "Voltage channel volt_l1 exceeded max threshold (110V > 100V max)"</p>
+                <p class="mb-2"><strong>Langkah Investigation:</strong></p>
+                <ol class="mb-2">
+                  <li>Navigate to channel telemetry view (via alert link atau node detail)</li>
+                  <li>Check <strong>Error tab count</strong> - shows 5 error readings</li>
+                  <li>Click <strong>Error tab</strong> to filter problematic readings</li>
+                  <li>Review table:
+                    <ul>
+                      <li>Timestamp: 2025-12-24 09:15:00 - Value: 110.2V (Error)</li>
+                      <li>Timestamp: 2025-12-24 09:15:30 - Value: 112.5V (Error)</li>
+                      <li>Timestamp: 2025-12-24 09:16:00 - Value: 108.3V (Error)</li>
+                      <li>Timestamp: 2025-12-24 09:16:30 - Value: 102.1V (Warning)</li>
+                      <li>Timestamp: 2025-12-24 09:17:00 - Value: 98.5V (Online)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Analysis:</strong>
+                    <ul>
+                      <li>Spike duration: ~2 minutes (9:15-9:17)</li>
+                      <li>Peak value: 112.5V (12.5% over limit)</li>
+                      <li>Recovery: Gradual return to normal</li>
+                      <li><strong>Conclusion:</strong> Temporary voltage surge, not equipment failure</li>
+                    </ul>
+                  </li>
+                  <li>Export CSV dengan period "Hari Ini" untuk documentation</li>
+                  <li>Report to electrical team: "Grid voltage surge at 09:15, lasted 2min, peak 112.5V"</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Root cause identified - grid power issue, not sensor malfunction
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Monitor Daily Temperature Pattern
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Want to analyze daily temperature cycle untuk HVAC optimization</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open temperature channel (e.g., "water_temp" channel)</li>
+                  <li>Set period filter to <strong>"Hari Ini"</strong></li>
+                  <li>Set page size to <strong>100 rows</strong> untuk full day view</li>
+                  <li>Review table data:
+                    <ul>
+                      <li>00:00 - 06:00: Temp drops to 18-20°C (night cooling)</li>
+                      <li>06:00 - 12:00: Temp rises to 22-25°C (morning warmup)</li>
+                      <li>12:00 - 18:00: Peak temp 28-30°C (afternoon heat)</li>
+                      <li>18:00 - 24:00: Temp drops to 22-24°C (evening cooldown)</li>
+                    </ul>
+                  </li>
+                  <li>Export CSV dengan full day data</li>
+                  <li>Import ke Excel, create line chart</li>
+                  <li><strong>Insight:</strong> Peak temp at 14:00 (2PM), minimum at 05:00 (5AM)</li>
+                  <li><strong>Action:</strong> Adjust HVAC schedule to pre-cool at 13:00, reduce power at 05:00</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Benefit:</strong> Data-driven HVAC optimization → 15-20% energy savings
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Troubleshoot Poor Signal Quality
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Sensor readings erratic, suspect wiring issue</p>
+                <p class="mb-2"><strong>Langkah Diagnosis:</strong></p>
+                <ol class="mb-2">
+                  <li>Open suspect channel telemetry view</li>
+                  <li>Set period to <strong>"7 Hari Terakhir"</strong></li>
+                  <li>Check <strong>KUALITAS column</strong>:
+                    <ul>
+                      <li>Day 1-3: Quality 95-100% (green) - normal</li>
+                      <li>Day 4: Quality drops to 75-85% (blue) - degrading</li>
+                      <li>Day 5-7: Quality 60-70% (yellow/red) - poor signal</li>
+                    </ul>
+                  </li>
+                  <li><strong>Pattern Analysis:</strong>
+                    <ul>
+                      <li>Progressive degradation over 4 days</li>
+                      <li>Not sudden failure → rules out power loss</li>
+                      <li>Gradual decline → indicates corrosion atau loose connection</li>
+                    </ul>
+                  </li>
+                  <li>Export CSV untuk detailed analysis</li>
+                  <li><strong>Field Action:</strong>
+                    <ul>
+                      <li>Dispatch technician to check wiring</li>
+                      <li>Found: Corroded terminal block</li>
+                      <li>Fix: Replace terminal, clean connections</li>
+                    </ul>
+                  </li>
+                  <li>After repair:
+                    <ul>
+                      <li>Reload telemetry view</li>
+                      <li>Quality back to 95-100% (green)</li>
+                      <li>Readings stable again</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Quality column helped identify wiring issue before complete sensor failure
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Adjust Threshold After Calibration
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> After sensor calibration, previous thresholds no longer accurate</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Tech team calibrated pressure sensor:
+                    <ul>
+                      <li>Old operating range: 0-100 PSI</li>
+                      <li>New operating range: 10-90 PSI (tighter control)</li>
+                    </ul>
+                  </li>
+                  <li>Open pressure channel telemetry view</li>
+                  <li>Current thresholds:
+                    <ul>
+                      <li>MIN: 0 PSI</li>
+                      <li>MAX: 100 PSI</li>
+                    </ul>
+                  </li>
+                  <li>Click <strong>"Set Threshold"</strong> button</li>
+                  <li>Update configuration:
+                    <ul>
+                      <li>MIN Threshold: 0 → <strong>10 PSI</strong></li>
+                      <li>MAX Threshold: 100 → <strong>90 PSI</strong></li>
+                      <li>Precision: 0.1 (1 decimal place)</li>
+                    </ul>
+                  </li>
+                  <li>Save changes</li>
+                  <li>System recalculates status for all readings:
+                    <ul>
+                      <li>Previous "Online" readings at 5 PSI now show "Error" (below new min 10 PSI)</li>
+                      <li>Previous "Online" readings at 95 PSI now show "Error" (above new max 90 PSI)</li>
+                    </ul>
+                  </li>
+                  <li>Threshold card updates: MIN 10 PSI, MAX 90 PSI</li>
+                  <li>Future readings akan use new thresholds untuk alert triggering</li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Important:</strong> Notify ops team of threshold changes to avoid confusion about new alerts
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 7: Tips & Best Practices -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Common Pitfalls -->
+                <div class="alert alert-danger mb-3">
+                  <h6 class="mb-2"><i class="bi bi-x-circle me-2"></i>Common Pitfalls:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Ignoring quality percentage:</strong> Low quality readings unreliable - don't base decisions on < 70% quality data</li>
+                    <li><strong>Not using status filters:</strong> Browse 1000 records to find errors - use Error tab instead</li>
+                    <li><strong>Wrong time period:</strong> Viewing "Hari Ini" when investigating yesterday's alert - always check period filter</li>
+                    <li><strong>Deleting channel accidentally:</strong> Permanent data loss - always confirm deletion carefully</li>
+                    <li><strong>Exporting without filtering:</strong> Export all 10,000 records when only need errors - filter first</li>
+                    <li><strong>Threshold too tight:</strong> Setting MAX=100.0 when readings fluctuate 99-101 causes constant alerts</li>
+                    <li><strong>Not checking notes column:</strong> Missing important error messages - always read CATATAN field</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Bookmark critical channels:</strong> Frequently monitored channels - bookmark URL untuk quick access</li>
+                    <li><strong>Use custom range for forensics:</strong> Incident at Dec 20 14:00? Use custom period: Dec 20 13:00 - 15:00</li>
+                    <li><strong>Export before threshold changes:</strong> Backup current data before modifying thresholds</li>
+                    <li><strong>Monitor quality trends:</strong> Gradual quality decline = early warning of hardware failure</li>
+                    <li><strong>Use 100 rows/page for pattern detection:</strong> See full day trend without scrolling</li>
+                    <li><strong>Check status tabs first:</strong> Quick health check - if all tabs show 0, system healthy</li>
+                    <li><strong>Combine filters:</strong> "Last 7 days" + "Error status" = show week's problems only</li>
+                    <li><strong>CSV for reporting:</strong> Export → Excel charts → client presentation</li>
+                    <li><strong>Notes field for documentation:</strong> System auto-generates, but useful untuk troubleshooting context</li>
+                    <li><strong>Sync before investigation:</strong> Click "Sync Telemetry" untuk ensure latest data loaded</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Tutorial Terkait -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Pelajari lebih lanjut tentang topik terkait:</p>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-hdd-network me-2"></i>
+                        <a routerLink="/iot/document/module-nodes/node-detail" class="text-decoration-none">
+                          Node Detail View
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Parent view - navigate to channels from node sensors list
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-activity me-2"></i>
+                        <a routerLink="/iot/document/module-dashboard/telemetry-streams" class="text-decoration-none">
+                          Telemetry Streams Dashboard
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Overview of all channels - alternate access point
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-list me-2"></i>
+                        <a routerLink="/iot/document/module-sensors/sensor-types" class="text-decoration-none">
+                          Sensor Types
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Understand sensor categories (voltage, temperature, pressure, etc)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-bell me-2"></i>
+                        <a routerLink="/iot/document/module-alerts/configure-alerts" class="text-decoration-none">
+                          Configure Alert Rules
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Setup alerts based on channel thresholds
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-graph-up me-2"></i>
+                        <a routerLink="/iot/document/module-sensors/sensor-calibration" class="text-decoration-none">
+                          Sensor Calibration
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Calibrate sensors & adjust thresholds
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                        <a routerLink="/iot/document/module-reports/data-export" class="text-decoration-none">
+                          Data Export & Reporting
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Advanced CSV export & report generation
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 9: Quick Reference -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-bookmark text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Status Badges -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-tag me-2"></i>Status Badge Reference</h6>
+                  <ul class="mb-0">
+                    <li><span class="badge bg-success">Online</span> - Normal range, good quality (green)</li>
+                    <li><span class="badge bg-warning text-dark">Warning</span> - Approaching limits (yellow)</li>
+                    <li><span class="badge bg-danger">Error</span> - Out of threshold range (red)</li>
+                    <li><span class="badge bg-secondary">Offline</span> - No data / poor quality (gray)</li>
+                  </ul>
+                </div>
+
+                <!-- Period Filter Options -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-calendar me-2"></i>Period Filter Options</h6>
+                  <ul class="mb-0">
+                    <li><strong>Hari Ini:</strong> 00:00 today → now</li>
+                    <li><strong>Kemarin:</strong> 00:00 yesterday → 23:59 yesterday</li>
+                    <li><strong>7 Hari Terakhir:</strong> Now - 7 days → now (default)</li>
+                    <li><strong>30 Hari Terakhir:</strong> Now - 30 days → now</li>
+                    <li><strong>Bulan Ini:</strong> 1st of month → now</li>
+                    <li><strong>Bulan Lalu:</strong> 1st of last month → last day of last month</li>
+                    <li><strong>Custom Range:</strong> User-specified start & end dates</li>
+                  </ul>
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-keyboard me-2"></i>Keyboard Shortcuts</h6>
+                  <ul class="mb-0">
+                    <li><kbd>F5</kbd> - Refresh page (reload latest telemetry)</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>E</kbd> - Export CSV</li>
+                    <li><kbd>Alt</kbd> + <kbd>←</kbd> - Back to Node Detail</li>
+                    <li><kbd>←</kbd> / <kbd>→</kbd> - Previous/Next page (when pagination focused)</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            <card>
+              <card-body>
+                <h5 class="mb-3">Daftar Isi</h5>
+                <nav-scroll class="nav flex-column">
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Sensor Detail View?
+                    </a>
+                    <a href="#access" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Akses
+                    </a>
+                    <a href="#interface" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Interface & Features
+                    </a>
+                    <a href="#usage" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Telemetry Data
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+              </card-body>
+            </card>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

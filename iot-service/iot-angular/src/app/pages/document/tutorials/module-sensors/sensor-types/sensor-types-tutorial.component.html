@@ -1,0 +1,1027 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-sensors">Module: Sensors</a></li>
+        <li class="breadcrumb-item active">Sensor Types</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-thermometer text-theme me-2"></i>
+        Sensor Types Management
+        <small class="d-block mt-2 text-white-transparent-7">Master kategori sensor, unit, precision, dan conversion formula</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Apa itu Sensor Types? -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Sensor Types?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Sensor Types</strong> adalah halaman untuk mengelola <strong>master data kategori sensor</strong> 
+                  yang digunakan dalam sistem IoT, termasuk unit pengukuran, precision, dan formula konversi.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-thermometer fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Apa itu Sensor Type?</h6>
+                      <p class="mb-0 text-white-transparent-8">
+                        Sensor Type adalah <strong>template/kategori sensor</strong> yang mendefinisikan:
+                        jenis sensor (Temperature, Humidity, Pressure, dll), default unit (°C, %, kPa), 
+                        precision (decimal places), dan conversion formula (jika perlu transformasi data).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <h6 class="mb-2">Fungsi Utama:</h6>
+                <ul class="mb-3">
+                  <li>Melihat semua sensor types yang tersedia di platform</li>
+                  <li>Add new sensor type untuk expand sensor support</li>
+                  <li>Edit existing type untuk update unit/precision/formula</li>
+                  <li>Define conversion formula untuk sensor non-linear</li>
+                  <li>Set precision untuk control data accuracy & storage</li>
+                  <li>Standardize unit pengukuran across platform</li>
+                </ul>
+
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Use Case:</strong> Ketika add sensor baru ke node, Anda pilih Sensor Type (contoh: "temperature") 
+                  yang automatically set unit (°C), precision (2 decimals), dan conversion formula (jika ada).
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Navigasi ke Sensor Types -->
+          <div id="getting-started" class="mb-5">
+            <h4><i class="bi bi-compass text-theme me-2"></i>Cara Mengakses</h4>
+            
+            <card>
+              <card-body>
+                <h6 class="mb-3">Navigasi:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-3">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-menu-button-wide text-theme me-2"></i>
+                    <span class="text-white-transparent-7">Sidebar Menu</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-white">IoT</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-white">Configuration</span>
+                    <i class="bi bi-chevron-right mx-2 text-white-transparent-5"></i>
+                    <span class="text-theme fw-bold">Sensor Types</span>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-3">
+                  <i class="bi bi-shield-lock me-2"></i>
+                  <strong>Role Access:</strong> Halaman ini hanya dapat diakses oleh <code>Super Admin</code> dan <code>Admin</code>
+                  <br>
+                  <small class="text-white-transparent-7">Owner users tidak bisa manage sensor types (system-wide config)</small>
+                </div>
+
+                <p class="mb-2"><strong>URL Path:</strong></p>
+                <div class="bg-dark bg-opacity-50 p-2 rounded font-monospace text-white-transparent-8 mb-0">
+                  /iot/config/sensor-types
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface Overview dengan Screenshot -->
+          <div id="features" class="mb-5">
+            <h4><i class="bi bi-layout-text-window text-theme me-2"></i>Memahami Interface</h4>
+            
+            <card>
+              <card-body>
+                <!-- Screenshot -->
+                <div class="mb-4 text-center">
+                  <img src="assets/tutorials/images/module-sensors/sensor-types-interface.png" 
+                       alt="Sensor Types Interface" 
+                       class="img-fluid border border-white-transparent-2 rounded shadow-lg">
+                  <p class="text-white-transparent-6 small mt-2 mb-0">
+                    <i class="bi bi-image me-1"></i>Screenshot: Sensor Types Management Interface
+                  </p>
+                </div>
+
+                <!-- Interface Components -->
+                <h6 class="mb-3">Komponen Interface:</h6>
+                
+                <!-- 1. Header Area -->
+                <div class="mb-4">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">1</span>
+                    <h6 class="mb-0">Header Area</h6>
+                  </div>
+                  <div class="ps-4">
+                    <ul class="mb-0">
+                      <li><strong>Page Title:</strong> "Sensor Types"</li>
+                      <li><strong>Description:</strong> "Master kategori sensor, unit, dan formula konversi"</li>
+                      <li><strong>Search Box:</strong> Cari by kategori / unit / formula</li>
+                      <li><strong>Add Button:</strong> 
+                        <span class="badge bg-theme ms-1">
+                          <i class="fa fa-plus me-1"></i>Tambah Sensor Type
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- 2. Sensor Types Table -->
+                <div class="mb-0">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-theme me-2">2</span>
+                    <h6 class="mb-0">Sensor Types Table</h6>
+                  </div>
+                  <div class="ps-4">
+                    <p class="mb-2">Table columns dengan informasi lengkap setiap sensor type:</p>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-dark table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Column</th>
+                            <th>Deskripsi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><strong>Category</strong></td>
+                            <td>
+                              Kategori sensor dengan badge:<br>
+                              <span class="badge bg-primary">temperature</span>
+                              <span class="badge bg-primary">humidity</span>
+                              <span class="badge bg-primary">pressure</span> dll
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><strong>Unit</strong></td>
+                            <td>
+                              Default unit pengukuran (uppercase badge):<br>
+                              <span class="badge bg-dark">°C</span>
+                              <span class="badge bg-dark">%</span>
+                              <span class="badge bg-dark">KPA</span>
+                              <span class="badge bg-dark">PPM</span> dll
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><strong>Precision</strong></td>
+                            <td>Decimal places untuk data (0, 1, 2, 3, dll) - menentukan akurasi data storage</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Conversion Formula</strong></td>
+                            <td>
+                              • Formula code (green text) - untuk sensor non-linear<br>
+                              • "Linear (default)" - jika tidak ada formula custom<br>
+                              <small class="text-muted">Contoh: <code>x * 0.01</code>, <code>(x - 32) * 5/9</code></small>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><strong>Actions</strong></td>
+                            <td>
+                              • <button class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i></button> Edit type<br>
+                              • <button class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></button> Delete type
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Cara Menggunakan -->
+          <div id="next-steps" class="mb-5">
+            <h4><i class="bi bi-play-circle text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- Search Sensor Types -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-search me-2"></i>Search Sensor Types
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Ketik di <strong>Search Box</strong></li>
+                  <li>Anda bisa search by:
+                    <ul>
+                      <li><strong>Category:</strong> "temperature", "humidity", "pressure"</li>
+                      <li><strong>Unit:</strong> "°C", "%", "kPa", "ppm"</li>
+                      <li><strong>Formula:</strong> Bagian dari conversion formula</li>
+                    </ul>
+                  </li>
+                  <li>Table otomatis filter real-time saat mengetik</li>
+                  <li>Hapus text untuk show all sensor types</li>
+                </ol>
+
+                <div class="alert alert-success mb-0">
+                  <i class="bi bi-lightbulb me-2"></i>
+                  <strong>Tip:</strong> Search "temp" untuk quick find temperature-related sensors!
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Add New Sensor Type -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-plus-circle me-2"></i>Add New Sensor Type
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Klik button <strong>"Tambah Sensor Type"</strong></li>
+                  <li>Drawer akan slide-in dari kanan</li>
+                  <li>Fill in form fields:
+                    <ul>
+                      <li><strong>Category:</strong> Sensor category name (lowercase, contoh: "soil_moisture")</li>
+                      <li><strong>Default Unit:</strong> Unit pengukuran (contoh: "%", "°C", "ppm")</li>
+                      <li><strong>Precision:</strong> Decimal places (0-5, contoh: 2 untuk 2 decimals)</li>
+                      <li><strong>Conversion Formula:</strong> (Optional) Formula untuk convert raw data
+                        <br><small class="text-muted">Gunakan 'x' untuk raw value, contoh: <code>x * 0.01</code></small>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>"Save"</strong></li>
+                  <li>New sensor type muncul di table</li>
+                </ol>
+
+                <div class="alert alert-warning mb-0">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Note:</strong> Category name harus unique! System akan reject jika duplicate.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Edit Existing Type -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-pencil me-2"></i>Edit Existing Sensor Type
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Cari sensor type yang ingin di-edit di table</li>
+                  <li>Klik button <strong>Edit</strong> (icon pensil biru) di kolom Actions</li>
+                  <li>Drawer akan open dengan form pre-filled</li>
+                  <li>Update field yang diperlukan:
+                    <ul>
+                      <li>Unit (jika ada standar baru)</li>
+                      <li>Precision (jika perlu akurasi lebih/kurang)</li>
+                      <li>Conversion Formula (jika ada penyesuaian)</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>"Save"</strong> untuk apply changes</li>
+                  <li>Table akan refresh dengan data terbaru</li>
+                </ol>
+
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Common Edit:</strong> Update precision dari 1 ke 2 untuk temperature sensors agar lebih akurat.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Delete Sensor Type -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-trash me-2"></i>Delete Sensor Type
+              </card-header>
+              <card-body>
+                <ol class="mb-3">
+                  <li>Cari sensor type yang ingin dihapus</li>
+                  <li>Klik button <strong>Delete</strong> (icon trash merah) di kolom Actions</li>
+                  <li>Confirm deletion di popup dialog</li>
+                  <li>Sensor type will be removed dari system</li>
+                </ol>
+
+                <div class="alert alert-danger mb-0">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Warning!</strong> Hanya delete sensor type yang <strong>tidak digunakan</strong> oleh sensor aktif! 
+                  Deleting type yang masih digunakan dapat cause data integrity issues.
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Define Conversion Formula -->
+            <card class="mb-3">
+              <card-header class="fw-bold bg-dark bg-opacity-50">
+                <i class="bi bi-calculator me-2"></i>Define Conversion Formula
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Kapan menggunakan conversion formula?</strong></p>
+                <ul class="mb-3">
+                  <li>Sensor mengirim raw value yang perlu di-convert</li>
+                  <li>Unit conversion (Fahrenheit ke Celsius)</li>
+                  <li>Calibration offset atau scaling</li>
+                  <li>Non-linear sensor response</li>
+                </ul>
+
+                <p class="mb-2"><strong>Formula syntax:</strong></p>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-3">
+                  <p class="mb-2">Gunakan <code class="text-success">x</code> untuk represent raw value dari sensor</p>
+                  <p class="mb-2"><strong>Contoh formula:</strong></p>
+                  <ul class="mb-0">
+                    <li><code class="text-success">x * 0.01</code> - Scale down by 100</li>
+                    <li><code class="text-success">(x - 32) * 5/9</code> - Fahrenheit to Celsius</li>
+                    <li><code class="text-success">x / 10 + 5</code> - Scale & offset</li>
+                    <li><code class="text-success">x * x</code> - Quadratic response</li>
+                  </ul>
+                </div>
+
+                <div class="alert alert-success mb-0">
+                  <i class="bi bi-stars me-2"></i>
+                  <strong>Pro Tip:</strong> Test formula dengan sample data sebelum deploy ke production sensors!
+                </div>
+              </card-body>
+            </card>
+
+          </div>
+
+          <!-- Section 5: Understanding Data -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-graph-up text-theme me-2"></i>Memahami Data Sensor Type</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Sensor Type Structure -->
+                <h6 class="mb-3">Sensor Type Data Structure:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-4">
+                  <pre class="text-white-transparent-8 mb-0" style="font-family: 'Courier New', monospace; font-size: 13px;">
+<span class="text-theme">Sensor Type</span> (Template Master)
+├── <span class="text-info">Category:</span> temperature (unique identifier)
+├── <span class="text-success">Default Unit:</span> °C (Celsius)
+├── <span class="text-warning">Precision:</span> 2 (decimal places)
+│   └── Example: 25.73°C (2 decimals)
+│
+├── <span class="text-info">Conversion Formula:</span> x * 0.01
+│   └── Raw: 2573 → Converted: 25.73°C
+│
+└── <span class="text-success">Used By:</span> All temperature sensors in system
+    ├── Node 001 - Sensor T1 (outdoor temp)
+    ├── Node 002 - Sensor T2 (indoor temp)
+    └── Node 003 - Sensor T3 (water temp)
+                  </pre>
+                </div>
+
+                <!-- Common Sensor Categories -->
+                <h6 class="mb-3">Common Sensor Categories:</h6>
+                <div class="table-responsive mb-4">
+                  <table class="table table-sm table-dark table-bordered">
+                    <thead>
+                      <tr>
+                        <th width="25%">Category</th>
+                        <th width="15%">Unit</th>
+                        <th width="15%">Precision</th>
+                        <th width="45%">Use Case</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="badge bg-primary">temperature</span></td>
+                        <td><code>°C</code></td>
+                        <td>2</td>
+                        <td>Suhu lingkungan, air, mesin</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">humidity</span></td>
+                        <td><code>%</code></td>
+                        <td>1</td>
+                        <td>Kelembaban udara relatif</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">pressure</span></td>
+                        <td><code>kPa</code></td>
+                        <td>2</td>
+                        <td>Tekanan atmosfer/air</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">water_level</span></td>
+                        <td><code>m</code></td>
+                        <td>2</td>
+                        <td>Ketinggian air di tank/sungai</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">flow_rate</span></td>
+                        <td><code>L/min</code></td>
+                        <td>2</td>
+                        <td>Aliran air/gas</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">co2</span></td>
+                        <td><code>ppm</code></td>
+                        <td>0</td>
+                        <td>Kualitas udara CO2</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">ph</span></td>
+                        <td><code>pH</code></td>
+                        <td>2</td>
+                        <td>Keasaman air</td>
+                      </tr>
+                      <tr>
+                        <td><span class="badge bg-primary">voltage</span></td>
+                        <td><code>V</code></td>
+                        <td>2</td>
+                        <td>Tegangan listrik/baterai</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Precision Impact -->
+                <h6 class="mb-3">Precision (Decimal Places) Impact:</h6>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-success mb-2">Precision: 0</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>Format:</strong> Integer only (25)<br>
+                        <strong>Best For:</strong> CO2 ppm, count sensors, on/off states<br>
+                        <strong>Storage:</strong> Minimal (most efficient)
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-info mb-2">Precision: 1</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>Format:</strong> 1 decimal (25.7)<br>
+                        <strong>Best For:</strong> Humidity %, basic temperature<br>
+                        <strong>Storage:</strong> Small
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-warning mb-2">Precision: 2</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>Format:</strong> 2 decimals (25.73)<br>
+                        <strong>Best For:</strong> Temperature, pressure, pH, voltage<br>
+                        <strong>Storage:</strong> Medium (most common)
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="text-danger mb-2">Precision: 3+</h6>
+                      <p class="small text-white-transparent-7 mb-2">
+                        <strong>Format:</strong> 3+ decimals (25.735)<br>
+                        <strong>Best For:</strong> Scientific instruments, high-precision sensors<br>
+                        <strong>Storage:</strong> Larger (use only if needed)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Conversion Formula Examples -->
+                <h6 class="mb-3">Conversion Formula Examples:</h6>
+                <div class="bg-dark bg-opacity-50 p-3 rounded">
+                  <table class="table table-sm table-borderless text-white-transparent-8 mb-0">
+                    <thead>
+                      <tr>
+                        <th width="30%">Scenario</th>
+                        <th width="25%">Formula</th>
+                        <th width="45%">Explanation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Sensor raw 0-1023</td>
+                        <td><code class="text-success">x * 0.0977</code></td>
+                        <td>Convert ADC 10-bit ke 0-100 range</td>
+                      </tr>
+                      <tr>
+                        <td>Fahrenheit sensor</td>
+                        <td><code class="text-success">(x - 32) * 5/9</code></td>
+                        <td>Convert F ke Celsius</td>
+                      </tr>
+                      <tr>
+                        <td>mV ke V</td>
+                        <td><code class="text-success">x / 1000</code></td>
+                        <td>Convert millivolt to volt</td>
+                      </tr>
+                      <tr>
+                        <td>Offset calibration</td>
+                        <td><code class="text-success">x - 5.2</code></td>
+                        <td>Adjust sensor offset error</td>
+                      </tr>
+                      <tr>
+                        <td>Scale & offset</td>
+                        <td><code class="text-success">x * 0.1 + 2</code></td>
+                        <td>Scale down dan add offset</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Common Scenarios -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-check text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Add Soil Moisture Sensor Type
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Deploy agriculture IoT project perlu soil moisture sensors</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik "Tambah Sensor Type"</li>
+                  <li>Fill form:
+                    <ul>
+                      <li>Category: <code>soil_moisture</code></li>
+                      <li>Default Unit: <code>%</code></li>
+                      <li>Precision: <code>1</code> (1 decimal cukup)</li>
+                      <li>Conversion Formula: <code>x * 0.1</code> (if sensor output 0-1000 untuk 0-100%)</li>
+                    </ul>
+                  </li>
+                  <li>Save → New type ready!</li>
+                  <li>Sekarang bisa add soil moisture sensors ke nodes dengan auto unit & formula</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Soil moisture sensor type ready untuk agriculture project
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Update Temperature Precision
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Temperature sensor precision 1 decimal tidak cukup akurat</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Search "temperature" di sensor types</li>
+                  <li>Klik Edit button</li>
+                  <li>Update Precision: <code>1</code> → <code>2</code></li>
+                  <li>Save changes</li>
+                  <li>Future temperature sensors akan save dengan 2 decimal precision (25.73°C)</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Improved temperature data accuracy untuk better analytics
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Add Fahrenheit Temperature Type
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Client di US menggunakan Fahrenheit, perlu support</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik "Tambah Sensor Type"</li>
+                  <li>Fill form:
+                    <ul>
+                      <li>Category: <code>temperature_f</code></li>
+                      <li>Default Unit: <code>°F</code></li>
+                      <li>Precision: <code>2</code></li>
+                      <li>Conversion Formula: <code>(x - 32) * 5/9</code> (convert to Celsius untuk storage)</li>
+                    </ul>
+                  </li>
+                  <li>Save</li>
+                  <li>System akan auto convert Fahrenheit ke Celsius untuk standardized storage</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Support Fahrenheit sensors dengan automatic conversion to Celsius
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Calibrate Sensor with Offset
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> pH sensor selalu read 0.3 terlalu tinggi (calibration error)</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Search "ph" sensor type</li>
+                  <li>Klik Edit</li>
+                  <li>Add Conversion Formula: <code>x - 0.3</code></li>
+                  <li>Save</li>
+                  <li>All pH readings akan automatically adjusted by -0.3</li>
+                  <li>Monitor beberapa readings untuk validate correction</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Corrected pH readings tanpa perlu ganti hardware
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 5 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-5-circle me-2"></i>Scenario: Custom Analog Sensor
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Custom analog sensor output 0-4095 (12-bit ADC) untuk 0-100 PSI</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Create new sensor type:
+                    <ul>
+                      <li>Category: <code>pressure_psi</code></li>
+                      <li>Default Unit: <code>PSI</code></li>
+                      <li>Precision: <code>1</code></li>
+                      <li>Conversion Formula: <code>x * 0.0244</code> (4095 → 100, so x/4095*100 = x*0.0244)</li>
+                    </ul>
+                  </li>
+                  <li>Save dan test dengan sample values:
+                    <ul>
+                      <li>Raw: 0 → 0.0 PSI ✓</li>
+                      <li>Raw: 2048 → 50.0 PSI ✓</li>
+                      <li>Raw: 4095 → 100.0 PSI ✓</li>
+                    </ul>
+                  </li>
+                  <li>Deploy sensors dengan type ini</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Custom analog sensor fully integrated dengan proper scaling
+                </p>
+              </card-body>
+            </card>
+
+          </div>
+
+          <!-- Section 7: Tips & Best Practices -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Quick Tips -->
+                <div class="alert alert-success mb-3">
+                  <h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>Quick Tips:</h6>
+                  <ul class="mb-0">
+                    <li>Use lowercase & underscores untuk category names (temperature_f, soil_moisture)</li>
+                    <li>Keep precision reasonable - higher precision = more storage space</li>
+                    <li>Test conversion formulas dengan sample data before production</li>
+                    <li>Document complex formulas di naming atau external docs</li>
+                    <li>Standardize units across platform (prefer SI units: °C, kPa, m)</li>
+                    <li>Group related sensors (temp_indoor, temp_outdoor vs just temp1, temp2)</li>
+                  </ul>
+                </div>
+
+                <!-- Warnings -->
+                <div class="alert alert-warning mb-3">
+                  <h6 class="mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Perhatian:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Changing precision:</strong> Affects NEW sensor readings only, tidak change historical data</li>
+                    <li><strong>Formula errors:</strong> Invalid formula = sensor data corrupt! Always validate!</li>
+                    <li><strong>Delete restrictions:</strong> Cannot delete types used by active sensors</li>
+                    <li><strong>Unit consistency:</strong> Mixing units (°C & °F) dapat cause confusion - standardize!</li>
+                    <li><strong>Over-precision:</strong> Precision 5 untuk temperature sensor = overkill & waste storage</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li>Create sensor type naming convention: <code>{{ '{' }}measurement{{ '}' }}_{{ '{' }}variant{{ '}' }}</code></li>
+                    <li>Use version suffixes untuk breaking changes: <code>temp_v2</code> instead of modify existing</li>
+                    <li>Document formula logic: Keep spreadsheet dengan test cases & expected outputs</li>
+                    <li>Monitor data after formula changes untuk detect conversion errors early</li>
+                    <li>Prefer linear conversions (simpler, faster) unless sensor truly non-linear</li>
+                    <li>Setup alerts untuk sensor readings outside expected range (detect formula issues)</li>
+                    <li>Backup sensor types config before major changes</li>
+                    <li>Use precision 2 sebagai default untuk most sensors (good balance)</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Related Tutorials -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Setelah memahami Sensor Types, lanjutkan dengan tutorial berikut:</p>
+                
+                <div class="row g-3">
+                  <!-- Add Sensor to Node -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Add Sensor to Node
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Cara menambahkan sensor ke node menggunakan sensor type yang sudah configured
+                      </p>
+                      <a routerLink="/iot/document/module-sensors/add-sensor" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Sensor Catalog -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Sensor Catalog
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Browse sensor catalog dengan pre-configured types & formulas
+                      </p>
+                      <a routerLink="/iot/document/module-sensors/sensor-catalog" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Formula Builder -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        Formula Builder Guide
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Advanced guide untuk membuat complex conversion formulas
+                      </p>
+                      <a routerLink="/iot/document/advanced/formula-builder" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Telemetry Data -->
+                  <div class="col-md-6">
+                    <div class="bg-dark bg-opacity-50 p-3 rounded h-100">
+                      <h6 class="mb-2">
+                        <i class="bi bi-arrow-right-circle text-theme me-2"></i>
+                        View Telemetry Data
+                      </h6>
+                      <p class="text-white-transparent-7 small mb-2">
+                        Monitor sensor readings dengan converted values dari formula
+                      </p>
+                      <a routerLink="/iot/document/telemetry/view-data" class="btn btn-sm btn-outline-theme">
+                        Lihat Tutorial <i class="bi bi-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Quick Reference Card -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-card-checklist text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                <div class="bg-dark bg-opacity-75 p-4 rounded border border-theme">
+                  <h5 class="text-center text-theme mb-4">
+                    <i class="bi bi-bookmark-star me-2"></i>SENSOR TYPES QUICK REFERENCE
+                  </h5>
+                  
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-tag text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Category:</strong>
+                          <span class="text-white-transparent-7 d-block small">Unique sensor identifier</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-rulers text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Unit:</strong>
+                          <span class="text-white-transparent-7 d-block small">Measurement unit (°C, %, kPa)</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-bullseye text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Precision:</strong>
+                          <span class="text-white-transparent-7 d-block small">Decimal places (0-5)</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-calculator text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Formula:</strong>
+                          <span class="text-white-transparent-7 d-block small">Conversion logic (optional)</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-plus-circle text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Add Type:</strong>
+                          <span class="text-white-transparent-7 d-block small">Create new sensor category</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-pencil text-theme fs-5 me-2"></i>
+                        <div>
+                          <strong>Edit Type:</strong>
+                          <span class="text-white-transparent-7 d-block small">Update unit/precision/formula</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <hr class="border-theme my-3">
+                  
+                  <div class="text-center">
+                    <small class="text-white-transparent-6">
+                      <i class="bi bi-link me-1"></i>
+                      URL: <code class="text-theme">/iot/config/sensor-types</code>
+                    </small>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Completion Badge -->
+          <div class="text-center mb-5">
+            <div class="alert alert-success d-inline-block">
+              <i class="bi bi-check-circle fs-3 me-2"></i>
+              <strong>Tutorial Complete!</strong>
+              <p class="mb-0 mt-2 text-white-transparent-8">
+                Anda sekarang sudah memahami cara manage Sensor Types module
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sidebar - Tutorial Info -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            
+            <!-- Tutorial Info Card -->
+            <card class="mb-3">
+              <card-body>
+                <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>Tutorial Info</h6>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Category</small>
+                  <span class="badge bg-theme">Module: Sensors</span>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Difficulty</small>
+                  <span class="badge bg-warning">Intermediate</span>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Estimated Time</small>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-clock text-theme me-2"></i>
+                    <span>15 minutes</span>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <small class="text-white-transparent-6 d-block mb-1">Role Access</small>
+                  <div>
+                    <span class="badge bg-danger me-1">Super Admin</span>
+                    <span class="badge bg-warning">Admin</span>
+                  </div>
+                </div>
+
+                <hr class="border-white-transparent-2">
+
+                <div>
+                  <small class="text-white-transparent-6 d-block mb-2">Tags</small>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span class="badge bg-secondary">sensors</span>
+                    <span class="badge bg-secondary">types</span>
+                    <span class="badge bg-secondary">formula</span>
+                    <span class="badge bg-secondary">units</span>
+                    <span class="badge bg-secondary">precision</span>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+
+            <!-- Table of Contents -->
+            <card>
+              <card-header class="fw-bold">
+                <i class="bi bi-list-ul me-2"></i>Sections
+              </card-header>
+              <card-body class="p-0">
+                <nav-scroll>
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Sensor Types?
+                    </a>
+                    <a href="#getting-started" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Mengakses
+                    </a>
+                    <a href="#features" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Interface
+                    </a>
+                    <a href="#next-steps" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Data Sensor Type
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+              </card-body>
+            </card>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,977 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-owners">Module: Owners</a></li>
+        <li class="breadcrumb-item active">Edit Owner</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-pencil-square text-theme me-2"></i>
+        Edit Owner
+        <small class="d-block mt-2 text-white-transparent-7">Modify existing owner profile, contact info & data forwarding settings</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Apa itu Edit Owner? -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Edit Owner?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Edit Owner</strong> adalah halaman <strong>form untuk mengubah data owner yang sudah ada</strong> di dalam IoT platform. 
+                  Form ini menggunakan <strong>same component dengan Create Owner</strong>, namun pre-filled dengan data existing.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-pencil-square fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Edit vs Create - Same Form, Different Mode</h6>
+                      <p class="mb-2">
+                        Component <code>OwnersAddPage</code> digunakan untuk both purposes:
+                      </p>
+                      <ul class="mb-0">
+                        <li><strong>Create Mode:</strong> Route <code>/iot/owners/add</code> → Empty form → Save button</li>
+                        <li><strong>Edit Mode:</strong> Route <code>/iot/owners/edit/{{ '{' }}ownerId{{ '}' }}</code> → Pre-filled form → Update button</li>
+                        <li>Mode detected by presence of <code>ownerId</code> in route parameters</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kapan Perlu Edit Owner?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Contact Change:</strong> PIC (Person in Charge) resigned atau pindah posisi</li>
+                    <li><strong>Company Info Update:</strong> Company name change, merger, acquisition</li>
+                    <li><strong>SLA Upgrade/Downgrade:</strong> Contract renewal dengan different service level</li>
+                    <li><strong>Data Forwarding Changes:</strong> Add/remove webhook, change endpoint URL, configure database</li>
+                    <li><strong>Address Update:</strong> Office relocation</li>
+                    <li><strong>Email/Phone Update:</strong> Contact information change</li>
+                    <li><strong>Batch Size Tuning:</strong> Optimize data forwarding performance</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Cara Akses Edit Owner Form -->
+          <div id="access" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Edit Owner Form</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Ada beberapa cara untuk mengakses <strong>Edit Owner Form</strong>:</p>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Owner List Page (Most Common)</h6>
+                  <ol class="mb-0">
+                    <li>Navigate to <strong>IoT → Owners</strong> menu</li>
+                    <li>Find owner yang ingin di-edit di table</li>
+                    <li>Klik tombol <strong>"Edit"</strong> (pencil icon) di kolom Actions</li>
+                    <li>Edit Owner form akan terbuka dengan data pre-filled</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Owner Detail View</h6>
+                  <ol class="mb-0">
+                    <li>Open <strong>Owner Detail View</strong> (via owner list atau direct link)</li>
+                    <li>Klik tombol <strong>"Edit Project"</strong> di header atau footer</li>
+                    <li>Navigate to Edit Owner form</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Via Direct URL</h6>
+                  <p class="mb-2">Akses langsung via browser (if you know owner UUID):</p>
+                  <pre class="bg-dark text-white p-2 rounded mb-0"><code>https://your-domain.com/iot/owners/edit/{{ '{' }}ownerUUID{{ '}' }}</code></pre>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface & Differences from Create -->
+          <div id="interface" class="mb-5">
+            <h4><i class="bi bi-window text-theme me-2"></i>Interface & Differences from Create</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Interface <strong>Edit Owner</strong> sama dengan Create Owner, dengan beberapa perbedaan:</p>
+
+                <div class="mb-4">
+                  <img src="assets/tutorials/images/module-owners/edit-owner-form.png" 
+                       alt="Edit Owner Form" 
+                       class="img-fluid rounded border">
+                </div>
+
+                <!-- Key Differences -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-arrows-angle-contract me-2"></i>Key Differences from Create Mode</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Aspect</th>
+                        <th>Create Mode</th>
+                        <th>Edit Mode</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Page Title</strong></td>
+                        <td>"Create Owner"</td>
+                        <td>"Edit Owner"</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Breadcrumb</strong></td>
+                        <td>IoT → Owners → Create</td>
+                        <td>IoT → Owners → Edit</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Form Fields</strong></td>
+                        <td>Empty (default values)</td>
+                        <td>Pre-filled dengan existing data</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Submit Button</strong></td>
+                        <td>"Save Owner"</td>
+                        <td>"Update Owner"</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Loading State</strong></td>
+                        <td>No loading (form ready)</td>
+                        <td>Loading spinner while fetching data (1-2 sec)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>API Call</strong></td>
+                        <td>POST /owners</td>
+                        <td>PUT /owners/{{ '{' }}id{{ '}' }}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Success Redirect</strong></td>
+                        <td>Owner List (dengan highlight)</td>
+                        <td>Owner Detail View (show updated data)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Same Form Fields -->
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-list-check me-2"></i>Same Form Fields (Editable)</h6>
+                  <p class="mb-2">All fields dari Create Owner form available untuk edit:</p>
+                  <ul class="mb-0">
+                    <li><strong>Basic Info:</strong> Owner Name, Industry</li>
+                    <li><strong>Contact Info:</strong> Contact Person, Email, Phone</li>
+                    <li><strong>Service Level:</strong> SLA Level (Platinum/Gold/Silver/Bronze)</li>
+                    <li><strong>Additional Details:</strong> Address, Notes</li>
+                    <li><strong>Data Forwarding:</strong> Webhook toggle/URL, Database toggle, Batch Size</li>
+                  </ul>
+                  <p class="mb-0 mt-2 text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Validation rules sama dengan Create mode - required fields tetap required
+                  </p>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Cara Menggunakan -->
+          <div id="usage" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- Edit Owner Basic Info -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-pencil me-2"></i>Edit Owner Basic Information
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li><strong>Navigate to Edit Form:</strong>
+                    <ul>
+                      <li>Go to <strong>IoT → Owners</strong></li>
+                      <li>Find owner (e.g., "PT ADHI WATER")</li>
+                      <li>Klik <strong>Edit</strong> button (pencil icon)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Wait for Data Loading:</strong>
+                    <ul>
+                      <li>Spinner shows: "Loading owner data..."</li>
+                      <li>Form populates dengan existing data (1-2 seconds)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Modify Fields:</strong>
+                    <ul>
+                      <li><strong>Example 1 - Change Name:</strong>
+                        <ul>
+                          <li>Old: "PT ADHI WATER"</li>
+                          <li>New: "PT ADHI WATER INDONESIA" (legal name change)</li>
+                        </ul>
+                      </li>
+                      <li><strong>Example 2 - Change Industry:</strong>
+                        <ul>
+                          <li>Old: "Manufacturing"</li>
+                          <li>New: "Water Treatment" (reclassification)</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                  <li><strong>Review Changes:</strong>
+                    <ul>
+                      <li>Check <strong>Owner Summary</strong> panel - verify new info</li>
+                      <li>Check <strong>Payload Preview</strong> - see updated JSON</li>
+                    </ul>
+                  </li>
+                  <li><strong>Submit Update:</strong>
+                    <ul>
+                      <li>Klik <strong>"Update Owner"</strong> button</li>
+                      <li>Button shows "Updating..." during save</li>
+                      <li>Success → Redirect to Owner Detail View</li>
+                      <li>Toast notification: "Owner updated successfully"</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Owner info updated, changes reflected di all views
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Update Contact Person -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-person-badge me-2"></i>Update Contact Person (PIC Change)
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Scenario:</strong> Previous PIC resigned, need to update to new contact</p>
+                <ol class="mb-2">
+                  <li>Open Edit Owner form</li>
+                  <li><strong>Update Contact Fields:</strong>
+                    <ul>
+                      <li><strong>Contact Person:</strong>
+                        <ul>
+                          <li>Old: "Budi Santoso"</li>
+                          <li>New: "Siti Nurhaliza" (new Operations Manager)</li>
+                        </ul>
+                      </li>
+                      <li><strong>Contact Email:</strong>
+                        <ul>
+                          <li>Old: "budi.santoso&#64;adhiwater.com"</li>
+                          <li>New: "siti.nurhaliza&#64;adhiwater.com"</li>
+                        </ul>
+                      </li>
+                      <li><strong>Contact Phone:</strong>
+                        <ul>
+                          <li>Old: "+62 812-3456-7890"</li>
+                          <li>New: "+62 813-9876-5432"</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>Keep other fields unchanged (name, industry, SLA, etc)</li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li>System will:
+                    <ul>
+                      <li>Update owner contact info</li>
+                      <li>Send email notification ke new contact (welcome email)</li>
+                      <li>Update notification recipients untuk alerts & reports</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Important:</strong> Verify new email valid sebelum update - akan digunakan untuk critical notifications
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Upgrade SLA Level -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-arrow-up-circle me-2"></i>Upgrade/Downgrade SLA Level
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Scenario:</strong> Client upgraded contract dari Gold ke Platinum SLA</p>
+                <ol class="mb-2">
+                  <li>Open Edit Owner form</li>
+                  <li>Change <strong>SLA Level</strong> dropdown:
+                    <ul>
+                      <li>Old: <span class="badge bg-secondary">Gold</span></li>
+                      <li>New: <span class="badge bg-warning text-dark">Platinum</span></li>
+                    </ul>
+                  </li>
+                  <li>Optionally update <strong>Notes</strong>:
+                    <ul>
+                      <li>Add: "Upgraded to Platinum SLA on Dec 24, 2025 - Contract renewal"</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li>System akan:
+                    <ul>
+                      <li>Update support priority queue (Platinum = highest priority)</li>
+                      <li>Enable premium features (if any)</li>
+                      <li>Update billing tier</li>
+                      <li>Notify support team of SLA change</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Response Time Changes:</strong> Platinum < 1 hour, Gold < 4 hours, Silver < 24 hours, Bronze best effort
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Update Webhook Configuration -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-link-45deg me-2"></i>Update Webhook Configuration
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Scenario:</strong> Client changed their webhook endpoint URL</p>
+                <ol class="mb-2">
+                  <li>Open Edit Owner form</li>
+                  <li>Scroll to <strong>Data Forwarding Settings</strong> section</li>
+                  <li><strong>Update Webhook URL:</strong>
+                    <ul>
+                      <li>Old: "https://api.client.com/iot-data"</li>
+                      <li>New: "https://api-v2.client.com/telemetry-webhook" (migrated to new API)</li>
+                    </ul>
+                  </li>
+                  <li>Keep webhook toggle <strong>ON</strong> (already enabled)</li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li><strong>After update, verify forwarding:</strong>
+                    <ul>
+                      <li>Go to Owner Detail View → Data Forwarding tab</li>
+                      <li>Klik <strong>Test Webhook Delivery</strong></li>
+                      <li>Verify success response dari new endpoint</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Best Practice:</strong> Test new webhook endpoint before updating untuk avoid data delivery failures
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Enable/Disable Data Forwarding -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-toggle-on me-2"></i>Enable/Disable Data Forwarding
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Scenario:</strong> Temporarily disable webhook due to client endpoint maintenance</p>
+                <ol class="mb-2">
+                  <li>Open Edit Owner form</li>
+                  <li>Scroll to <strong>Data Forwarding Settings</strong></li>
+                  <li>Toggle <strong>Enable Webhook</strong> to <strong>OFF</strong></li>
+                  <li>Webhook URL field becomes grayed out (disabled)</li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li>System akan:
+                    <ul>
+                      <li>Stop sending telemetry data ke webhook</li>
+                      <li>Queue data locally (if configured)</li>
+                      <li>Log warning: "Webhook disabled for owner X"</li>
+                    </ul>
+                  </li>
+                  <li><strong>To re-enable later:</strong>
+                    <ul>
+                      <li>Edit owner again</li>
+                      <li>Toggle webhook back to ON</li>
+                      <li>Verify URL still correct</li>
+                      <li>Update & test delivery</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Use Case:</strong> Temporary disable during client maintenance window, then re-enable
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Tune Batch Size -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-speedometer2 me-2"></i>Tune Batch Size for Performance
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Scenario:</strong> Database forwarding too slow, need to increase batch size</p>
+                <ol class="mb-2">
+                  <li>Open Edit Owner form</li>
+                  <li>Current <strong>Batch Size:</strong> 100 (default)</li>
+                  <li><strong>Problem Analysis:</strong>
+                    <ul>
+                      <li>High volume telemetry (1000 records/sec)</li>
+                      <li>Small batch (100) = 10 database transactions/sec</li>
+                      <li>Database latency high, backlog growing</li>
+                    </ul>
+                  </li>
+                  <li><strong>Solution - Increase Batch Size:</strong>
+                    <ul>
+                      <li>Change from 100 to <strong>500</strong></li>
+                      <li>Result: 1000 records/sec ÷ 500 batch = 2 transactions/sec</li>
+                      <li>Reduces database load, improves throughput</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li><strong>Monitor Performance:</strong>
+                    <ul>
+                      <li>Check data forwarding logs di Owner Detail View</li>
+                      <li>Verify backlog decreasing</li>
+                      <li>If still slow, increase to 1000 (max)</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Rule of Thumb:</strong> Higher volume = larger batch size (up to 1000 max)
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 5: Understanding Update Behavior -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-database text-theme me-2"></i>Memahami Update Behavior</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Update vs Patch -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-arrow-repeat me-2"></i>Update Behavior (Full Update)</h6>
+                  <p class="mb-2">Edit Owner uses <strong>PUT method</strong> (full replacement):</p>
+                  <ul class="mb-0">
+                    <li><strong>All fields sent:</strong> Even unchanged fields are included in payload</li>
+                    <li><strong>Partial update:</strong> Backend may support partial updates, but form sends all data</li>
+                    <li><strong>Optional fields:</strong> Can be cleared by leaving empty (e.g., remove address)</li>
+                    <li><strong>Required fields:</strong> Must always be provided (Name, Contact Person, Industry)</li>
+                  </ul>
+                </div>
+
+                <!-- What Gets Updated -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-check-circle me-2"></i>What Gets Updated</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Field Group</th>
+                        <th>Updated?</th>
+                        <th>Side Effects</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Owner Name</strong></td>
+                        <td>✅ Yes</td>
+                        <td>Updates display name across all views, breadcrumbs, dropdowns</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Industry</strong></td>
+                        <td>✅ Yes</td>
+                        <td>Affects reporting categories, analytics grouping</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Contact Info</strong></td>
+                        <td>✅ Yes</td>
+                        <td>Updates notification recipients, alert emails</td>
+                      </tr>
+                      <tr>
+                        <td><strong>SLA Level</strong></td>
+                        <td>✅ Yes</td>
+                        <td>Changes support priority, response times, feature access</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Webhook Settings</strong></td>
+                        <td>✅ Yes</td>
+                        <td>Immediately affects data forwarding (enable/disable/change URL)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Database Settings</strong></td>
+                        <td>✅ Yes (basic toggle)</td>
+                        <td>Connection details configured separately di Owner Detail View</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Batch Size</strong></td>
+                        <td>✅ Yes</td>
+                        <td>Takes effect on next batch cycle (within 1 minute)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>idOwner (UUID)</strong></td>
+                        <td>❌ No (immutable)</td>
+                        <td>Owner ID never changes - used as primary key</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Created Date</strong></td>
+                        <td>❌ No (immutable)</td>
+                        <td>Original creation timestamp preserved</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Validation on Update -->
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-shield-check me-2"></i>Validation on Update</h6>
+                  <p class="mb-2">Same validation rules as Create mode apply:</p>
+                  <ul class="mb-0">
+                    <li><strong>Duplicate Name Check:</strong> New name must not conflict dengan other owners (excluding self)</li>
+                    <li><strong>Email Format:</strong> If provided, must be valid email</li>
+                    <li><strong>Batch Size Range:</strong> 1-1000</li>
+                    <li><strong>Webhook URL Required:</strong> If webhook enabled, URL is mandatory</li>
+                    <li><strong>Required Fields:</strong> Name, Contact Person, Industry - cannot be empty</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Contoh Penggunaan (Scenarios) -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-text text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Company Name Change After Merger
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> PT ADHI WATER merged dengan PT TIRTA JAYA → new legal entity "PT ADHI TIRTA"</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Receive merger notification dari legal team</li>
+                  <li>Go to <strong>IoT → Owners</strong></li>
+                  <li>Find "PT ADHI WATER", klik <strong>Edit</strong></li>
+                  <li>Update fields:
+                    <ul>
+                      <li><strong>Owner Name:</strong> "PT ADHI WATER" → <strong>"PT ADHI TIRTA"</strong></li>
+                      <li><strong>Industry:</strong> Keep "Water Treatment"</li>
+                      <li><strong>Contact Person:</strong> Keep current (if same PIC) or update</li>
+                      <li><strong>Address:</strong> Update if headquarters relocated</li>
+                      <li><strong>Notes:</strong> Add "Merged with PT TIRTA JAYA on Dec 1, 2025"</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li>Verify changes:
+                    <ul>
+                      <li>Owner List shows new name "PT ADHI TIRTA"</li>
+                      <li>All projects under this owner automatically show new name</li>
+                      <li>Dashboard widgets updated</li>
+                      <li>Reports show new name (future reports, historical retain old name)</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Legal entity updated, all references reflect new company name
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Fix Incorrect Contact Email (Typo)
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Owner reports tidak menerima alert emails - ternyata email typo saat create</p>
+                <p class="mb-2"><strong>Problem:</strong></p>
+                <ul class="mb-2">
+                  <li>Current email: "budi.santoso&#64;adhiwater<strong>.co</strong>" (wrong - should be .com)</li>
+                  <li>Alerts bouncing, client complaining</li>
+                </ul>
+                <p class="mb-2"><strong>Langkah Fix:</strong></p>
+                <ol class="mb-2">
+                  <li>Open Edit Owner form</li>
+                  <li>Verify issue di <strong>Contact Email</strong> field:
+                    <ul>
+                      <li>Current: "budi.santoso&#64;adhiwater.co"</li>
+                      <li>Correct: "budi.santoso&#64;adhiwater.com"</li>
+                    </ul>
+                  </li>
+                  <li>Fix typo: Change ".co" to ".com"</li>
+                  <li>Klik <strong>Update Owner</strong></li>
+                  <li><strong>Test fix:</strong>
+                    <ul>
+                      <li>Trigger test alert (or wait for next scheduled report)</li>
+                      <li>Verify email delivered to correct address</li>
+                      <li>Check spam folder if not received</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Prevention:</strong> Always verify email during initial creation - send test email to confirm
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Migrate Webhook to Database Forwarding
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Client initially used webhook, now wants database storage untuk better analytics</p>
+                <p class="mb-2"><strong>Migration Plan:</strong></p>
+                <ol class="mb-2">
+                  <li><strong>Phase 1 - Enable Database (Parallel):</strong>
+                    <ul>
+                      <li>Edit owner</li>
+                      <li>Keep <strong>Enable Webhook</strong> = ON (existing)</li>
+                      <li>Toggle <strong>Enable Database Storage</strong> = ON (new)</li>
+                      <li>Set <strong>Batch Size</strong> = 500 (analytics optimized)</li>
+                      <li>Update owner</li>
+                    </ul>
+                  </li>
+                  <li><strong>Configure Database Connection:</strong>
+                    <ul>
+                      <li>Go to Owner Detail View → Data Forwarding tab</li>
+                      <li>Configure PostgreSQL connection details</li>
+                      <li>Test connection</li>
+                      <li>Save database config</li>
+                    </ul>
+                  </li>
+                  <li><strong>Phase 2 - Verify Database Working:</strong>
+                    <ul>
+                      <li>Monitor data forwarding logs (1-2 days)</li>
+                      <li>Verify data flowing to PostgreSQL correctly</li>
+                      <li>Client validates data quality</li>
+                    </ul>
+                  </li>
+                  <li><strong>Phase 3 - Disable Webhook (After Verification):</strong>
+                    <ul>
+                      <li>Edit owner again</li>
+                      <li>Toggle <strong>Enable Webhook</strong> = OFF</li>
+                      <li>Keep database enabled</li>
+                      <li>Update owner</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Smooth migration dari webhook ke database dengan zero data loss
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Downgrade Trial to Paid Account
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Trial owner "TRIAL - ABC Manufacturing" converted to paid customer</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Edit owner "TRIAL - ABC Manufacturing"</li>
+                  <li>Update fields:
+                    <ul>
+                      <li><strong>Owner Name:</strong> Remove "TRIAL - " prefix → <strong>"ABC Manufacturing"</strong></li>
+                      <li><strong>SLA Level:</strong> Bronze (trial) → <strong>Gold</strong> (standard paid)</li>
+                      <li><strong>Contact Email:</strong> Verify & update if changed</li>
+                      <li><strong>Notes:</strong> Add "Converted from trial to paid on Dec 24, 2025 - 1 year contract"</li>
+                      <li><strong>Enable Webhook:</strong> Turn ON (production use)</li>
+                      <li><strong>Webhook URL:</strong> Client's production endpoint</li>
+                    </ul>
+                  </li>
+                  <li>Update owner</li>
+                  <li><strong>Post-conversion tasks:</strong>
+                    <ul>
+                      <li>Remove node limit (trial had max 5 nodes)</li>
+                      <li>Enable premium features</li>
+                      <li>Update billing system</li>
+                      <li>Send welcome email for paid tier</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>Tip:</strong> Remove "TRIAL" prefix helps distinguish paid accounts di reporting
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 7: Tips & Best Practices -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Common Pitfalls -->
+                <div class="alert alert-danger mb-3">
+                  <h6 class="mb-2"><i class="bi bi-x-circle me-2"></i>Common Pitfalls:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Changing webhook URL without testing:</strong> Can break data delivery - always test new endpoint first</li>
+                    <li><strong>Disabling webhook accidentally:</strong> Toggle easy to click - double check before updating</li>
+                    <li><strong>Not notifying client of changes:</strong> Contact info changes should be communicated</li>
+                    <li><strong>Changing name without updating related docs:</strong> Contracts, invoices may have old name - coordinate with legal/finance</li>
+                    <li><strong>Batch size too aggressive:</strong> Setting 1000 may cause memory issues if records very large - test gradually</li>
+                    <li><strong>Removing email accidentally:</strong> Leaving field empty removes email - verify intentional</li>
+                    <li><strong>SLA downgrade without notice:</strong> Client may complain if response time decreases - communicate first</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Document changes in Notes:</strong> Add change log entries for audit trail</li>
+                    <li><strong>Verify email before saving:</strong> Send test email to new address to confirm valid</li>
+                    <li><strong>Test webhook changes immediately:</strong> After update, go to Owner Detail → Test Webhook Delivery</li>
+                    <li><strong>Coordinate major changes:</strong> Name/contact changes should be communicated to affected teams</li>
+                    <li><strong>Use parallel mode for migrations:</strong> Enable new forwarding before disabling old</li>
+                    <li><strong>Batch size tuning is iterative:</strong> Start conservative (100), increase gradually while monitoring</li>
+                    <li><strong>Keep historical notes:</strong> Don't delete old notes when updating - append new entries</li>
+                    <li><strong>Verify redirect after update:</strong> Should go to Owner Detail - if goes to list, may indicate error</li>
+                    <li><strong>Check payload preview:</strong> Before updating, verify JSON shows intended changes</li>
+                    <li><strong>Back button to cancel:</strong> If unsure, klik Back button instead of Update</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Tutorial Terkait -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Pelajari lebih lanjut tentang topik terkait:</p>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        <a routerLink="/iot/document/module-owners/create-owner" class="text-decoration-none">
+                          Create New Owner
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Same form component as Edit - understand field meanings
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-list me-2"></i>
+                        <a routerLink="/iot/document/module-owners/owner-list" class="text-decoration-none">
+                          Owner List
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Browse owners & access edit button
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-building me-2"></i>
+                        <a routerLink="/iot/document/module-owners/owner-details" class="text-decoration-none">
+                          Owner Detail View
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        View updated info, configure detailed data forwarding settings
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-link me-2"></i>
+                        <a routerLink="/iot/document/module-owners/data-forwarding" class="text-decoration-none">
+                          Data Forwarding Setup
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Configure webhook headers, database connections, retry logic
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 9: Quick Reference -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-bookmark text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Edit vs Create Comparison -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-arrows-angle-contract me-2"></i>Edit vs Create Quick Comparison</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Aspect</th>
+                        <th>Create</th>
+                        <th>Edit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Route</td>
+                        <td>/iot/owners/add</td>
+                        <td>/iot/owners/edit/:id</td>
+                      </tr>
+                      <tr>
+                        <td>Form State</td>
+                        <td>Empty</td>
+                        <td>Pre-filled</td>
+                      </tr>
+                      <tr>
+                        <td>Button Text</td>
+                        <td>Save Owner</td>
+                        <td>Update Owner</td>
+                      </tr>
+                      <tr>
+                        <td>API Method</td>
+                        <td>POST</td>
+                        <td>PUT</td>
+                      </tr>
+                      <tr>
+                        <td>Success Redirect</td>
+                        <td>Owner List</td>
+                        <td>Owner Detail</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Common Update Operations -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-list-check me-2"></i>Common Update Operations</h6>
+                  <ul class="mb-0">
+                    <li><strong>PIC Change:</strong> Update Contact Person, Email, Phone</li>
+                    <li><strong>SLA Upgrade:</strong> Change SLA Level dropdown</li>
+                    <li><strong>Webhook Migration:</strong> Toggle webhook off, enable database</li>
+                    <li><strong>Performance Tuning:</strong> Adjust Batch Size (100 → 500 → 1000)</li>
+                    <li><strong>Company Rename:</strong> Update Owner Name field</li>
+                    <li><strong>Address Change:</strong> Update Address textarea</li>
+                  </ul>
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-keyboard me-2"></i>Keyboard Shortcuts</h6>
+                  <ul class="mb-0">
+                    <li><kbd>Tab</kbd> - Navigate between fields</li>
+                    <li><kbd>Shift</kbd> + <kbd>Tab</kbd> - Navigate backwards</li>
+                    <li><kbd>Enter</kbd> - Submit update (when button focused)</li>
+                    <li><kbd>Esc</kbd> - Close error alert</li>
+                    <li><kbd>Alt</kbd> + <kbd>←</kbd> - Back to previous page (browser)</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            <card>
+              <card-body>
+                <h5 class="mb-3">Daftar Isi</h5>
+                <nav-scroll class="nav flex-column">
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Edit Owner?
+                    </a>
+                    <a href="#access" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Akses
+                    </a>
+                    <a href="#interface" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Interface & Differences
+                    </a>
+                    <a href="#usage" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Update Behavior
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+              </card-body>
+            </card>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

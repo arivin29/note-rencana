@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "id": "user-guide-login",
+    "title": "User Guide: How to Login",
+    "description": "Complete guide for users to access the IoT Monitoring System platform",
+    "category": "user-guide",
+    "difficulty": "beginner",
+    "estimatedTime": 3,
+    "roles": ["user", "admin", "owner", "super_admin"],
+    "tags": ["login", "authentication", "access", "credentials"],
+    "order": 1,
+    "icon": "bi bi-box-arrow-in-right",
+    "author": "IoT Support Team",
+    "lastUpdated": "2025-12-22T00:00:00Z"
+  },
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Access the Login Page",
+      "content": "<h3>Step 1: Navigate to Login Page</h3><p>Open your web browser (Chrome, Firefox, Safari, or Edge) and enter the IoT Monitoring System URL:</p><div class='alert alert-info'><strong>URL:</strong> Your administrator will provide the specific URL<br><strong>Example:</strong> https://iot.yourcompany.com</div><p>The login page will display automatically. If you're already logged in, you'll be redirected to the dashboard.</p>",
+      "order": 1,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-2",
+      "title": "Enter Your Credentials",
+      "content": "<h3>Step 2: Input Login Information</h3><p>On the login page, you'll see two input fields:</p><ol><li><strong>Email/Username:</strong> Enter the email address or username provided by your administrator</li><li><strong>Password:</strong> Enter your password (case-sensitive)</li></ol><div class='alert alert-warning'><i class='bi bi-exclamation-triangle'></i> <strong>Important Tips:</strong><ul><li>Make sure Caps Lock is OFF</li><li>Check your keyboard language settings</li><li>Passwords are case-sensitive</li></ul></div>",
+      "order": 2,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-3",
+      "title": "Login Options",
+      "content": "<h3>Step 3: Configure Login Settings</h3><p>Before clicking the Login button, you may see additional options:</p><h4>Remember Me Checkbox</h4><p>Check this box if you want the system to remember your login for 30 days on this device.</p><div class='alert alert-danger'><i class='bi bi-shield-exclamation'></i> <strong>Security Warning:</strong><br>Only use 'Remember Me' on your personal device. Never use it on public or shared computers.</div>",
+      "order": 3,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-4",
+      "title": "Complete Login",
+      "content": "<h3>Step 4: Submit and Access Dashboard</h3><p>Click the <button class='btn btn-sm btn-primary'><i class='bi bi-box-arrow-in-right'></i> Login</button> button.</p><h4>Successful Login</h4><p>If your credentials are correct, you'll be redirected to your dashboard automatically within 2-3 seconds.</p><h4>Failed Login</h4><p>If you see an error message:</p><ul><li><strong>'Invalid credentials'</strong> - Check your email/username and password</li><li><strong>'Account locked'</strong> - Contact your administrator (too many failed attempts)</li><li><strong>'Account disabled'</strong> - Contact your administrator</li></ul>",
+      "order": 4,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-5",
+      "title": "Forgot Password",
+      "content": "<h3>Step 5: Reset Password (If Needed)</h3><p>If you forgot your password:</p><ol><li>Click the <strong>'Forgot Password?'</strong> link below the login form</li><li>Enter your registered email address</li><li>Click <strong>'Send Reset Link'</strong></li><li>Check your email inbox (and spam folder)</li><li>Click the reset link in the email</li><li>Enter your new password twice</li><li>Click <strong>'Reset Password'</strong></li></ol><div class='alert alert-info'><i class='bi bi-info-circle'></i> Reset links expire after 24 hours. If expired, request a new one.</div>",
+      "order": 5,
+      "images": [],
+      "codeSnippets": []
+    },
+    {
+      "id": "section-6",
+      "title": "Troubleshooting",
+      "content": "<h3>Common Login Issues</h3><table class='table table-sm'><thead><tr><th>Problem</th><th>Solution</th></tr></thead><tbody><tr><td>Can't access login page</td><td>Check internet connection, verify URL is correct, clear browser cache</td></tr><tr><td>Forgot email/username</td><td>Contact your administrator or check your welcome email</td></tr><tr><td>Password not working</td><td>Verify Caps Lock is off, check keyboard language, use 'Forgot Password'</td></tr><tr><td>Page keeps loading</td><td>Refresh the page (F5), try different browser, check firewall settings</td></tr></tbody></table>",
+      "order": 6,
+      "images": [],
+      "codeSnippets": []
+    }
+  ]
+}

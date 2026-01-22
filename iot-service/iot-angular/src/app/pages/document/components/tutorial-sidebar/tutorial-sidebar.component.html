@@ -1,0 +1,71 @@
+<div class="tutorial-categories">
+  <div class="category-section">
+    <h3>QUICK START</h3>
+    <div class="category-list">
+      <div 
+        *ngFor="let category of categories.slice(0, 1)"
+        (click)="navigateToCategory(category.category)"
+        class="category-item">
+        <i [class]="category.icon + ' me-3'"></i>
+        <span class="category-label">{{ category.label }}</span>
+        <span class="count-badge ms-auto" *ngIf="category.count > 0">
+          {{ category.count }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-2" />
+
+  <div class="category-section">
+    <h3>USER GUIDES</h3>
+    <div class="category-list">
+      <div 
+        *ngFor="let category of categories.slice(1, 4)"
+        (click)="navigateToCategory(category.category)"
+        class="category-item">
+        <i [class]="category.icon + ' me-3'"></i>
+        <span class="category-label">{{ category.label }}</span>
+        <span class="count-badge ms-auto" *ngIf="category.count > 0">
+          {{ category.count }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-2" />
+
+  <div class="category-section">
+    <h3>MODULES</h3>
+    <div class="category-list">
+      <div 
+        *ngFor="let category of categories.slice(4, 11)"
+        (click)="navigateToCategory(category.category)"
+        class="category-item">
+        <i [class]="category.icon + ' me-3'"></i>
+        <span class="category-label">{{ category.label }}</span>
+        <span class="count-badge ms-auto" *ngIf="category.count > 0">
+          {{ category.count }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-2" />
+
+  <div class="category-section">
+    <h3>SUPPORT</h3>
+    <div class="category-list">
+      <div 
+        *ngFor="let category of categories.slice(11)"
+        (click)="navigateToCategory(category.category)"
+        class="category-item">
+        <i [class]="category.icon + ' me-3'"></i>
+        <span class="category-label">{{ category.label }}</span>
+        <span class="count-badge ms-auto" *ngIf="category.count > 0">
+          {{ category.count }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

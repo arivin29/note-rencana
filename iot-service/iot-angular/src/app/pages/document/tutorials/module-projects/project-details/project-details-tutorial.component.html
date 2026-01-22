@@ -1,0 +1,1042 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/module-projects">Module: Projects</a></li>
+        <li class="breadcrumb-item active">Project Detail View</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-folder text-theme me-2"></i>
+        Project Detail View Dashboard
+        <small class="d-block mt-2 text-white-transparent-7">Complete project monitoring: snapshot, statistics, nodes, sensors, alerts & geofence mapping</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Apa itu Project Detail View? -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Project Detail View?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Project Detail View</strong> adalah halaman <strong>dashboard monitoring lengkap</strong> untuk satu project specific, 
+                  menampilkan snapshot statistics, status deployment, daftar nodes, sensors, alerts, geofence mapping, 
+                  dan operations team information.
+                </p>
+                
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-folder fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Project-Level Dashboard</h6>
+                      <p class="mb-2">
+                        Project adalah container/grouping untuk nodes & sensors dalam satu deployment area:
+                      </p>
+                      <ul class="mb-0">
+                        <li><strong>Example 1:</strong> "Factory A - Water Treatment" project dengan 20 nodes monitoring water quality</li>
+                        <li><strong>Example 2:</strong> "Smart City - Zone B" project dengan 50 nodes monitoring traffic & pollution</li>
+                        <li><strong>Example 3:</strong> "Farm IoT - Sector 3" project dengan 15 nodes monitoring soil & irrigation</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kenapa Penting?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Centralized Monitoring:</strong> All project resources dalam satu dashboard</li>
+                    <li><strong>Quick Statistics:</strong> Instant view total nodes, sensors, locations, alerts</li>
+                    <li><strong>Status Tracking:</strong> Active/Maintenance status, last sync time, uptime</li>
+                    <li><strong>Geographic View:</strong> Map widget showing node locations dengan geofence boundaries</li>
+                    <li><strong>Owner Context:</strong> Link to owner company untuk multi-tenant scenario</li>
+                    <li><strong>Operations Info:</strong> Team assignments, deployment history, maintenance schedule</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Cara Akses Project Detail View -->
+          <div id="access" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Project Detail View</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Ada beberapa cara untuk mengakses <strong>Project Detail View</strong>:</p>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Project List (Most Common)</h6>
+                  <ol class="mb-0">
+                    <li>Buka <strong>IoT → Projects</strong> menu</li>
+                    <li>Klik pada <strong>baris project</strong> (anywhere) atau tombol <strong>View Detail</strong> (eye icon)</li>
+                    <li>Project detail dashboard akan terbuka</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Owner Detail View</h6>
+                  <ol class="mb-0">
+                    <li>Open <strong>Owner Detail View</strong></li>
+                    <li>Scroll ke Projects section</li>
+                    <li>Klik project name atau View button</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Via Dashboard Widget</h6>
+                  <ol class="mb-0">
+                    <li>Dari <strong>Main Dashboard</strong>, klik project name di widget</li>
+                    <li>Direct link ke project detail view</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-4-circle me-2"></i>Via Direct URL</h6>
+                  <p class="mb-2">Akses langsung via browser (if you know project UUID):</p>
+                  <pre class="bg-dark text-white p-2 rounded mb-0"><code>https://your-domain.com/iot/projects/{{ '{' }}projectUUID{{ '}' }}</code></pre>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Interface & Features -->
+          <div id="interface" class="mb-5">
+            <h4><i class="bi bi-window text-theme me-2"></i>Interface & Features Overview</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Interface <strong>Project Detail View</strong> dibagi menjadi beberapa section besar:</p>
+
+                <div class="mb-4">
+                  <img src="assets/tutorials/images/module-projects/project-detail-main-view.png" 
+                       alt="Project Detail Main View" 
+                       class="img-fluid rounded border">
+                </div>
+
+                <!-- Header Section -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Header Section</h6>
+                  <ul class="mb-0">
+                    <li><strong>Breadcrumb:</strong> IoT → Projects → {{ '{' }}ProjectName{{ '}' }}</li>
+                    <li><strong>Page Title:</strong> Project {{ '{' }}ProjectName{{ '}' }}</li>
+                    <li><strong>Action Buttons:</strong>
+                      <ul>
+                        <li><code>Export Report</code> - Download project summary report</li>
+                        <li><code>Force Sync</code> - Trigger manual data sync dari all nodes</li>
+                        <li><code>More Actions</code> - Schedule maintenance, assign owner admin, archive project</li>
+                        <li><code>Back</code> - Return to projects list</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Project Snapshot Card -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Project Snapshot Card (Main)</h6>
+                  <ul class="mb-0">
+                    <li><strong>Status Badges:</strong>
+                      <ul>
+                        <li>Active (green) / Maintenance (yellow) / Archived (gray)</li>
+                        <li>Last sync timestamp</li>
+                        <li>Primary location with map marker icon</li>
+                      </ul>
+                    </li>
+                    <li><strong>Project Metadata:</strong>
+                      <ul>
+                        <li><strong>Owner:</strong> Company name, industry, email</li>
+                        <li><strong>Deployment:</strong> Live since date, area type (Factory/Smart City/Farm/etc)</li>
+                        <li><strong>Data Window:</strong> Streaming protocol (MQTT/HTTP), data retention period</li>
+                      </ul>
+                    </li>
+                    <li><strong>Statistics Cards (4 Clickable Stat Links):</strong>
+                      <ul>
+                        <li><strong>Devices:</strong> Total nodes count, online count → Click navigate to Nodes list (filtered by project)</li>
+                        <li><strong>Sensors:</strong> Total sensors count, offline count → Click navigate to Sensors explorer</li>
+                        <li><strong>Locations:</strong> Deployment sites count → Click navigate to Telemetry view</li>
+                        <li><strong>Alerts:</strong> Active alerts count → Click navigate to Alerts queue</li>
+                      </ul>
+                    </li>
+                    <li><strong>Footer Actions:</strong>
+                      <ul>
+                        <li>Last deployment info (timestamp & actor)</li>
+                        <li>Deploy Update button</li>
+                        <li>Edit Project button (navigate to edit form)</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Operations & Team Card -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Operations & Team Card (Right Sidebar)</h6>
+                  <ul class="mb-0">
+                    <li><strong>Team Members List:</strong> Assigned engineers/operators dengan roles</li>
+                    <li><strong>Contact Information:</strong> Primary contact for project</li>
+                    <li><strong>Maintenance Schedule:</strong> Next scheduled maintenance date</li>
+                    <li><strong>SLA Status:</strong> Service level agreement compliance</li>
+                  </ul>
+                </div>
+
+                <!-- Geographic Map Widget -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-4-circle me-2"></i>Geographic Map Widget</h6>
+                  <ul class="mb-0">
+                    <li><strong>Node Markers:</strong> All nodes dengan GPS coordinates ditampilkan on map</li>
+                    <li><strong>Geofence Boundary:</strong> Project area boundary (polygon)</li>
+                    <li><strong>Color Coding:</strong> Green (online), Yellow (warning), Red (offline)</li>
+                    <li><strong>Interactive:</strong> Click marker untuk quick node info popup</li>
+                    <li><strong>Zoom/Pan:</strong> Navigate around deployment area</li>
+                  </ul>
+                </div>
+
+                <!-- Recent Activity Timeline -->
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-5-circle me-2"></i>Recent Activity Timeline</h6>
+                  <ul class="mb-0">
+                    <li><strong>Deployment Events:</strong> Node added, sensor configured, firmware updated</li>
+                    <li><strong>Alerts History:</strong> Recent alerts triggered & resolved</li>
+                    <li><strong>Maintenance Logs:</strong> Scheduled maintenance completion records</li>
+                    <li><strong>Configuration Changes:</strong> Project settings modified audit trail</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Cara Menggunakan -->
+          <div id="usage" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Cara Menggunakan</h4>
+            
+            <!-- View Project Info -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-eye me-2"></i>Melihat Project Information
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Buka project detail page (via project list atau owner detail)</li>
+                  <li>Check <strong>Project Snapshot</strong> card untuk overview:
+                    <ul>
+                      <li><strong>Status badge:</strong> Verify project Active atau Maintenance</li>
+                      <li><strong>Last Sync:</strong> Check timestamp - jika > 1 hour, may indicate connectivity issue</li>
+                      <li><strong>Location:</strong> Primary deployment site</li>
+                    </ul>
+                  </li>
+                  <li>Review <strong>Statistics Cards</strong>:
+                    <ul>
+                      <li><strong>Devices:</strong> Total & online count - low online % = investigate connectivity</li>
+                      <li><strong>Sensors:</strong> Total sensors deployed - verify matches expected</li>
+                      <li><strong>Locations:</strong> Deployment sites - multi-location projects may have distributed nodes</li>
+                      <li><strong>Alerts:</strong> Active count - if > 0, investigate alert queue</li>
+                    </ul>
+                  </li>
+                  <li>Check <strong>Owner</strong> info untuk company context & contact</li>
+                  <li>Scroll down untuk see geographic map & activity timeline</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Dashboard auto-loads fresh data on page load - F5 refresh untuk latest stats
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Navigate to Filtered Views -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-link me-2"></i>Navigate ke Filtered Resource Views
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Statistics cards adalah clickable links ke filtered views:</strong></p>
+                <ol class="mb-2">
+                  <li><strong>Click "Devices" card:</strong>
+                    <ul>
+                      <li>Navigate to <strong>Nodes List</strong></li>
+                      <li>Auto-filtered by <code>projectId</code></li>
+                      <li>Shows only nodes belonging to this project</li>
+                      <li>Can further filter by status, location, model</li>
+                    </ul>
+                  </li>
+                  <li><strong>Click "Sensors" card:</strong>
+                    <ul>
+                      <li>Navigate to <strong>Sensors Explorer</strong></li>
+                      <li>Auto-filtered by project's nodes</li>
+                      <li>Shows all sensors from all nodes in project</li>
+                    </ul>
+                  </li>
+                  <li><strong>Click "Locations" card:</strong>
+                    <ul>
+                      <li>Navigate to <strong>Telemetry Streams</strong></li>
+                      <li>Pre-filtered by project</li>
+                      <li>View real-time telemetry data</li>
+                    </ul>
+                  </li>
+                  <li><strong>Click "Alerts" card:</strong>
+                    <ul>
+                      <li>Navigate to <strong>Alert Queue</strong></li>
+                      <li>Filtered by project alerts</li>
+                      <li>Review & acknowledge active alerts</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Benefit:</strong> Quick drill-down dari high-level stats ke detailed resource views
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Edit Project -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-pencil me-2"></i>Edit Project Configuration
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik tombol <strong>"Edit Project"</strong> di footer snapshot card</li>
+                  <li>Navigate to <strong>Project Edit Form</strong></li>
+                  <li>Modify fields yang perlu diubah:
+                    <ul>
+                      <li><strong>Project Name:</strong> Rename project</li>
+                      <li><strong>Area Type:</strong> Change category (Factory/Smart City/Farm/etc)</li>
+                      <li><strong>Status:</strong> Set Active/Maintenance/Archived</li>
+                      <li><strong>Owner:</strong> Reassign to different owner (if multi-tenant)</li>
+                      <li><strong>Geofence:</strong> Update boundary polygon coordinates</li>
+                      <li><strong>Description:</strong> Add/modify project description</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Save</strong></li>
+                  <li>Navigate back to project detail - changes reflected</li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Note:</strong> Changing owner akan affect user access permissions - notify affected users
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Force Sync -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-arrow-repeat me-2"></i>Force Sync Project Data
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Trigger manual sync untuk all nodes in project:</strong></p>
+                <ol class="mb-2">
+                  <li>Klik <strong>"Force Sync"</strong> link di header</li>
+                  <li>Confirmation dialog akan muncul:
+                    <ul>
+                      <li>"Force sync will query all {{ '{' }}nodeCount{{ '}' }} nodes immediately"</li>
+                      <li>"This may cause network spike. Continue?"</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>OK</strong> untuk confirm</li>
+                  <li>System akan:
+                    <ul>
+                      <li>Send sync command ke all nodes via MQTT/HTTP</li>
+                      <li>Wait for nodes to respond dengan latest telemetry</li>
+                      <li>Update database dengan fresh data</li>
+                      <li>Refresh dashboard statistics</li>
+                    </ul>
+                  </li>
+                  <li>Monitor "Last Sync" badge - should update to current time</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Use Force Sync when suspecting stale data atau after bulk node configuration changes
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Export Report -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-download me-2"></i>Export Project Report
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>"Export Report"</strong> link di header</li>
+                  <li>Export dialog muncul dengan options:
+                    <ul>
+                      <li><strong>Format:</strong> PDF, Excel, CSV</li>
+                      <li><strong>Include:</strong> Statistics, Nodes list, Sensors list, Alerts history, Telemetry summary</li>
+                      <li><strong>Date Range:</strong> Last 7 days, 30 days, Custom range</li>
+                    </ul>
+                  </li>
+                  <li>Select export preferences</li>
+                  <li>Klik <strong>Generate Report</strong></li>
+                  <li>File akan download ke browser downloads folder</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Use Case:</strong> Monthly reports untuk management, audit documentation, client deliverables
+                </p>
+              </card-body>
+            </card>
+
+            <!-- View Geographic Map -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-map me-2"></i>View Geographic Map & Geofence
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Visualize node deployment locations:</strong></p>
+                <ol class="mb-2">
+                  <li>Scroll to <strong>Geographic Map Widget</strong></li>
+                  <li>Map akan show:
+                    <ul>
+                      <li><strong>Node Markers:</strong> All nodes dengan GPS coordinates</li>
+                      <li><strong>Color Coding:</strong>
+                        <ul>
+                          <li>Green = Online & healthy</li>
+                          <li>Yellow = Warning/degraded</li>
+                          <li>Red = Offline/critical</li>
+                          <li>Gray = Maintenance mode</li>
+                        </ul>
+                      </li>
+                      <li><strong>Geofence Polygon:</strong> Project boundary area (blue outline)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Interact with map:</strong>
+                    <ul>
+                      <li>Click marker untuk quick node info popup (code, status, last seen)</li>
+                      <li>Zoom in/out dengan mouse wheel atau +/- buttons</li>
+                      <li>Pan around dengan drag</li>
+                      <li>Toggle layers (satellite/terrain/street view)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Geofence Alerts:</strong>
+                    <ul>
+                      <li>Nodes outside geofence highlighted in orange</li>
+                      <li>Indicates possible GPS drift atau unauthorized movement</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  <strong>Note:</strong> Only nodes dengan GPS coordinates akan muncul on map
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Schedule Maintenance -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-calendar-event me-2"></i>Schedule Project Maintenance
+              </card-header>
+              <card-body>
+                <ol class="mb-2">
+                  <li>Klik <strong>More Actions</strong> dropdown di header</li>
+                  <li>Select <strong>"Schedule Maintenance"</strong></li>
+                  <li>Maintenance form muncul:
+                    <ul>
+                      <li><strong>Maintenance Type:</strong> Routine/Emergency/Upgrade</li>
+                      <li><strong>Scheduled Date:</strong> Date picker</li>
+                      <li><strong>Duration:</strong> Estimated hours</li>
+                      <li><strong>Assigned Team:</strong> Select engineers/technicians</li>
+                      <li><strong>Description:</strong> Maintenance scope & tasks</li>
+                      <li><strong>Auto-set Status:</strong> Checkbox - automatically set project to Maintenance mode during window</li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Schedule</strong></li>
+                  <li>Maintenance event added to timeline & calendar</li>
+                  <li>Assigned team will receive notification</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Maintenance mode suppresses alerts untuk prevent false alarms during work
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 5: Understanding Project Data -->
+          <div id="understanding-data" class="mb-5">
+            <h4><i class="bi bi-database text-theme me-2"></i>Memahami Project Data Structure</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Project Hierarchy -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>Hierarchy: Owner → Project → Nodes → Sensors</h6>
+                  <pre class="bg-dark text-white p-3 rounded mb-2" style="font-size: 0.85rem;"><code>Owner (ADHI WATER)
+└── Project (Factory A - Water Treatment)
+    ├── Node 1 (ESP-WTP-01)
+    │   ├── Sensor: Power Meter
+    │   │   ├── Channel: voltage_l1
+    │   │   ├── Channel: current_l1
+    │   │   └── Channel: power_l1
+    │   └── Sensor: Flow Meter
+    │       └── Channel: flow_rate
+    ├── Node 2 (ESP-WTP-02)
+    │   └── Sensor: pH Sensor
+    │       └── Channel: ph_value
+    └── Node 3 (ESP-WTP-03)
+        └── Sensor: Temperature Sensor
+            └── Channel: water_temp</code></pre>
+                  <p class="mb-0 text-muted">Project adalah container untuk logically group nodes dalam same deployment area</p>
+                </div>
+
+                <!-- Project Fields -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Project Level Fields</h6>
+                  <ul class="mb-0">
+                    <li><strong>Project Name:</strong> Human-readable identifier (Factory A - Water Treatment)</li>
+                    <li><strong>idProject:</strong> Database UUID untuk API calls</li>
+                    <li><strong>Owner:</strong> Reference to owner company (multi-tenant isolation)</li>
+                    <li><strong>Area Type:</strong> Category - Factory, Smart City, Farm, Building, Infrastructure</li>
+                    <li><strong>Status:</strong> Active (operational), Maintenance (scheduled work), Archived (decommissioned)</li>
+                    <li><strong>Created At:</strong> Deployment date</li>
+                    <li><strong>Last Sync:</strong> Timestamp of last successful data sync dari any node</li>
+                    <li><strong>Geofence:</strong> Polygon coordinates defining project boundary</li>
+                  </ul>
+                </div>
+
+                <!-- Statistics Calculation -->
+                <div class="alert alert-warning mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Statistics Calculation Logic</h6>
+                  <ul class="mb-0">
+                    <li><strong>Total Nodes:</strong> COUNT(nodes) WHERE idProject = this</li>
+                    <li><strong>Active Nodes:</strong> COUNT(nodes) WHERE idProject = this AND connectivityStatus = 'online'</li>
+                    <li><strong>Total Sensors:</strong> COUNT(sensors) via nodes in this project</li>
+                    <li><strong>Total Locations:</strong> COUNT(DISTINCT gps_coordinates) from nodes (or manual location entries)</li>
+                    <li><strong>Offline Nodes:</strong> Total Nodes - Active Nodes</li>
+                  </ul>
+                </div>
+
+                <!-- Area Types -->
+                <div class="alert alert-success mb-0">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Common Area Types</h6>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Area Type</th>
+                        <th>Use Case</th>
+                        <th>Typical Sensors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Factory</strong></td>
+                        <td>Manufacturing plants, production lines</td>
+                        <td>Power meters, vibration, temperature</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Smart City</strong></td>
+                        <td>Urban infrastructure monitoring</td>
+                        <td>Air quality, traffic, noise</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Farm</strong></td>
+                        <td>Agricultural IoT deployments</td>
+                        <td>Soil moisture, weather, irrigation</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Building</strong></td>
+                        <td>Smart building management</td>
+                        <td>HVAC, occupancy, energy</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Water Treatment</strong></td>
+                        <td>Water/wastewater facilities</td>
+                        <td>pH, flow, turbidity, chlorine</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 6: Contoh Penggunaan -->
+          <div id="scenarios" class="mb-5">
+            <h4><i class="bi bi-journal-text text-theme me-2"></i>Contoh Penggunaan</h4>
+            
+            <!-- Scenario 1 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-1-circle me-2"></i>Scenario: Monitor Factory IoT Deployment Health
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Daily morning check untuk Factory A water treatment project</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open project detail view (via project list atau dashboard bookmark)</li>
+                  <li><strong>Quick Health Check:</strong>
+                    <ul>
+                      <li>Status badge = Active ✅</li>
+                      <li>Devices: 20 total, 19 online (95% uptime) ✅</li>
+                      <li>Alerts: 1 active ⚠️</li>
+                      <li>Last Sync: 5 minutes ago ✅</li>
+                    </ul>
+                  </li>
+                  <li><strong>Investigate alert:</strong>
+                    <ul>
+                      <li>Click "Alerts" card (shows 1 active)</li>
+                      <li>Navigate to Alert Queue</li>
+                      <li>Find alert: "pH sensor reading out of range (pH 8.5, threshold 6-8)"</li>
+                      <li>Acknowledge alert & assign to technician</li>
+                    </ul>
+                  </li>
+                  <li><strong>Check offline node:</strong>
+                    <ul>
+                      <li>Click "Devices" card</li>
+                      <li>Filter by status = Offline</li>
+                      <li>Find ESP-WTP-15 offline (last seen 2 hours ago)</li>
+                      <li>Open node detail → connectivity logs show power loss</li>
+                      <li>Schedule field visit untuk investigate</li>
+                    </ul>
+                  </li>
+                  <li>Export daily report untuk manager</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Issues identified & assigned dalam < 5 minutes daily check
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 2 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-2-circle me-2"></i>Scenario: Verify New Node Deployment
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Tech deployed 5 new nodes di expansion area, verify on system</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open project detail view</li>
+                  <li>Check statistics:
+                    <ul>
+                      <li>Before: 20 nodes</li>
+                      <li>After: Wait for sync... should become 25 nodes</li>
+                    </ul>
+                  </li>
+                  <li>If not updating:
+                    <ul>
+                      <li>Click "Force Sync"</li>
+                      <li>Wait 30 seconds untuk nodes to report</li>
+                      <li>Refresh page</li>
+                    </ul>
+                  </li>
+                  <li>Verify on map:
+                    <ul>
+                      <li>Scroll to geographic map widget</li>
+                      <li>Check 5 new markers muncul di expansion area</li>
+                      <li>Markers should be green (online)</li>
+                      <li>Click each marker untuk verify node codes match deployment list</li>
+                    </ul>
+                  </li>
+                  <li>Click "Devices" card → filter by "Created Today" untuk see new nodes</li>
+                  <li>Document deployment completion timestamp</li>
+                </ol>
+                <p class="mb-0 text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Map visualization helps verify physical placement matches GPS coordinates
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 3 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-3-circle me-2"></i>Scenario: Prepare for Scheduled Maintenance
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Quarterly calibration maintenance besok, prepare project</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open project detail view</li>
+                  <li>Klik <strong>More Actions → Schedule Maintenance</strong></li>
+                  <li>Fill maintenance form:
+                    <ul>
+                      <li>Type: Routine</li>
+                      <li>Date: Tomorrow 08:00 - 16:00 (8 hours)</li>
+                      <li>Team: Technician A, Technician B</li>
+                      <li>Tasks: Calibrate all pH sensors, clean flow meters, firmware update</li>
+                      <li>✅ Auto-set Status to Maintenance</li>
+                    </ul>
+                  </li>
+                  <li>Save maintenance schedule</li>
+                  <li>System akan:
+                    <ul>
+                      <li>Send notification ke assigned technicians</li>
+                      <li>Automatically change project status to "Maintenance" tomorrow 08:00</li>
+                      <li>Suppress alerts during maintenance window</li>
+                      <li>Restore to "Active" automatically at 16:00</li>
+                    </ul>
+                  </li>
+                  <li>Export current baseline telemetry report untuk before/after comparison</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Maintenance automated, alerts suppressed, team notified
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 4 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-4-circle me-2"></i>Scenario: Investigate Geofence Violation Alert
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> Received alert "Node ESP-WTP-12 outside geofence boundary"</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open project detail view</li>
+                  <li>Scroll to geographic map widget</li>
+                  <li>Find ESP-WTP-12 marker:
+                    <ul>
+                      <li>Should be highlighted in orange (geofence violation)</li>
+                      <li>Located outside blue polygon boundary</li>
+                    </ul>
+                  </li>
+                  <li>Click marker untuk node details:
+                    <ul>
+                      <li>Check GPS coordinates</li>
+                      <li>Review last position update timestamp</li>
+                    </ul>
+                  </li>
+                  <li><strong>Possible causes:</strong>
+                    <ul>
+                      <li><strong>GPS Drift:</strong> Sensor malfunction (common in indoor/urban areas)</li>
+                      <li><strong>Unauthorized Movement:</strong> Someone moved the node</li>
+                      <li><strong>Wrong Geofence:</strong> Boundary polygon needs adjustment</li>
+                    </ul>
+                  </li>
+                  <li><strong>Resolution:</strong>
+                    <ul>
+                      <li>If GPS drift: Click node → Settings → Disable GPS alerts for this node</li>
+                      <li>If moved: Field visit untuk verify & relocate atau update coordinates</li>
+                      <li>If wrong geofence: Edit Project → Update geofence polygon</li>
+                    </ul>
+                  </li>
+                </ol>
+                <p class="mb-0 text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  Geofence violations dapat indicate security issues - investigate promptly
+                </p>
+              </card-body>
+            </card>
+
+            <!-- Scenario 5 -->
+            <card class="mb-3">
+              <card-header class="bg-theme bg-opacity-25 fw-bold">
+                <i class="bi bi-5-circle me-2"></i>Scenario: Generate Monthly Report untuk Client
+              </card-header>
+              <card-body>
+                <p class="mb-2"><strong>Situasi:</strong> End of month, client meminta operational report</p>
+                <p class="mb-2"><strong>Langkah:</strong></p>
+                <ol class="mb-2">
+                  <li>Open project detail view</li>
+                  <li>Klik <strong>"Export Report"</strong></li>
+                  <li>Configure export:
+                    <ul>
+                      <li>Format: PDF (client-friendly)</li>
+                      <li>Date Range: Last 30 days</li>
+                      <li>Include Sections:
+                        <ul>
+                          <li>✅ Executive Summary (statistics overview)</li>
+                          <li>✅ Uptime Analysis (per node)</li>
+                          <li>✅ Alert History (count, severity, resolution time)</li>
+                          <li>✅ Telemetry Summary (average values, trends)</li>
+                          <li>✅ Maintenance Log (scheduled work completed)</li>
+                          <li>❌ Raw sensor data (too detailed untuk executive report)</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>Klik <strong>Generate</strong></li>
+                  <li>Wait for PDF generation (30-60 seconds untuk large projects)</li>
+                  <li>Download PDF report</li>
+                  <li>Review report contents:
+                    <ul>
+                      <li>Cover page: Project name, owner, reporting period</li>
+                      <li>Summary: Key metrics, uptime %, alert count</li>
+                      <li>Charts: Telemetry trends, alert distribution</li>
+                      <li>Tables: Node list, sensor inventory, maintenance log</li>
+                    </ul>
+                  </li>
+                  <li>Attach to email & send to client</li>
+                </ol>
+                <p class="mb-0 text-success">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <strong>Result:</strong> Professional report generated dalam < 2 minutes, ready for client delivery
+                </p>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 7: Tips & Best Practices -->
+          <div id="tips" class="mb-5">
+            <h4><i class="bi bi-lightbulb text-theme me-2"></i>Tips & Best Practices</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Common Pitfalls -->
+                <div class="alert alert-danger mb-3">
+                  <h6 class="mb-2"><i class="bi bi-x-circle me-2"></i>Common Pitfalls:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Stale "Last Sync":</strong> If > 1 hour, investigate connectivity - don't ignore</li>
+                    <li><strong>Low online percentage:</strong> < 80% online nodes indicates systemic issue (power/network)</li>
+                    <li><strong>Ignoring geofence violations:</strong> May indicate security breach atau GPS malfunction</li>
+                    <li><strong>Not using Force Sync:</strong> After bulk config changes, always force sync untuk verify</li>
+                    <li><strong>Wrong area type:</strong> Affects report categorization & analytics - choose correctly</li>
+                    <li><strong>No maintenance scheduling:</strong> Ad-hoc maintenance causes unplanned downtime & alert spam</li>
+                  </ul>
+                </div>
+
+                <!-- Pro Tips -->
+                <div class="alert alert-info mb-0">
+                  <h6 class="mb-2"><i class="bi bi-stars me-2"></i>Pro Tips:</h6>
+                  <ul class="mb-0">
+                    <li><strong>Bookmark frequently accessed projects:</strong> Browser bookmark untuk daily check projects</li>
+                    <li><strong>Set baseline expectations:</strong> Know normal uptime % untuk detect degradation early</li>
+                    <li><strong>Use stat cards untuk navigation:</strong> Faster than navigating through menus</li>
+                    <li><strong>Schedule maintenance windows:</strong> Auto-suppress alerts during known downtime</li>
+                    <li><strong>Monitor map regularly:</strong> Visual anomalies easier to spot than tables</li>
+                    <li><strong>Export reports monthly:</strong> Build historical archive untuk trend analysis</li>
+                    <li><strong>Force sync after deployments:</strong> Verify new nodes immediately</li>
+                    <li><strong>Check "Last Sync" first:</strong> Quickest health indicator - green flag or red flag</li>
+                    <li><strong>Use project status wisely:</strong> Maintenance mode prevents alert fatigue</li>
+                    <li><strong>Keep owner info updated:</strong> Contact details critical untuk emergency escalation</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 8: Tutorial Terkait -->
+          <div id="related" class="mb-5">
+            <h4><i class="bi bi-link-45deg text-theme me-2"></i>Tutorial Terkait</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Pelajari lebih lanjut tentang topik terkait:</p>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-list me-2"></i>
+                        <a routerLink="/iot/document/module-projects/project-list" class="text-decoration-none">
+                          Project List
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Browse all projects, filtering, searching - starting point sebelum open detail
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-building me-2"></i>
+                        <a routerLink="/iot/document/module-owners/owner-details" class="text-decoration-none">
+                          Owner Detail View
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Parent owner context - projects belong to owners
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-hdd-network me-2"></i>
+                        <a routerLink="/iot/document/module-nodes/node-list" class="text-decoration-none">
+                          Node List
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        View nodes dalam project - click "Devices" stat card untuk navigate
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-activity me-2"></i>
+                        <a routerLink="/iot/document/module-telemetry/telemetry-streams" class="text-decoration-none">
+                          Telemetry Streams
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Real-time telemetry data dari project's sensors
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-bell me-2"></i>
+                        <a routerLink="/iot/document/module-alerts/alert-list" class="text-decoration-none">
+                          Alert Management
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Review & acknowledge project alerts
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-map me-2"></i>
+                        <a routerLink="/iot/document/module-projects/geofence-management" class="text-decoration-none">
+                          Geofence Management
+                        </a>
+                      </h6>
+                      <p class="mb-0 small text-muted">
+                        Configure & manage project geofence boundaries
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 9: Quick Reference -->
+          <div id="quick-reference" class="mb-5">
+            <h4><i class="bi bi-bookmark text-theme me-2"></i>Quick Reference</h4>
+            
+            <card>
+              <card-body>
+                
+                <!-- Status Badges -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-tag me-2"></i>Project Status Badges</h6>
+                  <ul class="mb-0">
+                    <li><span class="badge bg-success">Active</span> - Operational, collecting data normally</li>
+                    <li><span class="badge bg-warning text-dark">Maintenance</span> - Under scheduled maintenance, alerts suppressed</li>
+                    <li><span class="badge bg-secondary">Archived</span> - Decommissioned, historical data retained</li>
+                  </ul>
+                </div>
+
+                <!-- Map Marker Colors -->
+                <div class="alert alert-info mb-3">
+                  <h6 class="mb-2"><i class="bi bi-geo-alt me-2"></i>Map Marker Color Coding</h6>
+                  <ul class="mb-0">
+                    <li><strong>🟢 Green:</strong> Node online & healthy</li>
+                    <li><strong>🟡 Yellow:</strong> Node online but degraded (warnings active)</li>
+                    <li><strong>🔴 Red:</strong> Node offline atau critical alerts</li>
+                    <li><strong>⚪ Gray:</strong> Node in maintenance mode</li>
+                    <li><strong>🟠 Orange:</strong> Geofence violation (node outside boundary)</li>
+                  </ul>
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-keyboard me-2"></i>Keyboard Shortcuts</h6>
+                  <ul class="mb-0">
+                    <li><kbd>F5</kbd> - Refresh dashboard (reload fresh statistics)</li>
+                    <li><kbd>Alt</kbd> + <kbd>←</kbd> - Back to projects list</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>E</kbd> - Open Edit Project form</li>
+                    <li><kbd>Ctrl</kbd> + <kbd>R</kbd> - Export Report</li>
+                  </ul>
+                </div>
+
+              </card-body>
+            </card>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <div class="sticky-top" style="top: 20px;">
+            <card>
+              <card-body>
+                <h5 class="mb-3">Daftar Isi</h5>
+                <nav-scroll class="nav flex-column">
+                  <div class="list-group list-group-flush">
+                    <a href="#introduction" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Apa itu Project Detail View?
+                    </a>
+                    <a href="#access" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Akses
+                    </a>
+                    <a href="#interface" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Interface & Features
+                    </a>
+                    <a href="#usage" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Cara Menggunakan
+                    </a>
+                    <a href="#understanding-data" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Memahami Project Data
+                    </a>
+                    <a href="#scenarios" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Contoh Penggunaan
+                    </a>
+                    <a href="#tips" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tips & Best Practices
+                    </a>
+                    <a href="#related" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Tutorial Terkait
+                    </a>
+                    <a href="#quick-reference" 
+                       class="nav-link list-group-item list-group-item-action bg-transparent text-white border-0">
+                      <i class="bi bi-circle-fill text-theme me-2" style="font-size: 6px;"></i>
+                      Quick Reference
+                    </a>
+                  </div>
+                </nav-scroll>
+              </card-body>
+            </card>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

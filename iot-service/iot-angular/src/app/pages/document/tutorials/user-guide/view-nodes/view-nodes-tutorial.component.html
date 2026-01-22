@@ -1,0 +1,351 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      
+      <!-- Breadcrumb -->
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/iot/document">Documentation</a></li>
+        <li class="breadcrumb-item"><a routerLink="/iot/document/user-guide">User Guide</a></li>
+        <li class="breadcrumb-item active">View Nodes</li>
+      </ul>
+
+      <!-- Page Header -->
+      <h1 class="page-header">
+        <i class="bi bi-hdd-network text-theme me-2"></i>
+        View Nodes
+        <small class="d-block mt-2 text-white-transparent-7">Monitor and manage IoT nodes (devices) in your network</small>
+      </h1>
+      <hr class="mb-4">
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+          
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-white-transparent-7">Progress</span>
+              <span class="text-white">{{ getProgressPercentage() }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-theme" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Section 1: Introduction -->
+          <div id="introduction" class="mb-5">
+            <h4><i class="bi bi-info-circle text-theme me-2"></i>Apa itu Nodes?</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">
+                  <strong>Nodes</strong> (atau Devices) adalah perangkat IoT fisik yang terhubung ke sistem untuk mengirim telemetry data. 
+                  Setiap node memiliki <strong>sensors</strong> yang mengukur parameter tertentu (temperature, humidity, pressure, dll).
+                </p>
+                
+                <!-- Screenshot 1: Nodes List -->
+                <div class="mb-4">
+                  <img src="assets/img/documentation/user-guide/view-nodes/nodes-list-1.png" 
+                       alt="Nodes List Page" 
+                       class="img-fluid rounded border">
+                  <p class="text-center text-white-transparent-7 mt-2 mb-0">
+                    <small>
+                      <i class="bi bi-image me-1"></i>
+                      Halaman Nodes List dengan filters, status badges, dan connectivity indicators
+                    </small>
+                  </p>
+                </div>
+
+                <div class="alert alert-theme mb-3">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-hdd-stack fs-3 me-3"></i>
+                    <div>
+                      <h6 class="mb-2">Node Components</h6>
+                      <ul class="mb-0">
+                        <li><strong>Node Code:</strong> Unique identifier (e.g., NODE-001)</li>
+                        <li><strong>Node Model:</strong> Device type/model (ESP32, Arduino, Raspberry Pi)</li>
+                        <li><strong>Connectivity Status:</strong> Online, Degraded, Offline</li>
+                        <li><strong>Sensors:</strong> List of attached sensors (temperature, humidity, etc.)</li>
+                        <li><strong>Location:</strong> GPS coordinates atau installation address</li>
+                        <li><strong>Project Assignment:</strong> Which project this node belongs to</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Kenapa Penting?</h6>
+                  <ul class="mb-0">
+                    <li><strong>Device Management:</strong> Monitor health status semua devices dalam satu view</li>
+                    <li><strong>Quick Troubleshooting:</strong> Identify offline/degraded nodes untuk maintenance</li>
+                    <li><strong>Inventory Tracking:</strong> Keep track of all deployed IoT devices</li>
+                    <li><strong>Performance Monitoring:</strong> Check uptime, last seen, telemetry rate</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 2: Getting Started -->
+          <div id="getting-started" class="mb-5">
+            <h4><i class="bi bi-box-arrow-in-right text-theme me-2"></i>Cara Akses Nodes List</h4>
+            
+            <card>
+              <card-body>
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-1-circle me-2"></i>Via Main Navigation</h6>
+                  <ol class="mb-0">
+                    <li>Klik menu <strong>Nodes</strong> di sidebar kiri</li>
+                    <li>Nodes list page langsung terbuka</li>
+                    <li>Default: Show all nodes, sorted by most recent first</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-2-circle me-2"></i>Via Dashboard Widget</h6>
+                  <ol class="mb-0">
+                    <li>Di Dashboard, lihat widget <strong>"Node Health Trends"</strong></li>
+                    <li>Klik node name untuk view detail</li>
+                    <li>Atau klik <strong>"View All Nodes"</strong> link</li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2"><i class="bi bi-3-circle me-2"></i>Via Project Detail</h6>
+                  <ol class="mb-0">
+                    <li>Navigate ke <strong>Projects → Select Project</strong></li>
+                    <li>Di Project Detail page, scroll ke section <strong>"Nodes in This Project"</strong></li>
+                    <li>Klik node untuk view detail atau <strong>"View All"</strong></li>
+                  </ol>
+                </div>
+
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2"><i class="bi bi-4-circle me-2"></i>Via Direct URL</h6>
+                  <div class="bg-dark p-2 rounded">
+                    <code class="text-success">http://localhost:4200/iot/nodes</code>
+                  </div>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 3: Features -->
+          <div id="features" class="mb-5">
+            <h4><i class="bi bi-gear text-theme me-2"></i>Key Features</h4>
+            
+            <card>
+              <card-body>
+                <!-- Feature 1: Filters -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-funnel text-primary me-2"></i>
+                    1. Node Filters
+                  </h6>
+                  <ul class="mb-0">
+                    <li><strong>Owner Filter:</strong> Filter by specific owner/tenant</li>
+                    <li><strong>Project Filter:</strong> Filter by specific project (cascading from owner)</li>
+                    <li><strong>Status Filter:</strong> All / Online / Degraded / Offline</li>
+                    <li><strong>Model Filter:</strong> Filter by node model (ESP32, Arduino, etc.)</li>
+                    <li><strong>Location Filter:</strong> Filter by installation location</li>
+                    <li><strong>Search:</strong> Search by node code, name, atau serial number</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 2: Nodes Table -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-table text-success me-2"></i>
+                    2. Nodes Data Table
+                  </h6>
+                  
+                  <!-- Screenshot 2: Nodes Table Detail -->
+                  <div class="mb-3">
+                    <img src="assets/img/documentation/user-guide/view-nodes/img-02-37.png" 
+                         alt="Nodes Table with Details" 
+                         class="img-fluid rounded border">
+                    <p class="text-center text-white-transparent-7 mt-2 mb-0">
+                      <small>
+                        <i class="bi bi-image me-1"></i>
+                        Nodes table dengan status indicators, sensors count, dan action buttons
+                      </small>
+                    </p>
+                  </div>
+
+                  <p class="mb-2"><strong>Columns:</strong></p>
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th>Column</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Status Badge</strong></td>
+                        <td>Color-coded: Online (green), Degraded (yellow), Offline (red)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Node Code</strong></td>
+                        <td>Unique identifier (clickable link to detail)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Node Name</strong></td>
+                        <td>Friendly name/label untuk node</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Model</strong></td>
+                        <td>Device model (ESP32-WROOM, Arduino Mega, etc.)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Project</strong></td>
+                        <td>Project assignment (dengan owner badge)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Sensors Count</strong></td>
+                        <td>Number of attached sensors (e.g., "5 sensors")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Last Seen</strong></td>
+                        <td>Timestamp of last telemetry received</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Uptime</strong></td>
+                        <td>Percentage uptime (e.g., "98.5%")</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Location</strong></td>
+                        <td>Installation address atau GPS coordinates</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Actions</strong></td>
+                        <td>View Detail / Edit / Delete buttons</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Feature 3: Node Actions -->
+                <div class="alert alert-secondary mb-3">
+                  <h6 class="mb-2">
+                    <i class="bi bi-lightning text-warning me-2"></i>
+                    3. Node Actions
+                  </h6>
+                  <ul class="mb-0">
+                    <li><strong>View Detail:</strong> Navigate to node detail page (sensors, telemetry, config)</li>
+                    <li><strong>Edit Node:</strong> Update node info (name, location, model)</li>
+                    <li><strong>Delete Node:</strong> Remove node (dengan confirmation)</li>
+                    <li><strong>Reboot:</strong> Send reboot command ke node (jika online)</li>
+                    <li><strong>View Telemetry:</strong> Quick link to node's telemetry data</li>
+                    <li><strong>Export CSV:</strong> Download nodes list ke CSV/Excel</li>
+                  </ul>
+                </div>
+
+                <!-- Feature 4: Bulk Actions -->
+                <div class="alert alert-secondary mb-0">
+                  <h6 class="mb-2">
+                    <i class="bi bi-check2-square text-info me-2"></i>
+                    4. Bulk Actions
+                  </h6>
+                  <ul class="mb-0">
+                    <li><strong>Select Multiple:</strong> Checkbox untuk select multiple nodes</li>
+                    <li><strong>Bulk Delete:</strong> Delete multiple nodes sekaligus</li>
+                    <li><strong>Bulk Reboot:</strong> Reboot multiple nodes (hanya yang online)</li>
+                    <li><strong>Bulk Export:</strong> Export selected nodes ke CSV</li>
+                    <li><strong>Assign to Project:</strong> Move multiple nodes ke project lain</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Section 4: Next Steps -->
+          <div id="next-steps" class="mb-5">
+            <h4><i class="bi bi-signpost text-theme me-2"></i>Next Steps</h4>
+            
+            <card>
+              <card-body>
+                <p class="mb-3">Setelah familiar dengan Nodes List, explore:</p>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-cpu text-primary me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-sensors" class="text-decoration-none">View Sensors</a>
+                      </h6>
+                      <p class="mb-0 small">Explore sensors attached to nodes</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-activity text-success me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-telemetry" class="text-decoration-none">View Telemetry</a>
+                      </h6>
+                      <p class="mb-0 small">Monitor telemetry data from nodes</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-3">
+                      <h6 class="mb-2">
+                        <i class="bi bi-folder text-warning me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-projects" class="text-decoration-none">View Projects</a>
+                      </h6>
+                      <p class="mb-0 small">Browse projects containing nodes</p>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-secondary mb-0">
+                      <h6 class="mb-2">
+                        <i class="bi bi-bell text-danger me-2"></i>
+                        <a routerLink="/iot/document/user-guide/view-alerts" class="text-decoration-none">View Alerts</a>
+                      </h6>
+                      <p class="mb-0 small">Check alerts from node sensors</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0">
+                  <h6 class="mb-2"><i class="bi bi-lightbulb me-2"></i>Pro Tips</h6>
+                  <ul class="mb-0">
+                    <li><strong>Monitor Offline Nodes:</strong> Use Status Filter → Offline untuk quick identify problematic devices</li>
+                    <li><strong>Check Last Seen:</strong> Nodes dengan "Last Seen > 24h ago" likely need maintenance</li>
+                    <li><strong>Use Project Filter:</strong> For large deployments, filter by project untuk easier management</li>
+                    <li><strong>Export Regularly:</strong> Export nodes list monthly untuk inventory tracking</li>
+                    <li><strong>Bookmark Filters:</strong> Save filtered URLs untuk quick access (e.g., ?status=offline)</li>
+                    <li><strong>Check Uptime:</strong> Nodes dengan uptime < 95% mungkin ada connectivity issues</li>
+                  </ul>
+                </div>
+              </card-body>
+            </card>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-outline-theme" (click)="previousSection()" [disabled]="currentSection === 0">
+              <i class="bi bi-arrow-left me-2"></i>Previous
+            </button>
+            <button class="btn btn-theme" (click)="nextSection()" [disabled]="currentSection === sections.length - 1">
+              Next<i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3">
+          <nav-scroll class="nav">
+            <a class="nav-link" 
+               *ngFor="let section of sections; let i = index"
+               [class.active]="currentSection === i"
+               (click)="goToSection(i)"
+               style="cursor: pointer;">
+              {{ section.title }}
+            </a>
+          </nav-scroll>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

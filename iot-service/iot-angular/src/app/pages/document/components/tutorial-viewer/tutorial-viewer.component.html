@@ -1,0 +1,134 @@
+<div class="tutorial-viewer" *ngIf="tutorial">
+  <!-- Header -->
+  <div class="tutorial-header">
+    <div class="breadcrumb">
+      <a [routerLink]="['/iot/document']">Documentation</a>
+      <mat-icon>chevron_right</mat-icon>
+      <a [routerLink]="['/iot/document', tutorial.metadata.category]">
+        {{ tutorial.metadata.category | titlecase }}
+      </a>
+      <mat-icon>chevron_right</mat-icon>
+      <span>{{ tutorial.metadata.title }}</span>
+    </div>
+
+    <h1>{{ tutorial.metadata.title }}</h1>
+    <p class="description">{{ tutorial.metadata.description }}</p>
+
+    <div class="meta-info">
+      <mat-chip-set>
+        <mat-chip>
+          <mat-icon>schedule</mat-icon>
+          {{ tutorial.metadata.estimatedTime }} minutes
+        </mat-chip>
+        <mat-chip>
+          <mat-icon>bar_chart</mat-icon>
+          {{ tutorial.metadata.difficulty }}
+        </mat-chip>
+        <mat-chip *ngFor="let tag of tutorial.metadata.tags.slice(0, 3)">
+          {{ tag }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span>Progress: {{ getProgressPercentage() | number:'1.0-0' }}%</span>
+        <span>{{ completedSections.size }} / {{ tutorial.sections.length }} sections</span>
+      </div>
+      <mat-progress-bar 
+        mode="determinate" 
+        [value]="getProgressPercentage()">
+      </mat-progress-bar>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="tutorial-body">
+    <!-- Sidebar with sections -->
+    <aside class="sections-sidebar">
+      <h3>Sections</h3>
+      <mat-nav-list>
+        <mat-list-item 
+          *ngFor="let section of tutorial.sections; let i = index"
+          [class.active]="i === currentSectionIndex"
+          (click)="goToSection(i)">
+          <mat-icon matListItemIcon>
+            {{ isSectionCompleted(section.id) ? 'check_circle' : 'radio_button_unchecked' }}
+          </mat-icon>
+          <span matListItemTitle>{{ i + 1 }}. {{ section.title }}</span>
+        </mat-list-item>
+      </mat-nav-list>
+    </aside>
+
+    <!-- Main content -->
+    <main class="section-content" *ngIf="currentSection">
+      <h2>{{ currentSection.title }}</h2>
+
+      <!-- Markdown content -->
+      <div class="markdown-content" [innerHTML]="currentSection.content | markdown">
+      </div>
+
+      <!-- Video if available -->
+      <div class="video-container" *ngIf="currentSection.videoUrl">
+        <iframe 
+          [src]="currentSection.videoUrl" 
+          frameborder="0" 
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <!-- Images -->
+      <div class="images-gallery" *ngIf="currentSection.images && currentSection.images.length > 0">
+        <img 
+          *ngFor="let image of currentSection.images" 
+          [src]="image" 
+          [alt]="currentSection.title">
+      </div>
+
+      <!-- Code snippets -->
+      <div class="code-snippets" *ngIf="currentSection.codeSnippets && currentSection.codeSnippets.length > 0">
+        <div *ngFor="let snippet of currentSection.codeSnippets" class="code-block">
+          <div class="code-header">
+            <span class="language">{{ snippet.language }}</span>
+            <button mat-icon-button>
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+          <pre><code>{{ snippet.code }}</code></pre>
+          <p *ngIf="snippet.description" class="code-description">{{ snippet.description }}</p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="section-navigation">
+        <button 
+          mat-raised-button 
+          (click)="previousSection()" 
+          [disabled]="currentSectionIndex === 0">
+          <mat-icon>chevron_left</mat-icon>
+          Previous
+        </button>
+
+        <button 
+          mat-raised-button 
+          color="accent"
+          (click)="markAsCompleted()"
+          [disabled]="isSectionCompleted(currentSection.id)">
+          <mat-icon>check</mat-icon>
+          {{ isSectionCompleted(currentSection.id) ? 'Completed' : 'Mark as Complete' }}
+        </button>
+
+        <button 
+          mat-raised-button 
+          color="primary"
+          (click)="nextSection()" 
+          [disabled]="currentSectionIndex === tutorial.sections.length - 1">
+          Next
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </main>
+  </div>
+</div>
