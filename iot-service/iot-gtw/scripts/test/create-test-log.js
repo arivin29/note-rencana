@@ -39,7 +39,7 @@ const dataSource = new DataSource({
     console.log('   Device ID:', result[0].device_id);
     console.log('   Payload:', JSON.stringify(payload, null, 2));
     console.log('\n⏳ Scheduler will process this log automatically within 1 minute...');
-    console.log('   Or you can trigger manually: POST http://localhost:4000/api/telemetry-processor/process');
+    console.log('   Or you can trigger manually: POST http://localhost:5001/api/telemetry-processor/process');
 
     await dataSource.destroy();
   } catch (error) {

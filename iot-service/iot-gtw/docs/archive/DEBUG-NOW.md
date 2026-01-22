@@ -42,14 +42,14 @@ Look at NestJS startup logs, find this:
 # 1. Check if NestJS is running
 ps aux | grep "nest start" | grep -v grep
 
-# 2. Check if port 4000 is listening
-lsof -i :4000
+# 2. Check if port 5001 is listening
+lsof -i :5001
 
 # 3. Test API health
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 
 # 4. Check MQTT health
-curl http://localhost:4000/api/health/mqtt
+curl http://localhost:5001/api/health/mqtt
 ```
 
 ## Most Likely Issue: NestJS Not Restarted
@@ -70,7 +70,7 @@ Please provide:
 ps aux | grep nest | grep -v grep
 
 # If running, check health
-curl http://localhost:4000/api/health/mqtt
+curl http://localhost:5001/api/health/mqtt
 ```
 
 ## Quick Commands to Run Now
@@ -80,5 +80,5 @@ curl http://localhost:4000/api/health/mqtt
 # Should see: "Subscribed to MQTT topic: 'sensor/#'"
 
 # Or check via API
-curl -s http://localhost:4000/api/health/mqtt | python3 -m json.tool
+curl -s http://localhost:5001/api/health/mqtt | python3 -m json.tool
 ```

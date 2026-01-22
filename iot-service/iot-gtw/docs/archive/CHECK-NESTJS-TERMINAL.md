@@ -189,7 +189,7 @@ ps aux | grep "nest.*iot-gtw" | grep -v grep | head -1
 
 echo ""
 echo "=== Health Check ==="
-curl -s http://localhost:4000/api/health/mqtt
+curl -s http://localhost:5001/api/health/mqtt
 
 echo ""
 echo "=== Database Check ==="

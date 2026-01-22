@@ -10,7 +10,7 @@ Aplikasi NestJS untuk IoT Gateway telah berhasil diimplementasikan dan berjalan 
 - [x] Inisialisasi project di `./iot-gtw`
 - [x] Install dependencies (NestJS, TypeORM, PostgreSQL, MQTT)
 - [x] Konfigurasi TypeScript
-- [x] Setup port 4000
+- [x] Setup port 5001
 
 ### 2. ✅ Database Configuration
 - [x] TypeORM configuration
@@ -59,7 +59,7 @@ Aplikasi NestJS untuk IoT Gateway telah berhasil diimplementasikan dan berjalan 
 ### 7. ✅ Testing & Validation
 - [x] Build successful
 - [x] Migration successful
-- [x] Application running on port 4000
+- [x] Application running on port 5001
 - [x] MQTT connected
 - [x] Database connected
 - [x] Health check endpoints tested
@@ -92,7 +92,7 @@ iot-gtw/
 │   │   └── enums/
 │   │       └── log-label.enum.ts
 │   ├── migrations/
-│   │   └── 1732074000000-CreateIotLogTable.ts
+│   │   └── 1732075001000-CreateIotLogTable.ts
 │   ├── app.module.ts
 │   └── main.ts
 ├── .env
@@ -212,12 +212,12 @@ npm run start:dev
 
 ### Test Health Check
 ```bash
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 ```
 
 ### Check Stats
 ```bash
-curl http://localhost:4000/api/iot-logs/stats
+curl http://localhost:5001/api/iot-logs/stats
 ```
 
 ### Send Test MQTT Message
@@ -230,7 +230,7 @@ curl http://localhost:4000/api/iot-logs/stats
 
 ### Check MQTT Status
 ```bash
-curl http://localhost:4000/api/health/mqtt
+curl http://localhost:5001/api/health/mqtt
 ```
 
 Response:
@@ -247,7 +247,7 @@ Response:
 
 ### Check Database Status
 ```bash
-curl http://localhost:4000/api/health/database
+curl http://localhost:5001/api/health/database
 ```
 
 ### View Logs
@@ -331,6 +331,6 @@ Berikut adalah enhancement yang bisa ditambahkan di masa depan:
 
 **Status**: ✅ PRODUCTION READY
 
-**Deployment**: Aplikasi siap di-deploy dan sudah berjalan pada port 4000
+**Deployment**: Aplikasi siap di-deploy dan sudah berjalan pada port 5001
 
 **Documentation**: README.md tersedia dengan detail lengkap

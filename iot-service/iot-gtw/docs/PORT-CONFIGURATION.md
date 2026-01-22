@@ -1,8 +1,8 @@
 # Port Configuration
 
-## Default Port: 4000
+## Default Port: 5001
 
-IoT Gateway service menggunakan **port 4000** untuk menghindari konflik dengan service lain.
+IoT Gateway service menggunakan **port 5001** untuk menghindari konflik dengan service lain.
 
 ---
 
@@ -11,12 +11,12 @@ IoT Gateway service menggunakan **port 4000** untuk menghindari konflik dengan s
 ### Environment Variable
 ```bash
 # .env
-PORT=4000
+PORT=5001
 ```
 
-### Why Port 4000?
+### Why Port 5001?
 - ✅ Port 3000 sudah digunakan oleh service lain
-- ✅ Port 4000 tersedia dan tidak konflik
+- ✅ Port 5001 tersedia dan tidak konflik
 - ✅ Standard untuk development services
 
 ---
@@ -25,17 +25,17 @@ PORT=4000
 
 ### Main Application
 ```
-http://localhost:4000/api
+http://localhost:5001/api
 ```
 
 ### Health Check
 ```
-http://localhost:4000/api/health
+http://localhost:5001/api/health
 ```
 
 ### IoT Logs API
 ```
-http://localhost:4000/api/iot-logs
+http://localhost:5001/api/iot-logs
 ```
 
 ---
@@ -44,7 +44,7 @@ http://localhost:4000/api/iot-logs
 
 ### Check Service
 ```bash
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 ```
 
 ### Expected Response
@@ -64,7 +64,7 @@ curl http://localhost:4000/api/health
 
 | Service | Port | URL |
 |---------|------|-----|
-| **iot-gtw** (Gateway) | **4000** | http://localhost:4000/api |
+| **iot-gtw** (Gateway) | **5001** | http://localhost:5001/api |
 | iot-backend (Main API) | 3000 | http://localhost:3000 |
 | iot-angular (Frontend) | 4200 | http://localhost:4200 |
 | PostgreSQL | 5432 | - |
@@ -80,7 +80,7 @@ PM2 automatically uses the PORT from environment:
 // ecosystem.config.js
 env: {
   NODE_ENV: 'development',
-  PORT: 4000  // ✅ Port 4000
+  PORT: 5001  // ✅ Port 5001
 },
 ```
 
@@ -89,11 +89,11 @@ env: {
 ## Troubleshooting
 
 ### Port Already in Use
-If port 4000 is already used:
+If port 5001 is already used:
 
 **Check what's using the port:**
 ```bash
-lsof -i :4000
+lsof -i :5001
 ```
 
 **Kill the process:**
@@ -103,10 +103,10 @@ kill -9 <PID>
 
 **Or change port in .env:**
 ```bash
-PORT=4001  # Use different port
+PORT=5001  # Use different port
 ```
 
 ---
 
-**Default Port:** 4000  
+**Default Port:** 5001  
 **Last Updated:** November 22, 2025

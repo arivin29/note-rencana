@@ -7,7 +7,7 @@ function httpGet(path) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'localhost',
-      port: 4000,
+      port: 5001,
       path: path,
       method: 'GET',
       timeout: 5000
@@ -66,7 +66,7 @@ async function main() {
     console.log();
 
     console.log('=== Summary ===');
-    console.log('✓ Application is running on port 4000');
+    console.log('✓ Application is running on port 5001');
     console.log('✓ Scheduler is registered and active');
     console.log('✓ Automatic processing runs every minute');
     console.log('\nThe telemetry scheduler will process unprocessed logs automatically.');
@@ -74,7 +74,7 @@ async function main() {
 
   } catch (error) {
     console.error('Error testing application:', error.message);
-    console.log('\nApplication may not be running properly on port 4000.');
+    console.log('\nApplication may not be running properly on port 5001.');
   }
 }
 

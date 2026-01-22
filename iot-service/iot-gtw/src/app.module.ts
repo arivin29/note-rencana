@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import databaseConfig from './config/database.config';
 import mqttConfig from './config/mqtt.config';
 import deviceDefaultsConfig from './config/device-defaults.config';
+import teltonikaConfig from './config/teltonika.config';
 import { IotLog } from './entities';
 import { 
   Node, 
@@ -22,13 +23,14 @@ import { IotLogModule } from './modules/iot-log/iot-log.module';
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { HealthModule } from './modules/health/health.module';
 import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
+import { TeltonikaModule } from './modules/teltonika/teltonika.module';
 
 @Module({
   imports: [
     // Config Module
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, mqttConfig, deviceDefaultsConfig],
+      load: [databaseConfig, mqttConfig, deviceDefaultsConfig, teltonikaConfig],
       envFilePath: '.env',
     }),
 
@@ -69,6 +71,7 @@ import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
     MqttModule,
     HealthModule,
     SchedulerAppModule, // Auto-process telemetry every 30 seconds
+    TeltonikaModule, // Teltonika FM125 TCP Gateway
   ],
 })
 export class AppModule {}

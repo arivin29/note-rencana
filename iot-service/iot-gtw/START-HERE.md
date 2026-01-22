@@ -10,15 +10,16 @@ Project sudah **clean**, **organized**, dan **production-ready**!
 
 ### Service Details
 - **Name:** IoT Gateway Service
-- **Port:** 4000 (customized to avoid conflicts)
-- **URL:** http://localhost:4000/api
+- **Port:** 5001 (customized to avoid conflicts)
+- **URL:** http://localhost:5001/api
 - **Tech:** NestJS, TypeORM, PostgreSQL, MQTT
+- **Protocols:** MQTT (ESP32), TCP (Teltonika FM125)
 
 ### Current Status
 ✅ Documentation complete  
 ✅ PM2 configuration ready  
 ✅ Project structure organized  
-✅ Port configured (4000)  
+✅ Port configured (5001)  
 ✅ Environment template available  
 
 ---
@@ -33,7 +34,7 @@ cp .env.example .env
 npm run start:dev
 ```
 
-Service will run at: **http://localhost:4000/api**
+Service will run at: **http://localhost:5001/api**
 
 ### Production (PM2)
 ```bash
@@ -64,8 +65,10 @@ npm run pm2:monit        # Monitor resources
 
 ### Testing
 ```bash
-npm run test:mqtt        # Test MQTT publishing
-npm run test:logs        # Check IoT logs
+npm run test:mqtt              # Test MQTT publishing
+npm run test:logs              # Check IoT logs
+npm run test:teltonika:tcp     # Test Teltonika TCP connection
+npm run test:teltonika:data    # Check Teltonika data in DB
 ```
 
 ### Database
@@ -107,19 +110,19 @@ iot-gtw/
 ## 🔗 Important URLs
 
 ### Service Endpoints
-- **Main API:** http://localhost:4000/api
-- **Health Check:** http://localhost:4000/api/health
-- **IoT Logs:** http://localhost:4000/api/iot-logs
-- **Health - Database:** http://localhost:4000/api/health/database
-- **Health - MQTT:** http://localhost:4000/api/health/mqtt
+- **Main API:** http://localhost:5001/api
+- **Health Check:** http://localhost:5001/api/health
+- **IoT Logs:** http://localhost:5001/api/iot-logs
+- **Health - Database:** http://localhost:5001/api/health/database
+- **Health - MQTT:** http://localhost:5001/api/health/mqtt
 
 ### Test Service
 ```bash
 # Quick health check
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 
 # Check statistics
-curl http://localhost:4000/api/iot-logs/stats
+curl http://localhost:5001/api/iot-logs/stats
 ```
 
 ---
@@ -172,7 +175,7 @@ curl http://localhost:4000/api/iot-logs/stats
 ```bash
 # Application
 NODE_ENV=development
-PORT=4000                                    # ⭐ Customized port
+PORT=5001                                    # ⭐ Customized port
 
 # Database
 DATABASE_URL=postgresql://user:pass@host:port/db
@@ -194,7 +197,7 @@ MQTT_CLIENT_ID=iot-gateway
 
 ### 1. Check Service Health
 ```bash
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 ```
 
 ### 2. Test MQTT
@@ -261,7 +264,7 @@ npm run pm2:logs
 | Metric | Value |
 |--------|-------|
 | **Status** | ✅ Production Ready |
-| **Port** | 4000 |
+| **Port** | 5001 |
 | **Documentation** | Complete |
 | **PM2 Setup** | Ready |
 | **Test Scripts** | Organized |
@@ -274,7 +277,7 @@ npm run pm2:logs
 ✅ **Clean project structure**  
 ✅ **Complete documentation**  
 ✅ **PM2 production setup**  
-✅ **Port configured (4000)**  
+✅ **Port configured (5001)**  
 ✅ **Test scripts organized**  
 ✅ **Environment template**  
 ✅ **Health check ready**  
@@ -284,8 +287,8 @@ npm run pm2:logs
 
 **🚀 SERVICE IS READY TO USE!**
 
-**Port:** 4000  
-**URL:** http://localhost:4000/api  
+**Port:** 5001  
+**URL:** http://localhost:5001/api  
 **Status:** ✅ Complete  
 **Updated:** November 22, 2025  
 

@@ -24,7 +24,7 @@ console.log('');
 
 const client = mqtt.connect(BROKER_URL, {
   clean: true,
-  connectTimeout: 4000,
+  connectTimeout: 5001,
   clientId: `mqtt-debug-listener-${Date.now()}`
 });
 

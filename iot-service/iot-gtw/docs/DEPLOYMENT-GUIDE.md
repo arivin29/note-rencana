@@ -92,7 +92,7 @@ nano .env
 
 # 4. Verify service is running
 pm2 status
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 ```
 
 ---
@@ -174,7 +174,7 @@ pm2 logs iot-gateway --lines 50
 
 ### 3. Test Health Endpoint
 ```bash
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 ```
 
 Expected response:
@@ -191,10 +191,10 @@ Expected response:
 ### 4. Check Service URLs
 ```bash
 # Main API
-curl http://localhost:4000/api
+curl http://localhost:5001/api
 
 # IoT Logs
-curl http://localhost:4000/api/iot-logs/stats
+curl http://localhost:5001/api/iot-logs/stats
 ```
 
 ### 5. Monitor Resources
@@ -265,14 +265,14 @@ npm run start:prod
 ### Port Already in Use
 
 ```bash
-# Check what's using port 4000
-lsof -i :4000
+# Check what's using port 5001
+lsof -i :5001
 
 # Kill the process
 kill -9 <PID>
 
 # Or change port in .env
-PORT=4001
+PORT=5001
 ```
 
 ### Git Pull Fails
@@ -349,7 +349,7 @@ cat ~/.ssh/id_ed25519.pub
 ```bash
 # Allow only necessary ports
 sudo ufw allow 22    # SSH
-sudo ufw allow 4000  # IoT Gateway (if needed externally)
+sudo ufw allow 5001  # IoT Gateway (if needed externally)
 sudo ufw allow 1883  # MQTT (if needed externally)
 sudo ufw enable
 ```
@@ -477,7 +477,7 @@ pm2 restart iot-gateway
 pm2 stop iot-gateway
 
 # Health check
-curl http://localhost:4000/api/health
+curl http://localhost:5001/api/health
 ```
 
 ---

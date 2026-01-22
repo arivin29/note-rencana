@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
-export class CreateIotLogTable1732074000000 implements MigrationInterface {
+export class CreateIotLogTable1732075001000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Enable UUID extension if not already enabled
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);

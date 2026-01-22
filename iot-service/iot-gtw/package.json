@@ -20,7 +20,9 @@
     "pm2:logs": "pm2 logs iot-gateway",
     "pm2:monit": "pm2 monit",
     "test:mqtt": "node scripts/test/test-mqtt-publish.js",
-    "test:logs": "node scripts/test/check-iot-logs.js"
+    "test:logs": "node scripts/test/check-iot-logs.js",
+    "test:teltonika:tcp": "node scripts/test/test-teltonika-tcp.js",
+    "test:teltonika:data": "node scripts/test/check-teltonika-data.js"
   },
   "keywords": [],
   "author": "",

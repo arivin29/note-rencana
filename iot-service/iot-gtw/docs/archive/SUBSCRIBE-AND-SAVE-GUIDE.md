@@ -117,8 +117,8 @@ node quick-test.js
 [Nest] LOG [IotLogService]    Device ID: SENSOR-001
 [Nest] LOG [IotLogService]    Payload: {"deviceId":"SENSOR-001","temperature":25.5,...}
 [Nest] LOG [IotLogService] 🔵 Saving to database...
-[Nest] LOG [IotLogService] ✅ IoT log created successfully: 550e8400-e29b-41d4-a716-446655440000 [TELEMETRY]
-[Nest] LOG [MqttService] ✅ Successfully saved to database with ID: 550e8400-e29b-41d4-a716-446655440000 [TELEMETRY] from topic 'sensor'
+[Nest] LOG [IotLogService] ✅ IoT log created successfully: 550e8400-e29b-41d4-a716-446655450010 [TELEMETRY]
+[Nest] LOG [MqttService] ✅ Successfully saved to database with ID: 550e8400-e29b-41d4-a716-446655450010 [TELEMETRY] from topic 'sensor'
 ```
 
 ### Troubleshooting by Log Pattern:
@@ -205,21 +205,21 @@ node check-iot-logs.js
 
 📋 Last 5 logs:
 
-1. ID: 550e8400-e29b-41d4-a716-446655440000
+1. ID: 550e8400-e29b-41d4-a716-446655450010
    Label: TELEMETRY
    Topic: sensor
    Device ID: SENSOR-001
    Payload: {"deviceId":"SENSOR-001","temperature":25.5,...
    Created: 2025-11-20 12:45:30
 
-2. ID: 550e8400-e29b-41d4-a716-446655440001
+2. ID: 550e8400-e29b-41d4-a716-446655450011
    Label: LOG
    Topic: sensor/test
    Device ID: N/A
    Payload: Hello from sensor/test
    Created: 2025-11-20 12:45:31
 
-3. ID: 550e8400-e29b-41d4-a716-446655440002
+3. ID: 550e8400-e29b-41d4-a716-446655450012
    Label: COMMAND
    Topic: device/control
    Device ID: NODE001
@@ -231,16 +231,16 @@ node check-iot-logs.js
 
 ```bash
 # Get statistics
-curl http://localhost:4000/api/iot-logs/stats
+curl http://localhost:5001/api/iot-logs/stats
 
 # Get unprocessed logs
-curl http://localhost:4000/api/iot-logs/unprocessed?limit=10
+curl http://localhost:5001/api/iot-logs/unprocessed?limit=10
 
 # Get by label
-curl http://localhost:4000/api/iot-logs/by-label/TELEMETRY?limit=5
+curl http://localhost:5001/api/iot-logs/by-label/TELEMETRY?limit=5
 
 # Get by device ID
-curl http://localhost:4000/api/iot-logs/by-device/SENSOR-001
+curl http://localhost:5001/api/iot-logs/by-device/SENSOR-001
 ```
 
 ---
@@ -395,7 +395,7 @@ node check-iot-logs.js
 - [ ] See ✅ IoT log created successfully (3x)
 - [ ] Run `node check-iot-logs.js`
 - [ ] Confirm 3 new logs in database
-- [ ] Check via API: `curl http://localhost:4000/api/iot-logs/stats`
+- [ ] Check via API: `curl http://localhost:5001/api/iot-logs/stats`
 
 ---
 
@@ -417,7 +417,7 @@ node quick-test.js
 node check-iot-logs.js
 
 # 5. Check via API
-curl http://localhost:4000/api/iot-logs/stats
+curl http://localhost:5001/api/iot-logs/stats
 ```
 
 ---

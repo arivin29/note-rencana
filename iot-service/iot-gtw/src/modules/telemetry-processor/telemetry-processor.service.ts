@@ -97,23 +97,35 @@ export class TelemetryProcessorService {
     const startTime = Date.now();
     const errors: string[] = [];
 
+    // this.logger.debug(`🔍 Processing IoT Log: ${iotLog.id} | device_id: ${iotLog.deviceId}`);
     try {
-      // 1. Validate owner code from device_id
-      const ownerValidation = await this.validateOwnerCode(iotLog.deviceId);
+      // 1. Check if this is a pure IMEI (Teltonika device)
+      const isPureIMEI = /^\d{15}$/.test(iotLog.deviceId);
+      let ownerValidation;
+      
+      if (isPureIMEI) {
+        // Skip owner validation for IMEI-based devices (Teltonika)
+        // Owner will be determined from node's project
+        this.logger.debug(`Device ${iotLog.deviceId} is IMEI format, skipping owner validation`);
+        ownerValidation = { isValid: true, skipValidation: true };
+      } else {
+        // Normal validation for ESP32-style device IDs
+        ownerValidation = await this.validateOwnerCode(iotLog.deviceId);
+        
+        if (!ownerValidation.isValid) {
+          errors.push(`Owner validation failed: ${ownerValidation.error}`);
+          await this.markAsProcessed(iotLog, false, errors.join('; '));
 
-      if (!ownerValidation.isValid) {
-        errors.push(`Owner validation failed: ${ownerValidation.error}`);
-        await this.markAsProcessed(iotLog, false, errors.join('; '));
-
-        return {
-          success: false,
-          iotLogId: iotLog.id,
-          sensorsProcessed: 0,
-          channelsProcessed: 0,
-          sensorLogsCreated: 0,
-          errors,
-          processingTimeMs: Date.now() - startTime,
-        };
+          return {
+            success: false,
+            iotLogId: iotLog.id,
+            sensorsProcessed: 0,
+            channelsProcessed: 0,
+            sensorLogsCreated: 0,
+            errors,
+            processingTimeMs: Date.now() - startTime,
+          };
+        }
       }
 
       // 2. Find node by device_id
@@ -126,7 +138,7 @@ export class TelemetryProcessorService {
           iotLog.payload,
           iotLog.topic,
           undefined,
-          ownerValidation.owner?.idOwner,
+          ownerValidation.skipValidation ? undefined : ownerValidation.owner?.idOwner,
         );
 
         errors.push(`Node not found for device_id: ${iotLog.deviceId} - tracked as unpaired`);
@@ -151,7 +163,7 @@ export class TelemetryProcessorService {
           iotLog.payload,
           iotLog.topic,
           node.idNode,
-          ownerValidation.owner?.idOwner,
+          ownerValidation.skipValidation ? undefined : ownerValidation.owner?.idOwner,
         );
 
         errors.push(`Node ${node.code} has no assigned profile - tracked as unpaired`);
@@ -485,11 +497,13 @@ export class TelemetryProcessorService {
   /**
    * Validate owner code from device_id
    * Expected format: XXXXX-HARDWARE_ID (e.g., A1B2C-ESP32001)
+   * Exception: HELIO-IMEI devices (Teltonika) will get owner from node->project
    */
   private async validateOwnerCode(deviceId: string): Promise<{
     isValid: boolean;
     owner?: Owner;
     error?: string;
+    skipValidation?: boolean;
   }> {
     if (!deviceId) {
       return { isValid: false, error: 'Device ID is required' };
@@ -506,6 +520,13 @@ export class TelemetryProcessorService {
     }
 
     const ownerCode = parts[0].toUpperCase();
+
+    // Exception: HELIO-xxx devices (Teltonika GPS trackers)
+    // Owner will be determined from node->project->id_owner
+    if (ownerCode === 'HELIO') {
+      this.logger.debug(`Device ${deviceId} is HELIO format (Teltonika), owner will be from node->project`);
+      return { isValid: true, skipValidation: true };
+    }
 
     if (ownerCode.length !== 5) {
       return {

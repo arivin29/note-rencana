@@ -3,12 +3,12 @@ const net = require('net');
 
 console.log('=== Restarting IoT Gateway Application ===\n');
 
-// Find and kill process on port 4000
+// Find and kill process on port 5001
 function findAndKillProcess() {
   return new Promise((resolve, reject) => {
-    exec('lsof -ti:4000', (error, stdout, stderr) => {
+    exec('lsof -ti:5001', (error, stdout, stderr) => {
       if (error || !stdout.trim()) {
-        console.log('No process found on port 4000');
+        console.log('No process found on port 5001');
         resolve(false);
         return;
       }
@@ -91,13 +91,13 @@ function startApp() {
     await findAndKillProcess();
     await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
 
-    const portAvailable = await waitForPortAvailable(4000);
+    const portAvailable = await waitForPortAvailable(5001);
     if (!portAvailable) {
-      console.error('❌ Port 4000 is still not available');
+      console.error('❌ Port 5001 is still not available');
       process.exit(1);
     }
 
-    console.log('✅ Port 4000 is now available\n');
+    console.log('✅ Port 5001 is now available\n');
 
     await startApp();
 

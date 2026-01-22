@@ -29,7 +29,7 @@ File `.env` sudah tersedia dengan konfigurasi:
 
 ```env
 NODE_ENV=development
-PORT=4000
+PORT=5001
 
 # Database Configuration
 DATABASE_URL=postgresql://postgres:Pantek123@109.105.194.174:54366/iot
@@ -68,7 +68,7 @@ npm run build
 npm run start:prod
 ```
 
-Aplikasi akan berjalan di: http://localhost:4000
+Aplikasi akan berjalan di: http://localhost:5001
 
 ## Table Structure: iot_log
 

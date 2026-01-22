@@ -14,7 +14,7 @@
 ./PROJECT-STRUCTURE.txt
 ./src
 ./src/migrations
-./src/migrations/1732074000000-CreateIotLogTable.ts
+./src/migrations/1732075001000-CreateIotLogTable.ts
 ./src/main.ts
 ./src/config
 ./src/config/typeorm.config.ts

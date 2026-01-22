@@ -240,13 +240,13 @@ node check-iot-logs.js
 ### Step 5: Check via API
 ```bash
 # Get all logs
-curl http://localhost:4000/api/iot-logs/stats
+curl http://localhost:5001/api/iot-logs/stats
 
 # Get unprocessed logs
-curl http://localhost:4000/api/iot-logs/unprocessed
+curl http://localhost:5001/api/iot-logs/unprocessed
 
 # Get logs by label
-curl http://localhost:4000/api/iot-logs/by-label/TELEMETRY
+curl http://localhost:5001/api/iot-logs/by-label/TELEMETRY
 ```
 
 ## Common Issues & Solutions

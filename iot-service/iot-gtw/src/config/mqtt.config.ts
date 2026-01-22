@@ -6,7 +6,7 @@ export default registerAs('mqtt', () => ({
   clientId: process.env.MQTT_CLIENT_ID || 'iot-gtw-service',
   options: {
     clean: true,
-    connectTimeout: 4000,
+    connectTimeout: 5001,
     reconnectPeriod: 1000,
   },
 }));

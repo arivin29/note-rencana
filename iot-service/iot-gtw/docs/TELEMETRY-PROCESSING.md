@@ -461,7 +461,7 @@ INSERT INTO iot_log (label, payload, device_id, processed)
 VALUES ('telemetry', '{"device_id":"TEST-001","value":123}', 'TEST-001', false);
 
 # 2. Trigger processing
-curl -X POST http://localhost:4000/api/telemetry-processor/process
+curl -X POST http://localhost:5001/api/telemetry-processor/process
 
 # 3. Check result
 SELECT * FROM sensor_logs WHERE id_node = (

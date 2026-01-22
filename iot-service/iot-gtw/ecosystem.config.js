@@ -10,11 +10,11 @@ module.exports = {
     // Environment
     env: {
       NODE_ENV: 'development',
-      PORT: 4000
+        PORT: 5001
     },
     env_production: {
       NODE_ENV: 'production',
-      PORT: 4000
+        PORT: 5001
     },
     
     // Logs
@@ -31,7 +31,7 @@ module.exports = {
     // Restart strategies
     max_restarts: 10,
     min_uptime: '10s',
-    restart_delay: 4000,
+      restart_delay: 5001,
     
     // Graceful shutdown
     kill_timeout: 5000,

@@ -13,6 +13,10 @@ Complete documentation for IoT Gateway service.
 ### Core Features
 - **[MQTT-COMMAND-RELAY-SPEC.md](MQTT-COMMAND-RELAY-SPEC.md)** - MQTT command & relay control specification
 - **[TELEMETRY-PROCESSING.md](TELEMETRY-PROCESSING.md)** - Telemetry processing flow & logic
+- **[TELTONIKA-INTEGRATION.md](TELTONIKA-INTEGRATION.md)** - Teltonika FM125 GPS tracker integration (NEW!)
+
+### Quick References
+- **[TELTONIKA-QUICK-REF.md](../TELTONIKA-QUICK-REF.md)** - Teltonika quick reference guide
 
 ### Operations
 - **[MINIMAL-LOGGING.md](MINIMAL-LOGGING.md)** - Logging optimization & configuration
