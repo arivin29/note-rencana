@@ -70,27 +70,7 @@ export class PairingWorkspacePage implements OnInit {
     payloadMetadata: Record<string, PayloadField | undefined> = {};
     sensorProfileId: string | null = null;
 
-    // Available node models
-    nodeModels: NodeModel[] = [
-        {
-            idNodeModel: 'd832d8b8-306f-46e0-bcc3-0a6e1f772683',
-            name: 'ESP32-WROOM-32D',
-            manufacturer: 'Espressif',
-            description: 'Dual-core WiFi/BLE module'
-        },
-        {
-            idNodeModel: 'a1b2c3d4-5678-90ab-cdef-123456789abc',
-            name: 'Arduino MKR WAN 1310',
-            manufacturer: 'Arduino',
-            description: 'LoRaWAN connectivity module'
-        },
-        {
-            idNodeModel: 'b2c3d4e5-6789-01bc-def0-234567890bcd',
-            name: 'Raspberry Pi Pico W',
-            manufacturer: 'Raspberry Pi',
-            description: 'WiFi-enabled microcontroller'
-        }
-    ];
+    
 
     // Step validation states
     step1Valid = false;
