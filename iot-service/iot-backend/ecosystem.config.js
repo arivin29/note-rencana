@@ -2,7 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'iot-backend',
-      script: 'dist/main.js',
+      script: 'npm',
+      args: 'run start:prod',
       instances: 1,
       exec_mode: 'cluster',
       autorestart: true,
@@ -10,7 +11,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 5000,
       },
       env_development: {
         NODE_ENV: 'development',

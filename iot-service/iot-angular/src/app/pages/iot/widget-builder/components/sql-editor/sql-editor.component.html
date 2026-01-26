@@ -1,0 +1,23 @@
+<div class="sql-editor-wrapper">
+  <div class="editor-header">
+    <span class="editor-label">
+      <mat-icon>code</mat-icon>
+      SQL Query
+    </span>
+    <div class="editor-hints">
+      <span class="hint">
+        <code>$&#123;__timeFrom&#125;</code> - Start time
+      </span>
+      <span class="hint">
+        <code>$&#123;__timeTo&#125;</code> - End time
+      </span>
+    </div>
+  </div>
+  
+  <ngx-codemirror
+    [(ngModel)]="value"
+    [options]="editorOptions"
+    (ngModelChange)="onEditorChange($event)"
+    class="code-editor">
+  </ngx-codemirror>
+</div>

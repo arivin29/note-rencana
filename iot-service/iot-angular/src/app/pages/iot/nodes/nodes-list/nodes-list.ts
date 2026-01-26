@@ -1,19 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
-
-interface NodeListRow {
-  idNode: string;
-  code: string;
-  project: string;
-  projectId: string;
-  owner?: string;
-  status: 'online' | 'degraded' | 'offline';
-  firmware?: string;
-  telemetryMode: 'push' | 'pull';
-  lastSeen?: string;
-  serialNumber?: string;
-}
+import { OwnersService } from '../../../../../sdk/core/services/owners.service';
+import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
+import { AuthService } from '../../../../services/auth.service';
+import { NodeResponseDto } from '../../../../../sdk/core/models/node-response-dto';
+import { OwnerResponseDto } from '../../../../../sdk/core/models/owner-response-dto';
+import { ProjectResponseDto } from '../../../../../sdk/core/models/project-response-dto';
 
 @Component({
   selector: 'nodes-list',
@@ -23,8 +16,10 @@ interface NodeListRow {
 })
 export class NodesListPage implements OnInit {
   filters = {
-    owner: 'All Owners',
+    owner: '',
+    ownerId: '',
     project: 'All Projects',
+    projectId: '',
     status: 'All Status'
   };
   searchTerm = '';
@@ -36,7 +31,7 @@ export class NodesListPage implements OnInit {
   pageSize = 10;
   currentPage = 1;
 
-  nodes: NodeListRow[] = [];
+  nodes: NodeResponseDto[] = [];
   loading = false;
   error: string | null = null;
   
@@ -47,15 +42,33 @@ export class NodesListPage implements OnInit {
   degradedNodes = 0;
 
   statusOptions = ['All Status', 'online', 'degraded', 'offline'];
-  ownerOptions = ['All Owners'];
-  projectOptions = ['All Projects'];
+  ownerOptions: OwnerResponseDto[] = [];
+  projectOptions: ProjectResponseDto[] = [];
+  
+  // Admin detection
+  isAdmin = false;
+  currentUserRole = '';
 
   constructor(
     private nodesService: NodesService,
+    private ownersService: OwnersService,
+    private projectsService: ProjectsService,
+    private authService: AuthService,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
+    // Check if user is admin
+    this.currentUserRole = this.authService.getCurrentUserRole();
+    this.isAdmin = this.currentUserRole === 'admin' || this.currentUserRole === 'ADMIN';
+    
+    console.log('🔐 User role:', this.currentUserRole, 'Is Admin:', this.isAdmin);
+    
+    // Load owners first (for admin)
+    if (this.isAdmin) {
+      this.loadOwners();
+    }
+    
     // Read query params for projectId filter
     this.route.queryParams.subscribe(params => {
       this.projectIdFilter = params['projectId'] || null;
@@ -90,6 +103,81 @@ export class NodesListPage implements OnInit {
     });
   }
 
+  loadOwners() {
+    console.log('🔄 Loading owners for admin user...');
+    this.ownersService.ownersControllerFindAll({ page: 1, limit: 200 }).subscribe({
+      next: (response: any) => {
+        console.log('✅ Owners response:', response);
+        const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+        const items = parsed?.data || parsed?.items || (Array.isArray(parsed) ? parsed : []);
+        
+        this.ownerOptions = items as OwnerResponseDto[];
+        
+        console.log('✅ Loaded owners:', this.ownerOptions.length, this.ownerOptions);
+        
+        // Auto-select first owner if available
+        if (this.ownerOptions.length > 0 && !this.filters.ownerId) {
+          this.onOwnerChange(this.ownerOptions[0].idOwner);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Failed to load owners:', err);
+      }
+    });
+  }
+
+  loadProjects(ownerId: string) {
+    console.log('🔄 Loading projects for owner:', ownerId);
+    this.projectsService.projectsControllerFindAll({ page: 1, limit: 200, ownerId: ownerId }).subscribe({
+      next: (response: any) => {
+        console.log('✅ Projects response:', response);
+        const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+        const items = parsed?.data || parsed?.items || (Array.isArray(parsed) ? parsed : []);
+        
+        this.projectOptions = items as ProjectResponseDto[];
+        
+        console.log('✅ Loaded projects:', this.projectOptions.length, this.projectOptions);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load projects:', err);
+      }
+    });
+  }
+
+  onOwnerChange(ownerId: string) {
+    console.log('👤 Owner changed:', ownerId);
+    
+    const selectedOwner = this.ownerOptions.find(o => o.idOwner === ownerId);
+    this.filters.ownerId = ownerId;
+    this.filters.owner = selectedOwner ? `${selectedOwner.ownerCode} - ${selectedOwner.name}` : '';
+    
+    // Clear project selection
+    this.filters.projectId = '';
+    this.filters.project = 'All Projects';
+    this.projectOptions = [];
+    
+    // Load projects for selected owner
+    if (ownerId) {
+      this.loadProjects(ownerId);
+    }
+    
+    // Reload nodes with owner filter
+    this.currentPage = 1;
+    this.loadNodes();
+  }
+
+  onProjectChange(projectId: string) {
+    console.log('📁 Project changed:', projectId);
+    
+    const selectedProject = this.projectOptions.find(p => p.idProject === projectId);
+    this.filters.projectId = projectId;
+    this.filters.project = selectedProject ? selectedProject.name : 'All Projects';
+    
+    // Reload nodes with project filter
+    this.currentPage = 1;
+    this.loadNodes();
+  }
+
   loadNodes() {
     this.loading = true;
     this.error = null;
@@ -101,7 +189,17 @@ export class NodesListPage implements OnInit {
       search: this.searchTerm || undefined,
     };
     
-    // Add projectId filter if present
+    // Add owner filter (for admin)
+    if (this.filters.ownerId) {
+      params.ownerId = this.filters.ownerId;
+    }
+    
+    // Add project filter
+    if (this.filters.projectId) {
+      params.idProject = this.filters.projectId;
+    }
+    
+    // Add projectId filter if present (from query params)
     if (this.projectIdFilter) {
       params.idProject = this.projectIdFilter;
     }
@@ -118,21 +216,10 @@ export class NodesListPage implements OnInit {
         
         console.log('Parsed response:', response);
         
-        // Transform backend data to component format
-        this.nodes = (response.data || []).map((node: any) => ({
-          idNode: node.idNode,
-          code: node.code,
-          project: node.project?.name || 'Unknown Project',
-          projectId: node.idProject,
-          owner: node.project?.owner?.companyName || 'Unknown Owner',
-          status: this.mapConnectivityStatus(node.connectivityStatus),
-          firmware: node.firmwareVersion || 'N/A',
-          telemetryMode: node.telemetryIntervalSec > 0 ? 'push' : 'pull',
-          lastSeen: node.lastSeenAt ? new Date(node.lastSeenAt).toLocaleString() : 'Never',
-          serialNumber: node.serialNumber,
-        }));
+        // Store nodes directly from response
+        this.nodes = (response.data || []) as NodeResponseDto[];
         
-        console.log('Transformed nodes:', this.nodes);
+        console.log('Loaded nodes:', this.nodes);
         this.loading = false;
       },
       error: (err) => {
@@ -150,8 +237,12 @@ export class NodesListPage implements OnInit {
   }
 
   setFilter(type: 'owner' | 'project' | 'status', value: string) {
-    this.filters[type] = value;
-    this.currentPage = 1;
+    // Status filter only (client-side)
+    if (type === 'status') {
+      this.filters[type] = value;
+      this.currentPage = 1;
+    }
+    // Owner and project filters are handled by onOwnerChange and onProjectChange
   }
 
   onSearchChange(value: string) {
@@ -177,11 +268,11 @@ export class NodesListPage implements OnInit {
   }
 
   get filteredNodes() {
-    const nodes = this.filteredByOwnerProjectSearch;
+    // Only filter by status (client-side)
     if (this.filters.status === 'All Status') {
-      return nodes;
+      return this.nodes;
     }
-    return nodes.filter((node) => node.status === this.filters.status);
+    return this.nodes.filter((node) => node.connectivityStatus === this.filters.status);
   }
 
   get paginatedNodes() {
@@ -219,7 +310,7 @@ export class NodesListPage implements OnInit {
     return this.filteredNodes.length;
   }
 
-  badgeClass(status: NodeListRow['status']) {
+  badgeClass(status: string) {
     switch (status) {
       case 'online':
         return 'badge bg-success';
@@ -231,11 +322,23 @@ export class NodesListPage implements OnInit {
   }
 
   statusCount(option: string) {
-    const nodes = this.filteredByOwnerProjectSearch;
     if (option === 'All Status') {
-      return nodes.length;
+      return this.nodes.length;
     }
-    return nodes.filter((node) => node.status === option).length;
+    return this.nodes.filter((node) => node.connectivityStatus === option).length;
+  }
+
+  // Helper methods for template
+  getProjectName(node: NodeResponseDto): string {
+    return (node.project as any)?.name || 'Unknown Project';
+  }
+
+  getOwnerName(node: NodeResponseDto): string {
+    return (node.project as any)?.owner?.name || 'Unknown Owner';
+  }
+
+  getTelemetryMode(node: NodeResponseDto): string {
+    return node.telemetryIntervalSec > 0 ? 'Push' : 'Pull';
   }
 
   private computeTotalPages(count: number) {
@@ -250,20 +353,5 @@ export class NodesListPage implements OnInit {
       this.currentPage = 1;
     }
     return this.currentPage;
-  }
-
-  private get filteredByOwnerProjectSearch() {
-    const search = this.searchTerm.trim().toLowerCase();
-
-    return this.nodes.filter((node) => {
-      const matchOwner = this.filters.owner === 'All Owners' || node.owner === this.filters.owner;
-      const matchProject = this.filters.project === 'All Projects' || node.project === this.filters.project;
-      const matchSearch =
-        !search ||
-        node.code.toLowerCase().includes(search) ||
-        node.project.toLowerCase().includes(search) ||
-        (node.owner && node.owner.toLowerCase().includes(search));
-      return matchOwner && matchProject && matchSearch;
-    });
   }
 }

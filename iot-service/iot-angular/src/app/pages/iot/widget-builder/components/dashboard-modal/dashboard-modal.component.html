@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>
+  {{ mode === 'create' ? 'Create New Dashboard' : 'Edit Dashboard' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="w-100 mb-3">
+      <mat-label>Dashboard Name</mat-label>
+      <input matInput formControlName="name" placeholder="e.g., Production Monitoring">
+      <mat-error *ngIf="form.get('name')?.hasError('required')">
+        Name is required
+      </mat-error>
+      <mat-error *ngIf="form.get('name')?.hasError('minlength')">
+        Name must be at least 3 characters
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Description (optional)</mat-label>
+      <textarea matInput formControlName="description" rows="3" 
+                placeholder="Brief description of this dashboard"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="!form.valid">
+    {{ mode === 'create' ? 'Create' : 'Save' }}
+  </button>
+</mat-dialog-actions>

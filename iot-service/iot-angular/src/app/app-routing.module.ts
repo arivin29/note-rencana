@@ -159,6 +159,12 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/owners/owners.module').then((m) => m.OwnersModule)
     },
     {
+        path: 'iot/widget-builder',
+        loadChildren: () => import('./pages/iot/widget-builder/widget-builder.module').then((m) => m.WidgetBuilderModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Widget Builder' }
+    },
+    {
         path: 'iot/document',
         loadChildren: () => import('./pages/document/document.module').then((m) => m.DocumentModule),
         canActivate: [AuthGuard],

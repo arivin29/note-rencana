@@ -1,0 +1,183 @@
+<!-- Page Header -->
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/widget-builder">Widget Builder</a></li>
+            <li class="breadcrumb-item"><a href="javascript:;">Dashboards</a></li>
+            <li class="breadcrumb-item active">{{ dashboard?.name || 'Dashboard' }}</li>
+        </ul>
+        <h1 class="page-header mb-0">
+            {{ dashboard?.name || 'Loading...' }}
+            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal">
+                {{ dashboard?.description }}
+            </small>
+        </h1>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <!-- Time Range Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-outline-theme dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-calendar3 me-1"></i>
+                {{ getTimeRangeLabel() }}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end">
+                <a *ngFor="let preset of timePresets" class="dropdown-item" href="javascript:;"
+                    [class.active]="selectedTimePreset === preset.value" (click)="onTimePresetChange(preset.value)">
+                    {{ preset.label }}
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="javascript:;" (click)="openCustomTimeRange()">
+                    <i class="bi bi-calendar2-range me-1"></i> Custom Range...
+                </a>
+            </div>
+        </div>
+
+        <!-- Auto Refresh Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                {{ getRefreshLabel() }}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end">
+                <a *ngFor="let opt of refreshIntervals" class="dropdown-item" href="javascript:;"
+                    [class.active]="refreshInterval === opt.value" (click)="onRefreshIntervalChange(opt.value)">
+                    {{ opt.label }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Manual Refresh -->
+        <button class="btn btn-outline-secondary" (click)="refreshAllWidgets()" title="Refresh Now">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <!-- Last Refresh Time -->
+        <span class="text-muted small d-none d-md-inline">
+            <i class="bi bi-clock me-1"></i>
+            {{ lastRefresh | date:'HH:mm:ss' }}
+        </span>
+
+        <div class="vr d-none d-md-block"></div>
+
+        <!-- Edit Mode Toggle -->
+        <ng-container *ngIf="!editMode">
+            <button class="btn btn-outline-theme" (click)="toggleEditMode()">
+                <i class="bi bi-pencil me-1"></i>
+                Edit Layout
+            </button>
+            <button class="btn btn-theme" (click)="addWidget()">
+                <i class="fa fa-plus me-1"></i>
+                Add Widget
+            </button>
+        </ng-container>
+
+        <!-- Edit Mode Actions -->
+        <ng-container *ngIf="editMode">
+            <button class="btn btn-outline-danger" (click)="cancelEdit()">
+                <i class="bi bi-x me-1"></i>
+                Cancel
+            </button>
+            <button class="btn btn-theme" (click)="saveLayout()">
+                <i class="bi bi-check2 me-1"></i>
+                Save Layout
+            </button>
+        </ng-container>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-theme mb-3" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted">Loading dashboard...</p>
+</div>
+
+<!-- Dashboard Not Found -->
+<div *ngIf="!loading && !dashboard" class="text-center py-5">
+    <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+    <h4 class="mt-3">Dashboard Not Found</h4>
+    <p class="text-muted mb-4">The dashboard you're looking for doesn't exist or has been deleted.</p>
+    <button class="btn btn-theme" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Back to Dashboards
+    </button>
+</div>
+
+<!-- Dashboard Content -->
+<div *ngIf="!loading && dashboard">
+    <!-- Edit Mode Banner -->
+    <div *ngIf="editMode" class="alert alert-info alert-dismissible border-0 rounded-3 mb-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Edit Mode:</strong> Drag widgets to reposition, drag corners to resize
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="widgets.length === 0" class="text-center py-5">
+        <div class="card shadow-sm">
+            <div class="card-body py-5">
+                <i class="bi bi-puzzle display-1 text-muted mb-3 d-block"></i>
+                <h4 class="text-inverse">No Widgets Yet</h4>
+                <p class="text-muted mb-4">Add your first widget to start visualizing data</p>
+                <button class="btn btn-theme btn-lg" (click)="addWidget()">
+                    <i class="fa fa-plus me-1"></i>
+                    Add Widget
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gridster Dashboard -->
+
+    <gridster [options]="gridsterOptions" class="dashboard-gridster">
+        <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
+            <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
+                [timeRange]="timeRange" [isFullscreen]="fullscreenWidget === item['id']"
+                (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
+                (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])">
+            </app-widget-container>
+        </gridster-item>
+    </gridster>
+
+</div>
+
+<!-- Fullscreen Overlay -->
+<div *ngIf="fullscreenWidget" class="fullscreen-overlay" (click)="toggleFullscreen(fullscreenWidget)">
+    <div class="fullscreen-widget-container" (click)="$event.stopPropagation()">
+        <button class="btn btn-light position-absolute top-0 end-0 m-3" (click)="toggleFullscreen(fullscreenWidget!)">
+            <i class="bi bi-fullscreen-exit"></i>
+        </button>
+        <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" [timeRange]="timeRange"
+            [isFullscreen]="true" (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
+        </app-widget-container>
+    </div>
+</div>
+
+<!-- Custom Time Range Modal -->
+<div class="modal fade" id="customTimeRangeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Custom Time Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label">From</label>
+                        <input type="datetime-local" class="form-control" [(ngModel)]="customTimeFrom">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">To</label>
+                        <input type="datetime-local" class="form-control" [(ngModel)]="customTimeTo">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-theme" (click)="applyCustomTimeRange()"
+                    data-bs-dismiss="modal">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
