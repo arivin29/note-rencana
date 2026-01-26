@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { 
   Widget, WidgetType,
-  QueryResult, generateDummyTimeSeriesData, generateDummyBarData, 
-  generateDummyPieData, generateDummyTableData
+  QueryResult
 } from '../models/widget.models';
+import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
+import { ExecuteQueryResponseDto, ValidateQueryResponseDto } from '../../../../../sdk/core/models';
 
 @Component({
   selector: 'app-widget-wizard',
@@ -24,14 +25,14 @@ export class WidgetWizardComponent implements OnInit {
   queryExpanded = true;
   previewTab: 'chart' | 'table' = 'chart';
 
-  // Collapsible sections
-  sections = {
-    panel: true,
-    mapping: true,
-    legend: true,
-    graph: true,
-    tooltip: false,
-    thresholds: true
+  // Collapsible sections (Grafana-style)
+  expandedSections = {
+    chartOptions: true,
+    legend: false,
+    axis: false,
+    series: true,
+    thresholds: true,
+    pieLegend: true
   };
 
   // ============================================
@@ -47,6 +48,7 @@ export class WidgetWizardComponent implements OnInit {
     
     // Data Source
     sql: '',
+    timeRange: '6h' as '15m' | '30m' | '1h' | '3h' | '6h' | '12h' | '24h' | '7d' | '30d',
     
     // Field Mapping
     mapping: {
@@ -78,10 +80,12 @@ export class WidgetWizardComponent implements OnInit {
     yAxis: {
       label: '',            // Axis label (e.g., "Temperature")
       unit: '',             // Global unit (if all series same unit)
-      decimals: 1,          // Default decimal places
+      decimals: 2,          // Default 2 decimal places
       min: null as number | null,  // Min value (null = auto)
       max: null as number | null,  // Max value (null = auto)
       scale: 'linear' as 'linear' | 'log',
+      placement: 'left' as 'auto' | 'left' | 'right' | 'hidden',
+      showGrid: 'auto' as 'auto' | 'on' | 'off',
     },
     
     // Thresholds
@@ -98,6 +102,7 @@ export class WidgetWizardComponent implements OnInit {
     display: {
       showLegend: true,
       legendPosition: 'top' as 'top' | 'bottom' | 'left' | 'right',
+      legendMode: 'list' as 'list' | 'table',
       lineStyle: 'smooth' as 'smooth' | 'straight' | 'step',
       lineWidth: 2,
       fillOpacity: 20,
@@ -162,14 +167,16 @@ export class WidgetWizardComponent implements OnInit {
     { name: 'Purple', value: '#8b5cf6' }
   ];
   
-  // Widget Types with FA icons
+  // Widget Types with FA icons - use kebab-case consistently
   widgetTypes: { type: WidgetType; label: string; icon: string; description: string }[] = [
-    { type: 'line-chart', label: 'Time series', icon: 'fa-chart-line', description: 'Time based line, area and bar charts' },
-    { type: 'bar-chart', label: 'Bar chart', icon: 'fa-chart-bar', description: 'Categorical charts with group support' },
-    { type: 'value-card', label: 'Stat', icon: 'fa-digital-tachograph', description: 'Big stat values & sparklines' },
+    { type: 'line-chart', label: 'Time Series', icon: 'fa-chart-line', description: 'Time based line, area and bar charts' },
+    { type: 'multi-line-chart', label: 'Multi-Line Chart', icon: 'fa-chart-area', description: 'Compare multiple series over time' },
+    { type: 'bar-chart', label: 'Bar Chart', icon: 'fa-chart-bar', description: 'Categorical charts with group support' },
+    { type: 'stat-card', label: 'Stat Card', icon: 'fa-digital-tachograph', description: 'Big stat values & sparklines' },
     { type: 'gauge', label: 'Gauge', icon: 'fa-tachometer-alt', description: 'Standard gauge visualization' },
-    { type: 'data-table', label: 'Table', icon: 'fa-table', description: 'Supports many column styles' },
-    { type: 'pie-chart', label: 'Pie chart', icon: 'fa-chart-pie', description: 'The new core pie chart visualization' },
+    { type: 'table', label: 'Table', icon: 'fa-table', description: 'Supports many column styles' },
+    { type: 'pie-chart', label: 'Pie Chart', icon: 'fa-chart-pie', description: 'The new core pie chart visualization' },
+    { type: 'heatmap', label: 'Heatmap', icon: 'fa-th', description: '2D heatmap visualization' },
   ];
   
   selectedType: WidgetType = 'line-chart';
@@ -185,67 +192,112 @@ export class WidgetWizardComponent implements OnInit {
   // Chart Preview
   previewOptions: any = null;
 
-  // Sample SQL Templates
+  // Sample SQL Templates - using correct table: sensor_logs
+  // Variables: ${ownerId} - current user's owner, ${timeRange} - selected time range (e.g., '6 hours')
   sqlTemplates = [
     {
-      name: 'Time Series',
+      name: 'Time Series (Single)',
       sql: `SELECT 
-  sl.ts as timestamp,
-  sl.value_engineered as value
+  sl.ts AS timestamp,
+  sl.value_engineered AS value
 FROM sensor_logs sl
-WHERE sl.id_sensor_channel = 'your-channel-id'
-  AND sl.ts >= \${__timeFrom}
-  AND sl.ts <= \${__timeTo}
+WHERE sl.id_owner = '\${ownerId}'
+  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
 ORDER BY sl.ts ASC
 LIMIT 1000`
     },
     {
       name: 'Hourly Average',
       sql: `SELECT 
-  DATE_TRUNC('hour', sl.ts) as timestamp,
-  AVG(sl.value_engineered) as value
+  DATE_TRUNC('hour', sl.ts) AS timestamp,
+  ROUND(AVG(sl.value_engineered)::numeric, 2) AS value
 FROM sensor_logs sl
-WHERE sl.id_sensor_channel = 'your-channel-id'
-  AND sl.ts >= \${__timeFrom}
+WHERE sl.id_owner = '\${ownerId}'
+  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
 GROUP BY DATE_TRUNC('hour', sl.ts)
 ORDER BY timestamp ASC`
     },
     {
-      name: 'Multi-Series',
+      name: 'Multi-Series by Metric',
       sql: `SELECT 
-  sl.ts as timestamp,
-  sl.value_engineered as value,
-  sc.metric_code as series
+  DATE_TRUNC('hour', sl.ts) AS timestamp,
+  sc.metric_code,
+  ROUND(AVG(sl.value_engineered)::numeric, 2) AS value
 FROM sensor_logs sl
-JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id
-WHERE sc.id_sensor IN ('sensor-1', 'sensor-2')
-  AND sl.ts >= \${__timeFrom}
-ORDER BY sl.ts ASC`
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+WHERE sl.id_owner = '\${ownerId}'
+  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
+GROUP BY DATE_TRUNC('hour', sl.ts), sc.metric_code
+ORDER BY timestamp`
     },
     {
-      name: 'Latest Value',
-      sql: `SELECT 
-  sl.value_engineered as value,
-  sl.ts as timestamp
+      name: 'Latest Sensor Values',
+      sql: `SELECT DISTINCT ON (sc.id_sensor_channel)
+  s.label AS sensor_name,
+  sc.metric_code,
+  sl.value_engineered AS value,
+  sc.unit,
+  sl.ts AS timestamp
 FROM sensor_logs sl
-WHERE sl.id_sensor_channel = 'your-channel-id'
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+JOIN sensors s ON sc.id_sensor = s.id_sensor
+WHERE sl.id_owner = '\${ownerId}'
+  AND sl.ts >= NOW() - INTERVAL '1 hour'
+ORDER BY sc.id_sensor_channel, sl.ts DESC`
+    },
+    {
+      name: 'Current Value (Gauge)',
+      sql: `SELECT 
+  sl.value_engineered AS value,
+  sc.unit,
+  sc.min_threshold,
+  sc.max_threshold
+FROM sensor_logs sl
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+WHERE sl.id_owner = '\${ownerId}'
 ORDER BY sl.ts DESC
 LIMIT 1`
     },
     {
-      name: 'Distribution',
+      name: 'Node Status Count',
       sql: `SELECT 
-  st.name as category,
-  COUNT(*) as value
-FROM sensors s
-JOIN sensor_types st ON s.id_sensor_type = st.id
-GROUP BY st.name`
+  COALESCE(connectivity_status, 'unknown') AS status,
+  COUNT(*) AS count
+FROM nodes n
+JOIN projects p ON n.id_project = p.id_project
+WHERE p.id_owner = '\${ownerId}'
+GROUP BY connectivity_status`
+    },
+    {
+      name: 'Average by Sensor',
+      sql: `SELECT 
+  s.label AS sensor_name,
+  ROUND(AVG(sl.value_engineered)::numeric, 2) AS avg_value
+FROM sensor_logs sl
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+JOIN sensors s ON sc.id_sensor = s.id_sensor
+WHERE sl.id_owner = '\${ownerId}'
+  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
+GROUP BY s.label
+ORDER BY avg_value DESC`
+    },
+    {
+      name: 'Stats Summary',
+      sql: `SELECT 
+  COUNT(*) AS total_readings,
+  ROUND(AVG(sl.value_engineered)::numeric, 2) AS avg_value,
+  ROUND(MAX(sl.value_engineered)::numeric, 2) AS max_value,
+  ROUND(MIN(sl.value_engineered)::numeric, 2) AS min_value
+FROM sensor_logs sl
+WHERE sl.id_owner = '\${ownerId}'
+  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'`
     }
   ];
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private widgetBuilderService: WidgetBuilderService
   ) {}
 
   ngOnInit(): void {
@@ -298,14 +350,51 @@ GROUP BY st.name`
   }
 
   selectWidgetType(type: WidgetType): void {
+    const previousType = this.selectedType;
     this.selectedType = type;
     this.showTypeSelector = false;
-    this.form.title = ''; // Reset title
+    
+    // DON'T reset these - they should persist across widget type changes:
+    // - title, name, description (identity)
+    // - sql query (data source)
+    // - timeRange (time filter)
+    // - yAxis decimals, unit, label (formatting)
+    
+    // Reset type-specific settings only if changing between incompatible types
+    const chartTypes = ['line-chart', 'multi-line-chart', 'bar-chart'];
+    const singleValueTypes = ['gauge', 'stat-card'];
+    const categoryTypes = ['pie-chart'];
+    
+    const getTypeCategory = (t: WidgetType) => {
+      if (chartTypes.includes(t)) return 'chart';
+      if (singleValueTypes.includes(t)) return 'single';
+      if (categoryTypes.includes(t)) return 'category';
+      return 'other';
+    };
+    
+    // Only reset mapping/series if changing between different categories
+    if (getTypeCategory(previousType) !== getTypeCategory(type)) {
+      // Reset mapping for new category
+      this.form.mapping = {
+        xField: '',
+        yField: '',
+        yFields: [],
+        seriesField: '',
+        labelField: '',
+        valueField: ''
+      };
+      
+      // Reset series config only for non-chart types
+      if (getTypeCategory(type) !== 'chart') {
+        this.form.series = [];
+      }
+    }
+    
     this.updatePreview();
   }
 
-  toggleSection(section: keyof typeof this.sections): void {
-    this.sections[section] = !this.sections[section];
+  toggleSection(section: keyof typeof this.expandedSections): void {
+    this.expandedSections[section] = !this.expandedSections[section];
   }
 
   toggleQueryInspector(): void {
@@ -438,11 +527,13 @@ GROUP BY st.name`
     this.updatePreview();
   }
 
-  addPresetThreshold(type: 'min' | 'max' | 'target', value: number): void {
+  addPresetThreshold(type: 'min' | 'max' | 'target' | 'warning' | 'critical', value: number): void {
     const presets: Record<string, { label: string; color: string; lineStyle: 'solid' | 'dashed' }> = {
       min: { label: 'Min', color: '#3b82f6', lineStyle: 'dashed' },
       max: { label: 'Max', color: '#ef4444', lineStyle: 'dashed' },
-      target: { label: 'Target', color: '#eab308', lineStyle: 'solid' }
+      target: { label: 'Target', color: '#22c55e', lineStyle: 'solid' },
+      warning: { label: 'Warning', color: '#eab308', lineStyle: 'dashed' },
+      critical: { label: 'Critical', color: '#ef4444', lineStyle: 'solid' }
     };
     
     const preset = presets[type];
@@ -469,8 +560,114 @@ GROUP BY st.name`
   }
 
   loadWidget(): void {
-    // Load existing widget for editing (mockup)
+    if (!this.widgetId || !this.dashboardId) {
+      console.error('Missing widgetId or dashboardId');
+      return;
+    }
+
     console.log('Loading widget:', this.widgetId);
+    
+    this.widgetBuilderService.widgetBuilderControllerGetWidget$Response({
+      dashboardId: this.dashboardId,
+      widgetId: this.widgetId
+    }).subscribe({
+      next: (response: any) => {
+        const widget = response.body;
+        console.log('Widget loaded:', widget);
+        
+        // Map widget data to form
+        this.form.name = widget.name || '';
+        this.form.title = widget.name || '';
+        this.form.sql = widget.sqlQuery || '';
+        this.selectedType = widget.widgetType || 'line-chart';
+        
+        // Load config if exists
+        if (widget.config) {
+          const config = widget.config;
+          
+          // Mapping
+          if (config.mapping) {
+            this.form.mapping = {
+              xField: config.mapping.xField || '',
+              yField: config.mapping.yField || '',
+              yFields: config.mapping.yFields || [],
+              seriesField: config.mapping.seriesField || '',
+              labelField: config.mapping.labelField || '',
+              valueField: config.mapping.valueField || ''
+            };
+          }
+          
+          // Series - preserve all properties including decimals
+          if (config.series && Array.isArray(config.series)) {
+            this.form.series = config.series.map((s: any) => ({
+              field: s.field || '',
+              label: s.label || s.field || '',
+              color: s.color || '',
+              unit: s.unit || '',
+              decimals: s.decimals ?? 2, // Default 2 if not set
+              visible: s.visible !== false
+            }));
+          }
+          
+          // X-Axis
+          if (config.xAxis) {
+            this.form.xAxis = {
+              label: config.xAxis.label || '',
+              timeFormat: config.xAxis.timeFormat || 'HH:mm'
+            };
+          }
+          
+          // Y-Axis - use values from DB, only use default if truly undefined
+          if (config.yAxis) {
+            this.form.yAxis = {
+              label: config.yAxis.label || '',
+              unit: config.yAxis.unit || '',
+              decimals: config.yAxis.decimals ?? 2, // Default 2 if not in DB
+              min: config.yAxis.min ?? null,
+              max: config.yAxis.max ?? null,
+              scale: config.yAxis.scale || 'linear',
+              placement: config.yAxis.placement || 'left',
+              showGrid: config.yAxis.showGrid || 'auto'
+            };
+          }
+          
+          // Thresholds
+          if (config.thresholds && Array.isArray(config.thresholds)) {
+            this.form.thresholds = config.thresholds;
+          }
+          
+          // Display
+          if (config.display) {
+            this.form.display = {
+              showLegend: config.display.showLegend ?? true,
+              legendPosition: config.display.legendPosition || 'top',
+              legendMode: config.display.legendMode || 'list',
+              lineStyle: config.display.lineStyle || 'smooth',
+              lineWidth: config.display.lineWidth ?? 2,
+              fillOpacity: config.display.fillOpacity ?? 20,
+              showPoints: config.display.showPoints || 'auto',
+              tooltipMode: config.display.tooltipMode || 'all'
+            };
+          }
+          
+          // Time range
+          if (config.timeRange) {
+            this.form.timeRange = config.timeRange;
+            this.selectedTimeRange = config.timeRange;
+          }
+        }
+        
+        // Run query to show preview if SQL exists
+        if (this.form.sql) {
+          this.testQuery();
+        }
+      },
+      error: (err: any) => {
+        console.error('Failed to load widget:', err);
+        alert('Failed to load widget: ' + (err.error?.message || err.message));
+        this.router.navigate(['/iot/widget-builder', this.dashboardId]);
+      }
+    });
   }
 
   applySqlTemplate(template: { name: string; sql: string }): void {
@@ -488,101 +685,33 @@ GROUP BY st.name`
     this.queryError = null;
     this.queryResult = null;
 
-    // Simulate query execution with dummy data
-    setTimeout(() => {
-      try {
-        let columns: string[] = [];
-        let rows: any[] = [];
-
-        switch (this.selectedType) {
-          case 'line-chart':
-          case 'area-chart':
-            // Generate multi-field data for multi-line chart demo
-            // Include threshold fields: min_value, max_value, target_value
-            columns = ['timestamp', 'temperature', 'humidity', 'pressure', 'value', 'min_value', 'max_value', 'target_value'];
-            rows = this.generateMultiFieldData(24);
-            break;
-          case 'bar-chart':
-            columns = ['category', 'value'];
-            rows = generateDummyBarData();
-            break;
-          case 'pie-chart':
-            columns = ['name', 'value'];
-            rows = generateDummyPieData();
-            break;
-          case 'gauge':
-          case 'value-card':
-            columns = ['value', 'timestamp'];
-            rows = [{ value: 42.5, timestamp: new Date().toISOString() }];
-            break;
-          case 'data-table':
-            columns = ['timestamp', 'sensor', 'value', 'unit', 'status'];
-            rows = generateDummyTableData();
-            break;
-        }
-
+    // Execute query via API
+    this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
+      body: {
+        sql: this.form.sql,
+        timeRange: this.form.timeRange as any,
+        variables: {}
+      }
+    }).subscribe({
+      next: (response: any) => {
+        // Real API response
         this.queryResult = {
-          columns,
-          rows,
-          rowCount: rows.length,
-          executionTime: Math.random() * 100 + 50
+          columns: response.columns || [],
+          rows: response.rows || [],
+          rowCount: response.rowCount || 0,
+          executionTime: response.executionTime || 0
         };
         
-        this.availableColumns = columns;
+        this.availableColumns = this.queryResult.columns;
         this.autoMapFields();
-        
-      } catch (e: any) {
-        this.queryError = e.message || 'Query execution failed';
+        this.queryLoading = false;
+      },
+      error: (err: any) => {
+        console.error('API query failed:', err);
+        this.queryError = err.error?.message || err.message || 'Query execution failed';
+        this.queryLoading = false;
       }
-      
-      this.queryLoading = false;
-    }, 800);
-  }
-
-  // Generate multi-field data for multi-line chart with threshold fields
-  generateMultiFieldData(points: number): any[] {
-    const data: any[] = [];
-    const now = new Date();
-    
-    // Static threshold values (simulating aggregated/config values from DB)
-    const minTemp = 18;
-    const maxTemp = 32;
-    const targetTemp = 25;
-    
-    for (let i = points - 1; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000); // hourly
-      data.push({
-        timestamp: timestamp.toISOString(),
-        temperature: 20 + Math.random() * 15 + Math.sin(i / 3) * 5, // 20-35°C range
-        humidity: 40 + Math.random() * 30 + Math.cos(i / 4) * 10,   // 40-70% range
-        pressure: 1000 + Math.random() * 30 + Math.sin(i / 5) * 10, // 1000-1030 hPa
-        value: 50 + Math.random() * 20, // generic value
-        // Threshold fields - same value for all rows (from config/aggregation)
-        min_value: minTemp,
-        max_value: maxTemp,
-        target_value: targetTemp
-      });
-    }
-    
-    return data;
-  }
-
-  generateMultiSeriesData(): any[] {
-    const series = ['Temperature', 'Humidity', 'Pressure'];
-    const rows: any[] = [];
-    const now = Date.now();
-    
-    for (let i = 0; i < 24; i++) {
-      const timestamp = new Date(now - (23 - i) * 3600000).toISOString();
-      series.forEach(s => {
-        rows.push({
-          timestamp,
-          value: Math.random() * 50 + (s === 'Temperature' ? 20 : s === 'Humidity' ? 40 : 900),
-          series: s
-        });
-      });
-    }
-    return rows;
+    });
   }
 
   autoMapFields(): void {
@@ -616,7 +745,7 @@ GROUP BY st.name`
 
     switch (this.selectedType) {
       case 'line-chart':
-      case 'area-chart':
+      case 'multi-line-chart':
         this.form.mapping.xField = timestampField || columns[0];
         this.form.mapping.yField = valueField || columns[1];
         this.form.mapping.seriesField = seriesField || '';
@@ -632,15 +761,23 @@ GROUP BY st.name`
         ).slice(0, 3); // Default: select first 3 numeric fields
         
         // Set yFields and auto-create series config
-        this.form.mapping.yFields = selectedFields;
-        this.form.series = selectedFields.map((field, idx) => ({
-          field,
-          label: field,
-          color: this.seriesColors[idx % this.seriesColors.length],
-          unit: '',
-          decimals: 1,
-          visible: true
-        }));
+        // IMPORTANT: Preserve existing series config if already set (edit mode)
+        if (this.form.mapping.yFields.length === 0) {
+          this.form.mapping.yFields = selectedFields;
+        }
+        
+        // Only create new series config if empty (new widget)
+        // Otherwise preserve existing config with user's decimals, colors, etc.
+        if (this.form.series.length === 0) {
+          this.form.series = selectedFields.map((field, idx) => ({
+            field,
+            label: field,
+            color: this.seriesColors[idx % this.seriesColors.length],
+            unit: '',
+            decimals: 2, // Default 2
+            visible: true
+          }));
+        }
         break;
       case 'bar-chart':
         this.form.mapping.xField = labelField || columns[0];
@@ -651,7 +788,7 @@ GROUP BY st.name`
         this.form.mapping.valueField = valueField || columns[1];
         break;
       case 'gauge':
-      case 'value-card':
+      case 'stat-card':
         this.form.mapping.valueField = valueField || columns[0];
         break;
     }
@@ -751,7 +888,7 @@ GROUP BY st.name`
           }]
         };
         
-      case 'value-card':
+      case 'stat-card':
         return {
           value: data[0]?.[this.form.mapping.valueField] || 0,
           title: this.form.title || 'Value'
@@ -909,10 +1046,27 @@ GROUP BY st.name`
     
     params.forEach((item: any) => {
       if (item.seriesType === 'line' && item.data !== undefined) {
-        const seriesConfig = this.form.series.find(s => s.label === item.seriesName || s.field === item.seriesName);
+        // Find series config by field name or label
+        const seriesConfig = this.form.series.find(s => 
+          s.label === item.seriesName || 
+          s.field === item.seriesName ||
+          // Also check if any yField matches
+          this.form.mapping.yFields?.includes(item.seriesName)
+        );
+        
+        // Get decimals: series override -> yAxis default -> fallback to 2
+        const decimals = seriesConfig?.decimals ?? this.form.yAxis.decimals ?? 2;
         const unit = seriesConfig?.unit || this.form.yAxis.unit || '';
-        const decimals = seriesConfig?.decimals ?? this.form.yAxis.decimals ?? 1;
-        const value = typeof item.data === 'number' ? item.data.toFixed(decimals) : item.data;
+        
+        // Format value with proper decimals
+        let value: string;
+        if (typeof item.data === 'number') {
+          value = item.data.toFixed(decimals);
+        } else if (typeof item.data === 'string' && !isNaN(parseFloat(item.data))) {
+          value = parseFloat(item.data).toFixed(decimals);
+        } else {
+          value = String(item.data);
+        }
         
         html += `<div style="display:flex;justify-content:space-between;gap:20px">
           <span>${item.marker} ${item.seriesName}</span>
@@ -926,8 +1080,16 @@ GROUP BY st.name`
 
   // Format Y-axis value with unit and decimals
   formatYAxisValue(value: number): string {
-    const decimals = this.form.yAxis.decimals ?? 1;
+    const decimals = this.form.yAxis.decimals ?? 2;
     const unit = this.form.yAxis.unit || '';
+    
+    // Handle large numbers with K/M suffix
+    if (Math.abs(value) >= 1000000) {
+      return `${(value / 1000000).toFixed(decimals)}M${unit}`;
+    } else if (Math.abs(value) >= 10000) {
+      return `${(value / 1000).toFixed(decimals)}K${unit}`;
+    }
+    
     return `${value.toFixed(decimals)}${unit}`;
   }
 
@@ -996,16 +1158,16 @@ GROUP BY st.name`
     
     switch (this.selectedType) {
       case 'line-chart':
+      case 'multi-line-chart':
       case 'bar-chart':
-      case 'area-chart':
         // Valid if has xField AND (yField OR at least one yField)
         return !!xField && (!!yField || (yFields && yFields.length > 0));
       case 'gauge':
-      case 'value-card':
+      case 'stat-card':
         return !!valueField;
       case 'pie-chart':
         return !!labelField && !!valueField;
-      case 'data-table':
+      case 'table':
         return true;
       default:
         return false;
@@ -1030,34 +1192,72 @@ GROUP BY st.name`
   saveWidget(): void {
     if (!this.canSave()) return;
 
-    // Clean payload structure for DB storage
-    const widget: Partial<Widget> = {
-      name: this.form.name,
-      type: this.selectedType,
-      query: { sql: this.form.sql },
-      config: {
-        title: this.form.title,
-        description: this.form.description,
-        // Field mapping for data binding
-        mapping: this.form.mapping,
-        // Series configuration (multi-line)
-        series: this.form.series,
-        // X-Axis configuration
-        xAxis: this.form.xAxis,
-        // Y-Axis configuration
-        yAxis: this.form.yAxis,
-        // Thresholds
-        thresholds: this.form.thresholds,
-        // Display options
-        display: this.form.display
-      },
-      position: { x: 0, y: 0, cols: 6, rows: 4 }
+    // Build widget config for DB storage
+    const widgetConfig = {
+      title: this.form.title,
+      description: this.form.description,
+      // Field mapping for data binding
+      mapping: this.form.mapping,
+      // Series configuration (multi-line)
+      series: this.form.series,
+      // X-Axis configuration
+      xAxis: this.form.xAxis,
+      // Y-Axis configuration
+      yAxis: this.form.yAxis,
+      // Thresholds
+      thresholds: this.form.thresholds,
+      // Display options
+      display: this.form.display,
+      // Time range
+      timeRange: this.form.timeRange
     };
 
-    console.log('Saving widget:', widget);
-    alert('Widget saved! (Mockup)\n\n' + JSON.stringify(widget, null, 2));
-    
-    this.router.navigate(['/iot/widget-builder', this.dashboardId]);
+    if (this.isEditMode && this.widgetId) {
+      // Update existing widget
+      this.widgetBuilderService.widgetBuilderControllerUpdateWidget({
+        dashboardId: this.dashboardId,
+        widgetId: this.widgetId,
+        body: {
+          name: this.form.name,
+          widgetType: this.selectedType,
+          sqlQuery: this.form.sql,
+          config: widgetConfig
+        }
+      }).subscribe({
+        next: () => {
+          console.log('Widget updated successfully');
+          this.router.navigate(['/iot/widget-builder', this.dashboardId]);
+        },
+        error: (err: any) => {
+          console.error('Failed to update widget:', err);
+          alert('Failed to update widget: ' + (err.error?.message || err.message));
+        }
+      });
+    } else {
+      // Create new widget
+      this.widgetBuilderService.widgetBuilderControllerCreateWidget({
+        dashboardId: this.dashboardId,
+        body: {
+          name: this.form.name,
+          widgetType: this.selectedType,
+          sqlQuery: this.form.sql,
+          config: widgetConfig,
+          positionX: 0,
+          positionY: 0,
+          cols: 6,
+          rows: 4
+        }
+      }).subscribe({
+        next: () => {
+          console.log('Widget created successfully');
+          this.router.navigate(['/iot/widget-builder', this.dashboardId]);
+        },
+        error: (err: any) => {
+          console.error('Failed to create widget:', err);
+          alert('Failed to create widget: ' + (err.error?.message || err.message));
+        }
+      });
+    }
   }
 
   cancel(): void {
@@ -1065,11 +1265,11 @@ GROUP BY st.name`
   }
 
   needsXYMapping(): boolean {
-    return ['line-chart', 'bar-chart', 'area-chart'].includes(this.selectedType);
+    return ['line-chart', 'multi-line-chart', 'bar-chart'].includes(this.selectedType);
   }
 
   needsValueMapping(): boolean {
-    return ['gauge', 'value-card'].includes(this.selectedType);
+    return ['gauge', 'stat-card'].includes(this.selectedType);
   }
 
   needsLabelValueMapping(): boolean {

@@ -2,11 +2,43 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem, DisplayGrid, GridType, CompactType } from 'angular-gridster2';
 import { 
-  Dashboard, Widget, DUMMY_DASHBOARDS, DUMMY_WIDGETS,
+  Dashboard, Widget,
   TimeRange, TIME_RANGE_PRESETS, REFRESH_INTERVALS
 } from '../models/widget.models';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { WidgetBuilderService } from 'src/sdk/core/services';
+
+interface DashboardResponse {
+  idDashboard?: string;
+  id?: string;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  idOwner?: string;
+  ownerId?: string;
+  owner?: { name: string };
+  widgets?: WidgetResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WidgetResponse {
+  idWidget?: string;
+  id?: string;
+  idDashboard?: string;
+  dashboardId?: string;
+  name: string;
+  widgetType: string;
+  sqlQuery: string;
+  config: any;
+  positionX: number;
+  positionY: number;
+  cols: number;
+  rows: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 @Component({
   selector: 'app-dashboard-view',
@@ -48,7 +80,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private widgetBuilderService: WidgetBuilderService
   ) {}
 
   ngOnInit(): void {
@@ -98,27 +131,73 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   loadDashboard(): void {
     const dashboardId = this.route.snapshot.paramMap.get('id');
-    
-    // Simulate API call
-    setTimeout(() => {
-      this.dashboard = DUMMY_DASHBOARDS.find(d => d.id === dashboardId) || null;
-      
-      if (this.dashboard) {
-        // Load widgets for this dashboard
-        const dashboardWidgets = DUMMY_WIDGETS.filter(w => w.dashboardId === dashboardId);
-        this.widgets = dashboardWidgets.map(w => ({
-          id: w.id,
-          x: w.position.x,
-          y: w.position.y,
-          cols: w.position.cols,
-          rows: w.position.rows,
-        }));
-        
-        dashboardWidgets.forEach(w => this.widgetData.set(w.id, w));
-      }
-      
+    if (!dashboardId) {
       this.loading = false;
-    }, 500);
+      return;
+    }
+    
+    this.widgetBuilderService.widgetBuilderControllerGetDashboard$Response({ id: dashboardId }).subscribe({
+      next: (response: any) => {
+        const data = response.body as DashboardResponse;
+        const dashId = data.idDashboard || data.id || '';
+        this.dashboard = {
+          id: dashId,
+          name: data.name,
+          description: data.description,
+          isDefault: data.isDefault,
+          ownerName: data.owner?.name || 'Unknown',
+          createdAt: new Date(data.createdAt),
+          updatedAt: new Date(data.updatedAt)
+        };
+        
+        if (data.widgets && data.widgets.length > 0) {
+          this.widgets = data.widgets.map((w: WidgetResponse) => {
+            const widgetId = w.idWidget || w.id || '';
+            return {
+              id: widgetId,
+              x: w.positionX || 0,
+              y: w.positionY || 0,
+              cols: w.cols || 6,
+              rows: w.rows || 4,
+            };
+          });
+          
+          data.widgets.forEach((w: WidgetResponse) => {
+            const widgetId = w.idWidget || w.id || '';
+            const widgetDashboardId = w.idDashboard || w.dashboardId || dashId;
+            const widget: Widget = {
+              id: widgetId,
+              dashboardId: widgetDashboardId,
+              name: w.name,
+              type: w.widgetType as any,
+              sqlQuery: w.sqlQuery,  // Store SQL query at top level for widget-container
+              config: {
+                ...w.config,
+                sqlQuery: w.sqlQuery  // Also store in config as fallback
+              },
+              position: {
+                x: w.positionX || 0,
+                y: w.positionY || 0,
+                cols: w.cols || 6,
+                rows: w.rows || 4
+              },
+              query: {
+                sql: w.sqlQuery
+              },
+              createdAt: new Date(w.createdAt),
+              updatedAt: new Date(w.updatedAt)
+            };
+            this.widgetData.set(widgetId, widget);
+          });
+        }
+        
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to load dashboard:', err);
+        this.loading = false;
+      }
+    });
   }
 
   toggleEditMode(): void {
@@ -139,17 +218,29 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   }
 
   saveLayout(): void {
-    // Save widget positions (mockup - just log)
-    const layout = this.widgets.map(item => ({
-      id: item['id'],
-      x: item.x,
-      y: item.y,
-      cols: item.cols,
-      rows: item.rows,
+    if (!this.dashboard) return;
+    
+    const positions = this.widgets.map(item => ({
+      idWidget: item['id'] as string,
+      positionX: item.x || 0,
+      positionY: item.y || 0,
+      cols: item.cols || 6,
+      rows: item.rows || 4
     }));
-    console.log('Saving layout:', layout);
-    alert('Layout saved! (Mockup)');
-    this.toggleEditMode();
+    
+    this.widgetBuilderService.widgetBuilderControllerUpdateWidgetPositions({
+      dashboardId: this.dashboard.id,
+      body: { positions }
+    }).subscribe({
+      next: () => {
+        console.log('Layout saved successfully');
+        this.toggleEditMode();
+      },
+      error: (err: any) => {
+        console.error('Failed to save layout:', err);
+        alert('Failed to save layout: ' + (err.error?.message || err.message));
+      }
+    });
   }
 
   cancelEdit(): void {
@@ -170,10 +261,23 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   }
 
   deleteWidget(widgetId: string): void {
+    if (!this.dashboard) return;
+    
     const widget = this.widgetData.get(widgetId);
     if (widget && confirm(`Delete widget "${widget.name}"?`)) {
-      this.widgets = this.widgets.filter(w => w['id'] !== widgetId);
-      this.widgetData.delete(widgetId);
+      this.widgetBuilderService.widgetBuilderControllerDeleteWidget({
+        dashboardId: this.dashboard.id,
+        widgetId: widgetId
+      }).subscribe({
+        next: () => {
+          this.widgets = this.widgets.filter(w => w['id'] !== widgetId);
+          this.widgetData.delete(widgetId);
+        },
+        error: (err: any) => {
+          console.error('Failed to delete widget:', err);
+          alert('Failed to delete widget: ' + (err.error?.message || err.message));
+        }
+      });
     }
   }
 

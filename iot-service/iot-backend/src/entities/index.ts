@@ -24,3 +24,9 @@ export { OwnerForwardingLog } from './owner-forwarding-log.entity';
 export { NodeUnpairedDevice } from './node-unpaired-device.entity';
 export { NodeProfile } from './node-profile.entity';
 export { IotLog } from './iot-log.entity';
+
+// Widget Builder entities
+export { CustomDashboard } from './custom-dashboard.entity';
+export { CustomWidget } from './custom-widget.entity';
+export type { WidgetConfig, WidgetFieldMapping, WidgetSeriesConfig, WidgetAxisConfig, WidgetYAxisConfig, WidgetThreshold, WidgetDisplayConfig, WidgetType } from './custom-widget.entity';
+export { WidgetQueryTemplate } from './widget-query-template.entity';

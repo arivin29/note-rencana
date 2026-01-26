@@ -1,5 +1,53 @@
 /* Widget Wizard - Bootstrap Style */
 
+/* Fix dropdown z-index inside cards */
+.dropdown-menu {
+  z-index: 1050 !important;
+  position: absolute !important;
+}
+
+.dropdown {
+  position: relative;
+  z-index: 10;
+}
+
+/* Ensure card-header doesn't clip dropdown */
+card-header,
+.card-header {
+  overflow: visible !important;
+  position: relative;
+  z-index: 5;
+}
+
+/* Card must allow overflow for dropdowns */
+card,
+.card {
+  overflow: visible !important;
+}
+
+/* But card-body can clip content if needed */
+card-body {
+  overflow: visible;
+}
+
+/* Grafana-style collapsible sections */
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cursor-pointer:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.option-row {
+  transition: background-color 0.15s ease;
+}
+
+.option-row:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
 /* Right Panel Scrollable */
 .config-panel-scroll {
   max-height: calc(100vh - 120px);

@@ -380,360 +380,412 @@
       </card>
 
       <!-- Chart Options Card (for line chart) -->
-      <card class="mb-3" *ngIf="selectedType === 'line-chart' || selectedType === 'bar-chart'">
-        <card-header>
-          <i class="fa fa-sliders-h me-2 text-theme"></i>
-          <span class="fw-bold">Chart Options</span>
+      <card class="mb-2" *ngIf="selectedType === 'line-chart' || selectedType === 'bar-chart'">
+        <card-header class="py-2 cursor-pointer" (click)="toggleSection('chartOptions')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa fa-sliders-h me-2 text-theme"></i>
+              <span class="fw-bold">Chart Options</span>
+            </div>
+            <i class="fa" [class.fa-chevron-down]="!expandedSections.chartOptions" [class.fa-chevron-up]="expandedSections.chartOptions"></i>
+          </div>
         </card-header>
-        <card-body>
+        <card-body *ngIf="expandedSections.chartOptions" class="py-2">
           <!-- Legend -->
-          <div class="mb-3">
-            <div class="form-check form-switch">
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Show Legend</span>
+            <div class="form-check form-switch m-0">
               <input class="form-check-input" type="checkbox" 
                      [(ngModel)]="form.display.showLegend" 
-                     (ngModelChange)="updatePreview()"
-                     id="showLegend">
-              <label class="form-check-label" for="showLegend">Show Legend</label>
+                     (ngModelChange)="updatePreview()">
             </div>
           </div>
           
           <!-- Line Style (for line chart only) -->
-          <div class="mb-3" *ngIf="selectedType === 'line-chart'">
-            <label class="form-label">Line Style</label>
-            <select class="form-select" 
-                    [(ngModel)]="form.display.lineStyle" 
-                    (ngModelChange)="updatePreview()">
-              <option value="smooth">Smooth</option>
-              <option value="straight">Straight</option>
-              <option value="step">Step</option>
-            </select>
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom" *ngIf="selectedType === 'line-chart'">
+            <span class="text-white-50">Line Style</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.display.lineStyle === 'smooth'" [class.btn-outline-secondary]="form.display.lineStyle !== 'smooth'"
+                      (click)="form.display.lineStyle = 'smooth'; updatePreview()">Smooth</button>
+              <button class="btn" [class.btn-theme]="form.display.lineStyle === 'straight'" [class.btn-outline-secondary]="form.display.lineStyle !== 'straight'"
+                      (click)="form.display.lineStyle = 'straight'; updatePreview()">Straight</button>
+              <button class="btn" [class.btn-theme]="form.display.lineStyle === 'step'" [class.btn-outline-secondary]="form.display.lineStyle !== 'step'"
+                      (click)="form.display.lineStyle = 'step'; updatePreview()">Step</button>
+            </div>
           </div>
           
           <!-- Line Width -->
-          <div class="mb-3" *ngIf="selectedType === 'line-chart'">
-            <label class="form-label">Line Width: {{ form.display.lineWidth }}px</label>
-            <input type="range" class="form-range" 
-                   [(ngModel)]="form.display.lineWidth" 
-                   (ngModelChange)="updatePreview()"
-                   min="1" max="5" step="1">
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom" *ngIf="selectedType === 'line-chart'">
+            <span class="text-white-50">Line Width</span>
+            <div class="d-flex align-items-center gap-2" style="width: 150px;">
+              <input type="range" class="form-range flex-grow-1" 
+                     [(ngModel)]="form.display.lineWidth" 
+                     (ngModelChange)="updatePreview()"
+                     min="1" max="5" step="1">
+              <span class="badge bg-secondary">{{ form.display.lineWidth }}px</span>
+            </div>
           </div>
           
           <!-- Fill Opacity -->
-          <div class="mb-3" *ngIf="selectedType === 'line-chart'">
-            <label class="form-label">Fill Opacity: {{ form.display.fillOpacity }}%</label>
-            <input type="range" class="form-range" 
-                   [(ngModel)]="form.display.fillOpacity" 
-                   (ngModelChange)="updatePreview()"
-                   min="0" max="100" step="10">
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom" *ngIf="selectedType === 'line-chart'">
+            <span class="text-white-50">Fill Opacity</span>
+            <div class="d-flex align-items-center gap-2" style="width: 150px;">
+              <input type="range" class="form-range flex-grow-1" 
+                     [(ngModel)]="form.display.fillOpacity" 
+                     (ngModelChange)="updatePreview()"
+                     min="0" max="100" step="10">
+              <span class="badge bg-secondary">{{ form.display.fillOpacity }}%</span>
+            </div>
           </div>
           
           <!-- Show Points -->
-          <div class="mb-0" *ngIf="selectedType === 'line-chart'">
-            <label class="form-label">Show Points</label>
-            <select class="form-select" 
-                    [(ngModel)]="form.display.showPoints" 
+          <div class="option-row d-flex justify-content-between align-items-center py-2" *ngIf="selectedType === 'line-chart'">
+            <span class="text-white-50">Show Points</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.display.showPoints === 'auto'" [class.btn-outline-secondary]="form.display.showPoints !== 'auto'"
+                      (click)="form.display.showPoints = 'auto'; updatePreview()">Auto</button>
+              <button class="btn" [class.btn-theme]="form.display.showPoints === 'always'" [class.btn-outline-secondary]="form.display.showPoints !== 'always'"
+                      (click)="form.display.showPoints = 'always'; updatePreview()">Always</button>
+              <button class="btn" [class.btn-theme]="form.display.showPoints === 'never'" [class.btn-outline-secondary]="form.display.showPoints !== 'never'"
+                      (click)="form.display.showPoints = 'never'; updatePreview()">Never</button>
+            </div>
+          </div>
+        </card-body>
+      </card>
+
+      <!-- Legend Card (collapsible, Grafana style) -->
+      <card class="mb-2" *ngIf="selectedType === 'line-chart' || selectedType === 'bar-chart'">
+        <card-header class="py-2 cursor-pointer" (click)="toggleSection('legend')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa fa-list me-2 text-theme"></i>
+              <span class="fw-bold">Legend</span>
+            </div>
+            <i class="fa" [class.fa-chevron-down]="!expandedSections.legend" [class.fa-chevron-up]="expandedSections.legend"></i>
+          </div>
+        </card-header>
+        <card-body *ngIf="expandedSections.legend" class="py-2">
+          <!-- Visibility -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Visibility</span>
+            <div class="form-check form-switch m-0">
+              <input class="form-check-input" type="checkbox" 
+                     [(ngModel)]="form.display.showLegend" 
+                     (ngModelChange)="updatePreview()">
+            </div>
+          </div>
+          <!-- Mode -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Mode</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.display.legendMode === 'list'" [class.btn-outline-secondary]="form.display.legendMode !== 'list'"
+                      (click)="form.display.legendMode = 'list'; updatePreview()">List</button>
+              <button class="btn" [class.btn-theme]="form.display.legendMode === 'table'" [class.btn-outline-secondary]="form.display.legendMode !== 'table'"
+                      (click)="form.display.legendMode = 'table'; updatePreview()">Table</button>
+            </div>
+          </div>
+          <!-- Placement -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2">
+            <span class="text-white-50">Placement</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.display.legendPosition === 'bottom'" [class.btn-outline-secondary]="form.display.legendPosition !== 'bottom'"
+                      (click)="form.display.legendPosition = 'bottom'; updatePreview()">Bottom</button>
+              <button class="btn" [class.btn-theme]="form.display.legendPosition === 'right'" [class.btn-outline-secondary]="form.display.legendPosition !== 'right'"
+                      (click)="form.display.legendPosition = 'right'; updatePreview()">Right</button>
+            </div>
+          </div>
+        </card-body>
+      </card>
+
+      <!-- Axis Card (collapsible, Grafana style) -->
+      <card class="mb-2" *ngIf="selectedType === 'line-chart' || selectedType === 'bar-chart'">
+        <card-header class="py-2 cursor-pointer" (click)="toggleSection('axis')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa fa-arrows-alt-h me-2 text-theme"></i>
+              <span class="fw-bold">Axis</span>
+            </div>
+            <i class="fa" [class.fa-chevron-down]="!expandedSections.axis" [class.fa-chevron-up]="expandedSections.axis"></i>
+          </div>
+        </card-header>
+        <card-body *ngIf="expandedSections.axis" class="py-2">
+          <!-- Y-Axis Label -->
+          <div class="option-row py-2 border-bottom">
+            <div class="text-white-50 mb-1">Label</div>
+            <input type="text" class="form-control form-control-sm" 
+                   [(ngModel)]="form.yAxis.label"
+                   (ngModelChange)="updatePreview()"
+                   placeholder="Optional text">
+          </div>
+          <!-- Placement -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Placement</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.yAxis.placement === 'auto'" [class.btn-outline-secondary]="form.yAxis.placement !== 'auto'"
+                      (click)="form.yAxis.placement = 'auto'; updatePreview()">Auto</button>
+              <button class="btn" [class.btn-theme]="form.yAxis.placement === 'left'" [class.btn-outline-secondary]="form.yAxis.placement !== 'left'"
+                      (click)="form.yAxis.placement = 'left'; updatePreview()">Left</button>
+              <button class="btn" [class.btn-theme]="form.yAxis.placement === 'right'" [class.btn-outline-secondary]="form.yAxis.placement !== 'right'"
+                      (click)="form.yAxis.placement = 'right'; updatePreview()">Right</button>
+              <button class="btn" [class.btn-theme]="form.yAxis.placement === 'hidden'" [class.btn-outline-secondary]="form.yAxis.placement !== 'hidden'"
+                      (click)="form.yAxis.placement = 'hidden'; updatePreview()">Hidden</button>
+            </div>
+          </div>
+          <!-- Unit -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Unit</span>
+            <select class="form-select form-select-sm" style="width: 150px;"
+                    [(ngModel)]="form.yAxis.unit"
                     (ngModelChange)="updatePreview()">
-              <option value="auto">Auto</option>
-              <option value="always">Always</option>
-              <option value="never">Never</option>
+              <option value="">None</option>
+              <option *ngFor="let u of unitPresets" [value]="u.value">{{ u.label }}</option>
             </select>
           </div>
-        </card-body>
-      </card>
-
-      <!-- Axis Configuration Card (for line/bar chart) -->
-      <card class="mb-3" *ngIf="selectedType === 'line-chart' || selectedType === 'bar-chart'">
-        <card-header>
-          <i class="fa fa-arrows-alt-h me-2 text-theme"></i>
-          <span class="fw-bold">Axis Configuration</span>
-        </card-header>
-        <card-body>
-          <!-- X-Axis -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold">X-Axis</label>
-            <div class="row g-2">
-              <div class="col-6">
-                <input type="text" class="form-control form-control-sm" 
-                       [(ngModel)]="form.xAxis.label"
-                       (ngModelChange)="updatePreview()"
-                       placeholder="Label (optional)">
-              </div>
-              <div class="col-6">
-                <select class="form-select form-select-sm"
-                        [(ngModel)]="form.xAxis.timeFormat"
-                        (ngModelChange)="updatePreview()">
-                  <option *ngFor="let opt of timeFormatOptions" [value]="opt.value">{{ opt.label }}</option>
-                </select>
-              </div>
-            </div>
+          <!-- Decimals -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Decimals</span>
+            <select class="form-select form-select-sm" style="width: 100px;"
+                    [(ngModel)]="form.yAxis.decimals"
+                    (ngModelChange)="updatePreview()">
+              <option [ngValue]="0">0</option>
+              <option [ngValue]="1">1</option>
+              <option [ngValue]="2">2</option>
+              <option [ngValue]="3">3</option>
+              <option [ngValue]="4">4</option>
+            </select>
           </div>
-          
-          <!-- Y-Axis -->
-          <div class="mb-0">
-            <label class="form-label fw-semibold">Y-Axis</label>
-            <div class="row g-2 mb-2">
-              <div class="col-4">
-                <input type="text" class="form-control form-control-sm" 
-                       [(ngModel)]="form.yAxis.label"
-                       (ngModelChange)="updatePreview()"
-                       placeholder="Label">
-              </div>
-              <div class="col-4">
-                <select class="form-select form-select-sm"
-                        [(ngModel)]="form.yAxis.unit"
-                        (ngModelChange)="updatePreview()">
-                  <option value="">No unit</option>
-                  <option *ngFor="let u of unitPresets" [value]="u.value">{{ u.label }}</option>
-                </select>
-              </div>
-              <div class="col-4">
-                <select class="form-select form-select-sm"
-                        [(ngModel)]="form.yAxis.decimals"
-                        (ngModelChange)="updatePreview()">
-                  <option [ngValue]="0">0 decimals</option>
-                  <option [ngValue]="1">1 decimal</option>
-                  <option [ngValue]="2">2 decimals</option>
-                  <option [ngValue]="3">3 decimals</option>
-                </select>
-              </div>
-            </div>
-            <div class="row g-2">
-              <div class="col-4">
-                <input type="number" class="form-control form-control-sm" 
-                       [(ngModel)]="form.yAxis.min"
-                       (ngModelChange)="updatePreview()"
-                       placeholder="Min">
-              </div>
-              <div class="col-4">
-                <input type="number" class="form-control form-control-sm" 
-                       [(ngModel)]="form.yAxis.max"
-                       (ngModelChange)="updatePreview()"
-                       placeholder="Max">
-              </div>
-              <div class="col-4">
-                <select class="form-select form-select-sm"
-                        [(ngModel)]="form.yAxis.scale"
-                        (ngModelChange)="updatePreview()">
-                  <option value="linear">Linear</option>
-                  <option value="log">Log</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-text">Set min/max to auto-fit or enter manual values</div>
-          </div>
-        </card-body>
-      </card>
-
-      <!-- Series Override Card (for multi-line) -->
-      <card class="mb-3" *ngIf="(selectedType === 'line-chart' || selectedType === 'bar-chart') && form.series.length > 0">
-        <card-header>
-          <i class="fa fa-paint-brush me-2 text-theme"></i>
-          <span class="fw-bold">Series Override</span>
-          <span class="badge bg-secondary ms-2">{{ form.series.length }}</span>
-        </card-header>
-        <card-body class="py-2">
-          <div *ngFor="let s of form.series; let i = index" class="series-override-item py-2 border-bottom" [class.border-bottom-0]="i === form.series.length - 1">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <!-- Color Picker -->
-              <input type="color" 
-                     [(ngModel)]="s.color" 
+          <!-- Min/Max -->
+          <div class="option-row py-2 border-bottom">
+            <div class="text-white-50 mb-1">Soft min / max</div>
+            <div class="d-flex gap-2">
+              <input type="number" class="form-control form-control-sm" 
+                     [(ngModel)]="form.yAxis.min"
                      (ngModelChange)="updatePreview()"
-                     class="form-control form-control-color form-control-sm"
-                     style="width: 32px; height: 32px; padding: 2px;"
-                     title="Series color">
-              <!-- Field name -->
-              <span class="fw-semibold flex-grow-1">{{ s.field }}</span>
-              <!-- Visibility toggle -->
-              <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" 
-                       [(ngModel)]="s.visible"
-                       (ngModelChange)="updatePreview()">
-              </div>
+                     placeholder="Auto">
+              <input type="number" class="form-control form-control-sm" 
+                     [(ngModel)]="form.yAxis.max"
+                     (ngModelChange)="updatePreview()"
+                     placeholder="Auto">
             </div>
-            <div class="row g-2">
-              <div class="col-5">
-                <input type="text" class="form-control form-control-sm" 
-                       [(ngModel)]="s.label"
-                       (ngModelChange)="updatePreview()"
-                       placeholder="Display label">
-              </div>
-              <div class="col-4">
-                <select class="form-select form-select-sm"
-                        [(ngModel)]="s.unit"
-                        (ngModelChange)="updatePreview()">
-                  <option value="">Default</option>
-                  <option *ngFor="let u of unitPresets" [value]="u.value">{{ u.label }}</option>
-                </select>
-              </div>
-              <div class="col-3">
-                <select class="form-select form-select-sm"
-                        [(ngModel)]="s.decimals"
-                        (ngModelChange)="updatePreview()">
-                  <option [ngValue]="0">0</option>
-                  <option [ngValue]="1">1</option>
-                  <option [ngValue]="2">2</option>
-                  <option [ngValue]="3">3</option>
-                </select>
-              </div>
+          </div>
+          <!-- Scale -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Scale</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.yAxis.scale === 'linear'" [class.btn-outline-secondary]="form.yAxis.scale !== 'linear'"
+                      (click)="form.yAxis.scale = 'linear'; updatePreview()">Linear</button>
+              <button class="btn" [class.btn-theme]="form.yAxis.scale === 'log'" [class.btn-outline-secondary]="form.yAxis.scale !== 'log'"
+                      (click)="form.yAxis.scale = 'log'; updatePreview()">Log</button>
+            </div>
+          </div>
+          <!-- Show grid lines -->
+          <div class="option-row d-flex justify-content-between align-items-center py-2">
+            <span class="text-white-50">Show grid lines</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.yAxis.showGrid === 'auto'" [class.btn-outline-secondary]="form.yAxis.showGrid !== 'auto'"
+                      (click)="form.yAxis.showGrid = 'auto'; updatePreview()">Auto</button>
+              <button class="btn" [class.btn-theme]="form.yAxis.showGrid === 'on'" [class.btn-outline-secondary]="form.yAxis.showGrid !== 'on'"
+                      (click)="form.yAxis.showGrid = 'on'; updatePreview()">On</button>
+              <button class="btn" [class.btn-theme]="form.yAxis.showGrid === 'off'" [class.btn-outline-secondary]="form.yAxis.showGrid !== 'off'"
+                      (click)="form.yAxis.showGrid = 'off'; updatePreview()">Off</button>
             </div>
           </div>
         </card-body>
       </card>
 
-      <!-- Thresholds Card (for line chart) -->
-      <card class="mb-3" *ngIf="selectedType === 'line-chart'">
-        <card-header class="d-flex justify-content-between align-items-center">
-          <div>
-            <i class="fa fa-ruler-horizontal me-2 text-theme"></i>
-            <span class="fw-bold">Thresholds</span>
-          </div>
-          <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-theme" (click)="addThreshold('manual')" title="Manual value">
-              <i class="fa fa-plus me-1"></i> Manual
-            </button>
-            <button class="btn btn-outline-theme" (click)="addThreshold('field')" 
-                    [disabled]="availableColumns.length === 0" title="From query field">
-              <i class="fa fa-database me-1"></i> From Field
-            </button>
+      <!-- Series Override Card (collapsible, Grafana style) -->
+      <card class="mb-2" *ngIf="(selectedType === 'line-chart' || selectedType === 'bar-chart') && form.series.length > 0">
+        <card-header class="py-2 cursor-pointer" (click)="toggleSection('series')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa fa-paint-brush me-2 text-theme"></i>
+              <span class="fw-bold">Series Override</span>
+              <span class="badge bg-secondary ms-2">{{ form.series.length }}</span>
+            </div>
+            <i class="fa" [class.fa-chevron-down]="!expandedSections.series" [class.fa-chevron-up]="expandedSections.series"></i>
           </div>
         </card-header>
-        <card-body>
-          <div *ngIf="form.thresholds.length === 0" class="text-muted small text-center py-3">
-            <i class="fa fa-ruler-horizontal mb-2 d-block fa-2x opacity-50"></i>
-            No thresholds defined.<br>
-            Add min/max lines for visual reference.
+        <card-body *ngIf="expandedSections.series" class="py-2">
+          <div *ngFor="let s of form.series; let i = index" class="py-2 border-bottom" [class.border-bottom-0]="i === form.series.length - 1">
+            <!-- Series Header -->
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <input type="color" [(ngModel)]="s.color" (ngModelChange)="updatePreview()"
+                     class="form-control form-control-color p-0" style="width: 24px; height: 24px;">
+              <span class="fw-semibold flex-grow-1 text-truncate">{{ s.field }}</span>
+              <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.visible" (ngModelChange)="updatePreview()">
+              </div>
+            </div>
+            <!-- Options -->
+            <div class="option-row d-flex justify-content-between align-items-center py-1">
+              <span class="text-white-50 small">Label</span>
+              <input type="text" class="form-control form-control-sm" style="width: 140px;"
+                     [(ngModel)]="s.label" (ngModelChange)="updatePreview()" placeholder="Display name">
+            </div>
+            <div class="option-row d-flex justify-content-between align-items-center py-1">
+              <span class="text-white-50 small">Unit</span>
+              <select class="form-select form-select-sm" style="width: 100px;"
+                      [(ngModel)]="s.unit" (ngModelChange)="updatePreview()">
+                <option value="">Default</option>
+                <option *ngFor="let u of unitPresets" [value]="u.value">{{ u.label }}</option>
+              </select>
+            </div>
+            <div class="option-row d-flex justify-content-between align-items-center py-1">
+              <span class="text-white-50 small">Decimals</span>
+              <select class="form-select form-select-sm" style="width: 80px;"
+                      [(ngModel)]="s.decimals" (ngModelChange)="updatePreview()">
+                <option [ngValue]="0">0</option>
+                <option [ngValue]="1">1</option>
+                <option [ngValue]="2">2</option>
+                <option [ngValue]="3">3</option>
+              </select>
+            </div>
+          </div>
+        </card-body>
+      </card>
+
+      <!-- Thresholds Card (collapsible, Grafana style) -->
+      <card class="mb-2" *ngIf="selectedType === 'line-chart' || selectedType === 'multi-line-chart' || selectedType === 'gauge'">
+        <card-header class="py-2 cursor-pointer" (click)="toggleSection('thresholds')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa fa-ruler-horizontal me-2 text-theme"></i>
+              <span class="fw-bold">Thresholds</span>
+              <span *ngIf="form.thresholds.length > 0" class="badge bg-secondary ms-2">{{ form.thresholds.length }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-outline-theme" (click)="addThreshold('manual'); $event.stopPropagation();" title="Add threshold">
+                <i class="fa fa-plus"></i>
+              </button>
+              <i class="fa" [class.fa-chevron-down]="!expandedSections.thresholds" [class.fa-chevron-up]="expandedSections.thresholds"></i>
+            </div>
+          </div>
+        </card-header>
+        <card-body *ngIf="expandedSections.thresholds" class="py-2">
+          <div *ngIf="form.thresholds.length === 0" class="text-muted small text-center py-2">
+            No thresholds defined
           </div>
           
-          <div *ngFor="let threshold of form.thresholds; let i = index" class="threshold-item mb-3">
-            <div class="d-flex gap-2 align-items-start">
-              <!-- Color Picker -->
-              <div class="threshold-color">
-                <input type="color" 
-                       [(ngModel)]="threshold.color" 
-                       (ngModelChange)="updateThreshold(i)"
-                       class="form-control form-control-color"
-                       title="Choose color">
-              </div>
-              
-              <!-- Value & Label -->
-              <div class="flex-grow-1">
-                <!-- Mode Toggle -->
-                <div class="btn-group btn-group-sm w-100 mb-2">
-                  <button class="btn" 
-                          [class.btn-theme]="threshold.mode === 'manual'"
-                          [class.btn-outline-secondary]="threshold.mode !== 'manual'"
-                          (click)="threshold.mode = 'manual'; updateThreshold(i)">
-                    <i class="fa fa-edit me-1"></i> Manual
-                  </button>
-                  <button class="btn"
-                          [class.btn-theme]="threshold.mode === 'field'"
-                          [class.btn-outline-secondary]="threshold.mode !== 'field'"
-                          (click)="threshold.mode = 'field'; updateThreshold(i)"
-                          [disabled]="availableColumns.length === 0">
-                    <i class="fa fa-database me-1"></i> From Field
-                  </button>
-                </div>
-                
-                <div class="row g-2">
-                  <!-- Manual: Value Input -->
-                  <div class="col-6" *ngIf="threshold.mode === 'manual'">
-                    <input type="number" 
-                           class="form-control form-control-sm" 
-                           [(ngModel)]="threshold.value"
-                           (ngModelChange)="updateThreshold(i)"
-                           placeholder="Value">
-                  </div>
-                  
-                  <!-- Field: Select from columns -->
-                  <div class="col-6" *ngIf="threshold.mode === 'field'">
-                    <select class="form-select form-select-sm"
-                            [(ngModel)]="threshold.field"
-                            (ngModelChange)="updateThreshold(i)">
-                      <option value="">Select field</option>
-                      <option *ngFor="let col of getNumericColumns()" [value]="col">{{ col }}</option>
-                    </select>
-                  </div>
-                  
-                  <div class="col-6">
-                    <input type="text" 
-                           class="form-control form-control-sm" 
-                           [(ngModel)]="threshold.label"
-                           (ngModelChange)="updateThreshold(i)"
-                           placeholder="Label">
-                  </div>
-                </div>
-                <div class="mt-2">
-                  <select class="form-select form-select-sm" 
-                          [(ngModel)]="threshold.lineStyle"
-                          (ngModelChange)="updateThreshold(i)">
-                    <option value="solid">Solid Line</option>
-                    <option value="dashed">Dashed Line</option>
-                  </select>
-                </div>
-              </div>
-              
-              <!-- Delete Button -->
+          <div *ngFor="let threshold of form.thresholds; let i = index" class="py-2 border-bottom" [class.border-bottom-0]="i === form.thresholds.length - 1">
+            <!-- Threshold Header -->
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <input type="color" [(ngModel)]="threshold.color" (ngModelChange)="updateThreshold(i)"
+                     class="form-control form-control-color p-0" style="width: 24px; height: 24px;">
+              <span class="fw-semibold flex-grow-1">{{ threshold.label || 'Threshold ' + (i+1) }}</span>
               <button class="btn btn-sm btn-outline-danger" (click)="removeThreshold(i)">
-                <i class="fa fa-trash"></i>
+                <i class="fa fa-times"></i>
               </button>
+            </div>
+            <!-- Options -->
+            <div class="option-row d-flex justify-content-between align-items-center py-1">
+              <span class="text-white-50 small">Mode</span>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-sm" [class.btn-theme]="threshold.mode === 'manual'" [class.btn-outline-secondary]="threshold.mode !== 'manual'"
+                        (click)="threshold.mode = 'manual'; updateThreshold(i)">Value</button>
+                <button class="btn btn-sm" [class.btn-theme]="threshold.mode === 'field'" [class.btn-outline-secondary]="threshold.mode !== 'field'"
+                        (click)="threshold.mode = 'field'; updateThreshold(i)" [disabled]="availableColumns.length === 0">Field</button>
+              </div>
+            </div>
+            <div class="option-row d-flex justify-content-between align-items-center py-1" *ngIf="threshold.mode === 'manual'">
+              <span class="text-white-50 small">Value</span>
+              <input type="number" class="form-control form-control-sm" style="width: 100px;"
+                     [(ngModel)]="threshold.value" (ngModelChange)="updateThreshold(i)">
+            </div>
+            <div class="option-row d-flex justify-content-between align-items-center py-1" *ngIf="threshold.mode === 'field'">
+              <span class="text-white-50 small">Field</span>
+              <select class="form-select form-select-sm" style="width: 120px;"
+                      [(ngModel)]="threshold.field" (ngModelChange)="updateThreshold(i)">
+                <option *ngFor="let col of getNumericColumns()" [value]="col">{{ col }}</option>
+              </select>
+            </div>
+            <div class="option-row d-flex justify-content-between align-items-center py-1">
+              <span class="text-white-50 small">Label</span>
+              <input type="text" class="form-control form-control-sm" style="width: 100px;"
+                     [(ngModel)]="threshold.label" (ngModelChange)="updateThreshold(i)" placeholder="Optional">
+            </div>
+            <div class="option-row d-flex justify-content-between align-items-center py-1">
+              <span class="text-white-50 small">Style</span>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-sm" [class.btn-theme]="threshold.lineStyle === 'solid'" [class.btn-outline-secondary]="threshold.lineStyle !== 'solid'"
+                        (click)="threshold.lineStyle = 'solid'; updateThreshold(i)">─</button>
+                <button class="btn btn-sm" [class.btn-theme]="threshold.lineStyle === 'dashed'" [class.btn-outline-secondary]="threshold.lineStyle !== 'dashed'"
+                        (click)="threshold.lineStyle = 'dashed'; updateThreshold(i)">┄</button>
+              </div>
             </div>
           </div>
           
           <!-- Quick Presets -->
-          <div class="threshold-presets mt-3" *ngIf="form.thresholds.length === 0">
-            <small class="text-muted d-block mb-2">Quick Presets:</small>
-            <button class="btn btn-sm btn-outline-secondary me-1" (click)="addPresetThreshold('min', 20)">
-              <i class="fa fa-arrow-down text-info me-1"></i> Min (20)
-            </button>
-            <button class="btn btn-sm btn-outline-secondary me-1" (click)="addPresetThreshold('max', 80)">
-              <i class="fa fa-arrow-up text-danger me-1"></i> Max (80)
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" (click)="addPresetThreshold('target', 50)">
-              <i class="fa fa-bullseye text-warning me-1"></i> Target (50)
-            </button>
+          <div class="mt-2 pt-2 border-top" *ngIf="form.thresholds.length === 0">
+            <div class="text-white-50 small mb-2">Quick add:</div>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-secondary" (click)="addPresetThreshold('min', 20)">Min</button>
+              <button class="btn btn-xs btn-outline-secondary" (click)="addPresetThreshold('max', 80)">Max</button>
+              <button class="btn btn-xs btn-outline-secondary" (click)="addPresetThreshold('target', 50)">Target</button>
+              <button class="btn btn-xs btn-outline-secondary" (click)="addPresetThreshold('warning', 70)">Warning</button>
+              <button class="btn btn-xs btn-outline-secondary" (click)="addPresetThreshold('critical', 90)">Critical</button>
+            </div>
           </div>
         </card-body>
       </card>
 
-      <!-- Legend Options Card (for pie) -->
-      <card class="mb-3" *ngIf="selectedType === 'pie-chart'">
-        <card-header>
-          <i class="fa fa-list me-2 text-theme"></i>
-          <span class="fw-bold">Legend Options</span>
+      <!-- Legend Options Card (for pie, collapsible) -->
+      <card class="mb-2" *ngIf="selectedType === 'pie-chart'">
+        <card-header class="py-2 cursor-pointer" (click)="toggleSection('pieLegend')">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fa fa-list me-2 text-theme"></i>
+              <span class="fw-bold">Legend</span>
+            </div>
+            <i class="fa" [class.fa-chevron-down]="!expandedSections.pieLegend" [class.fa-chevron-up]="expandedSections.pieLegend"></i>
+          </div>
         </card-header>
-        <card-body>
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" 
-                   [(ngModel)]="form.display.showLegend" 
-                   (ngModelChange)="updatePreview()"
-                   id="pieLegend">
-            <label class="form-check-label" for="pieLegend">Show Legend</label>
+        <card-body *ngIf="expandedSections.pieLegend" class="py-2">
+          <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-white-50">Visibility</span>
+            <div class="form-check form-switch m-0">
+              <input class="form-check-input" type="checkbox" 
+                     [(ngModel)]="form.display.showLegend" 
+                     (ngModelChange)="updatePreview()">
+            </div>
+          </div>
+          <div class="option-row d-flex justify-content-between align-items-center py-2">
+            <span class="text-white-50">Position</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn" [class.btn-theme]="form.display.legendPosition === 'left'" [class.btn-outline-secondary]="form.display.legendPosition !== 'left'"
+                      (click)="form.display.legendPosition = 'left'; updatePreview()">Left</button>
+              <button class="btn" [class.btn-theme]="form.display.legendPosition === 'right'" [class.btn-outline-secondary]="form.display.legendPosition !== 'right'"
+                      (click)="form.display.legendPosition = 'right'; updatePreview()">Right</button>
+              <button class="btn" [class.btn-theme]="form.display.legendPosition === 'bottom'" [class.btn-outline-secondary]="form.display.legendPosition !== 'bottom'"
+                      (click)="form.display.legendPosition = 'bottom'; updatePreview()">Bottom</button>
+            </div>
           </div>
         </card-body>
       </card>
 
       <!-- Quick Actions Card -->
-      <card>
-        <card-header>
+      <card class="mb-2">
+        <card-header class="py-2">
           <i class="fa fa-bolt me-2 text-theme"></i>
-          <span class="fw-bold">Quick Actions</span>
+          <span class="fw-bold">Actions</span>
         </card-header>
-        <card-body>
-          <button class="btn btn-outline-secondary btn-sm w-100 mb-2" 
-                  (click)="testQuery()" 
-                  [disabled]="!form.sql || queryLoading || !isValidSelectQuery()">
-            <i class="fa fa-play me-1"></i> Run Query
-          </button>
-          <button class="btn btn-outline-secondary btn-sm w-100 mb-2" 
-                  (click)="refreshPreview()"
-                  [disabled]="!queryResult">
-            <i class="fa fa-sync-alt me-1"></i> Refresh Preview
-          </button>
-          <button class="btn btn-theme btn-sm w-100" 
-                  (click)="saveWidget()" 
-                  [disabled]="!canSave()">
-            <i class="fa fa-save me-1"></i> Save Widget
-          </button>
+        <card-body class="py-2">
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm flex-grow-1" 
+                    (click)="testQuery()" 
+                    [disabled]="!form.sql || queryLoading || !isValidSelectQuery()">
+              <i class="fa fa-play me-1"></i> Run
+            </button>
+            <button class="btn btn-outline-secondary btn-sm flex-grow-1" 
+                    (click)="refreshPreview()"
+                    [disabled]="!queryResult">
+              <i class="fa fa-sync-alt me-1"></i> Refresh
+            </button>
+            <button class="btn btn-theme btn-sm flex-grow-1" 
+                    (click)="saveWidget()" 
+                    [disabled]="!canSave()">
+              <i class="fa fa-save me-1"></i> Save
+            </button>
+          </div>
         </card-body>
       </card>
       

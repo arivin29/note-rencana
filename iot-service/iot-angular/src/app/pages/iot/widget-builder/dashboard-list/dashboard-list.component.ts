@@ -1,8 +1,22 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { Dashboard, DUMMY_DASHBOARDS } from '../models/widget.models';
+import { Dashboard } from '../models/widget.models';
 import { DashboardModalComponent } from '../components/dashboard-modal/dashboard-modal.component';
+import { WidgetBuilderService } from 'src/sdk/core/services';
+
+interface DashboardResponse {
+  idDashboard: string;  // Backend uses idDashboard
+  id?: string;          // Fallback
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  idOwner: string;
+  owner?: { name: string };
+  widgetCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 @Component({
   selector: 'app-dashboard-list',
@@ -16,7 +30,8 @@ export class DashboardListComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private widgetBuilderService: WidgetBuilderService
   ) {}
 
   ngOnInit(): void {
@@ -25,11 +40,36 @@ export class DashboardListComponent implements OnInit {
 
   loadDashboards(): void {
     this.loading = true;
-    // Simulate API call with dummy data
-    setTimeout(() => {
-      this.dashboards = [...DUMMY_DASHBOARDS];
-      this.loading = false;
-    }, 500);
+    this.widgetBuilderService.widgetBuilderControllerGetDashboards$Response().subscribe({
+      next: (response: any) => {
+        // Handle both array response and wrapped response
+        let data: DashboardResponse[] = [];
+        if (Array.isArray(response.body)) {
+          data = response.body;
+        } else if (response.body && Array.isArray(response.body.dashboards)) {
+          data = response.body.dashboards;
+        } else if (response.body && typeof response.body === 'object') {
+          // Single object, wrap in array
+          data = [response.body];
+        }
+        
+        this.dashboards = data.map((d: DashboardResponse) => ({
+          id: d.idDashboard || d.id || '',
+          name: d.name,
+          description: d.description,
+          isDefault: d.isDefault,
+          ownerName: d.owner?.name || 'Unknown',
+          widgetCount: d.widgetCount || 0,
+          createdAt: new Date(d.createdAt),
+          updatedAt: new Date(d.updatedAt)
+        }));
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to load dashboards:', err);
+        this.loading = false;
+      }
+    });
   }
 
   openDashboard(dashboard: Dashboard): void {
@@ -44,16 +84,20 @@ export class DashboardListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Add new dashboard (mockup - just add to list)
-        const newDashboard: Dashboard = {
-          id: Date.now().toString(),
-          name: result.name,
-          description: result.description,
-          isDefault: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        this.dashboards = [newDashboard, ...this.dashboards];
+        this.widgetBuilderService.widgetBuilderControllerCreateDashboard({
+          body: {
+            name: result.name,
+            description: result.description || ''
+          }
+        }).subscribe({
+          next: () => {
+            this.loadDashboards(); // Reload list
+          },
+          error: (err: any) => {
+            console.error('Failed to create dashboard:', err);
+            alert('Failed to create dashboard: ' + (err.error?.message || err.message));
+          }
+        });
       }
     });
   }
@@ -67,11 +111,21 @@ export class DashboardListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Update dashboard (mockup)
-        const index = this.dashboards.findIndex(d => d.id === dashboard.id);
-        if (index !== -1) {
-          this.dashboards[index] = { ...this.dashboards[index], ...result, updatedAt: new Date() };
-        }
+        this.widgetBuilderService.widgetBuilderControllerUpdateDashboard({
+          id: dashboard.id,
+          body: {
+            name: result.name,
+            description: result.description
+          }
+        }).subscribe({
+          next: () => {
+            this.loadDashboards(); // Reload list
+          },
+          error: (err: any) => {
+            console.error('Failed to update dashboard:', err);
+            alert('Failed to update dashboard: ' + (err.error?.message || err.message));
+          }
+        });
       }
     });
   }
@@ -79,20 +133,38 @@ export class DashboardListComponent implements OnInit {
   deleteDashboard(event: Event, dashboard: Dashboard): void {
     event.stopPropagation();
     if (confirm(`Are you sure you want to delete "${dashboard.name}"?`)) {
-      this.dashboards = this.dashboards.filter(d => d.id !== dashboard.id);
+      this.widgetBuilderService.widgetBuilderControllerDeleteDashboard({
+        id: dashboard.id
+      }).subscribe({
+        next: () => {
+          this.loadDashboards(); // Reload list
+        },
+        error: (err: any) => {
+          console.error('Failed to delete dashboard:', err);
+          alert('Failed to delete dashboard: ' + (err.error?.message || err.message));
+        }
+      });
     }
   }
 
   setAsDefault(event: Event, dashboard: Dashboard): void {
     event.stopPropagation();
-    this.dashboards = this.dashboards.map(d => ({
-      ...d,
-      isDefault: d.id === dashboard.id
-    }));
+    this.widgetBuilderService.widgetBuilderControllerUpdateDashboard({
+      id: dashboard.id,
+      body: {
+        isDefault: true
+      }
+    }).subscribe({
+      next: () => {
+        this.loadDashboards(); // Reload list
+      },
+      error: (err: any) => {
+        console.error('Failed to set as default:', err);
+      }
+    });
   }
 
   getWidgetCount(dashboard: Dashboard): number {
-    return DUMMY_DASHBOARDS.find(d => d.id === dashboard.id)?.widgets?.length || 
-           (dashboard.id === '1' ? 6 : Math.floor(Math.random() * 5) + 1);
+    return dashboard.widgetCount || 0;
   }
 }

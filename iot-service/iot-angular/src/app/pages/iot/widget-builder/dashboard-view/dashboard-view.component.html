@@ -132,7 +132,7 @@
     <gridster [options]="gridsterOptions" class="dashboard-gridster">
         <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
             <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
-                [timeRange]="timeRange" [isFullscreen]="fullscreenWidget === item['id']"
+                [timeRange]="selectedTimePreset" [isFullscreen]="fullscreenWidget === item['id']"
                 (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
                 (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])">
             </app-widget-container>
@@ -147,7 +147,7 @@
         <button class="btn btn-light position-absolute top-0 end-0 m-3" (click)="toggleFullscreen(fullscreenWidget!)">
             <i class="bi bi-fullscreen-exit"></i>
         </button>
-        <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" [timeRange]="timeRange"
+        <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" [timeRange]="selectedTimePreset"
             [isFullscreen]="true" (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
         </app-widget-container>
     </div>
