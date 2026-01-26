@@ -1,104 +1,78 @@
+/* SQL Editor - Custom Textarea Style */
 .sql-editor-wrapper {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  display: flex;
+  background: #1e1e2e;
+  border-radius: 6px;
+  border: 1px solid #313244;
   overflow: hidden;
-}
-
-.editor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.editor-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
   font-size: 13px;
+  line-height: 1.6;
 }
 
-.editor-label mat-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
+/* Line Numbers */
+.editor-toolbar {
+  background: #181825;
+  padding: 12px 0;
+  border-right: 1px solid #313244;
+  user-select: none;
 }
 
-.editor-hints {
+.line-numbers {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  text-align: right;
+  padding: 0 12px;
+  color: #6c7086;
+  min-width: 40px;
 }
 
-.hint {
-  font-size: 11px;
-  color: #666;
+.line-numbers span {
+  height: 20.8px; /* Match line-height */
 }
 
-.hint code {
-  background: #e3f2fd;
-  padding: 2px 6px;
+/* SQL Textarea */
+.sql-textarea {
+  flex: 1;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border: none;
+  outline: none;
+  padding: 12px;
+  resize: none;
+  min-height: 200px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.sql-textarea::placeholder {
+  color: #6c7086;
+}
+
+.sql-textarea:focus {
+  outline: none;
+}
+
+/* Scrollbar styling */
+.sql-textarea::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sql-textarea::-webkit-scrollbar-track {
+  background: #181825;
+}
+
+.sql-textarea::-webkit-scrollbar-thumb {
+  background: #45475a;
   border-radius: 4px;
-  color: #1976d2;
 }
 
-/* CodeMirror Overrides */
-::ng-deep .CodeMirror {
-  height: 250px !important;
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 13px;
+.sql-textarea::-webkit-scrollbar-thumb:hover {
+  background: #585b70;
 }
 
-::ng-deep .CodeMirror-gutters {
-  background: #f9f9f9;
-  border-right: 1px solid #e0e0e0;
-}
-
-::ng-deep .CodeMirror-linenumber {
-  color: #999;
-}
-
-/* SQL Syntax Highlighting */
-::ng-deep .cm-keyword {
-  color: #0000ff;
-  font-weight: bold;
-}
-
-::ng-deep .cm-string {
-  color: #a31515;
-}
-
-::ng-deep .cm-number {
-  color: #098658;
-}
-
-::ng-deep .cm-comment {
-  color: #008000;
-  font-style: italic;
-}
-
-::ng-deep .cm-variable {
-  color: #001080;
-}
-
-/* Dark Mode */
-:host-context(.dark-mode) .sql-editor-wrapper {
-  border-color: #333;
-}
-
-:host-context(.dark-mode) .editor-header {
-  background: #252525;
-  border-color: #333;
-}
-
-:host-context(.dark-mode) ::ng-deep .CodeMirror {
-  background: #1e1e1e;
-  color: #d4d4d4;
-}
-
-:host-context(.dark-mode) ::ng-deep .CodeMirror-gutters {
-  background: #252525;
-  border-color: #333;
-}

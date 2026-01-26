@@ -34,11 +34,77 @@ export interface WidgetPosition {
 export interface WidgetConfig {
   title?: string;
   subtitle?: string;
+  description?: string;
   refreshInterval?: number; // in seconds, 0 = no auto refresh
   showLegend?: boolean;
   colorScheme?: string;
-  chartOptions?: any; // ECharts specific options
-  fieldMapping?: FieldMapping;
+  chartOptions?: any; // ECharts specific options (legacy)
+  fieldMapping?: FieldMapping; // Legacy field mapping
+  
+  // New structured configuration
+  mapping?: WidgetFieldMapping;
+  series?: WidgetSeriesConfig[];
+  xAxis?: WidgetAxisConfig;
+  yAxis?: WidgetYAxisConfig;
+  thresholds?: WidgetThreshold[];
+  display?: WidgetDisplayConfig;
+}
+
+// New structured field mapping
+export interface WidgetFieldMapping {
+  xField: string;
+  yField: string;
+  yFields: string[];      // Multi-line: multiple Y fields
+  seriesField: string;    // Group by series column
+  labelField: string;     // For pie charts
+  valueField: string;     // For gauge/card
+}
+
+// Per-series configuration
+export interface WidgetSeriesConfig {
+  field: string;
+  label: string;
+  color: string;
+  unit: string;
+  decimals: number;
+  visible: boolean;
+}
+
+// X-Axis configuration
+export interface WidgetAxisConfig {
+  label: string;
+  timeFormat: string;
+}
+
+// Y-Axis configuration
+export interface WidgetYAxisConfig {
+  label: string;
+  unit: string;
+  decimals: number;
+  min: number | null;
+  max: number | null;
+  scale: 'linear' | 'log';
+}
+
+// Threshold configuration
+export interface WidgetThreshold {
+  mode: 'manual' | 'field';
+  value: number;
+  field: string;
+  label: string;
+  color: string;
+  lineStyle: 'solid' | 'dashed' | 'dotted';
+}
+
+// Display configuration
+export interface WidgetDisplayConfig {
+  showLegend: boolean;
+  legendPosition: 'top' | 'bottom' | 'left' | 'right';
+  lineStyle: 'smooth' | 'straight' | 'step';
+  lineWidth: number;
+  fillOpacity: number;
+  showPoints: 'never' | 'always' | 'auto';
+  tooltipMode: 'single' | 'all' | 'hidden';
 }
 
 export interface FieldMapping {

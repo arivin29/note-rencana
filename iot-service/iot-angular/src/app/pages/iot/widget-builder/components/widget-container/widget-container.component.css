@@ -3,7 +3,7 @@
 /* Wrapper to allow resize handles to be accessible */
 .widget-wrapper {
   position: absolute;
-  top: 8px;
+  top: 0px;
   left: 8px;
   right: 8px;
   bottom: 8px;

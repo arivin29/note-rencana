@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, AfterViewInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 
 @Component({
   selector: 'app-sql-editor',
@@ -6,30 +6,45 @@ import { Component, Input, Output, EventEmitter, AfterViewInit } from '@angular/
   templateUrl: './sql-editor.component.html',
   styleUrls: ['./sql-editor.component.css']
 })
-export class SqlEditorComponent implements AfterViewInit {
+export class SqlEditorComponent implements OnInit, OnChanges {
   @Input() value = '';
   @Output() valueChange = new EventEmitter<string>();
 
-  // CodeMirror options
-  editorOptions = {
-    lineNumbers: true,
-    mode: 'text/x-sql',
-    theme: 'default',
-    indentWithTabs: true,
-    smartIndent: true,
-    lineWrapping: true,
-    matchBrackets: true,
-    autofocus: false,
-    extraKeys: {
-      'Ctrl-Space': 'autocomplete'
-    }
-  };
+  editorValue = '';
+  lineNumbers: number[] = [1];
 
-  ngAfterViewInit(): void {
-    // Editor initialization handled by ngx-codemirror
+  // Default SQL query template
+  defaultQuery = `SELECT 
+  node_id,
+  temperature,
+  humidity,
+  created_at
+FROM telemetry
+WHERE created_at >= \${__timeFrom}
+  AND created_at <= \${__timeTo}
+ORDER BY created_at DESC
+LIMIT 100`;
+
+  ngOnInit(): void {
+    this.editorValue = this.value || this.defaultQuery;
+    this.updateLineNumbers();
   }
 
-  onEditorChange(value: string): void {
-    this.valueChange.emit(value);
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['value'] && !changes['value'].firstChange) {
+      this.editorValue = this.value || '';
+      this.updateLineNumbers();
+    }
+  }
+
+  onEditorChange(newValue: string): void {
+    this.editorValue = newValue;
+    this.valueChange.emit(newValue);
+    this.updateLineNumbers();
+  }
+
+  updateLineNumbers(): void {
+    const lines = (this.editorValue || '').split('\n').length;
+    this.lineNumbers = Array.from({ length: Math.max(lines, 10) }, (_, i) => i + 1);
   }
 }
