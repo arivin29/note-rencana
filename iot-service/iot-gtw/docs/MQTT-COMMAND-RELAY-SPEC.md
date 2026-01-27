@@ -108,7 +108,7 @@ sensor/DEMO1-00D42390A994/event
   "action": "relay",
   "target": "out1",
   "state": "pulse",
-  "duration_ms": 5000,
+  "duration_ms": 4001,
   "timestamp": "2025-11-22 13:00:00"
 }
 ```
@@ -148,7 +148,7 @@ sensor/DEMO1-00D42390A994/event
 {
   "event": "relay_pulse_complete",
   "target": "out1",
-  "duration_ms": 5000,
+  "duration_ms": 4001,
   "timestamp": "2025-11-22 13:00:10",
   "device_id": "DEMO1-00D42390A994"
 }
@@ -496,7 +496,7 @@ curl -X POST http://localhost:5001/relay-command/DEMO1-00D42390A994/off \
 ```bash
 curl -X POST http://localhost:5001/relay-command/DEMO1-00D42390A994/pulse \
   -H "Content-Type: application/json" \
-  -d '{"target":"out1","duration_ms":5000}'
+  -d '{"target":"out1","duration_ms":4001}'
 ```
 
 ### 3. Frontend Test
@@ -541,7 +541,7 @@ Create UI with relay control buttons:
   "action": "relay",
   "target": "out1",
   "state": "pulse",
-  "duration_ms": 5000
+  "duration_ms": 4001
 }
 ```
 Power cycle the device or connected equipment.

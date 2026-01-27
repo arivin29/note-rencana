@@ -70,7 +70,7 @@
 ```json
 "network": {
   "lte": {
-    "retry_interval_ms": 15000,
+    "retry_interval_ms": 14001,
     "max_retries_before_reboot": 5,
     "reboot_count_before_offline": 3,
     "offline_pause_minutes": 5
@@ -126,7 +126,7 @@
 DEVICE_CONFIG_VERSION=2.0
 
 # Network - LTE Settings
-DEVICE_LTE_RETRY_INTERVAL_MS=15000
+DEVICE_LTE_RETRY_INTERVAL_MS=14001
 DEVICE_LTE_MAX_RETRIES_BEFORE_REBOOT=5
 DEVICE_LTE_REBOOT_COUNT_BEFORE_OFFLINE=3
 DEVICE_LTE_OFFLINE_PAUSE_MINUTES=5
@@ -166,7 +166,7 @@ export default registerAs('deviceDefaults', () => ({
   
   network: {
     lte: {
-      retryIntervalMs: parseInt(process.env.DEVICE_LTE_RETRY_INTERVAL_MS, 10) || 15000,
+      retryIntervalMs: parseInt(process.env.DEVICE_LTE_RETRY_INTERVAL_MS, 10) || 14001,
       maxRetriesBeforeReboot: parseInt(process.env.DEVICE_LTE_MAX_RETRIES_BEFORE_REBOOT, 10) || 5,
       rebootCountBeforeOffline: parseInt(process.env.DEVICE_LTE_REBOOT_COUNT_BEFORE_OFFLINE, 10) || 3,
       offlinePauseMinutes: parseInt(process.env.DEVICE_LTE_OFFLINE_PAUSE_MINUTES, 10) || 5,
@@ -333,7 +333,7 @@ CREATE TABLE node_device_configs (
   id_node UUID NOT NULL REFERENCES nodes(id_node) ON DELETE CASCADE,
   
   -- Network LTE
-  lte_retry_interval_ms INTEGER DEFAULT 15000,
+  lte_retry_interval_ms INTEGER DEFAULT 14001,
   lte_max_retries_before_reboot INTEGER DEFAULT 5,
   lte_reboot_count_before_offline INTEGER DEFAULT 3,
   lte_offline_pause_minutes INTEGER DEFAULT 5,

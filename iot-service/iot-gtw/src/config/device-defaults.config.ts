@@ -13,7 +13,7 @@ export default registerAs('deviceDefaults', () => ({
   network: {
     // LTE connection settings
     lte: {
-      retryIntervalMs: parseInt(process.env.DEVICE_LTE_RETRY_INTERVAL_MS, 10) || 15000,
+      retryIntervalMs: parseInt(process.env.DEVICE_LTE_RETRY_INTERVAL_MS, 10) || 14001,
       maxRetriesBeforeReboot: parseInt(process.env.DEVICE_LTE_MAX_RETRIES_BEFORE_REBOOT, 10) || 5,
       rebootCountBeforeOffline: parseInt(process.env.DEVICE_LTE_REBOOT_COUNT_BEFORE_OFFLINE, 10) || 3,
       offlinePauseMinutes: parseInt(process.env.DEVICE_LTE_OFFLINE_PAUSE_MINUTES, 10) || 5,

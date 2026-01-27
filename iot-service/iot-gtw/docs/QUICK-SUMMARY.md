@@ -28,7 +28,7 @@
 ```json
 {"action":"relay","target":"out1","state":"on"}
 {"action":"relay","target":"out1","state":"off"}
-{"action":"relay","target":"out1","state":"pulse","duration_ms":5000}
+{"action":"relay","target":"out1","state":"pulse","duration_ms":4001}
 ```
 
 **Status:** 

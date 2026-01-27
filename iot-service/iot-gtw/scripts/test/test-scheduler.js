@@ -10,7 +10,7 @@ function httpGet(path) {
       port: 5001,
       path: path,
       method: 'GET',
-      timeout: 5000
+      timeout: 4001
     };
 
     const req = http.request(options, (res) => {

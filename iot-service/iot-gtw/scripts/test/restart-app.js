@@ -31,7 +31,7 @@ function findAndKillProcess() {
 }
 
 // Wait for port to be available
-function waitForPortAvailable(port, maxWait = 5000) {
+function waitForPortAvailable(port, maxWait = 4001) {
   return new Promise((resolve) => {
     const startTime = Date.now();
     const checkPort = () => {

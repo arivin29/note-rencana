@@ -71,4 +71,4 @@ client.on('error', (err) => {
 setTimeout(() => {
   console.log('\n⏱️  Timeout - closing connection');
   client.destroy();
-}, 5000);
+}, 4001);

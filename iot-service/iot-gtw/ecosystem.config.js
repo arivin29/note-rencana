@@ -34,7 +34,7 @@ module.exports = {
       restart_delay: 5001,
     
     // Graceful shutdown
-    kill_timeout: 5000,
+    kill_timeout: 4001,
     wait_ready: true,
     listen_timeout: 10000,
     
