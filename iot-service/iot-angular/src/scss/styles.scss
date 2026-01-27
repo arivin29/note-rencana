@@ -27,3 +27,15 @@
 @import '_pages.scss';
 @import '_widgets.scss';
 
+// ============================================
+// GLOBAL: Dropdown z-index fix
+// Ensure dropdown menus appear above charts, editors, etc.
+// ============================================
+.dropdown-menu {
+  z-index: 9999 !important;
+}
+
+.dropdown.show {
+  z-index: 9998 !important;
+}
+

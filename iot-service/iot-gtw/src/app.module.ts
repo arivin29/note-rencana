@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import databaseConfig from './config/database.config';
 import mqttConfig from './config/mqtt.config';
 import deviceDefaultsConfig from './config/device-defaults.config';
+import clickhouseConfig from './config/clickhouse.config';
 import { IotLog } from './entities';
 import { 
   Node, 
@@ -22,13 +23,14 @@ import { IotLogModule } from './modules/iot-log/iot-log.module';
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { HealthModule } from './modules/health/health.module';
 import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
+import { ClickhouseModule } from './modules/clickhouse/clickhouse.module';
 
 @Module({
   imports: [
     // Config Module
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, mqttConfig, deviceDefaultsConfig],
+      load: [databaseConfig, mqttConfig, deviceDefaultsConfig, clickhouseConfig],
       envFilePath: '.env',
     }),
 
@@ -68,6 +70,7 @@ import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
     IotLogModule,
     MqttModule,
     HealthModule,
+    ClickhouseModule, // ClickHouse for time-series telemetry
     SchedulerAppModule, // Auto-process telemetry every 30 seconds
   ],
 })

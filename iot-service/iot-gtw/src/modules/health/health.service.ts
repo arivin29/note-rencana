@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { MqttService } from '../mqtt/mqtt.service';
+import { ClickhouseService } from '../clickhouse/clickhouse.service';
 
 @Injectable()
 export class HealthService {
@@ -11,6 +12,7 @@ export class HealthService {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly mqttService: MqttService,
+    private readonly clickhouseService: ClickhouseService,
   ) {}
 
   /**
@@ -19,15 +21,19 @@ export class HealthService {
   async checkAll() {
     const database = await this.checkDatabase();
     const mqtt = await this.checkMqtt();
+    const clickhouse = await this.checkClickhouse();
 
     const isHealthy = database.status === 'ok' && mqtt.status === 'ok';
+    // ClickHouse is optional - don't fail health if it's down
+    const hasWarnings = clickhouse.status !== 'ok';
 
     return {
-      status: isHealthy ? 'ok' : 'error',
+      status: isHealthy ? (hasWarnings ? 'degraded' : 'ok') : 'error',
       timestamp: new Date().toISOString(),
       services: {
         database,
         mqtt,
+        clickhouse,
       },
     };
   }
@@ -85,6 +91,37 @@ export class HealthService {
       return {
         status: 'error',
         message: 'MQTT health check failed',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Check ClickHouse connection
+   */
+  async checkClickhouse() {
+    try {
+      const health = await this.clickhouseService.healthCheck();
+
+      if (health.connected) {
+        return {
+          status: 'ok',
+          message: 'ClickHouse connection is healthy',
+          details: health,
+        };
+      } else {
+        return {
+          status: 'warning',
+          message: 'ClickHouse is not connected',
+          details: health,
+        };
+      }
+    } catch (error) {
+      this.logger.error(`ClickHouse health check failed: ${error.message}`);
+
+      return {
+        status: 'warning',
+        message: 'ClickHouse health check failed',
         error: error.message,
       };
     }

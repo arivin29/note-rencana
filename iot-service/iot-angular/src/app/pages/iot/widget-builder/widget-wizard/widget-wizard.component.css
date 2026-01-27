@@ -1,22 +1,33 @@
 /* Widget Wizard - Bootstrap Style */
 
-/* Fix dropdown z-index inside cards */
+/* ============================================
+   FIX DROPDOWN Z-INDEX - Must be above chart/editor
+   ============================================ */
+
+/* Dropdown menu must be on top of everything */
 .dropdown-menu {
-  z-index: 1050 !important;
+  z-index: 9999 !important;
   position: absolute !important;
 }
 
+/* Dropdown container */
 .dropdown {
   position: relative;
-  z-index: 10;
+  z-index: 100;
 }
 
-/* Ensure card-header doesn't clip dropdown */
+/* Open dropdown should have higher z-index */
+.dropdown.show,
+.dropdown:focus-within {
+  z-index: 9998;
+}
+
+/* Ensure card-header allows dropdown overflow */
 card-header,
 .card-header {
   overflow: visible !important;
   position: relative;
-  z-index: 5;
+  z-index: 100;
 }
 
 /* Card must allow overflow for dropdowns */
@@ -25,9 +36,31 @@ card,
   overflow: visible !important;
 }
 
-/* But card-body can clip content if needed */
-card-body {
-  overflow: visible;
+/* Card body allow overflow */
+card-body,
+.card-body {
+  overflow: visible !important;
+}
+
+/* Preview area and chart container should be below dropdown */
+.preview-area,
+.chart-preview,
+.echart-box,
+.echart {
+  position: relative;
+  z-index: 1;
+}
+
+/* SQL Editor container should be below dropdown */
+.sql-editor-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* CodeMirror editor */
+.CodeMirror,
+.cm-editor {
+  z-index: 1 !important;
 }
 
 /* Grafana-style collapsible sections */
@@ -341,4 +374,369 @@ card-body {
   .widget-type-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ========================================
+   Grafana-style Time Picker
+   ======================================== */
+
+.time-picker-wrapper {
+  position: relative;
+}
+
+.time-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.time-picker-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.time-picker-dropdown {
+  position: fixed;
+  background: #1f1f23;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 99999999;
+  min-width: 560px;
+  max-width: 90vw;
+  overflow: visible;
+}
+
+.time-picker-content {
+  display: flex;
+}
+
+.time-picker-absolute {
+  flex: 0 0 300px;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.time-picker-absolute .section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.time-input-group {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.time-input-group label {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .form-control {
+  background: #111217;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  padding-right: 36px;
+}
+
+.input-with-icon .form-control:focus {
+  background: #111217;
+  border-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.input-with-icon .form-control.active {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.input-with-icon .btn-icon {
+  position: absolute;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.input-with-icon .btn-icon:hover {
+  color: #fff;
+}
+
+.time-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.time-actions .btn {
+  font-size: 13px;
+}
+
+/* Quick Ranges */
+.time-picker-quick {
+  width: 220px;
+  background: #111217;
+  display: flex;
+  flex-direction: column;
+}
+
+.quick-search {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 8px;
+}
+
+.quick-search .bi-search {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.quick-search .form-control {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.quick-search .form-control:focus {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.quick-ranges-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.quick-range-item {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.quick-range-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-left-color: var(--bs-primary);
+}
+
+.quick-range-item.active {
+  background: rgba(var(--bs-primary-rgb), 0.15);
+  color: var(--bs-primary);
+  border-left-color: var(--bs-primary);
+}
+
+/* Footer */
+.time-picker-footer {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #0a0a0c;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  gap: 12px;
+}
+
+.timezone-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.timezone-label .text-muted {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.timezone-offset {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+}
+
+/* Calendar Popup */
+.calendar-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 9999;
+  width: 280px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-nav {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.cal-nav:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.cal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px 0;
+  font-weight: 600;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  margin: 0 auto;
+}
+
+.cal-day:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cal-day.other-month {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.cal-day.today {
+  background: rgba(var(--bs-primary-rgb), 0.2);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.cal-day.selected {
+  background: var(--bs-primary);
+  color: #fff;
+}
+
+.calendar-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.calendar-time label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.calendar-time .form-control {
+  flex: 1;
+  background: #111217;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.calendar-time .form-control:focus {
+  background: #111217;
+  border-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+  outline: none;
+}
+
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.calendar-actions .btn {
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 4px;
+}
+
+.calendar-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.calendar-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }

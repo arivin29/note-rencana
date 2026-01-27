@@ -14,6 +14,8 @@ import {
 } from '../../entities/existing';
 import { TelemetryParserService } from './telemetry-parser.service';
 import { ProcessTelemetryResultDto, BulkProcessResultDto } from './dto/process-telemetry.dto';
+import { ClickhouseService } from '../clickhouse/clickhouse.service';
+import { SensorTelemetryDto, SensorChannelLatestDto, NodeLatestDto } from '../clickhouse/dto';
 
 @Injectable()
 export class TelemetryProcessorService {
@@ -39,6 +41,7 @@ export class TelemetryProcessorService {
     @InjectRepository(SensorLog)
     private readonly sensorLogRepository: Repository<SensorLog>,
     private readonly telemetryParser: TelemetryParserService,
+    private readonly clickhouseService: ClickhouseService,
   ) {}
 
   /**
@@ -244,10 +247,29 @@ export class TelemetryProcessorService {
         };
       }
 
+      // Get node model name for ClickHouse denormalization
+      const nodeModel = await this.nodeRepository.findOne({
+        where: { idNode: node.idNode },
+        relations: ['nodeModel'],
+      });
+      const nodeModelName = nodeModel?.nodeModel?.modelName || 'Unknown';
+
+      // Get sensor catalog names for ClickHouse denormalization
+      const sensorCatalogMap = new Map<string, string>();
+      for (const s of sensors) {
+        if (s.idSensorCatalog) {
+          sensorCatalogMap.set(s.idSensor, s.idSensorCatalog);
+        }
+      }
+
       // 8. Match parsed data with actual sensors and save sensor_logs
       let sensorsProcessed = 0;
       let channelsProcessed = 0;
       let sensorLogsCreated = 0;
+
+      // Collect data for ClickHouse batch insert
+      const clickhouseTelemetryBatch: SensorTelemetryDto[] = [];
+      const clickhouseChannelLatestBatch: SensorChannelLatestDto[] = [];
 
       for (const parsedSensor of parsedTelemetry.sensors) {
         // Find matching sensor by idSensor (if present), fallback to label
@@ -365,15 +387,103 @@ export class TelemetryProcessorService {
               maxThreshold,
             });
 
-            await this.sensorLogRepository.save(sensorLog);
+            const savedSensorLog = await this.sensorLogRepository.save(sensorLog);
             sensorLogsCreated++;
+
+            // Prepare ClickHouse telemetry data
+            const chTelemetry: SensorTelemetryDto = {
+              event_time: iotLog.timestamp,
+              device_id: iotLog.deviceId,
+              owner_code: ownerValidation.owner?.ownerCode || '',
+              owner_id: idOwner,
+              project_code: project.name || '',
+              project_id: node.idProject,
+              node_id: node.idNode,
+              node_code: node.code,
+              node_model: nodeModelName,
+              sensor_id: sensor.idSensor,
+              sensor_label: sensor.label,
+              sensor_catalog: sensorCatalogMap.get(sensor.idSensor) || '',
+              channel_id: channel.idSensorChannel,
+              metric_code: channel.metricCode,
+              metric_unit: channel.unit || '',
+              raw_value: parsedChannel.value,
+              eng_value: valueEngineered,
+              signal_quality: parsedTelemetry.metadata?.signalQuality || 0,
+              firmware_version: node.firmwareVersion || '',
+              iot_log_id: iotLog.id,
+              pg_sensor_log_id: savedSensorLog.idSensorLog,
+            };
+            clickhouseTelemetryBatch.push(chTelemetry);
+
+            // Prepare ClickHouse channel latest status
+            const chChannelLatest: SensorChannelLatestDto = {
+              channel_id: channel.idSensorChannel,
+              last_update: iotLog.timestamp,
+              device_id: iotLog.deviceId,
+              owner_code: ownerValidation.owner?.ownerCode || '',
+              owner_id: idOwner,
+              project_code: project.name || '',
+              project_id: node.idProject,
+              node_id: node.idNode,
+              node_code: node.code,
+              node_model: nodeModelName,
+              sensor_id: sensor.idSensor,
+              sensor_label: sensor.label,
+              sensor_catalog: sensorCatalogMap.get(sensor.idSensor) || '',
+              metric_code: channel.metricCode,
+              metric_unit: channel.unit || '',
+              raw_value: parsedChannel.value,
+              eng_value: valueEngineered,
+              signal_quality: parsedTelemetry.metadata?.signalQuality || 0,
+              last_iot_log_id: iotLog.id,
+            };
+            clickhouseChannelLatestBatch.push(chChannelLatest);
+
           } catch (error) {
             errors.push(`Error saving sensor_log for channel ${channel.metricCode}: ${error.message}`);
           }
         }
       }
 
-      // 9. Mark iot_log as processed
+      // 9. Insert to ClickHouse (async, non-blocking)
+      if (clickhouseTelemetryBatch.length > 0 && this.clickhouseService.isReady()) {
+        try {
+          // Batch insert telemetry
+          await this.clickhouseService.insertTelemetryBatch(clickhouseTelemetryBatch);
+
+          // Update channel latest status
+          for (const chLatest of clickhouseChannelLatestBatch) {
+            await this.clickhouseService.updateChannelLatest(chLatest);
+          }
+
+          // Update node latest status
+          const nodeLatest: NodeLatestDto = {
+            node_id: node.idNode,
+            device_id: iotLog.deviceId,
+            last_seen: iotLog.timestamp,
+            owner_code: ownerValidation.owner?.ownerCode || '',
+            owner_id: idOwner,
+            project_code: project.name || '',
+            project_id: node.idProject,
+            node_code: node.code,
+            node_model: nodeModelName,
+            signal_quality: parsedTelemetry.metadata?.signalQuality || 0,
+            firmware_version: node.firmwareVersion || '',
+            ip_address: node.ipAddress || '',
+            total_channels: sensors.reduce((sum, s) => sum + (s.channels?.length || 0), 0),
+            active_channels: clickhouseChannelLatestBatch.length,
+          };
+          await this.clickhouseService.updateNodeLatest(nodeLatest);
+
+          this.logger.debug(`ClickHouse: Inserted ${clickhouseTelemetryBatch.length} telemetry records`);
+        } catch (chError) {
+          // Log but don't fail - ClickHouse is secondary storage
+          this.logger.warn(`ClickHouse insert warning: ${chError.message}`);
+        }
+      }
+
+      // 10. Mark iot_log as processed
       const success = sensorLogsCreated > 0;
       await this.markAsProcessed(iotLog, success, errors.join('; '));
 
@@ -485,6 +595,7 @@ export class TelemetryProcessorService {
   /**
    * Validate owner code from device_id
    * Expected format: XXXXX-HARDWARE_ID (e.g., A1B2C-ESP32001)
+   * Special case: HELIO-XXX devices - lookup via node -> project -> owner
    */
   private async validateOwnerCode(deviceId: string): Promise<{
     isValid: boolean;
@@ -505,7 +616,14 @@ export class TelemetryProcessorService {
       };
     }
 
-    const ownerCode = parts[0].toUpperCase();
+    const prefix = parts[0].toUpperCase();
+
+    // Special case: HELIO devices - lookup via node -> project -> owner
+    if (prefix === 'HELIO') {
+      return this.validateOwnerViaNode(deviceId);
+    }
+
+    const ownerCode = prefix;
 
     if (ownerCode.length !== 5) {
       return {
@@ -523,6 +641,61 @@ export class TelemetryProcessorService {
       return {
         isValid: false,
         error: `Owner code '${ownerCode}' not found in system`
+      };
+    }
+
+    return { isValid: true, owner };
+  }
+
+  /**
+   * Validate owner via node -> project -> owner chain
+   * Used for special devices like HELIO-XXX
+   */
+  private async validateOwnerViaNode(deviceId: string): Promise<{
+    isValid: boolean;
+    owner?: Owner;
+    error?: string;
+  }> {
+    // Find node by code (device_id is stored as code in nodes table)
+    const node = await this.nodeRepository.findOne({
+      where: { code: deviceId },
+    });
+
+    if (!node) {
+      return {
+        isValid: false,
+        error: `Special device '${deviceId}' not registered in nodes table`
+      };
+    }
+
+    if (!node.idProject) {
+      return {
+        isValid: false,
+        error: `Node '${deviceId}' has no project assigned`
+      };
+    }
+
+    // Get project
+    const project = await this.projectRepository.findOne({
+      where: { idProject: node.idProject },
+    });
+
+    if (!project) {
+      return {
+        isValid: false,
+        error: `Project not found for node '${deviceId}'`
+      };
+    }
+
+    // Get owner
+    const owner = await this.ownerRepository.findOne({
+      where: { idOwner: project.idOwner },
+    });
+
+    if (!owner) {
+      return {
+        isValid: false,
+        error: `Owner not found for project '${project.name}'`
       };
     }
 

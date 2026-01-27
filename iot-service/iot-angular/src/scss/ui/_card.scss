@@ -99,8 +99,8 @@
 	}
 	
 	& > *:not(.card-arrow):not(.card-img-overlay):not(.card-img):not(.hljs-container) {
-		position: relative;
-		z-index: 10;
+		position: unset;
+		z-index: 999999 !important;
 	}
 	& .card-arrow {
 		position: absolute;

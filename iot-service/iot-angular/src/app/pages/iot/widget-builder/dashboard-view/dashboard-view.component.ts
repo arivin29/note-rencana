@@ -77,6 +77,23 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   // Custom time range modal
   customTimeFrom = '';
   customTimeTo = '';
+  
+  // Grafana-style time picker
+  timePickerOpen = false;
+  absoluteTimeFrom = 'now-24h';
+  absoluteTimeTo = 'now';
+  quickRangeSearch = '';
+  recentTimeRanges: { from: string; to: string; label: string }[] = [];
+  
+  // Calendar picker state
+  activeCalendar: 'from' | 'to' | null = null;
+  fromCalendarDate = new Date();
+  toCalendarDate = new Date();
+  fromSelectedDate: Date | null = null;
+  toSelectedDate: Date | null = null;
+  fromTime = '00:00:00';
+  toTime = '23:59:59';
+  weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   constructor(
     private route: ActivatedRoute,
@@ -376,5 +393,327 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
       const to = new Date(this.customTimeTo);
       this.onCustomTimeRange(from, to);
     }
+  }
+
+  // ========== Grafana-style Time Picker Methods ==========
+  
+  toggleTimePicker(): void {
+    this.timePickerOpen = !this.timePickerOpen;
+    if (this.timePickerOpen) {
+      this.quickRangeSearch = '';
+      this.loadRecentTimeRanges();
+    }
+  }
+
+  closeTimePicker(): void {
+    this.timePickerOpen = false;
+  }
+
+  get filteredQuickRanges() {
+    if (!this.quickRangeSearch) {
+      return this.timePresets;
+    }
+    const search = this.quickRangeSearch.toLowerCase();
+    return this.timePresets.filter(p => 
+      p.label.toLowerCase().includes(search) || 
+      p.value.toLowerCase().includes(search)
+    );
+  }
+
+  selectQuickRange(preset: { label: string; value: string; duration: number }): void {
+    this.selectedTimePreset = preset.value;
+    this.absoluteTimeFrom = 'now-' + preset.value;
+    this.absoluteTimeTo = 'now';
+    
+    this.timeRange = {
+      from: new Date(Date.now() - preset.duration),
+      to: new Date(),
+      label: preset.label
+    };
+    
+    this.saveRecentTimeRange(this.absoluteTimeFrom, this.absoluteTimeTo, preset.label);
+    this.closeTimePicker();
+    this.refreshAllWidgets();
+  }
+
+  applyAbsoluteTimeRange(): void {
+    const from = this.parseRelativeTime(this.absoluteTimeFrom);
+    const to = this.parseRelativeTime(this.absoluteTimeTo);
+    
+    if (from && to) {
+      this.selectedTimePreset = 'custom';
+      this.timeRange = {
+        from,
+        to,
+        label: `${this.absoluteTimeFrom} to ${this.absoluteTimeTo}`
+      };
+      
+      this.saveRecentTimeRange(this.absoluteTimeFrom, this.absoluteTimeTo, this.timeRange.label || 'Custom');
+      this.closeTimePicker();
+      this.refreshAllWidgets();
+    }
+  }
+
+  parseRelativeTime(input: string): Date | null {
+    const now = new Date();
+    
+    if (input === 'now') {
+      return now;
+    }
+    
+    // Parse "now-Xm", "now-Xh", "now-Xd" format
+    const relativeMatch = input.match(/^now-(\d+)(m|h|d|w|M|y)$/);
+    if (relativeMatch) {
+      const value = parseInt(relativeMatch[1], 10);
+      const unit = relativeMatch[2];
+      const multipliers: { [key: string]: number } = {
+        'm': 60 * 1000,           // minutes
+        'h': 60 * 60 * 1000,      // hours
+        'd': 24 * 60 * 60 * 1000, // days
+        'w': 7 * 24 * 60 * 60 * 1000, // weeks
+        'M': 30 * 24 * 60 * 60 * 1000, // months (approx)
+        'y': 365 * 24 * 60 * 60 * 1000, // years (approx)
+      };
+      return new Date(now.getTime() - value * multipliers[unit]);
+    }
+    
+    // Try parsing as absolute date
+    const parsed = new Date(input);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  formatRelativeTime(): string {
+    // Return display text for current time range
+    if (this.selectedTimePreset !== 'custom') {
+      const preset = this.timePresets.find(p => p.value === this.selectedTimePreset);
+      return preset ? preset.label : 'Select time range';
+    }
+    return this.timeRange.label || `${this.absoluteTimeFrom} to ${this.absoluteTimeTo}`;
+  }
+
+  // Recent time ranges (stored in localStorage)
+  private loadRecentTimeRanges(): void {
+    try {
+      const stored = localStorage.getItem('dashboard_recent_time_ranges');
+      this.recentTimeRanges = stored ? JSON.parse(stored) : [];
+    } catch {
+      this.recentTimeRanges = [];
+    }
+  }
+
+  private saveRecentTimeRange(from: string, to: string, label: string): void {
+    const entry = { from, to, label };
+    
+    // Remove duplicate if exists
+    this.recentTimeRanges = this.recentTimeRanges.filter(
+      r => !(r.from === from && r.to === to)
+    );
+    
+    // Add to beginning
+    this.recentTimeRanges.unshift(entry);
+    
+    // Keep only last 5
+    this.recentTimeRanges = this.recentTimeRanges.slice(0, 5);
+    
+    localStorage.setItem('dashboard_recent_time_ranges', JSON.stringify(this.recentTimeRanges));
+  }
+
+  applyRecentTimeRange(recent: { from: string; to: string; label: string }): void {
+    this.absoluteTimeFrom = recent.from;
+    this.absoluteTimeTo = recent.to;
+    this.applyAbsoluteTimeRange();
+  }
+
+  copyTimeRangeUrl(): void {
+    const url = new URL(window.location.href);
+    url.searchParams.set('from', this.absoluteTimeFrom);
+    url.searchParams.set('to', this.absoluteTimeTo);
+    navigator.clipboard.writeText(url.toString());
+  }
+
+  copyShortLink(): void {
+    // Copy shortened time range representation
+    navigator.clipboard.writeText(`from=${this.absoluteTimeFrom}&to=${this.absoluteTimeTo}`);
+  }
+
+  getTimezone(): string {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  getTimezoneOffset(): string {
+    const offset = -new Date().getTimezoneOffset();
+    const hours = Math.floor(Math.abs(offset) / 60);
+    const minutes = Math.abs(offset) % 60;
+    const sign = offset >= 0 ? '+' : '-';
+    return `UTC${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  // ========== Time Range Epoch Getters ==========
+  // These return epoch milliseconds for widget-container to use
+  
+  getTimeFrom(): number {
+    return this.timeRange.from.getTime();
+  }
+
+  getTimeTo(): number {
+    return this.timeRange.to.getTime();
+  }
+
+  // ========== Calendar Picker Methods ==========
+  
+  toggleCalendar(target: 'from' | 'to'): void {
+    if (this.activeCalendar === target) {
+      this.activeCalendar = null;
+    } else {
+      this.activeCalendar = target;
+      // Initialize calendar to current time range or now
+      if (target === 'from') {
+        this.fromCalendarDate = new Date(this.timeRange.from);
+        this.fromSelectedDate = new Date(this.timeRange.from);
+        this.fromTime = this.formatTime(this.timeRange.from);
+      } else {
+        this.toCalendarDate = new Date(this.timeRange.to);
+        this.toSelectedDate = new Date(this.timeRange.to);
+        this.toTime = this.formatTime(this.timeRange.to);
+      }
+    }
+  }
+
+  closeCalendar(): void {
+    this.activeCalendar = null;
+  }
+
+  getCalendarTitle(target: 'from' | 'to'): string {
+    const date = target === 'from' ? this.fromCalendarDate : this.toCalendarDate;
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  prevMonth(target: 'from' | 'to'): void {
+    if (target === 'from') {
+      this.fromCalendarDate = new Date(
+        this.fromCalendarDate.getFullYear(),
+        this.fromCalendarDate.getMonth() - 1,
+        1
+      );
+    } else {
+      this.toCalendarDate = new Date(
+        this.toCalendarDate.getFullYear(),
+        this.toCalendarDate.getMonth() - 1,
+        1
+      );
+    }
+  }
+
+  nextMonth(target: 'from' | 'to'): void {
+    if (target === 'from') {
+      this.fromCalendarDate = new Date(
+        this.fromCalendarDate.getFullYear(),
+        this.fromCalendarDate.getMonth() + 1,
+        1
+      );
+    } else {
+      this.toCalendarDate = new Date(
+        this.toCalendarDate.getFullYear(),
+        this.toCalendarDate.getMonth() + 1,
+        1
+      );
+    }
+  }
+
+  getCalendarDays(target: 'from' | 'to'): { day: number; date: Date; otherMonth: boolean; isToday: boolean; isSelected: boolean }[] {
+    const calDate = target === 'from' ? this.fromCalendarDate : this.toCalendarDate;
+    const selectedDate = target === 'from' ? this.fromSelectedDate : this.toSelectedDate;
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const days: { day: number; date: Date; otherMonth: boolean; isToday: boolean; isSelected: boolean }[] = [];
+    
+    // Days from previous month
+    const startPadding = firstDay.getDay();
+    for (let i = startPadding - 1; i >= 0; i--) {
+      const date = new Date(year, month, -i);
+      days.push({
+        day: date.getDate(),
+        date,
+        otherMonth: true,
+        isToday: false,
+        isSelected: false
+      });
+    }
+    
+    // Days in current month
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const date = new Date(year, month, d);
+      const isToday = date.getTime() === today.getTime();
+      const isSelected = selectedDate ? 
+        date.toDateString() === selectedDate.toDateString() : false;
+      days.push({
+        day: d,
+        date,
+        otherMonth: false,
+        isToday,
+        isSelected
+      });
+    }
+    
+    // Days from next month to complete grid (6 rows × 7 days = 42)
+    const remaining = 42 - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      const date = new Date(year, month + 1, i);
+      days.push({
+        day: i,
+        date,
+        otherMonth: true,
+        isToday: false,
+        isSelected: false
+      });
+    }
+    
+    return days;
+  }
+
+  selectDate(target: 'from' | 'to', day: { day: number; date: Date; otherMonth: boolean }): void {
+    if (target === 'from') {
+      this.fromSelectedDate = day.date;
+      if (day.otherMonth) {
+        this.fromCalendarDate = new Date(day.date.getFullYear(), day.date.getMonth(), 1);
+      }
+    } else {
+      this.toSelectedDate = day.date;
+      if (day.otherMonth) {
+        this.toCalendarDate = new Date(day.date.getFullYear(), day.date.getMonth(), 1);
+      }
+    }
+  }
+
+  applyCalendarDate(target: 'from' | 'to'): void {
+    const selectedDate = target === 'from' ? this.fromSelectedDate : this.toSelectedDate;
+    const timeStr = target === 'from' ? this.fromTime : this.toTime;
+    
+    if (selectedDate) {
+      const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+      const finalDate = new Date(selectedDate);
+      finalDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+      
+      // Format as ISO string for display
+      const isoStr = finalDate.toISOString().slice(0, 19).replace('T', ' ');
+      
+      if (target === 'from') {
+        this.absoluteTimeFrom = isoStr;
+      } else {
+        this.absoluteTimeTo = isoStr;
+      }
+    }
+    
+    this.activeCalendar = null;
+  }
+
+  private formatTime(date: Date): string {
+    return date.toTimeString().slice(0, 8); // HH:MM:SS
   }
 }

@@ -159,12 +159,18 @@ export interface TimeRange {
 }
 
 export const TIME_RANGE_PRESETS: { label: string; value: string; duration: number }[] = [
+  { label: 'Last 5 minutes', value: '5m', duration: 5 * 60 * 1000 },
   { label: 'Last 15 minutes', value: '15m', duration: 15 * 60 * 1000 },
+  { label: 'Last 30 minutes', value: '30m', duration: 30 * 60 * 1000 },
   { label: 'Last 1 hour', value: '1h', duration: 60 * 60 * 1000 },
+  { label: 'Last 3 hours', value: '3h', duration: 3 * 60 * 60 * 1000 },
   { label: 'Last 6 hours', value: '6h', duration: 6 * 60 * 60 * 1000 },
+  { label: 'Last 12 hours', value: '12h', duration: 12 * 60 * 60 * 1000 },
   { label: 'Last 24 hours', value: '24h', duration: 24 * 60 * 60 * 1000 },
+  { label: 'Last 2 days', value: '2d', duration: 2 * 24 * 60 * 60 * 1000 },
   { label: 'Last 7 days', value: '7d', duration: 7 * 24 * 60 * 60 * 1000 },
   { label: 'Last 30 days', value: '30d', duration: 30 * 24 * 60 * 60 * 1000 },
+  { label: 'Last 90 days', value: '90d', duration: 90 * 24 * 60 * 60 * 1000 },
 ];
 
 export const REFRESH_INTERVALS: { label: string; value: number }[] = [

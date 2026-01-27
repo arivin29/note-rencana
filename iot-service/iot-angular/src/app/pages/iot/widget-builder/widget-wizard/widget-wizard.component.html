@@ -11,7 +11,139 @@
       <span class="text-muted">|</span>
       <h5 class="mb-0">{{ isEditMode ? 'Edit Widget' : 'New Widget' }}</h5>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 align-items-center">
+      <!-- Time Range Picker (Grafana-style) -->
+      <div class="time-picker-wrapper">
+        <button #timePickerBtn class="btn btn-outline-theme time-picker-btn" (click)="toggleTimePicker()">
+          <i class="bi bi-calendar3 me-2"></i>
+          <span>{{ formatRelativeTime() }}</span>
+          <i class="bi bi-chevron-down ms-2"></i>
+        </button>
+        
+        <!-- Backdrop (behind dropdown) -->
+        <div class="time-picker-backdrop" *ngIf="timePickerOpen" (click)="closeTimePicker()"></div>
+        
+        <!-- Time Picker Dropdown -->
+        <div class="time-picker-dropdown" *ngIf="timePickerOpen" [ngStyle]="timePickerDropdownStyle">
+          <div class="time-picker-content">
+            <!-- Left: Absolute Time -->
+            <div class="time-picker-absolute">
+              <h6 class="section-title">Absolute time range</h6>
+              
+              <div class="time-input-group">
+                <label>From</label>
+                <div class="input-with-icon">
+                  <input type="text" class="form-control form-control-sm" 
+                         [(ngModel)]="absoluteTimeFrom" placeholder="now-1h"
+                         [class.active]="activeCalendar === 'from'">
+                  <button class="btn-icon" (click)="toggleCalendar('from')">
+                    <i class="bi bi-calendar"></i>
+                  </button>
+                </div>
+                <!-- From Calendar -->
+                <div class="calendar-popup" *ngIf="activeCalendar === 'from'">
+                  <div class="calendar-header">
+                    <button class="cal-nav" (click)="prevMonth('from')"><i class="bi bi-chevron-left"></i></button>
+                    <span class="cal-title">{{ getCalendarTitle('from') }}</span>
+                    <button class="cal-nav" (click)="nextMonth('from')"><i class="bi bi-chevron-right"></i></button>
+                  </div>
+                  <div class="calendar-weekdays">
+                    <span *ngFor="let d of weekDays">{{ d }}</span>
+                  </div>
+                  <div class="calendar-days">
+                    <button *ngFor="let day of getCalendarDays('from')" class="cal-day"
+                            [class.other-month]="day.otherMonth"
+                            [class.today]="day.isToday"
+                            [class.selected]="day.isSelected"
+                            (click)="selectDate('from', day)">
+                      {{ day.day }}
+                    </button>
+                  </div>
+                  <div class="calendar-time">
+                    <label>Time:</label>
+                    <input type="time" class="form-control form-control-sm" [(ngModel)]="fromTime" step="1">
+                  </div>
+                  <div class="calendar-actions">
+                    <button class="btn btn-sm btn-secondary" (click)="closeCalendar()">Cancel</button>
+                    <button class="btn btn-sm btn-primary" (click)="applyCalendarDate('from')">Apply</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="time-input-group">
+                <label>To</label>
+                <div class="input-with-icon">
+                  <input type="text" class="form-control form-control-sm" 
+                         [(ngModel)]="absoluteTimeTo" placeholder="now"
+                         [class.active]="activeCalendar === 'to'">
+                  <button class="btn-icon" (click)="toggleCalendar('to')">
+                    <i class="bi bi-calendar"></i>
+                  </button>
+                </div>
+                <!-- To Calendar -->
+                <div class="calendar-popup" *ngIf="activeCalendar === 'to'">
+                  <div class="calendar-header">
+                    <button class="cal-nav" (click)="prevMonth('to')"><i class="bi bi-chevron-left"></i></button>
+                    <span class="cal-title">{{ getCalendarTitle('to') }}</span>
+                    <button class="cal-nav" (click)="nextMonth('to')"><i class="bi bi-chevron-right"></i></button>
+                  </div>
+                  <div class="calendar-weekdays">
+                    <span *ngFor="let d of weekDays">{{ d }}</span>
+                  </div>
+                  <div class="calendar-days">
+                    <button *ngFor="let day of getCalendarDays('to')" class="cal-day"
+                            [class.other-month]="day.otherMonth"
+                            [class.today]="day.isToday"
+                            [class.selected]="day.isSelected"
+                            (click)="selectDate('to', day)">
+                      {{ day.day }}
+                    </button>
+                  </div>
+                  <div class="calendar-time">
+                    <label>Time:</label>
+                    <input type="time" class="form-control form-control-sm" [(ngModel)]="toTime" step="1">
+                  </div>
+                  <div class="calendar-actions">
+                    <button class="btn btn-sm btn-secondary" (click)="closeCalendar()">Cancel</button>
+                    <button class="btn btn-sm btn-primary" (click)="applyCalendarDate('to')">Apply</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="time-actions">
+                <button class="btn btn-primary btn-sm" (click)="applyAbsoluteTimeRange()">
+                  Apply time range
+                </button>
+              </div>
+            </div>
+            
+            <!-- Right: Quick Ranges -->
+            <div class="time-picker-quick">
+              <div class="quick-search">
+                <i class="bi bi-search"></i>
+                <input type="text" [(ngModel)]="quickRangeSearch" placeholder="Search quick ranges" class="form-control form-control-sm">
+              </div>
+              <div class="quick-ranges-list">
+                <a *ngFor="let preset of filteredQuickRanges" class="quick-range-item" href="javascript:;"
+                   [class.active]="selectedTimeRange === preset.value"
+                   (click)="selectQuickRange(preset)">
+                  {{ preset.label }}
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="time-picker-footer">
+            <span class="timezone-label">
+              <i class="bi bi-globe me-1"></i>
+              Browser Time <span class="text-muted">{{ getTimezone() }}</span>
+            </span>
+            <span class="timezone-offset">{{ getTimezoneOffset() }}</span>
+          </div>
+        </div>
+      </div>
+      
       <button class="btn btn-outline-secondary" (click)="cancel()">
         <i class="fa fa-times me-1"></i> Cancel
       </button>
@@ -69,22 +201,6 @@
             </ul>
           </div>
           <div class="d-flex gap-2 pe-3 align-items-center">
-            <!-- Time Range Dropdown -->
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-theme dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fa fa-clock me-1"></i> {{ getTimeRangeLabel() }}
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li *ngFor="let tr of timeRangePresets">
-                  <a class="dropdown-item" 
-                     [class.active]="selectedTimeRange === tr.value"
-                     href="javascript:;" 
-                     (click)="selectTimeRange(tr.value)">
-                    {{ tr.label }}
-                  </a>
-                </li>
-              </ul>
-            </div>
             <button class="btn btn-sm btn-outline-secondary" (click)="refreshPreview()" [disabled]="!queryResult">
               <i class="fa fa-sync-alt"></i>
             </button>

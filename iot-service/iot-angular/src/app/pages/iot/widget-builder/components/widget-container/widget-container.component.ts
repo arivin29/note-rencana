@@ -15,7 +15,9 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
 
   @Input() widget: Widget | undefined;
   @Input() editMode = false;
-  @Input() timeRange: string = '6h';
+  @Input() timeRange: string = '6h';  // Legacy - preset string
+  @Input() timeFrom: number = 0;      // Epoch milliseconds
+  @Input() timeTo: number = 0;        // Epoch milliseconds
   @Input() isFullscreen = false;
 
   @Output() edit = new EventEmitter<void>();
@@ -35,7 +37,10 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['timeRange'] && !changes['timeRange'].firstChange) {
+    // Reload data when time range changes (either preset or epoch)
+    if ((changes['timeRange'] && !changes['timeRange'].firstChange) ||
+        (changes['timeFrom'] && !changes['timeFrom'].firstChange) ||
+        (changes['timeTo'] && !changes['timeTo'].firstChange)) {
       this.loadWidgetData();
     }
   }
@@ -60,26 +65,23 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
-    // Map timeRange to API format
-    const timeRangeMap: Record<string, string> = {
-      '15m': '15m',
-      '30m': '30m',
-      '1h': '1h',
-      '3h': '3h',
-      '6h': '6h',
-      '12h': '12h',
-      '24h': '24h',
-      '7d': '7d',
-      '30d': '30d'
+    // Build request body with epoch timestamps if available
+    const requestBody: any = {
+      sql: sqlQuery,
+      variables: {}
     };
+
+    // Use epoch timestamps if provided, otherwise use preset string
+    if (this.timeFrom > 0 && this.timeTo > 0) {
+      requestBody.from = this.timeFrom;
+      requestBody.to = this.timeTo;
+    } else {
+      requestBody.timeRange = (this.timeRange || '6h') as any;
+    }
 
     // Execute the SQL query via API
     this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
-      body: {
-        sql: sqlQuery,
-        timeRange: (this.timeRange || '6h') as any,
-        variables: {}
-      }
+      body: requestBody
     }).pipe(
       takeUntil(this.destroy$)
     ).subscribe({

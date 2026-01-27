@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ExecuteQueryDto {
@@ -7,13 +7,29 @@ export class ExecuteQueryDto {
   sql: string;
 
   @ApiPropertyOptional({ 
-    description: 'Time range for query', 
+    description: 'Time range preset for query (legacy)', 
     example: '6h',
     enum: ['15m', '30m', '1h', '3h', '6h', '12h', '24h', '7d', '30d']
   })
   @IsString()
   @IsOptional()
   timeRange?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Start time as epoch milliseconds',
+    example: 1769481191565
+  })
+  @IsNumber()
+  @IsOptional()
+  from?: number;
+
+  @ApiPropertyOptional({ 
+    description: 'End time as epoch milliseconds',
+    example: 1769482091565
+  })
+  @IsNumber()
+  @IsOptional()
+  to?: number;
 
   @ApiPropertyOptional({ description: 'Query variables' })
   @IsObject()

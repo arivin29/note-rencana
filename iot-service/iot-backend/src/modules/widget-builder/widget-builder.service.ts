@@ -270,10 +270,44 @@ export class WidgetBuilderService {
       throw new BadRequestException(`Invalid SQL: ${validation.error}`);
     }
 
-    // Replace time range variable
+    // Replace time range variables
     let sql = dto.sql;
-    if (dto.timeRange && TIME_RANGE_MAP[dto.timeRange]) {
+    
+    // Priority: Use epoch timestamps (from/to) if provided, otherwise use preset
+    if (dto.from && dto.to) {
+      // Convert epoch milliseconds to ISO timestamp strings
+      const fromDate = new Date(dto.from).toISOString();
+      const toDate = new Date(dto.to).toISOString();
+      
+      // Replace ${fromTime} and ${toTime} placeholders
+      sql = sql.replace(/\$\{fromTime\}/g, fromDate);
+      sql = sql.replace(/\$\{toTime\}/g, toDate);
+      
+      // Also calculate interval for ${timeRange} placeholder (for backward compatibility)
+      const durationMs = dto.to - dto.from;
+      const durationHours = durationMs / (60 * 60 * 1000);
+      let intervalStr: string;
+      if (durationHours <= 1) {
+        intervalStr = `${Math.round(durationMs / (60 * 1000))} minutes`;
+      } else if (durationHours <= 24) {
+        intervalStr = `${Math.round(durationHours)} hours`;
+      } else {
+        intervalStr = `${Math.round(durationHours / 24)} days`;
+      }
+      sql = sql.replace(/\$\{timeRange\}/g, intervalStr);
+    } else if (dto.timeRange && TIME_RANGE_MAP[dto.timeRange]) {
+      // Legacy: Use preset time range
       sql = sql.replace(/\$\{timeRange\}/g, TIME_RANGE_MAP[dto.timeRange]);
+      
+      // Also set fromTime/toTime based on preset (for queries that use absolute time)
+      const duration = this.getTimeRangeDuration(dto.timeRange);
+      if (duration) {
+        const now = new Date();
+        const fromDate = new Date(now.getTime() - duration).toISOString();
+        const toDate = now.toISOString();
+        sql = sql.replace(/\$\{fromTime\}/g, fromDate);
+        sql = sql.replace(/\$\{toTime\}/g, toDate);
+      }
     }
 
     // Replace owner ID variable
@@ -351,5 +385,27 @@ export class WidgetBuilderService {
     }
 
     return template;
+  }
+
+  // ==========================================
+  // HELPER METHODS
+  // ==========================================
+
+  private getTimeRangeDuration(preset: string): number | null {
+    const durations: Record<string, number> = {
+      '5m': 5 * 60 * 1000,
+      '15m': 15 * 60 * 1000,
+      '30m': 30 * 60 * 1000,
+      '1h': 60 * 60 * 1000,
+      '3h': 3 * 60 * 60 * 1000,
+      '6h': 6 * 60 * 60 * 1000,
+      '12h': 12 * 60 * 60 * 1000,
+      '24h': 24 * 60 * 60 * 1000,
+      '2d': 2 * 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000,
+      '90d': 90 * 24 * 60 * 60 * 1000,
+    };
+    return durations[preset] || null;
   }
 }

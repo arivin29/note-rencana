@@ -5,14 +5,24 @@
 export interface ExecuteQueryDto {
 
   /**
+   * Start time as epoch milliseconds
+   */
+  from?: number;
+
+  /**
    * SQL SELECT query to execute
    */
   sql: string;
 
   /**
-   * Time range for query
+   * Time range preset for query (legacy)
    */
   timeRange?: '15m' | '30m' | '1h' | '3h' | '6h' | '12h' | '24h' | '7d' | '30d';
+
+  /**
+   * End time as epoch milliseconds
+   */
+  to?: number;
 
   /**
    * Query variables
