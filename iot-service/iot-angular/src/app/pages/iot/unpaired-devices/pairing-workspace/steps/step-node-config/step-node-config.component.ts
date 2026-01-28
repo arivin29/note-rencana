@@ -192,17 +192,29 @@ export class StepNodeConfigComponent implements OnInit {
 
     private loadExistingNodes(): void {
         this.existingNodesLoading = true;
-        this.nodesService.nodesControllerFindAll({
-            limit: 10,
-            // connectivityStatus: 'inactive'
-        }).subscribe({
+        
+        // Build query params
+        const params: any = {
+            limit: 100,
+            idNodeProfileIsNull: true  // Only nodes without node profile (unpaired)
+        };
+        
+        // Filter by ownerId if not admin (admin sees all)
+        if (!this.isAdmin()) {
+            const ownerId = this.authService.getCurrentOwnerId();
+            if (ownerId) {
+                params.ownerId = ownerId;
+            }
+        }
+        
+        this.nodesService.nodesControllerFindAll(params).subscribe({
             next: (response: any) => {
                 response = JSON.parse(response).data;
                 this.existingNodes = response as ExistingNode[];
                 this.existingNodesLoading = false;
             },
             error: (err) => {
-                console.error('Failed to load inactive nodes', err);
+                console.error('Failed to load unpaired nodes', err);
                 this.existingNodes = [];
                 this.existingNodesLoading = false;
             }

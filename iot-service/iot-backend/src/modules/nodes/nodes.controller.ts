@@ -24,6 +24,8 @@ export class NodesController {
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by code' })
   @ApiQuery({ name: 'idProject', required: false, type: String })
   @ApiQuery({ name: 'idNodeModel', required: false, type: String })
+  @ApiQuery({ name: 'idNodeProfile', required: false, type: String, description: 'Filter by node profile ID' })
+  @ApiQuery({ name: 'idNodeProfileIsNull', required: false, type: Boolean, description: 'Filter nodes without node profile (unpaired)' })
   @ApiQuery({ name: 'connectivityStatus', required: false, type: String })
   @ApiQuery({ name: 'ownerId', required: false, type: String, description: 'Filter by owner ID' })
   @ApiResponse({ status: 200, description: 'List of nodes' })
@@ -34,6 +36,8 @@ export class NodesController {
     @Query('search') search?: string,
     @Query('idProject') idProject?: string,
     @Query('idNodeModel') idNodeModel?: string,
+    @Query('idNodeProfile') idNodeProfile?: string,
+    @Query('idNodeProfileIsNull') idNodeProfileIsNull?: string,
     @Query('connectivityStatus') connectivityStatus?: string,
     @Query('ownerId') ownerId?: string,
   ) {
@@ -48,6 +52,8 @@ export class NodesController {
       search,
       idProject,
       idNodeModel,
+      idNodeProfile,
+      idNodeProfileIsNull: idNodeProfileIsNull === 'true',
       connectivityStatus,
       ownerId: finalOwnerId,
     });

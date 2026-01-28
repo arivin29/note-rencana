@@ -84,6 +84,8 @@ export class NodesService {
     search?: string;
     idProject?: string;
     idNodeModel?: string;
+    idNodeProfile?: string;
+    idNodeProfileIsNull?: boolean;
     connectivityStatus?: string;
     ownerId?: string;
   }): Promise<{ data: NodeResponseDto[]; total: number; page: number; limit: number }> {
@@ -109,6 +111,16 @@ export class NodesService {
 
     if (params.idNodeModel) {
       queryBuilder.andWhere('node.idNodeModel = :idNodeModel', { idNodeModel: params.idNodeModel });
+    }
+
+    // Filter by idNodeProfile (exact match)
+    if (params.idNodeProfile) {
+      queryBuilder.andWhere('node.idNodeProfile = :idNodeProfile', { idNodeProfile: params.idNodeProfile });
+    }
+
+    // Filter nodes without node profile (unpaired nodes)
+    if (params.idNodeProfileIsNull) {
+      queryBuilder.andWhere('node.idNodeProfile IS NULL');
     }
 
     if (params.connectivityStatus) {

@@ -1,44 +1,24 @@
-import { Component } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, forkJoin } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { 
+  NodesService, 
+  ProjectsService, 
+  NodeModelsService
+} from 'src/sdk/core/services';
+import { 
+  ProjectResponseDto,
+  NodeModelResponseDto,
+  NodeResponseDto,
+  UpdateNodeDto,
+  CreateNodeDto
+} from 'src/sdk/core/models';
 
-interface OwnerOption {
-  id: string;
-  name: string;
-}
-
-interface ProjectOption {
-  id: string;
-  name: string;
-  ownerId: string;
-}
-
-interface NodeModelOption {
-  id: string;
-  vendor: string;
-  model: string;
-}
-
-interface SensorChannelDraft {
-  metricCode: string;
-  unit: string;
-  register: string;
-  minThreshold?: number;
-  maxThreshold?: number;
-}
-
-interface SensorDraft {
-  catalogId: string;
-  label: string;
-  protocolChannel: string;
-  installDate?: string;
-  calibrationDue?: string;
-  channels: SensorChannelDraft[];
-}
-
+// Form interface matching CreateNodeDto/UpdateNodeDto fields
 interface NodeForm {
-  ownerId: string;
-  projectId: string;
-  nodeModelId: string;
+  idProject: string;
+  idNodeModel: string;
   code: string;
   serialNumber: string;
   installDate: string;
@@ -46,13 +26,8 @@ interface NodeForm {
   ipAddress: string;
   firmwareVersion: string;
   batteryType: string;
-  telemetryMode: 'push' | 'pull';
-  telemetryInterval: number;
-  locationType: string;
-  latitude: string;
-  longitude: string;
-  elevation?: number;
-  address: string;
+  telemetryIntervalSec: number;
+  connectivityStatus: string;
 }
 
 @Component({
@@ -61,43 +36,28 @@ interface NodeForm {
   styleUrls: ['./nodes-edit.scss'],
   standalone: false
 })
-export class NodesEditPage {
-  ownerOptions: OwnerOption[] = [
-    { id: 'owner-abc', name: 'PT ABC' },
-    { id: 'owner-xyz', name: 'PT XYZ' },
-    { id: 'owner-delta', name: 'PT Delta' }
-  ];
+export class NodesEditPage implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  
+  // Loading states
+  loading = true;
+  saving = false;
+  error: string | null = null;
 
-  projectOptionsAll: ProjectOption[] = [
-    { id: 'project-area-a', name: 'Area A', ownerId: 'owner-abc' },
-    { id: 'project-plant-south', name: 'Plant South', ownerId: 'owner-xyz' },
-    { id: 'project-booster-west', name: 'Booster West', ownerId: 'owner-xyz' },
-    { id: 'project-reservoir-b', name: 'Reservoir B', ownerId: 'owner-delta' },
-    { id: 'project-pipeline-north', name: 'Pipeline North', ownerId: 'owner-abc' }
-  ];
+  // Options loaded from API - using SDK interfaces
+  projects: ProjectResponseDto[] = [];
+  nodeModels: NodeModelResponseDto[] = [];
 
-  nodeModels: NodeModelOption[] = [
-    { id: 'model-vx-200', vendor: 'VendorX', model: 'VX-200' },
-    { id: 'model-hw-550', vendor: 'HydroWorks', model: 'HW-550' },
-    { id: 'model-rv-12', vendor: 'RiverTech', model: 'RV-12' }
-  ];
-
-  sensorCatalogs = [
-    { id: 'catalog-3051', label: 'Rosemount 3051 (Pressure)' },
-    { id: 'catalog-flow-rs485', label: 'Siemens FM Mag 6000 (Flow)' },
-    { id: 'catalog-energy', label: 'Schneider PowerTag (Energy Meter)' }
-  ];
-
-  telemetryModes: Array<'push' | 'pull'> = ['push', 'pull'];
-  batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains'];
-  protocolChannels = ['4-20mA', 'RS485-Modbus', 'Pulse', 'Digital'];
+  // Static options
+  batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains', 'Solar'];
+  connectivityStatuses = ['online', 'offline', 'unknown'];
 
   currentNodeId = '';
+  isEditMode = false;
 
   form: NodeForm = {
-    ownerId: this.ownerOptions[0].id,
-    projectId: 'project-area-a',
-    nodeModelId: this.nodeModels[0].id,
+    idProject: '',
+    idNodeModel: '',
     code: '',
     serialNumber: '',
     installDate: '',
@@ -105,144 +65,246 @@ export class NodesEditPage {
     ipAddress: '',
     firmwareVersion: '',
     batteryType: this.batteryTypes[0],
-    telemetryMode: this.telemetryModes[0],
-    telemetryInterval: 120,
-    locationType: 'manual',
-    latitude: '',
-    longitude: '',
-    elevation: undefined,
-    address: ''
+    telemetryIntervalSec: 120,
+    connectivityStatus: 'unknown'
   };
 
-  sensors: SensorDraft[] = [];
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private nodesService: NodesService,
+    private projectsService: ProjectsService,
+    private nodeModelsService: NodeModelsService
+  ) {}
 
-  constructor(private route: ActivatedRoute) {
-    this.route.paramMap.subscribe((params) => {
-      const nodeId = params.get('nodeId') ?? 'NODE-001';
-      this.loadMockNode(nodeId);
+  ngOnInit(): void {
+    this.loadDropdownOptions();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private loadDropdownOptions(): void {
+    this.loading = true;
+    this.error = null;
+
+    // Load only required dropdown options
+    forkJoin({
+      projects: this.projectsService.projectsControllerFindAll$Response(),
+      nodeModels: this.nodeModelsService.nodeModelsControllerFindAll$Response()
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (responses: any) => {
+        // Parse response body (handle both direct array and paginated response)
+        const parseBody = (body: any) => {
+          if (typeof body === 'string') body = JSON.parse(body);
+          return body?.data || body || [];
+        };
+
+        // Map to SDK interfaces
+        this.projects = parseBody(responses.projects.body) as ProjectResponseDto[];
+        this.nodeModels = parseBody(responses.nodeModels.body) as NodeModelResponseDto[];
+
+        console.log('Loaded dropdown options:', {
+          projects: this.projects.length,
+          nodeModels: this.nodeModels.length
+        });
+
+        // Check if we're editing an existing node
+        this.route.paramMap.pipe(
+          takeUntil(this.destroy$)
+        ).subscribe((params) => {
+          const nodeId = params.get('nodeId');
+          if (nodeId) {
+            this.isEditMode = true;
+            this.loadNode(nodeId);
+          } else {
+            // New node mode - set defaults
+            this.isEditMode = false;
+            this.setDefaultFormValues();
+            this.loading = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load dropdown options:', err);
+        this.error = 'Failed to load form options. Please try again.';
+        this.loading = false;
+      }
     });
   }
 
-  onOwnerChange(ownerId: string) {
-    this.form.ownerId = ownerId;
-    const projects = this.projectOptions;
-    if (projects.length) {
-      this.form.projectId = projects[0].id;
-    } else {
-      this.form.projectId = '';
+  private setDefaultFormValues(): void {
+    if (this.projects.length > 0) {
+      this.form.idProject = this.projects[0].idProject;
+    }
+    if (this.nodeModels.length > 0) {
+      this.form.idNodeModel = this.nodeModels[0].idNodeModel;
     }
   }
 
-  onProjectChange(projectId: string) {
-    this.form.projectId = projectId;
-  }
+  private loadNode(nodeId: string): void {
+    this.currentNodeId = nodeId;
+    
+    this.nodesService.nodesControllerFindOne({ id: nodeId }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (node: NodeResponseDto) => {
+        // Map node data to form - only fields that exist in DTO
+        this.form = {
+          idProject: node.idProject || '',
+          idNodeModel: node.idNodeModel || '',
+          code: node.code || '',
+          serialNumber: node.serialNumber || '',
+          installDate: node.installDate ? node.installDate.substring(0, 10) : '',
+          devEui: node.devEui || '',
+          ipAddress: node.ipAddress || '',
+          firmwareVersion: node.firmwareVersion || '',
+          batteryType: node.batteryType || this.batteryTypes[0],
+          telemetryIntervalSec: node.telemetryIntervalSec || 120,
+          connectivityStatus: node.connectivityStatus || 'unknown'
+        };
 
-  get projectOptions() {
-    return this.projectOptionsAll.filter((project) => project.ownerId === this.form.ownerId);
-  }
-
-  addSensor() {
-    this.sensors.push({
-      catalogId: this.sensorCatalogs[0]?.id ?? '',
-      label: '',
-      protocolChannel: this.protocolChannels[0],
-      channels: []
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load node:', err);
+        this.error = 'Failed to load node data: ' + (err.error?.message || err.message);
+        this.loading = false;
+      }
     });
   }
 
-  removeSensor(index: number) {
-    this.sensors.splice(index, 1);
+  onProjectChange(projectId: string): void {
+    this.form.idProject = projectId;
   }
 
-  addChannel(sensor: SensorDraft) {
-    sensor.channels.push({ metricCode: '', unit: '', register: '', minThreshold: undefined, maxThreshold: undefined });
+  onNodeModelChange(nodeModelId: string): void {
+    this.form.idNodeModel = nodeModelId;
   }
 
-  removeChannel(sensor: SensorDraft, index: number) {
-    sensor.channels.splice(index, 1);
+  // Helper to get project name for display
+  getProjectName(projectId: string): string {
+    const project = this.projects.find(p => p.idProject === projectId);
+    return project?.name || '';
   }
 
-  get payloadPreview() {
+  // Helper to get node model display name
+  getNodeModelName(nodeModelId: string): string {
+    const model = this.nodeModels.find(m => m.idNodeModel === nodeModelId);
+    return model ? model.vendor + ' – ' + model.modelName : '';
+  }
+
+  get payloadPreview(): CreateNodeDto | UpdateNodeDto {
     return {
-      nodeId: this.currentNodeId,
-      ownerId: this.form.ownerId,
-      projectId: this.form.projectId,
-      node: {
-        nodeModelId: this.form.nodeModelId,
-        code: this.form.code,
-        serialNumber: this.form.serialNumber,
-        installDate: this.form.installDate,
-        devEui: this.form.devEui,
-        ipAddress: this.form.ipAddress,
-        firmwareVersion: this.form.firmwareVersion,
-        batteryType: this.form.batteryType,
-        telemetry: {
-          mode: this.form.telemetryMode,
-          intervalSec: this.form.telemetryInterval
-        },
-        location: {
-          type: this.form.locationType,
-          latitude: this.form.latitude,
-          longitude: this.form.longitude,
-          elevation: this.form.elevation,
-          address: this.form.address
-        }
-      },
-      sensors: this.sensors.map((sensor) => ({
-        catalogId: sensor.catalogId,
-        label: sensor.label,
-        protocolChannel: sensor.protocolChannel,
-        installDate: sensor.installDate,
-        calibrationDueAt: sensor.calibrationDue,
-        channels: sensor.channels
-      }))
+      idProject: this.form.idProject,
+      idNodeModel: this.form.idNodeModel,
+      code: this.form.code,
+      serialNumber: this.form.serialNumber || undefined,
+      installDate: this.form.installDate || undefined,
+      devEui: this.form.devEui || undefined,
+      ipAddress: this.form.ipAddress || undefined,
+      firmwareVersion: this.form.firmwareVersion || undefined,
+      batteryType: this.form.batteryType || undefined,
+      telemetryIntervalSec: this.form.telemetryIntervalSec,
+      connectivityStatus: this.form.connectivityStatus || undefined
     };
   }
 
-  private loadMockNode(nodeId: string) {
-    this.currentNodeId = nodeId;
-    this.form = {
-      ownerId: 'owner-abc',
-      projectId: 'project-area-a',
-      nodeModelId: 'model-vx-200',
-      code: nodeId,
-      serialNumber: 'SN-2023-8891',
-      installDate: '2024-02-12',
-      devEui: 'A84041B6C1D2E3F4',
-      ipAddress: '10.0.0.15',
-      firmwareVersion: 'v1.3.2',
-      batteryType: 'Li-SOCl2',
-      telemetryMode: 'push',
-      telemetryInterval: 120,
-      locationType: 'manual',
-      latitude: '-6.2213',
-      longitude: '106.8432',
-      elevation: 12,
-      address: 'Area A - Blok 3'
-    };
+  saveNode(): void {
+    // Validation
+    if (!this.form.idProject) {
+      this.error = 'Please select a project';
+      return;
+    }
+    if (!this.form.idNodeModel) {
+      this.error = 'Please select a node model';
+      return;
+    }
+    if (!this.form.code) {
+      this.error = 'Node code is required';
+      return;
+    }
 
-    this.sensors = [
-      {
-        catalogId: 'catalog-3051',
-        label: 'Inlet Pressure',
-        protocolChannel: '4-20mA',
-        installDate: '2024-02-12',
-        calibrationDue: '2025-02-12',
-        channels: [
-          { metricCode: 'pressure', unit: 'bar', register: 'n/a', minThreshold: 1.2, maxThreshold: 3.5 }
-        ]
-      },
-      {
-        catalogId: 'catalog-flow-rs485',
-        label: 'Main Flow Meter',
-        protocolChannel: 'RS485-Modbus',
-        installDate: '2024-02-15',
-        calibrationDue: '2024-11-01',
-        channels: [
-          { metricCode: 'flow_rate', unit: 'm3/h', register: '30001', minThreshold: 20, maxThreshold: 180 },
-          { metricCode: 'pressure', unit: 'bar', register: '30005', minThreshold: 1.5, maxThreshold: 4.0 }
-        ]
-      }
-    ];
+    this.saving = true;
+    this.error = null;
+
+    if (this.isEditMode && this.currentNodeId) {
+      // Update existing node
+      const updateData: UpdateNodeDto = {
+        idProject: this.form.idProject,
+        idNodeModel: this.form.idNodeModel,
+        code: this.form.code,
+        serialNumber: this.form.serialNumber || undefined,
+        installDate: this.form.installDate || undefined,
+        devEui: this.form.devEui || undefined,
+        ipAddress: this.form.ipAddress || undefined,
+        firmwareVersion: this.form.firmwareVersion || undefined,
+        batteryType: this.form.batteryType || undefined,
+        telemetryIntervalSec: this.form.telemetryIntervalSec,
+        connectivityStatus: this.form.connectivityStatus || undefined
+      };
+
+      this.nodesService.nodesControllerUpdate({
+        id: this.currentNodeId,
+        body: updateData
+      }).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: () => {
+          this.saving = false;
+          alert('Node updated successfully!');
+          this.router.navigate(['/iot/nodes', this.currentNodeId]);
+        },
+        error: (err) => {
+          console.error('Failed to update node:', err);
+          this.error = 'Failed to update node: ' + (err.error?.message || err.message);
+          this.saving = false;
+        }
+      });
+    } else {
+      // Create new node
+      const createData: CreateNodeDto = {
+        idProject: this.form.idProject,
+        idNodeModel: this.form.idNodeModel,
+        code: this.form.code,
+        serialNumber: this.form.serialNumber || undefined,
+        installDate: this.form.installDate || undefined,
+        devEui: this.form.devEui || undefined,
+        ipAddress: this.form.ipAddress || undefined,
+        firmwareVersion: this.form.firmwareVersion || undefined,
+        batteryType: this.form.batteryType || undefined,
+        telemetryIntervalSec: this.form.telemetryIntervalSec
+      };
+
+      this.nodesService.nodesControllerCreate({
+        body: createData
+      }).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: (response: NodeResponseDto) => {
+          this.saving = false;
+          const newNodeId = response.idNode;
+          alert('Node created successfully!');
+          this.router.navigate(['/iot/nodes', newNodeId]);
+        },
+        error: (err) => {
+          console.error('Failed to create node:', err);
+          this.error = 'Failed to create node: ' + (err.error?.message || err.message);
+          this.saving = false;
+        }
+      });
+    }
+  }
+
+  cancel(): void {
+    if (this.currentNodeId) {
+      this.router.navigate(['/iot/nodes', this.currentNodeId]);
+    } else {
+      this.router.navigate(['/iot/nodes']);
+    }
   }
 }

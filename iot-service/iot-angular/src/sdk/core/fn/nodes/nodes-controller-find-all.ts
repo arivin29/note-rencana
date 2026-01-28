@@ -19,6 +19,16 @@ export interface NodesControllerFindAll$Params {
   search?: string;
   idProject?: string;
   idNodeModel?: string;
+
+/**
+ * Filter by node profile ID
+ */
+  idNodeProfile?: string;
+
+/**
+ * Filter nodes without node profile (unpaired)
+ */
+  idNodeProfileIsNull?: boolean;
   connectivityStatus?: string;
 
 /**
@@ -35,6 +45,8 @@ export function nodesControllerFindAll(http: HttpClient, rootUrl: string, params
     rb.query('search', params.search, {});
     rb.query('idProject', params.idProject, {});
     rb.query('idNodeModel', params.idNodeModel, {});
+    rb.query('idNodeProfile', params.idNodeProfile, {});
+    rb.query('idNodeProfileIsNull', params.idNodeProfileIsNull, {});
     rb.query('connectivityStatus', params.connectivityStatus, {});
     rb.query('ownerId', params.ownerId, {});
   }

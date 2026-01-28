@@ -3,52 +3,67 @@
     <ul class="breadcrumb mb-1">
       <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
       <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
-      <li class="breadcrumb-item active">Edit</li>
+      <li class="breadcrumb-item active">{{ isEditMode ? 'Edit' : 'Create' }}</li>
     </ul>
-    <h1 class="page-header mb-0">Edit Node <span class="text-theme">{{ currentNodeId }}</span></h1>
+    <h1 class="page-header mb-0">
+      {{ isEditMode ? 'Edit Node' : 'Create Node' }} 
+      <span *ngIf="currentNodeId" class="text-theme">{{ currentNodeId }}</span>
+    </h1>
   </div>
   <div class="ms-auto">
-    <a [routerLink]="['/iot/nodes', currentNodeId]" class="btn btn-outline-default me-2">
+    <a *ngIf="isEditMode && currentNodeId" [routerLink]="['/iot/nodes', currentNodeId]" class="btn btn-outline-default me-2">
       <i class="fa fa-eye fa-fw me-1"></i>
       View Detail
     </a>
-    <a routerLink="/iot/nodes" class="btn btn-outline-secondary me-2">
+    <button class="btn btn-outline-secondary me-2" (click)="cancel()">
       <i class="fa fa-arrow-left fa-fw me-1"></i>
-      Back to List
-    </a>
-    <button class="btn btn-theme">
-      <i class="fa fa-save fa-fw me-1"></i>
-      Update Node
+      Cancel
+    </button>
+    <button class="btn btn-theme" (click)="saveNode()" [disabled]="loading || saving">
+      <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+      <i *ngIf="!saving" class="fa fa-save fa-fw me-1"></i>
+      {{ isEditMode ? 'Update Node' : 'Create Node' }}
     </button>
   </div>
 </div>
 
-<div class="row">
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+  <div class="spinner-border text-theme" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <p class="text-muted mt-3">Loading form data...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error && !loading" class="alert alert-danger">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  {{ error }}
+</div>
+
+<div class="row" *ngIf="!loading">
   <div class="col-xl-9">
-    <card id="sectionOwnership" class="border-0 shadow-sm mb-4">
+    <!-- Project & Node Model Selection -->
+    <card id="sectionProject" class="border-0 shadow-sm mb-4">
       <div class="card-header border-0 bg-transparent">
-        <div class="card-title mb-0">Ownership & Project</div>
-        <div class="text-muted small">Perbarui relasi owner/project saat node dipindahkan tenant.</div>
+        <div class="card-title mb-0">Project & Node Model</div>
+        <div class="text-muted small">Pilih project dan model node yang sesuai.</div>
       </div>
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label text-uppercase small text-muted">Owner</label>
-            <select class="form-select" [ngModel]="form.ownerId" (ngModelChange)="onOwnerChange($event)">
-              <option *ngFor="let owner of ownerOptions" [value]="owner.id">{{ owner.name }}</option>
+          <div class="col-md-6">
+            <label class="form-label text-uppercase small text-muted">Project <span class="text-danger">*</span></label>
+            <select class="form-select" [ngModel]="form.idProject" (ngModelChange)="onProjectChange($event)">
+              <option value="">-- Select Project --</option>
+              <option *ngFor="let project of projects" [value]="project.idProject">{{ project.name }}</option>
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label text-uppercase small text-muted">Project</label>
-            <select class="form-select" [ngModel]="form.projectId" (ngModelChange)="onProjectChange($event)">
-              <option *ngFor="let project of projectOptions" [value]="project.id">{{ project.name }}</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label text-uppercase small text-muted">Node Model</label>
-            <select class="form-select" [(ngModel)]="form.nodeModelId" [ngModelOptions]="{standalone: true}">
-              <option *ngFor="let model of nodeModels" [value]="model.id">
-                {{ model.vendor }} – {{ model.model }}
+          <div class="col-md-6">
+            <label class="form-label text-uppercase small text-muted">Node Model <span class="text-danger">*</span></label>
+            <select class="form-select" [ngModel]="form.idNodeModel" (ngModelChange)="onNodeModelChange($event)">
+              <option value="">-- Select Node Model --</option>
+              <option *ngFor="let model of nodeModels" [value]="model.idNodeModel">
+                {{ model.vendor }} – {{ model.modelName }}
               </option>
             </select>
           </div>
@@ -56,6 +71,7 @@
       </div>
     </card>
 
+    <!-- Node Identity & Telemetry -->
     <card id="sectionIdentity" class="border-0 shadow-sm mb-4">
       <div class="card-header border-0 bg-transparent">
         <div class="card-title mb-0">Node Identity & Telemetry</div>
@@ -64,12 +80,12 @@
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label">Node Code</label>
-            <input class="form-control" [(ngModel)]="form.code" [ngModelOptions]="{standalone: true}">
+            <label class="form-label">Node Code <span class="text-danger">*</span></label>
+            <input class="form-control" [(ngModel)]="form.code" [ngModelOptions]="{standalone: true}" placeholder="e.g. HELIO-350544503213269">
           </div>
           <div class="col-md-4">
             <label class="form-label">Serial Number</label>
-            <input class="form-control" [(ngModel)]="form.serialNumber" [ngModelOptions]="{standalone: true}">
+            <input class="form-control" [(ngModel)]="form.serialNumber" [ngModelOptions]="{standalone: true}" placeholder="e.g. SN-2024-001">
           </div>
           <div class="col-md-4">
             <label class="form-label">Install Date</label>
@@ -77,15 +93,15 @@
           </div>
           <div class="col-md-4">
             <label class="form-label">DevEUI</label>
-            <input class="form-control" [(ngModel)]="form.devEui" [ngModelOptions]="{standalone: true}">
+            <input class="form-control" [(ngModel)]="form.devEui" [ngModelOptions]="{standalone: true}" placeholder="e.g. A84041B6C1D2E3F4">
           </div>
           <div class="col-md-4">
             <label class="form-label">IP Address</label>
-            <input class="form-control" [(ngModel)]="form.ipAddress" [ngModelOptions]="{standalone: true}">
+            <input class="form-control" [(ngModel)]="form.ipAddress" [ngModelOptions]="{standalone: true}" placeholder="e.g. 192.168.1.100">
           </div>
           <div class="col-md-4">
             <label class="form-label">Firmware Version</label>
-            <input class="form-control" [(ngModel)]="form.firmwareVersion" [ngModelOptions]="{standalone: true}">
+            <input class="form-control" [(ngModel)]="form.firmwareVersion" [ngModelOptions]="{standalone: true}" placeholder="e.g. v1.3.2">
           </div>
           <div class="col-md-4">
             <label class="form-label">Battery Type</label>
@@ -94,73 +110,36 @@
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label">Telemetry Mode</label>
-            <select class="form-select" [(ngModel)]="form.telemetryMode" [ngModelOptions]="{standalone: true}">
-              <option *ngFor="let mode of telemetryModes" [value]="mode">{{ mode | titlecase }}</option>
-            </select>
+            <label class="form-label">Telemetry Interval (sec)</label>
+            <input type="number" class="form-control" min="30" step="30" [(ngModel)]="form.telemetryIntervalSec" [ngModelOptions]="{standalone: true}">
           </div>
           <div class="col-md-4">
-            <label class="form-label">Telemetry Interval (sec)</label>
-            <input type="number" class="form-control" min="30" step="30" [(ngModel)]="form.telemetryInterval" [ngModelOptions]="{standalone: true}">
-          </div>
-        </div>
-      </div>
-    </card>
-
-    <card id="sectionLocation" class="border-0 shadow-sm mb-4">
-      <div class="card-header border-0 bg-transparent">
-        <div class="card-title mb-0">Lokasi & Assignment</div>
-        <div class="text-muted small">Lokasi manual/GPS memastikan histori NodeAssignment valid.</div>
-      </div>
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label">Lokasi Type</label>
-            <select class="form-select" [(ngModel)]="form.locationType" [ngModelOptions]="{standalone: true}">
-              <option value="manual">Manual</option>
-              <option value="gps">GPS</option>
-              <option value="import">Import</option>
+            <label class="form-label">Connectivity Status</label>
+            <select class="form-select" [(ngModel)]="form.connectivityStatus" [ngModelOptions]="{standalone: true}">
+              <option *ngFor="let status of connectivityStatuses" [value]="status">{{ status | titlecase }}</option>
             </select>
           </div>
-          <div class="col-md-3">
-            <label class="form-label">Latitude</label>
-            <input class="form-control" [(ngModel)]="form.latitude" [ngModelOptions]="{standalone: true}">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Longitude</label>
-            <input class="form-control" [(ngModel)]="form.longitude" [ngModelOptions]="{standalone: true}">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Elevation (m)</label>
-            <input type="number" class="form-control" [(ngModel)]="form.elevation" [ngModelOptions]="{standalone: true}">
-          </div>
-          <div class="col-12">
-            <label class="form-label">Address / Note</label>
-            <textarea class="form-control" rows="2" [(ngModel)]="form.address" [ngModelOptions]="{standalone: true}"></textarea>
-          </div>
         </div>
       </div>
     </card>
 
-  
-
+    <!-- Payload Preview -->
     <card id="sectionPreview" class="border-0 shadow-sm">
       <div class="card-header border-0 bg-transparent">
         <div class="card-title mb-0">Preview Payload</div>
-        <div class="text-muted small">Pratinjau request yang dikirim ke API metadata.</div>
+        <div class="text-muted small">Pratinjau request yang dikirim ke API.</div>
       </div>
       <div class="card-body">
         <pre class="bg-dark text-white rounded-3 p-3 small mb-0">{{ payloadPreview | json }}</pre>
       </div>
     </card>
   </div>
+  
   <div class="col-xl-3">
     <div class="sticky-top" style="top: 6rem;">
       <nav-scroll>
-        <a class="nav-link" href="#sectionOwnership" data-toggle="scroll-to">Ownership &amp; Project</a>
-        <a class="nav-link" href="#sectionIdentity" data-toggle="scroll-to">Identity &amp; Telemetry</a>
-        <a class="nav-link" href="#sectionLocation" data-toggle="scroll-to">Lokasi &amp; Assignment</a>
-        <a class="nav-link" href="#sectionSensors" data-toggle="scroll-to">Sensor Stack</a>
+        <a class="nav-link" href="#sectionProject" data-toggle="scroll-to">Project & Node Model</a>
+        <a class="nav-link" href="#sectionIdentity" data-toggle="scroll-to">Identity & Telemetry</a>
         <a class="nav-link" href="#sectionPreview" data-toggle="scroll-to">Payload Preview</a>
       </nav-scroll>
     </div>
