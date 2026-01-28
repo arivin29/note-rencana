@@ -14,6 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { WidgetBuilderService } from './widget-builder.service';
+import { ClickhouseService } from '../clickhouse/clickhouse.service';
 import {
   CreateCustomDashboardDto,
   UpdateCustomDashboardDto,
@@ -33,7 +34,10 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('widget-builder')
 export class WidgetBuilderController {
-  constructor(private readonly widgetBuilderService: WidgetBuilderService) {}
+  constructor(
+    private readonly widgetBuilderService: WidgetBuilderService,
+    private readonly clickhouseService: ClickhouseService,
+  ) {}
 
   // ==========================================
   // DASHBOARD ENDPOINTS
@@ -199,6 +203,37 @@ export class WidgetBuilderController {
   // ==========================================
   // QUERY ENDPOINTS
   // ==========================================
+
+  @Get('datasources')
+  @ApiOperation({ summary: 'Get available data sources' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of available data sources',
+    schema: {
+      type: 'object',
+      properties: {
+        postgresql: { type: 'object', properties: { available: { type: 'boolean' }, name: { type: 'string' } } },
+        clickhouse: { type: 'object', properties: { available: { type: 'boolean' }, name: { type: 'string' }, status: { type: 'string' } } }
+      }
+    }
+  })
+  async getDataSources() {
+    const clickhouseHealth = await this.clickhouseService.healthCheck();
+    return {
+      postgresql: {
+        available: true,
+        name: 'PostgreSQL',
+        description: 'Relational database for real-time and transactional data'
+      },
+      clickhouse: {
+        available: this.clickhouseService.isAvailable(),
+        name: 'ClickHouse',
+        description: 'Column-oriented database for time-series analytics',
+        status: clickhouseHealth.status,
+        latency: clickhouseHealth.latency
+      }
+    };
+  }
 
   @Post('query/validate')
   @ApiOperation({ summary: 'Validate SQL query' })

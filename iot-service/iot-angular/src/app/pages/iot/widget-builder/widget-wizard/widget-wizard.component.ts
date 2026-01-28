@@ -184,6 +184,13 @@ export class WidgetWizardComponent implements OnInit {
   timeFrom = Date.now() - 6 * 60 * 60 * 1000;
   timeTo = Date.now();
 
+  // Data Source Configuration
+  dataSources = {
+    postgresql: { available: true, name: 'PostgreSQL', description: 'Relational database for real-time data' },
+    clickhouse: { available: false, name: 'ClickHouse', description: 'Time-series analytics database', status: 'disabled' }
+  };
+  selectedDataSource: 'postgresql' | 'clickhouse' = 'postgresql';
+
   // Threshold presets
   thresholdColors = [
     { name: 'Red', value: '#ef4444' },
@@ -338,8 +345,39 @@ WHERE sl.id_owner = '\${ownerId}'
       this.selectedType = typeParam as WidgetType;
     }
     
+    // Load available data sources
+    this.loadDataSources();
+    
     if (this.isEditMode) {
       this.loadWidget();
+    }
+  }
+
+  /**
+   * Load available data sources from backend
+   */
+  loadDataSources(): void {
+    this.widgetBuilderService.widgetBuilderControllerGetDataSources().subscribe({
+      next: (response: any) => {
+        this.dataSources = response;
+        // If ClickHouse is not available, ensure PostgreSQL is selected
+        if (!this.dataSources.clickhouse?.available && this.selectedDataSource === 'clickhouse') {
+          this.selectedDataSource = 'postgresql';
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load data sources:', err);
+      }
+    });
+  }
+
+  /**
+   * Change data source
+   */
+  onDataSourceChange(): void {
+    // Re-run query with new data source if we have SQL
+    if (this.form.sql) {
+      this.testQuery();
     }
   }
 
@@ -682,6 +720,11 @@ WHERE sl.id_owner = '\${ownerId}'
             this.form.timeRange = config.timeRange;
             this.selectedTimeRange = config.timeRange;
           }
+          
+          // Data source
+          if (config.dataSource && (config.dataSource === 'postgresql' || config.dataSource === 'clickhouse')) {
+            this.selectedDataSource = config.dataSource;
+          }
         }
         
         // Run query to show preview if SQL exists
@@ -712,10 +755,11 @@ WHERE sl.id_owner = '\${ownerId}'
     this.queryError = null;
     this.queryResult = null;
 
-    // Execute query via API with from/to epoch timestamps
+    // Execute query via API with from/to epoch timestamps and data source
     this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
       body: {
         sql: this.form.sql,
+        dataSource: this.selectedDataSource,
         from: this.timeFrom,
         to: this.timeTo,
         variables: {}
@@ -1224,6 +1268,8 @@ WHERE sl.id_owner = '\${ownerId}'
     const widgetConfig = {
       title: this.form.title,
       description: this.form.description,
+      // Data source (postgresql or clickhouse)
+      dataSource: this.selectedDataSource,
       // Field mapping for data binding
       mapping: this.form.mapping,
       // Series configuration (multi-line)

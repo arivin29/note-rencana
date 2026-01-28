@@ -63,6 +63,43 @@ card-body,
   z-index: 1 !important;
 }
 
+/* ============================================
+   Data Source Selector
+   ============================================ */
+
+.datasource-select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: inherit;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  padding-right: 1.75rem;
+}
+
+.datasource-select:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--bs-theme);
+  box-shadow: 0 0 0 2px rgba(var(--bs-theme-rgb), 0.15);
+}
+
+.datasource-select option {
+  background-color: #1a1a1f;
+  color: #fff;
+}
+
+.datasource-select option:disabled {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.datasource-info {
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.8rem;
+}
+
+.datasource-info.bg-info-subtle {
+  background: rgba(var(--bs-info-rgb), 0.1) !important;
+}
+
 /* Grafana-style collapsible sections */
 .cursor-pointer {
   cursor: pointer;

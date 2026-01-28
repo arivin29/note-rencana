@@ -29,6 +29,8 @@ import { widgetBuilderControllerGetDashboard } from '../fn/widget-builder/widget
 import { WidgetBuilderControllerGetDashboard$Params } from '../fn/widget-builder/widget-builder-controller-get-dashboard';
 import { widgetBuilderControllerGetDashboards } from '../fn/widget-builder/widget-builder-controller-get-dashboards';
 import { WidgetBuilderControllerGetDashboards$Params } from '../fn/widget-builder/widget-builder-controller-get-dashboards';
+import { widgetBuilderControllerGetDataSources } from '../fn/widget-builder/widget-builder-controller-get-data-sources';
+import { WidgetBuilderControllerGetDataSources$Params } from '../fn/widget-builder/widget-builder-controller-get-data-sources';
 import { widgetBuilderControllerGetTemplate } from '../fn/widget-builder/widget-builder-controller-get-template';
 import { WidgetBuilderControllerGetTemplate$Params } from '../fn/widget-builder/widget-builder-controller-get-template';
 import { widgetBuilderControllerGetTemplates } from '../fn/widget-builder/widget-builder-controller-get-templates';
@@ -412,6 +414,79 @@ export class WidgetBuilderService extends BaseService {
   widgetBuilderControllerUpdateWidgetPositions(params: WidgetBuilderControllerUpdateWidgetPositions$Params, context?: HttpContext): Observable<void> {
     return this.widgetBuilderControllerUpdateWidgetPositions$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `widgetBuilderControllerGetDataSources()` */
+  static readonly WidgetBuilderControllerGetDataSourcesPath = '/api/widget-builder/datasources';
+
+  /**
+   * Get available data sources.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `widgetBuilderControllerGetDataSources()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  widgetBuilderControllerGetDataSources$Response(params?: WidgetBuilderControllerGetDataSources$Params, context?: HttpContext): Observable<StrictHttpResponse<{
+'postgresql'?: {
+'available'?: boolean;
+'name'?: string;
+};
+'clickhouse'?: {
+'available'?: boolean;
+'name'?: string;
+'status'?: string;
+};
+}>> {
+    return widgetBuilderControllerGetDataSources(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get available data sources.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `widgetBuilderControllerGetDataSources$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  widgetBuilderControllerGetDataSources(params?: WidgetBuilderControllerGetDataSources$Params, context?: HttpContext): Observable<{
+'postgresql'?: {
+'available'?: boolean;
+'name'?: string;
+};
+'clickhouse'?: {
+'available'?: boolean;
+'name'?: string;
+'status'?: string;
+};
+}> {
+    return this.widgetBuilderControllerGetDataSources$Response(params, context).pipe(
+      map((r: StrictHttpResponse<{
+'postgresql'?: {
+'available'?: boolean;
+'name'?: string;
+};
+'clickhouse'?: {
+'available'?: boolean;
+'name'?: string;
+'status'?: string;
+};
+}>): {
+'postgresql'?: {
+'available'?: boolean;
+'name'?: string;
+};
+'clickhouse'?: {
+'available'?: boolean;
+'name'?: string;
+'status'?: string;
+};
+} => r.body)
     );
   }
 

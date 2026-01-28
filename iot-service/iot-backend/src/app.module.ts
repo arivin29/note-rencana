@@ -32,6 +32,8 @@ import { WidgetBuilderModule } from './modules/widget-builder/widget-builder.mod
 import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ClickhouseModule } from './modules/clickhouse';
+import clickhouseConfig from './config/clickhouse.config';
 import * as entities from './entities'; 
 
 @Module({
@@ -39,6 +41,7 @@ import * as entities from './entities';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [clickhouseConfig],
     }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
@@ -91,6 +94,7 @@ import * as entities from './entities';
     UsersModule,
     AuditModule,
     NotificationsModule,
+    ClickhouseModule,
   ],
   controllers: [AppController],
   providers: [

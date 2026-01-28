@@ -1,10 +1,25 @@
-import { IsString, IsOptional, IsObject, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export enum DataSource {
+  POSTGRESQL = 'postgresql',
+  CLICKHOUSE = 'clickhouse',
+}
 
 export class ExecuteQueryDto {
   @ApiProperty({ description: 'SQL SELECT query to execute' })
   @IsString()
   sql: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Data source to query',
+    enum: DataSource,
+    default: DataSource.POSTGRESQL,
+    example: 'postgresql'
+  })
+  @IsEnum(DataSource)
+  @IsOptional()
+  dataSource?: DataSource;
 
   @ApiPropertyOptional({ 
     description: 'Time range preset for query (legacy)', 

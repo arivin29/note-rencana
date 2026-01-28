@@ -38,6 +38,7 @@ export interface WidgetConfig {
   subtitle?: string;
   description?: string;
   sqlQuery?: string;  // SQL query (fallback location)
+  dataSource?: 'postgresql' | 'clickhouse';  // Data source selection
   refreshInterval?: number; // in seconds, 0 = no auto refresh
   showLegend?: boolean;
   colorScheme?: string;

@@ -65,9 +65,13 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
+    // Get data source from widget config (default: postgresql)
+    const dataSource = this.widget.config?.dataSource || 'postgresql';
+
     // Build request body with epoch timestamps if available
     const requestBody: any = {
       sql: sqlQuery,
+      dataSource: dataSource,
       variables: {}
     };
 
