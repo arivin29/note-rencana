@@ -28,6 +28,7 @@ import { NodeProfilesModule } from './modules/node-profiles/node-profiles.module
 import { MqttModule } from './modules/mqtt/mqtt.module';
 import { DeviceCommandsModule } from './modules/device-commands/device-commands.module';
 import { IotLogsModule } from './modules/iot-logs/iot-logs.module';
+import { WidgetBuilderModule } from './modules/widget-builder/widget-builder.module';
 import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -86,6 +87,7 @@ import * as entities from './entities';
     MqttModule,
     DeviceCommandsModule,
     IotLogsModule,
+    WidgetBuilderModule,
     UsersModule,
     AuditModule,
     NotificationsModule,

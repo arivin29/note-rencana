@@ -1,0 +1,7 @@
+::ng-deep .mat-mdc-dialog-container {
+  --mdc-dialog-supporting-text-color: inherit;
+}
+
+mat-dialog-content {
+  min-width: 400px;
+}

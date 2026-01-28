@@ -28,6 +28,7 @@ import { UnpairedDevicesService } from './services/unpaired-devices.service';
 import { NodeProfilesService } from './services/node-profiles.service';
 import { DeviceCommandsService } from './services/device-commands.service';
 import { IoTLogsService } from './services/io-t-logs.service';
+import { WidgetBuilderService } from './services/widget-builder.service';
 import { UsersService } from './services/users.service';
 import { AuditService } from './services/audit.service';
 import { NotificationsService } from './services/notifications.service';
@@ -62,6 +63,7 @@ import { NotificationsService } from './services/notifications.service';
     NodeProfilesService,
     DeviceCommandsService,
     IoTLogsService,
+    WidgetBuilderService,
     UsersService,
     AuditService,
     NotificationsService,

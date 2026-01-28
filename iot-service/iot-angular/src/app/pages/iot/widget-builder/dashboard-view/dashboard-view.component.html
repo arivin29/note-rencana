@@ -1,0 +1,340 @@
+<!-- Page Header -->
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/widget-builder">Widget Builder</a></li>
+            <li class="breadcrumb-item"><a href="javascript:;">Dashboards</a></li>
+            <li class="breadcrumb-item active">{{ dashboard?.name || 'Dashboard' }}</li>
+        </ul>
+        <h1 class="page-header mb-0">
+            {{ dashboard?.name || 'Loading...' }}
+            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal">
+                {{ dashboard?.description }}
+            </small>
+        </h1>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <!-- Grafana-style Time Range Picker -->
+        <div class="time-picker-wrapper">
+            <button class="btn btn-outline-theme time-picker-btn" (click)="toggleTimePicker()">
+                <i class="bi bi-calendar3 me-2"></i>
+                <span class="time-range-display">{{ formatRelativeTime() }}</span>
+                <i class="bi bi-chevron-down ms-2"></i>
+            </button>
+            
+            <!-- Time Picker Dropdown Panel -->
+            <div class="time-picker-dropdown" *ngIf="timePickerOpen">
+                <div class="time-picker-content">
+                    <!-- Left Panel: Absolute Time Range -->
+                    <div class="time-picker-absolute">
+                        <h6 class="section-title">Absolute time range</h6>
+                        
+                        <div class="time-input-group">
+                            <label>From</label>
+                            <div class="input-with-icon">
+                                <input type="text" class="form-control form-control-sm" 
+                                       [(ngModel)]="absoluteTimeFrom" 
+                                       placeholder="now-1h"
+                                       [class.active]="activeCalendar === 'from'">
+                                <button class="btn-icon" title="Open calendar" (click)="toggleCalendar('from')">
+                                    <i class="bi bi-calendar"></i>
+                                </button>
+                            </div>
+                            <!-- From Calendar Popup -->
+                            <div class="calendar-popup" *ngIf="activeCalendar === 'from'">
+                                <div class="calendar-header">
+                                    <button class="cal-nav" (click)="prevMonth('from')"><i class="bi bi-chevron-left"></i></button>
+                                    <span class="cal-title">{{ getCalendarTitle('from') }}</span>
+                                    <button class="cal-nav" (click)="nextMonth('from')"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                <div class="calendar-weekdays">
+                                    <span *ngFor="let d of weekDays">{{ d }}</span>
+                                </div>
+                                <div class="calendar-days">
+                                    <button *ngFor="let day of getCalendarDays('from')" 
+                                            class="cal-day"
+                                            [class.other-month]="day.otherMonth"
+                                            [class.today]="day.isToday"
+                                            [class.selected]="day.isSelected"
+                                            (click)="selectDate('from', day)">
+                                        {{ day.day }}
+                                    </button>
+                                </div>
+                                <div class="calendar-time">
+                                    <label>Time:</label>
+                                    <input type="time" class="form-control form-control-sm" 
+                                           [(ngModel)]="fromTime" step="1">
+                                </div>
+                                <div class="calendar-actions">
+                                    <button class="btn btn-sm btn-secondary" (click)="closeCalendar()">Cancel</button>
+                                    <button class="btn btn-sm btn-primary" (click)="applyCalendarDate('from')">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="time-input-group">
+                            <label>To</label>
+                            <div class="input-with-icon">
+                                <input type="text" class="form-control form-control-sm" 
+                                       [(ngModel)]="absoluteTimeTo" 
+                                       placeholder="now"
+                                       [class.active]="activeCalendar === 'to'">
+                                <button class="btn-icon" title="Open calendar" (click)="toggleCalendar('to')">
+                                    <i class="bi bi-calendar"></i>
+                                </button>
+                            </div>
+                            <!-- To Calendar Popup -->
+                            <div class="calendar-popup" *ngIf="activeCalendar === 'to'">
+                                <div class="calendar-header">
+                                    <button class="cal-nav" (click)="prevMonth('to')"><i class="bi bi-chevron-left"></i></button>
+                                    <span class="cal-title">{{ getCalendarTitle('to') }}</span>
+                                    <button class="cal-nav" (click)="nextMonth('to')"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                <div class="calendar-weekdays">
+                                    <span *ngFor="let d of weekDays">{{ d }}</span>
+                                </div>
+                                <div class="calendar-days">
+                                    <button *ngFor="let day of getCalendarDays('to')" 
+                                            class="cal-day"
+                                            [class.other-month]="day.otherMonth"
+                                            [class.today]="day.isToday"
+                                            [class.selected]="day.isSelected"
+                                            (click)="selectDate('to', day)">
+                                        {{ day.day }}
+                                    </button>
+                                </div>
+                                <div class="calendar-time">
+                                    <label>Time:</label>
+                                    <input type="time" class="form-control form-control-sm" 
+                                           [(ngModel)]="toTime" step="1">
+                                </div>
+                                <div class="calendar-actions">
+                                    <button class="btn btn-sm btn-secondary" (click)="closeCalendar()">Cancel</button>
+                                    <button class="btn btn-sm btn-primary" (click)="applyCalendarDate('to')">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="time-actions">
+                            <button class="btn-action" (click)="copyShortLink()" title="Copy short link">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            <button class="btn-action" (click)="copyTimeRangeUrl()" title="Copy URL">
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
+                            <button class="btn btn-primary btn-sm" (click)="applyAbsoluteTimeRange()">
+                                Apply time range
+                            </button>
+                        </div>
+                        
+                        <!-- Recent Time Ranges -->
+                        <div class="recent-ranges" *ngIf="recentTimeRanges.length > 0">
+                            <p class="recent-hint">Recently used absolute ranges</p>
+                            <div class="recent-list">
+                                <a *ngFor="let recent of recentTimeRanges" 
+                                   class="recent-item" 
+                                   href="javascript:;" 
+                                   (click)="applyRecentTimeRange(recent)">
+                                    {{ recent.label }}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="recent-ranges" *ngIf="recentTimeRanges.length === 0">
+                            <p class="recent-hint text-muted">
+                                It looks like you haven't used this time picker before. 
+                                As soon as you enter some time intervals, recently used intervals will appear here.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel: Quick Ranges -->
+                    <div class="time-picker-quick">
+                        <div class="quick-search">
+                            <i class="bi bi-search"></i>
+                            <input type="text" 
+                                   [(ngModel)]="quickRangeSearch" 
+                                   placeholder="Search quick ranges"
+                                   class="form-control form-control-sm">
+                        </div>
+                        
+                        <div class="quick-ranges-list">
+                            <a *ngFor="let preset of filteredQuickRanges" 
+                               class="quick-range-item" 
+                               href="javascript:;"
+                               [class.active]="selectedTimePreset === preset.value"
+                               (click)="selectQuickRange(preset)">
+                                {{ preset.label }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer: Timezone Info -->
+                <div class="time-picker-footer">
+                    <span class="timezone-label">
+                        <i class="bi bi-globe me-1"></i>
+                        Browser Time <span class="text-muted">{{ getTimezone() }}</span>
+                    </span>
+                    <span class="timezone-offset">{{ getTimezoneOffset() }}</span>
+                    <a href="javascript:;" class="change-settings">
+                        <i class="bi bi-chevron-down me-1"></i>
+                        Change time settings
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Click outside to close -->
+            <div class="time-picker-backdrop" *ngIf="timePickerOpen" (click)="closeTimePicker()"></div>
+        </div>
+
+        <!-- Auto Refresh Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                {{ getRefreshLabel() }}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end">
+                <a *ngFor="let opt of refreshIntervals" class="dropdown-item" href="javascript:;"
+                    [class.active]="refreshInterval === opt.value" (click)="onRefreshIntervalChange(opt.value)">
+                    {{ opt.label }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Manual Refresh -->
+        <button class="btn btn-outline-secondary" (click)="refreshAllWidgets()" title="Refresh Now">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <!-- Last Refresh Time -->
+        <span class="text-muted small d-none d-md-inline">
+            <i class="bi bi-clock me-1"></i>
+            {{ lastRefresh | date:'HH:mm:ss' }}
+        </span>
+
+        <div class="vr d-none d-md-block"></div>
+
+        <!-- Edit Mode Toggle -->
+        <ng-container *ngIf="!editMode">
+            <button class="btn btn-outline-theme" (click)="toggleEditMode()">
+                <i class="bi bi-pencil me-1"></i>
+                Edit Layout
+            </button>
+            <button class="btn btn-theme" (click)="addWidget()">
+                <i class="fa fa-plus me-1"></i>
+                Add Widget
+            </button>
+        </ng-container>
+
+        <!-- Edit Mode Actions -->
+        <ng-container *ngIf="editMode">
+            <button class="btn btn-outline-danger" (click)="cancelEdit()">
+                <i class="bi bi-x me-1"></i>
+                Cancel
+            </button>
+            <button class="btn btn-theme" (click)="saveLayout()">
+                <i class="bi bi-check2 me-1"></i>
+                Save Layout
+            </button>
+        </ng-container>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-theme mb-3" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted">Loading dashboard...</p>
+</div>
+
+<!-- Dashboard Not Found -->
+<div *ngIf="!loading && !dashboard" class="text-center py-5">
+    <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+    <h4 class="mt-3">Dashboard Not Found</h4>
+    <p class="text-muted mb-4">The dashboard you're looking for doesn't exist or has been deleted.</p>
+    <button class="btn btn-theme" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Back to Dashboards
+    </button>
+</div>
+
+<!-- Dashboard Content -->
+<div *ngIf="!loading && dashboard">
+    <!-- Edit Mode Banner -->
+    <div *ngIf="editMode" class="alert alert-info alert-dismissible border-0 rounded-3 mb-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Edit Mode:</strong> Drag widgets to reposition, drag corners to resize
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="widgets.length === 0" class="text-center py-5">
+        <div class="card shadow-sm">
+            <div class="card-body py-5">
+                <i class="bi bi-puzzle display-1 text-muted mb-3 d-block"></i>
+                <h4 class="text-inverse">No Widgets Yet</h4>
+                <p class="text-muted mb-4">Add your first widget to start visualizing data</p>
+                <button class="btn btn-theme btn-lg" (click)="addWidget()">
+                    <i class="fa fa-plus me-1"></i>
+                    Add Widget
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gridster Dashboard -->
+
+    <gridster [options]="gridsterOptions" class="dashboard-gridster">
+        <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
+            <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
+                [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
+                (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
+                (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])">
+            </app-widget-container>
+        </gridster-item>
+    </gridster>
+
+</div>
+
+<!-- Fullscreen Overlay -->
+<div *ngIf="fullscreenWidget" class="fullscreen-overlay" (click)="toggleFullscreen(fullscreenWidget)">
+    <div class="fullscreen-widget-container" (click)="$event.stopPropagation()">
+        <button class="btn btn-light position-absolute top-0 end-0 m-3" (click)="toggleFullscreen(fullscreenWidget!)">
+            <i class="bi bi-fullscreen-exit"></i>
+        </button>
+        <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" 
+            [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()"
+            [isFullscreen]="true" (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
+        </app-widget-container>
+    </div>
+</div>
+
+<!-- Custom Time Range Modal -->
+<div class="modal fade" id="customTimeRangeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Custom Time Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label">From</label>
+                        <input type="datetime-local" class="form-control" [(ngModel)]="customTimeFrom">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">To</label>
+                        <input type="datetime-local" class="form-control" [(ngModel)]="customTimeTo">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-theme" (click)="applyCustomTimeRange()"
+                    data-bs-dismiss="modal">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>

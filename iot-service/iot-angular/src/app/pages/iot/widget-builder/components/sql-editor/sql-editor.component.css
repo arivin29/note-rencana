@@ -1,0 +1,78 @@
+/* SQL Editor - Custom Textarea Style */
+.sql-editor-wrapper {
+  display: flex;
+  background: #1e1e2e;
+  border-radius: 6px;
+  border: 1px solid #313244;
+  overflow: hidden;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Line Numbers */
+.editor-toolbar {
+  background: #181825;
+  padding: 12px 0;
+  border-right: 1px solid #313244;
+  user-select: none;
+}
+
+.line-numbers {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  padding: 0 12px;
+  color: #6c7086;
+  min-width: 40px;
+}
+
+.line-numbers span {
+  height: 20.8px; /* Match line-height */
+}
+
+/* SQL Textarea */
+.sql-textarea {
+  flex: 1;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border: none;
+  outline: none;
+  padding: 12px;
+  resize: none;
+  min-height: 200px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.sql-textarea::placeholder {
+  color: #6c7086;
+}
+
+.sql-textarea:focus {
+  outline: none;
+}
+
+/* Scrollbar styling */
+.sql-textarea::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sql-textarea::-webkit-scrollbar-track {
+  background: #181825;
+}
+
+.sql-textarea::-webkit-scrollbar-thumb {
+  background: #45475a;
+  border-radius: 4px;
+}
+
+.sql-textarea::-webkit-scrollbar-thumb:hover {
+  background: #585b70;
+}
+

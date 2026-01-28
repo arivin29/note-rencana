@@ -1,0 +1,742 @@
+/* Widget Wizard - Bootstrap Style */
+
+/* ============================================
+   FIX DROPDOWN Z-INDEX - Must be above chart/editor
+   ============================================ */
+
+/* Dropdown menu must be on top of everything */
+.dropdown-menu {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+/* Dropdown container */
+.dropdown {
+  position: relative;
+  z-index: 100;
+}
+
+/* Open dropdown should have higher z-index */
+.dropdown.show,
+.dropdown:focus-within {
+  z-index: 9998;
+}
+
+/* Ensure card-header allows dropdown overflow */
+card-header,
+.card-header {
+  overflow: visible !important;
+  position: relative;
+  z-index: 100;
+}
+
+/* Card must allow overflow for dropdowns */
+card,
+.card {
+  overflow: visible !important;
+}
+
+/* Card body allow overflow */
+card-body,
+.card-body {
+  overflow: visible !important;
+}
+
+/* Preview area and chart container should be below dropdown */
+.preview-area,
+.chart-preview,
+.echart-box,
+.echart {
+  position: relative;
+  z-index: 1;
+}
+
+/* SQL Editor container should be below dropdown */
+.sql-editor-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* CodeMirror editor */
+.CodeMirror,
+.cm-editor {
+  z-index: 1 !important;
+}
+
+/* Grafana-style collapsible sections */
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cursor-pointer:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.option-row {
+  transition: background-color 0.15s ease;
+}
+
+.option-row:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Right Panel Scrollable */
+.config-panel-scroll {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+}
+
+.config-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.config-panel-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.config-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.config-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Widget Type Selection Grid */
+.widget-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+/* Widget Type Horizontal Scroll */
+.widget-type-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+}
+
+.widget-type-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.widget-type-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.widget-type-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.widget-type-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.widget-type-scroll .widget-type-card {
+  flex: 0 0 150px;
+  scroll-snap-align: start;
+  padding: 12px 10px;
+}
+
+.widget-type-card {
+  padding: 16px 12px;
+  border: 2px solid var(--bs-border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  background: var(--bs-body-bg);
+}
+
+.widget-type-card:hover {
+  border-color: var(--bs-theme);
+  background: rgba(var(--bs-theme-rgb), 0.05);
+}
+
+.widget-type-card.selected {
+  border-color: var(--bs-theme);
+  background: rgba(var(--bs-theme-rgb), 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--bs-theme-rgb), 0.2);
+}
+
+.widget-type-card .type-icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+  color: var(--bs-theme);
+  display: block;
+}
+
+.widget-type-card .type-name {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.widget-type-card .type-desc {
+  font-size: 10px;
+  color: var(--bs-secondary-color);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Preview Area */
+.preview-area {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-preview,
+.stat-preview,
+.table-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+.echart-box {
+  width: 100%;
+  height: 300px;
+}
+
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+/* Stat Display */
+.stat-display {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.stat-value {
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  font-size: 16px;
+}
+
+/* SQL Editor Container */
+.sql-editor-container {
+  position: relative;
+}
+
+/* Card Header Tabs */
+.card-header-tabs {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.card-header-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 12px 16px;
+  color: var(--bs-secondary-color);
+  font-weight: 500;
+}
+
+.card-header-tabs .nav-link:hover {
+  border-bottom-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+.card-header-tabs .nav-link.active {
+  border-bottom-color: var(--bs-theme);
+  color: var(--bs-theme);
+  background: transparent;
+}
+
+/* Table Preview */
+.table-preview .table-responsive {
+  max-height: 300px;
+  overflow: auto;
+}
+
+/* Card Header Consistency */
+.card-header {
+  font-weight: 500;
+}
+
+.card-header .badge {
+  font-weight: 500;
+}
+
+/* Form Enhancements */
+.form-label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.375rem;
+}
+
+.form-text {
+  font-size: 0.8rem;
+}
+
+/* Multi-Select Fields for Y-Axis */
+.multi-select-fields {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.field-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.field-option:last-child {
+  border-bottom: none;
+}
+
+.field-option:hover {
+  background: rgba(var(--bs-theme-rgb), 0.05);
+}
+
+.field-option.selected {
+  background: rgba(var(--bs-theme-rgb), 0.1);
+}
+
+.field-option .field-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+/* Threshold Styling */
+.threshold-item {
+  padding: 12px;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+}
+
+.threshold-color .form-control-color {
+  width: 38px;
+  height: 38px;
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.threshold-presets {
+  padding-top: 12px;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+/* Series Override Styling */
+.series-override-item {
+  transition: background 0.15s ease;
+}
+
+.series-override-item:hover {
+  background: rgba(var(--bs-theme-rgb), 0.03);
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+  .widget-type-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .widget-type-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========================================
+   Grafana-style Time Picker
+   ======================================== */
+
+.time-picker-wrapper {
+  position: relative;
+}
+
+.time-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.time-picker-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.time-picker-dropdown {
+  position: fixed;
+  background: #1f1f23;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 99999999;
+  min-width: 560px;
+  max-width: 90vw;
+  overflow: visible;
+}
+
+.time-picker-content {
+  display: flex;
+}
+
+.time-picker-absolute {
+  flex: 0 0 300px;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.time-picker-absolute .section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.time-input-group {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.time-input-group label {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .form-control {
+  background: #111217;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  padding-right: 36px;
+}
+
+.input-with-icon .form-control:focus {
+  background: #111217;
+  border-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.input-with-icon .form-control.active {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.input-with-icon .btn-icon {
+  position: absolute;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.input-with-icon .btn-icon:hover {
+  color: #fff;
+}
+
+.time-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.time-actions .btn {
+  font-size: 13px;
+}
+
+/* Quick Ranges */
+.time-picker-quick {
+  width: 220px;
+  background: #111217;
+  display: flex;
+  flex-direction: column;
+}
+
+.quick-search {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 8px;
+}
+
+.quick-search .bi-search {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.quick-search .form-control {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.quick-search .form-control:focus {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.quick-ranges-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.quick-range-item {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.quick-range-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-left-color: var(--bs-primary);
+}
+
+.quick-range-item.active {
+  background: rgba(var(--bs-primary-rgb), 0.15);
+  color: var(--bs-primary);
+  border-left-color: var(--bs-primary);
+}
+
+/* Footer */
+.time-picker-footer {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #0a0a0c;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  gap: 12px;
+}
+
+.timezone-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.timezone-label .text-muted {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.timezone-offset {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+}
+
+/* Calendar Popup */
+.calendar-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 9999;
+  width: 280px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-nav {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.cal-nav:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.cal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px 0;
+  font-weight: 600;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  margin: 0 auto;
+}
+
+.cal-day:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cal-day.other-month {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.cal-day.today {
+  background: rgba(var(--bs-primary-rgb), 0.2);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.cal-day.selected {
+  background: var(--bs-primary);
+  color: #fff;
+}
+
+.calendar-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.calendar-time label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.calendar-time .form-control {
+  flex: 1;
+  background: #111217;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.calendar-time .form-control:focus {
+  background: #111217;
+  border-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+  outline: none;
+}
+
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.calendar-actions .btn {
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 4px;
+}
+
+.calendar-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.calendar-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}

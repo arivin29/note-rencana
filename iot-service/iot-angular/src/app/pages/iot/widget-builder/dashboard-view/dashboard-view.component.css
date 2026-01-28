@@ -1,0 +1,678 @@
+/* Dashboard View - Grafana-like clean style */
+
+.dashboard-grid,
+.dashboard-gridster {
+  flex: 1;
+  min-height: calc(100vh - 200px);
+}
+
+.widget-item,
+.widget-gridster-item {
+  border-radius: 0px;
+  overflow: hidden;
+}
+
+/* Edit mode styles - subtle dashed border on widgets only */
+:host-context(.edit-mode) .widget-item,
+:host-context(.edit-mode) .widget-gridster-item {
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+}
+
+/* Fullscreen overlay */
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.fullscreen-widget-container {
+  width: 90vw;
+  height: 90vh;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ========================================
+   Gridster - Grafana-like clean appearance
+   ======================================== */
+
+/* Main gridster container - no background, no grid */
+gridster {
+  background: transparent !important;
+}
+
+/* Gridster items - clean, no visible borders */
+gridster-item {
+  background: transparent !important;
+}
+
+/* Hide ALL grid lines and backgrounds */
+::ng-deep gridster {
+  background: transparent !important;
+}
+
+::ng-deep .gridster-column,
+::ng-deep .gridster-row {
+  display: none !important;
+}
+
+/* Preview when dragging - subtle highlight */
+::ng-deep .gridster-preview {
+  background: rgba(var(--bs-primary-rgb), 0.15) !important;
+  border: 2px dashed var(--bs-primary) !important;
+  border-radius: 8px;
+}
+
+/* ========================================
+   Resize Handles - Visible corner indicators
+   ======================================== */
+
+/* All resize handles */
+::ng-deep .gridster-item-resizable-handler {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Show handles on hover */
+::ng-deep gridster-item:hover .gridster-item-resizable-handler {
+  opacity: 1;
+}
+
+/* SE Corner (main resize handle - bottom right) */
+::ng-deep .gridster-item-resizable-handler.handle-se {
+  width: 20px !important;
+  height: 20px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  cursor: se-resize !important;
+  background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
+  border: none !important;
+  border-radius: 0 0 4px 0;
+}
+
+/* SW Corner (bottom left) */
+::ng-deep .gridster-item-resizable-handler.handle-sw {
+  width: 20px !important;
+  height: 20px !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  cursor: sw-resize !important;
+  background: linear-gradient(225deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
+  border: none !important;
+}
+
+/* NE Corner (top right) */
+::ng-deep .gridster-item-resizable-handler.handle-ne {
+  width: 20px !important;
+  height: 20px !important;
+  right: 0 !important;
+  top: 0 !important;
+  cursor: ne-resize !important;
+  background: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
+  border: none !important;
+}
+
+/* NW Corner (top left) */
+::ng-deep .gridster-item-resizable-handler.handle-nw {
+  width: 20px !important;
+  height: 20px !important;
+  left: 0 !important;
+  top: 0 !important;
+  cursor: nw-resize !important;
+  background: linear-gradient(315deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
+  border: none !important;
+}
+
+/* Edge handles (N, S, E, W) */
+::ng-deep .gridster-item-resizable-handler.handle-n,
+::ng-deep .gridster-item-resizable-handler.handle-s {
+  height: 8px !important;
+  left: 20px !important;
+  right: 20px !important;
+  width: auto !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+}
+
+::ng-deep .gridster-item-resizable-handler.handle-n {
+  top: 0 !important;
+  cursor: n-resize !important;
+  border-radius: 4px 4px 0 0;
+}
+
+::ng-deep .gridster-item-resizable-handler.handle-s {
+  bottom: 0 !important;
+  cursor: s-resize !important;
+  border-radius: 0 0 4px 4px;
+}
+
+::ng-deep .gridster-item-resizable-handler.handle-e,
+::ng-deep .gridster-item-resizable-handler.handle-w {
+  width: 8px !important;
+  top: 20px !important;
+  bottom: 20px !important;
+  height: auto !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+}
+
+::ng-deep .gridster-item-resizable-handler.handle-e {
+  right: 0 !important;
+  cursor: e-resize !important;
+  border-radius: 0 4px 4px 0;
+}
+
+::ng-deep .gridster-item-resizable-handler.handle-w {
+  left: 0 !important;
+  cursor: w-resize !important;
+  border-radius: 4px 0 0 4px;
+}
+
+/* Hover effect on handles */
+::ng-deep .gridster-item-resizable-handler:hover {
+  background: rgba(var(--bs-primary-rgb), 0.6) !important;
+}
+
+/* Remove any grid display patterns */
+::ng-deep .gridster-grid {
+  display: none !important;
+}
+
+/* Smooth drag animation */
+::ng-deep gridster-item.gridster-item-moving {
+  z-index: 1000;
+  opacity: 0.9;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   Grafana-style Time Picker
+   ======================================== */
+
+.time-picker-wrapper {
+  position: relative;
+}
+
+.time-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.time-picker-btn .time-range-display {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time-picker-btn .bi-chevron-down {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* Backdrop for click-outside */
+.time-picker-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1049;
+}
+
+/* Main dropdown panel */
+.time-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1f1f23;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+  min-width: 580px;
+  overflow: visible;
+}
+
+.time-picker-content {
+  display: flex;
+}
+
+/* Left panel - Absolute time range */
+.time-picker-absolute {
+  flex: 0 0 320px;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: visible;
+}
+
+.time-picker-absolute .section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.time-input-group {
+  margin-bottom: 12px;
+}
+
+.time-input-group label {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .form-control {
+  background: #111217;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  padding-right: 36px;
+}
+
+.input-with-icon .form-control:focus {
+  background: #111217;
+  border-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.input-with-icon .btn-icon {
+  position: absolute;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.input-with-icon .btn-icon:hover {
+  color: #fff;
+}
+
+/* Time actions row */
+.time-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.time-actions .btn-action {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.time-actions .btn-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.time-actions .btn-primary {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+/* Recent ranges */
+.recent-ranges {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recent-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recent-item {
+  font-size: 13px;
+  color: var(--bs-primary);
+  text-decoration: none;
+  padding: 4px 0;
+}
+
+.recent-item:hover {
+  color: var(--bs-primary);
+  text-decoration: underline;
+}
+
+/* Right panel - Quick ranges */
+.time-picker-quick {
+  width: 220px;
+  background: #111217;
+  display: flex;
+  flex-direction: column;
+}
+
+.quick-search {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 8px;
+}
+
+.quick-search .bi-search {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.quick-search .form-control {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.quick-search .form-control:focus {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.quick-search .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.quick-ranges-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.quick-range-item {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.quick-range-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-left-color: var(--bs-primary);
+}
+
+.quick-range-item.active {
+  background: rgba(var(--bs-primary-rgb), 0.15);
+  color: var(--bs-primary);
+  border-left-color: var(--bs-primary);
+}
+
+/* Footer - Timezone */
+.time-picker-footer {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #0a0a0c;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  gap: 12px;
+}
+
+.timezone-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.timezone-label .text-muted {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.timezone-offset {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+}
+
+.change-settings {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.change-settings:hover {
+  color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .time-picker-dropdown {
+    min-width: 320px;
+    right: -50px;
+  }
+  
+  .time-picker-content {
+    flex-direction: column;
+  }
+  
+  .time-picker-absolute {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .time-picker-quick {
+    width: 100%;
+  }
+  
+  .quick-ranges-list {
+    max-height: 200px;
+  }
+}
+
+/* ========================================
+   Calendar Popup Styles
+   ======================================== */
+
+.time-input-group {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.calendar-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 9999;
+  width: 280px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-nav {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.cal-nav:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.cal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px 0;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  margin: 0 auto;
+}
+
+.cal-day:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cal-day.other-month {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.cal-day.today {
+  background: rgba(var(--bs-primary-rgb), 0.2);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.cal-day.selected {
+  background: var(--bs-primary);
+  color: #fff;
+}
+
+.cal-day.selected.today {
+  background: var(--bs-primary);
+}
+
+.calendar-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.calendar-time label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.calendar-time .form-control {
+  flex: 1;
+  background: #111217;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.calendar-time .form-control:focus {
+  background: #111217;
+  border-color: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+  outline: none;
+}
+
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.calendar-actions .btn {
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 4px;
+}
+
+.calendar-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.calendar-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Input active state when calendar is open */
+.input-with-icon .form-control.active {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+}

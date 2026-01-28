@@ -30,13 +30,16 @@
             "styles": [
               "src/styles.css",
               "src/scss/styles.scss",
-              "node_modules/highlight.js/styles/github.css"
+              "node_modules/highlight.js/styles/github.css",
+              "node_modules/codemirror/lib/codemirror.css",
+              "node_modules/codemirror/theme/dracula.css"
             ],
             "scripts": [
             	"node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
             	"node_modules/apexcharts/dist/apexcharts.min.js",
             	"src/app/composables/slide.js",
-            	"src/app/composables/iconify.js"
+            	"src/app/composables/iconify.js",
+            	"node_modules/codemirror/mode/sql/sql.js"
             ],
             "allowedCommonJsDependencies": [
             	"lodash", "lity", "jquery", "quill", "quill-delta", "bezier-easing", "ev-emitter", "moment", "apexcharts", "jsvectormap"

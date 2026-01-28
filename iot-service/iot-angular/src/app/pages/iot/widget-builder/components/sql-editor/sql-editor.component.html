@@ -1,0 +1,15 @@
+<div class="sql-editor-wrapper">
+  <div class="editor-toolbar">
+    <span class="line-numbers">
+      <span *ngFor="let line of lineNumbers">{{ line }}</span>
+    </span>
+  </div>
+  <textarea
+    class="sql-textarea"
+    [(ngModel)]="editorValue"
+    (ngModelChange)="onEditorChange($event)"
+    (input)="updateLineNumbers()"
+    placeholder="Write your SQL query here..."
+    spellcheck="false">
+  </textarea>
+</div>

@@ -52,6 +52,8 @@ import { CountdownModule } from 'ngx-countdown';
 import { NgChartsModule } from 'ng2-charts';
 import { NgApexchartsModule } from 'ng-apexcharts';
 
+// ECharts for Widget Builder
+import { provideEchartsCore } from 'ngx-echarts';
 
 // App Component
 import { AppComponent } from './app.component';
@@ -148,6 +150,7 @@ import { AlertService } from './service/alert.service';
             fullLibraryLoader: () => import('highlight.js'),
             lineNumbersLoader: () => import('ngx-highlightjs/line-numbers'),
         }),
+        provideEchartsCore({ echarts: () => import('echarts') }),
         {
             provide: NG_SCROLLBAR_OPTIONS,
             useValue: {

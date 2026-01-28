@@ -24,6 +24,7 @@ export { UnpairedDevicesService } from './services/unpaired-devices.service';
 export { NodeProfilesService } from './services/node-profiles.service';
 export { DeviceCommandsService } from './services/device-commands.service';
 export { IoTLogsService } from './services/io-t-logs.service';
+export { WidgetBuilderService } from './services/widget-builder.service';
 export { UsersService } from './services/users.service';
 export { AuditService } from './services/audit.service';
 export { NotificationsService } from './services/notifications.service';

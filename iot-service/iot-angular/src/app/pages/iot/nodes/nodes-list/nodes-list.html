@@ -66,33 +66,40 @@
     </ul>
     <div class="p-4">
         <div class="row g-3 mb-4">
-            <div class="col-lg-4 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
-                <div class="dropdown w-100">
-                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-                        data-bs-toggle="dropdown">
-                        {{ filters.owner }}
-                    </button>
-                    <div class="dropdown-menu w-100">
-                        <button type="button" class="dropdown-item" *ngFor="let option of ownerOptions"
-                            (click)="setFilter('owner', option)">{{ option }}</button>
-                    </div>
-                </div>
+            <!-- Owner Dropdown (Admin Only) -->
+            <div class="col-lg-4 col-md-6" *ngIf="isAdmin">
+                <label class="text-muted text-uppercase small d-block mb-1">
+                    Owner
+                    <span class="badge bg-primary ms-2">
+                        <i class="fa fa-user-shield me-1"></i>Admin
+                    </span>
+                </label>
+                <select class="form-select" [(ngModel)]="filters.ownerId" (ngModelChange)="onOwnerChange($event)">
+                    <option value="">-- Select Owner --</option>
+                    <option *ngFor="let owner of ownerOptions" [value]="owner.idOwner">
+                        {{ owner.ownerCode }} - {{ owner.name }}
+                    </option>
+                </select>
             </div>
+            
+            <!-- Project Dropdown -->
             <div class="col-lg-4 col-md-6">
                 <label class="text-muted text-uppercase small d-block mb-1">Project</label>
-                <div class="dropdown w-100">
-                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-                        data-bs-toggle="dropdown">
-                        {{ filters.project }}
-                    </button>
-                    <div class="dropdown-menu w-100">
-                        <button type="button" class="dropdown-item" *ngFor="let option of projectOptions"
-                            (click)="setFilter('project', option)">{{ option }}</button>
-                    </div>
-                </div>
+                <select class="form-select" 
+                        [(ngModel)]="filters.projectId" 
+                        (ngModelChange)="onProjectChange($event)"
+                        [disabled]="isAdmin && !filters.ownerId">
+                    <option value="">All Projects</option>
+                    <option *ngFor="let project of projectOptions" [value]="project.idProject">
+                        {{ project.name }}
+                    </option>
+                </select>
+                <small class="text-muted" *ngIf="isAdmin && !filters.ownerId">
+                    Select an owner first
+                </small>
             </div>
-            <div class="col-lg-4 col-md-12">
+            
+            <div [class]="isAdmin ? 'col-lg-4 col-md-12' : 'col-lg-4 col-md-6'">
                 <label class="text-muted text-uppercase small d-block mb-1">Search</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0 text-muted"><i
@@ -135,26 +142,26 @@
                                         class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
                                         {{ node.code }}
                                     </a>
-                                    <div class="text-muted small">Telemetry {{ node.telemetryMode }}</div>
+                                    <div class="text-muted small">SN: {{ node.serialNumber || 'N/A' }}</div>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <div class="fw-semibold">{{ node.owner }}</div>
-                            <div class="text-muted small">{{ node.project }}</div>
+                            <div class="fw-semibold">{{ getOwnerName(node) }}</div>
+                            <div class="text-muted small">{{ getProjectName(node) }}</div>
                         </td>
                         <td>
-                            <span [class]="badgeClass(node.status)">{{ node.status | titlecase }}</span>
+                            <span [class]="badgeClass(node.connectivityStatus)">{{ node.connectivityStatus | titlecase }}</span>
                         </td>
                         <td>
-                            <div class="fw-semibold">{{ node.firmware }}</div>
-                            <div class="text-muted small">Assigned image</div>
+                            <div class="fw-semibold">{{ node.firmwareVersion || 'N/A' }}</div>
+                            <div class="text-muted small">Firmware</div>
                         </td>
                         <td class="text-capitalize">
-                            <div class="fw-semibold">{{ node.telemetryMode }}</div>
-                            <div class="text-muted small">Reporting cadence</div>
+                            <div class="fw-semibold">{{ getTelemetryMode(node) }}</div>
+                            <div class="text-muted small">{{ node.telemetryIntervalSec }}s interval</div>
                         </td>
-                        <td class="text-end text-muted">{{ node.lastSeen }}</td>
+                        <td class="text-end text-muted">{{ node.lastSeenAt ? (node.lastSeenAt | date:'short') : 'Never' }}</td>
                     </tr>
                 </tbody>
             </table>
