@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsObject, IsInt, IsIn, Min, Max, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsInt, IsIn, Min, Max, IsArray, ValidateNested, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -14,6 +14,10 @@ const WIDGET_TYPES = [
   'heatmap'            // 2D heatmap visualization
 ] as const;
 type WidgetTypeDto = typeof WIDGET_TYPES[number];
+
+// Data source types
+const DATA_SOURCES = ['postgresql', 'clickhouse'] as const;
+type DataSourceType = typeof DATA_SOURCES[number];
 
 export class CreateWidgetDto {
   @ApiProperty({ description: 'Widget name' })
@@ -32,6 +36,17 @@ export class CreateWidgetDto {
   @ApiProperty({ description: 'SQL SELECT query' })
   @IsString()
   sqlQuery: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Data source for query execution',
+    enum: DATA_SOURCES,
+    default: 'postgresql',
+    example: 'postgresql'
+  })
+  @IsString()
+  @IsIn(DATA_SOURCES)
+  @IsOptional()
+  dataSource?: DataSourceType;
 
   @ApiProperty({ description: 'Widget configuration JSON' })
   @IsObject()
@@ -83,6 +98,16 @@ export class UpdateWidgetDto {
   @IsString()
   @IsOptional()
   sqlQuery?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Data source for query execution',
+    enum: DATA_SOURCES,
+    example: 'postgresql'
+  })
+  @IsString()
+  @IsIn(DATA_SOURCES)
+  @IsOptional()
+  dataSource?: DataSourceType;
 
   @ApiPropertyOptional({ description: 'Widget configuration JSON' })
   @IsObject()

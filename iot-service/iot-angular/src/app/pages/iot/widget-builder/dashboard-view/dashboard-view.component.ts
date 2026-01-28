@@ -307,6 +307,78 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     this.fullscreenWidget = this.fullscreenWidget === widgetId ? null : widgetId;
   }
 
+  duplicateWidget(widgetId: string): void {
+    if (!this.dashboard) return;
+    
+    const widget = this.widgetData.get(widgetId);
+    if (!widget) return;
+
+    // Find current widget's gridster item for position calculation
+    const currentItem = this.widgets.find(w => w['id'] === widgetId);
+    if (!currentItem) return;
+
+    // Calculate new position (below the original widget)
+    const newPositionY = (currentItem.y || 0) + (currentItem.rows || 2);
+    
+    // Create duplicate widget data
+    const duplicateData = {
+      name: `${widget.name} (Copy)`,
+      widgetType: widget.type as any,
+      sqlQuery: widget.sqlQuery || widget.config?.sqlQuery || '',
+      dataSource: widget.config?.dataSource || 'postgresql',
+      config: { ...widget.config },
+      positionX: currentItem.x || 0,
+      positionY: newPositionY,
+      cols: currentItem.cols || 4,
+      rows: currentItem.rows || 2
+    };
+
+    this.widgetBuilderService.widgetBuilderControllerCreateWidget({
+      dashboardId: this.dashboard.id,
+      body: duplicateData
+    }).subscribe({
+      next: (response: any) => {
+        // Add new widget to the grid
+        const newWidgetId = response.idWidget || response.id;
+        
+        const newGridsterItem: GridsterItem = {
+          cols: duplicateData.cols,
+          rows: duplicateData.rows,
+          y: duplicateData.positionY,
+          x: duplicateData.positionX,
+          id: newWidgetId
+        };
+        
+        // Create Widget object for widgetData map
+        const newWidget: Widget = {
+          id: newWidgetId,
+          dashboardId: this.dashboard!.id,
+          name: duplicateData.name,
+          type: duplicateData.widgetType,
+          sqlQuery: duplicateData.sqlQuery,
+          config: duplicateData.config,
+          position: {
+            x: duplicateData.positionX,
+            y: duplicateData.positionY,
+            cols: duplicateData.cols,
+            rows: duplicateData.rows
+          },
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        this.widgets.push(newGridsterItem);
+        this.widgetData.set(newWidgetId, newWidget);
+        
+        console.log('Widget duplicated successfully:', newWidgetId);
+      },
+      error: (err: any) => {
+        console.error('Failed to duplicate widget:', err);
+        alert('Failed to duplicate widget: ' + (err.error?.message || err.message));
+      }
+    });
+  }
+
   // Time Range Methods
   onTimePresetChange(preset: string): void {
     this.selectedTimePreset = preset;

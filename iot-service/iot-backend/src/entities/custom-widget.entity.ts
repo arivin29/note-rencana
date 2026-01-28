@@ -21,6 +21,9 @@ export type WidgetType =
   | 'table'             // Tabular data
   | 'heatmap';          // 2D heatmap visualization
 
+// Data source type for widget queries
+export type WidgetDataSource = 'postgresql' | 'clickhouse';
+
 // Widget configuration interfaces
 export interface WidgetFieldMapping {
   xField: string;
@@ -115,6 +118,10 @@ export class CustomWidget {
   // SQL Query
   @Column({ type: 'text', name: 'sql_query', nullable: false })
   sqlQuery: string;
+
+  // Data source for query execution
+  @Column({ type: 'varchar', length: 20, name: 'data_source', default: 'postgresql' })
+  dataSource: WidgetDataSource;
 
   // Complete configuration as JSONB
   @Column({ type: 'jsonb', default: {} })

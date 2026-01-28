@@ -24,6 +24,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   @Output() delete = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
   @Output() toggleFullscreen = new EventEmitter<void>();
+  @Output() duplicate = new EventEmitter<void>();
 
   loading = true;
   error: string | null = null;

@@ -16,6 +16,11 @@ export interface CreateWidgetDto {
 };
 
   /**
+   * Data source for query execution
+   */
+  dataSource?: 'postgresql' | 'clickhouse';
+
+  /**
    * Widget name
    */
   name: string;
