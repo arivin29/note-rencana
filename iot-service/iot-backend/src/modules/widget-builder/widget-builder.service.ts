@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { CustomDashboard } from '../../entities/custom-dashboard.entity';
 import { CustomWidget } from '../../entities/custom-widget.entity';
 import { WidgetQueryTemplate } from '../../entities/widget-query-template.entity';
+import { ClickhouseService } from '../clickhouse/clickhouse.service';
 import { 
   CreateCustomDashboardDto, 
   UpdateCustomDashboardDto,
@@ -13,7 +14,8 @@ import {
   ExecuteQueryDto,
   ValidateQueryDto,
   ExecuteQueryResponseDto,
-  ValidateQueryResponseDto
+  ValidateQueryResponseDto,
+  DataSource as DataSourceEnum
 } from './dto';
 
 // Blocked SQL keywords for security
@@ -37,8 +39,23 @@ const TIME_RANGE_MAP: Record<string, string> = {
   '30d': '30 days'
 };
 
+// ClickHouse time range mapping (uses INTERVAL syntax)
+const CLICKHOUSE_TIME_RANGE_MAP: Record<string, string> = {
+  '15m': '15 MINUTE',
+  '30m': '30 MINUTE',
+  '1h': '1 HOUR',
+  '3h': '3 HOUR',
+  '6h': '6 HOUR',
+  '12h': '12 HOUR',
+  '24h': '24 HOUR',
+  '7d': '7 DAY',
+  '30d': '30 DAY'
+};
+
 @Injectable()
 export class WidgetBuilderService {
+  private readonly logger = new Logger(WidgetBuilderService.name);
+
   constructor(
     @InjectRepository(CustomDashboard)
     private dashboardRepository: Repository<CustomDashboard>,
@@ -47,6 +64,7 @@ export class WidgetBuilderService {
     @InjectRepository(WidgetQueryTemplate)
     private templateRepository: Repository<WidgetQueryTemplate>,
     private dataSource: DataSource,
+    private clickhouseService: ClickhouseService,
   ) {}
 
   // ==========================================
@@ -270,12 +288,37 @@ export class WidgetBuilderService {
       throw new BadRequestException(`Invalid SQL: ${validation.error}`);
     }
 
-    // Replace time range variables
+    // Determine data source (default: PostgreSQL)
+    const dataSourceType = dto.dataSource || DataSourceEnum.POSTGRESQL;
+    
+    // Check if ClickHouse is requested but not available
+    if (dataSourceType === DataSourceEnum.CLICKHOUSE && !this.clickhouseService.isAvailable()) {
+      throw new BadRequestException('ClickHouse is not available. Please use PostgreSQL or enable ClickHouse.');
+    }
+
+    // Prepare SQL with variable replacements
+    const sql = this.prepareQuery(dto, ownerId, dataSourceType);
+
+    this.logger.debug(`Executing query on ${dataSourceType}: ${sql.substring(0, 200)}...`);
+
+    // Route to appropriate data source
+    if (dataSourceType === DataSourceEnum.CLICKHOUSE) {
+      return this.executeClickHouseQuery(sql);
+    } else {
+      return this.executePostgreSQLQuery(sql);
+    }
+  }
+
+  /**
+   * Prepare SQL query with variable replacements
+   */
+  private prepareQuery(dto: ExecuteQueryDto, ownerId: string | null, dataSourceType: DataSourceEnum): string {
     let sql = dto.sql;
+    const isClickHouse = dataSourceType === DataSourceEnum.CLICKHOUSE;
     
     // Priority: Use epoch timestamps (from/to) if provided, otherwise use preset
     if (dto.from && dto.to) {
-      // Convert epoch milliseconds to ISO timestamp strings
+      // Convert epoch milliseconds to appropriate format
       const fromDate = new Date(dto.from).toISOString();
       const toDate = new Date(dto.to).toISOString();
       
@@ -283,23 +326,39 @@ export class WidgetBuilderService {
       sql = sql.replace(/\$\{fromTime\}/g, fromDate);
       sql = sql.replace(/\$\{toTime\}/g, toDate);
       
-      // Also calculate interval for ${timeRange} placeholder (for backward compatibility)
+      // Calculate interval for ${timeRange} placeholder
       const durationMs = dto.to - dto.from;
       const durationHours = durationMs / (60 * 60 * 1000);
       let intervalStr: string;
-      if (durationHours <= 1) {
-        intervalStr = `${Math.round(durationMs / (60 * 1000))} minutes`;
-      } else if (durationHours <= 24) {
-        intervalStr = `${Math.round(durationHours)} hours`;
+      
+      if (isClickHouse) {
+        // ClickHouse INTERVAL syntax
+        if (durationHours <= 1) {
+          intervalStr = `${Math.round(durationMs / (60 * 1000))} MINUTE`;
+        } else if (durationHours <= 24) {
+          intervalStr = `${Math.round(durationHours)} HOUR`;
+        } else {
+          intervalStr = `${Math.round(durationHours / 24)} DAY`;
+        }
       } else {
-        intervalStr = `${Math.round(durationHours / 24)} days`;
+        // PostgreSQL interval syntax
+        if (durationHours <= 1) {
+          intervalStr = `${Math.round(durationMs / (60 * 1000))} minutes`;
+        } else if (durationHours <= 24) {
+          intervalStr = `${Math.round(durationHours)} hours`;
+        } else {
+          intervalStr = `${Math.round(durationHours / 24)} days`;
+        }
       }
       sql = sql.replace(/\$\{timeRange\}/g, intervalStr);
-    } else if (dto.timeRange && TIME_RANGE_MAP[dto.timeRange]) {
+    } else if (dto.timeRange) {
       // Legacy: Use preset time range
-      sql = sql.replace(/\$\{timeRange\}/g, TIME_RANGE_MAP[dto.timeRange]);
+      const timeRangeMap = isClickHouse ? CLICKHOUSE_TIME_RANGE_MAP : TIME_RANGE_MAP;
+      if (timeRangeMap[dto.timeRange]) {
+        sql = sql.replace(/\$\{timeRange\}/g, timeRangeMap[dto.timeRange]);
+      }
       
-      // Also set fromTime/toTime based on preset (for queries that use absolute time)
+      // Also set fromTime/toTime based on preset
       const duration = this.getTimeRangeDuration(dto.timeRange);
       if (duration) {
         const now = new Date();
@@ -311,17 +370,12 @@ export class WidgetBuilderService {
     }
 
     // Replace owner ID variable
-    // For admin users (no ownerId), we need to handle this specially
     if (ownerId) {
       sql = sql.replace(/\$\{ownerId\}/g, ownerId);
     } else {
-      // Admin user - remove owner filter or use a pattern that selects all
-      // Option 1: Replace with a condition that's always true for UUID columns
-      // This handles WHERE id_owner = '${ownerId}' case
+      // Admin user - remove owner filter
       sql = sql.replace(/id_owner\s*=\s*'\$\{ownerId\}'/gi, '1=1');
-      // Also handle IN (SELECT ... WHERE id_owner = '${ownerId}')
       sql = sql.replace(/WHERE\s+id_owner\s*=\s*'\$\{ownerId\}'/gi, 'WHERE 1=1');
-      // Clean up any remaining ${ownerId} placeholders
       sql = sql.replace(/'\$\{ownerId\}'/g, "'00000000-0000-0000-0000-000000000000'");
     }
 
@@ -333,21 +387,25 @@ export class WidgetBuilderService {
       }
     }
 
+    return sql;
+  }
+
+  /**
+   * Execute query on PostgreSQL
+   */
+  private async executePostgreSQLQuery(sql: string): Promise<ExecuteQueryResponseDto> {
     const startTime = Date.now();
 
     try {
       // Set timeout first
       await this.dataSource.query('SET statement_timeout = 30000');
       
-      // Then execute the actual query
+      // Execute the query
       const result = await this.dataSource.query(sql);
-
       const executionTime = Date.now() - startTime;
 
       // Handle both array and non-array results
       const rows = Array.isArray(result) ? result : [];
-      
-      // Get columns from first row
       const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
 
       return {
@@ -357,7 +415,25 @@ export class WidgetBuilderService {
         executionTime
       };
     } catch (error) {
-      throw new BadRequestException(`Query execution failed: ${error.message}`);
+      throw new BadRequestException(`PostgreSQL query failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Execute query on ClickHouse
+   */
+  private async executeClickHouseQuery(sql: string): Promise<ExecuteQueryResponseDto> {
+    try {
+      const result = await this.clickhouseService.executeQuery(sql);
+      
+      return {
+        columns: result.columns,
+        rows: result.rows,
+        rowCount: result.rowCount,
+        executionTime: result.executionTime
+      };
+    } catch (error) {
+      throw new BadRequestException(`ClickHouse query failed: ${error.message}`);
     }
   }
 

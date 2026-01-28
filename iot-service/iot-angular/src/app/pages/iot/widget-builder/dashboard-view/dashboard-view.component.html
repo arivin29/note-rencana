@@ -290,7 +290,8 @@
             <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
                 [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
                 (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
-                (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])">
+                (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
+                (duplicate)="duplicateWidget(item['id'])">
             </app-widget-container>
         </gridster-item>
     </gridster>

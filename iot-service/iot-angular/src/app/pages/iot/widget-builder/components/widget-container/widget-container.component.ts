@@ -24,6 +24,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   @Output() delete = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
   @Output() toggleFullscreen = new EventEmitter<void>();
+  @Output() duplicate = new EventEmitter<void>();
 
   loading = true;
   error: string | null = null;
@@ -65,9 +66,13 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
       return;
     }
 
+    // Get data source from widget config (default: postgresql)
+    const dataSource = this.widget.config?.dataSource || 'postgresql';
+
     // Build request body with epoch timestamps if available
     const requestBody: any = {
       sql: sqlQuery,
+      dataSource: dataSource,
       variables: {}
     };
 

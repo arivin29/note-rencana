@@ -16,6 +16,11 @@ export interface UpdateWidgetDto {
 };
 
   /**
+   * Data source for query execution
+   */
+  dataSource?: 'postgresql' | 'clickhouse';
+
+  /**
    * Active status
    */
   isActive?: boolean;

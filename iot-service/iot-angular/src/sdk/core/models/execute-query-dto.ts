@@ -5,6 +5,11 @@
 export interface ExecuteQueryDto {
 
   /**
+   * Data source to query
+   */
+  dataSource?: 'postgresql' | 'clickhouse';
+
+  /**
    * Start time as epoch milliseconds
    */
   from?: number;
