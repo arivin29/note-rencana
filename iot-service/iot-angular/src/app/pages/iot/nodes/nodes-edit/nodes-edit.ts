@@ -17,9 +17,12 @@ import {
 
 // Form interface matching CreateNodeDto/UpdateNodeDto fields
 interface NodeForm {
+  // Basic Info
   idProject: string;
   idNodeModel: string;
   code: string;
+  name: string;
+  description: string;
   serialNumber: string;
   installDate: string;
   devEui: string;
@@ -28,6 +31,31 @@ interface NodeForm {
   batteryType: string;
   telemetryIntervalSec: number;
   connectivityStatus: string;
+  // Location
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+  elevationM: number | null;
+  // Status & Maintenance
+  status: string;
+  commissionedAt: string;
+  lastMaintenanceAt: string;
+  nextMaintenanceAt: string;
+  // Environment
+  installationType: string;
+  enclosureRating: string;
+  powerSource: string;
+  // PIC
+  picName: string;
+  picPhone: string;
+  picEmail: string;
+  // Notes & Tags
+  notes: string;
+  tags: string[];
 }
 
 @Component({
@@ -51,14 +79,26 @@ export class NodesEditPage implements OnInit, OnDestroy {
   // Static options
   batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains', 'Solar'];
   connectivityStatuses = ['online', 'offline', 'unknown'];
+  nodeStatuses = ['active', 'inactive', 'maintenance', 'decommissioned'];
+  installationTypes = ['outdoor', 'indoor', 'underground', 'submerged'];
+  enclosureRatings = ['IP54', 'IP65', 'IP67', 'IP68'];
+  powerSources = ['solar', 'grid', 'battery', 'hybrid'];
+  provinces = [
+    'DKI Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur', 'Banten',
+    'Bali', 'Sumatera Utara', 'Sumatera Barat', 'Sumatera Selatan',
+    'Kalimantan Timur', 'Kalimantan Selatan', 'Sulawesi Selatan', 'Papua'
+  ];
 
   currentNodeId = '';
   isEditMode = false;
+  tagsInput = '';
 
   form: NodeForm = {
     idProject: '',
     idNodeModel: '',
     code: '',
+    name: '',
+    description: '',
     serialNumber: '',
     installDate: '',
     devEui: '',
@@ -66,7 +106,32 @@ export class NodesEditPage implements OnInit, OnDestroy {
     firmwareVersion: '',
     batteryType: this.batteryTypes[0],
     telemetryIntervalSec: 120,
-    connectivityStatus: 'unknown'
+    connectivityStatus: 'unknown',
+    // Location
+    address: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    country: 'Indonesia',
+    latitude: null,
+    longitude: null,
+    elevationM: null,
+    // Status & Maintenance
+    status: 'active',
+    commissionedAt: '',
+    lastMaintenanceAt: '',
+    nextMaintenanceAt: '',
+    // Environment
+    installationType: '',
+    enclosureRating: '',
+    powerSource: '',
+    // PIC
+    picName: '',
+    picPhone: '',
+    picEmail: '',
+    // Notes & Tags
+    notes: '',
+    tags: []
   };
 
   constructor(
@@ -153,21 +218,55 @@ export class NodesEditPage implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (node: NodeResponseDto) => {
-        // Map node data to form - only fields that exist in DTO
+        // Helper to format date for input
+        const formatDate = (date: any): string => {
+          if (!date) return '';
+          return typeof date === 'string' ? date.substring(0, 10) : new Date(date).toISOString().substring(0, 10);
+        };
+
+        // Map node data to form
         this.form = {
           idProject: node.idProject || '',
           idNodeModel: node.idNodeModel || '',
           code: node.code || '',
+          name: node.name || '',
+          description: node.description || '',
           serialNumber: node.serialNumber || '',
-          installDate: node.installDate ? node.installDate.substring(0, 10) : '',
+          installDate: formatDate(node.installDate),
           devEui: node.devEui || '',
           ipAddress: node.ipAddress || '',
           firmwareVersion: node.firmwareVersion || '',
           batteryType: node.batteryType || this.batteryTypes[0],
           telemetryIntervalSec: node.telemetryIntervalSec || 120,
-          connectivityStatus: node.connectivityStatus || 'unknown'
+          connectivityStatus: node.connectivityStatus || 'unknown',
+          // Location
+          address: node.address || '',
+          city: node.city || '',
+          province: node.province || '',
+          postalCode: node.postalCode || '',
+          country: node.country || 'Indonesia',
+          latitude: node.latitude ?? null,
+          longitude: node.longitude ?? null,
+          elevationM: node.elevationM ?? null,
+          // Status & Maintenance
+          status: node.status || 'active',
+          commissionedAt: formatDate(node.commissionedAt),
+          lastMaintenanceAt: formatDate(node.lastMaintenanceAt),
+          nextMaintenanceAt: formatDate(node.nextMaintenanceAt),
+          // Environment
+          installationType: node.installationType || '',
+          enclosureRating: node.enclosureRating || '',
+          powerSource: node.powerSource || '',
+          // PIC
+          picName: node.picName || '',
+          picPhone: node.picPhone || '',
+          picEmail: node.picEmail || '',
+          // Notes & Tags
+          notes: node.notes || '',
+          tags: node.tags || []
         };
 
+        this.tagsInput = this.form.tags.join(', ');
         this.loading = false;
       },
       error: (err) => {
@@ -198,11 +297,20 @@ export class NodesEditPage implements OnInit, OnDestroy {
     return model ? model.vendor + ' – ' + model.modelName : '';
   }
 
-  get payloadPreview(): CreateNodeDto | UpdateNodeDto {
+  // Parse tags from comma-separated string
+  onTagsChange(value: string): void {
+    this.tagsInput = value;
+    this.form.tags = value.split(',').map(t => t.trim()).filter(t => t.length > 0);
+  }
+
+  // Build DTO from form
+  private buildNodeDto(): CreateNodeDto {
     return {
       idProject: this.form.idProject,
       idNodeModel: this.form.idNodeModel,
       code: this.form.code,
+      name: this.form.name || undefined,
+      description: this.form.description || undefined,
       serialNumber: this.form.serialNumber || undefined,
       installDate: this.form.installDate || undefined,
       devEui: this.form.devEui || undefined,
@@ -210,8 +318,37 @@ export class NodesEditPage implements OnInit, OnDestroy {
       firmwareVersion: this.form.firmwareVersion || undefined,
       batteryType: this.form.batteryType || undefined,
       telemetryIntervalSec: this.form.telemetryIntervalSec,
-      connectivityStatus: this.form.connectivityStatus || undefined
+      connectivityStatus: this.form.connectivityStatus || undefined,
+      // Location
+      address: this.form.address || undefined,
+      city: this.form.city || undefined,
+      province: this.form.province || undefined,
+      postalCode: this.form.postalCode || undefined,
+      country: this.form.country || undefined,
+      latitude: this.form.latitude ?? undefined,
+      longitude: this.form.longitude ?? undefined,
+      elevationM: this.form.elevationM ?? undefined,
+      // Status & Maintenance
+      status: this.form.status || undefined,
+      commissionedAt: this.form.commissionedAt || undefined,
+      lastMaintenanceAt: this.form.lastMaintenanceAt || undefined,
+      nextMaintenanceAt: this.form.nextMaintenanceAt || undefined,
+      // Environment
+      installationType: this.form.installationType || undefined,
+      enclosureRating: this.form.enclosureRating || undefined,
+      powerSource: this.form.powerSource || undefined,
+      // PIC
+      picName: this.form.picName || undefined,
+      picPhone: this.form.picPhone || undefined,
+      picEmail: this.form.picEmail || undefined,
+      // Notes & Tags
+      notes: this.form.notes || undefined,
+      tags: this.form.tags.length > 0 ? this.form.tags : undefined
     };
+  }
+
+  get payloadPreview(): CreateNodeDto | UpdateNodeDto {
+    return this.buildNodeDto();
   }
 
   saveNode(): void {
@@ -232,25 +369,13 @@ export class NodesEditPage implements OnInit, OnDestroy {
     this.saving = true;
     this.error = null;
 
+    const nodeData = this.buildNodeDto();
+
     if (this.isEditMode && this.currentNodeId) {
       // Update existing node
-      const updateData: UpdateNodeDto = {
-        idProject: this.form.idProject,
-        idNodeModel: this.form.idNodeModel,
-        code: this.form.code,
-        serialNumber: this.form.serialNumber || undefined,
-        installDate: this.form.installDate || undefined,
-        devEui: this.form.devEui || undefined,
-        ipAddress: this.form.ipAddress || undefined,
-        firmwareVersion: this.form.firmwareVersion || undefined,
-        batteryType: this.form.batteryType || undefined,
-        telemetryIntervalSec: this.form.telemetryIntervalSec,
-        connectivityStatus: this.form.connectivityStatus || undefined
-      };
-
       this.nodesService.nodesControllerUpdate({
         id: this.currentNodeId,
-        body: updateData
+        body: nodeData as UpdateNodeDto
       }).pipe(
         takeUntil(this.destroy$)
       ).subscribe({
@@ -267,21 +392,8 @@ export class NodesEditPage implements OnInit, OnDestroy {
       });
     } else {
       // Create new node
-      const createData: CreateNodeDto = {
-        idProject: this.form.idProject,
-        idNodeModel: this.form.idNodeModel,
-        code: this.form.code,
-        serialNumber: this.form.serialNumber || undefined,
-        installDate: this.form.installDate || undefined,
-        devEui: this.form.devEui || undefined,
-        ipAddress: this.form.ipAddress || undefined,
-        firmwareVersion: this.form.firmwareVersion || undefined,
-        batteryType: this.form.batteryType || undefined,
-        telemetryIntervalSec: this.form.telemetryIntervalSec
-      };
-
       this.nodesService.nodesControllerCreate({
-        body: createData
+        body: nodeData
       }).pipe(
         takeUntil(this.destroy$)
       ).subscribe({

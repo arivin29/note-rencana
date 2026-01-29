@@ -52,6 +52,8 @@ export class PairingWorkspacePage implements OnInit {
         newNode: {
             nodeModelId: '',
             code: '',
+            name: '',
+            description: '',
             serialNumber: '',
             devEui: '',
             ipAddress: '',
@@ -59,10 +61,26 @@ export class PairingWorkspacePage implements OnInit {
             batteryType: 'Li-SOCl2',
             telemetryMode: 'push',
             telemetryIntervalSec: 120,
-            locationType: 'manual',
+            // Location
+            address: '',
+            city: '',
+            province: '',
+            postalCode: '',
+            country: 'Indonesia',
             latitude: '',
             longitude: '',
-            address: ''
+            elevationM: '',
+            // Status & Environment
+            status: 'active',
+            installationType: '',
+            enclosureRating: '',
+            powerSource: '',
+            // PIC
+            picName: '',
+            picPhone: '',
+            picEmail: '',
+            // Notes
+            notes: ''
         }
     };
 
@@ -117,6 +135,8 @@ export class PairingWorkspacePage implements OnInit {
         this.nodeConfig.newNode = {
             nodeModelId: typeof idNodeModel === 'string' ? idNodeModel : '',
             code: this.unpairedDevice.hardwareId || '',
+            name: '',
+            description: '',
             serialNumber: this.unpairedDevice.hardwareId || '',
             devEui: this.unpairedDevice.hardwareId || '',
             ipAddress: '',
@@ -124,10 +144,26 @@ export class PairingWorkspacePage implements OnInit {
             batteryType: 'Li-SOCl2',
             telemetryMode: 'push',
             telemetryIntervalSec: 120,
-            locationType: 'manual',
+            // Location
+            address: '',
+            city: '',
+            province: '',
+            postalCode: '',
+            country: 'Indonesia',
             latitude: '',
             longitude: '',
-            address: ''
+            elevationM: '',
+            // Status & Environment
+            status: 'active',
+            installationType: '',
+            enclosureRating: '',
+            powerSource: '',
+            // PIC
+            picName: '',
+            picPhone: '',
+            picEmail: '',
+            // Notes
+            notes: ''
         };
     }
 

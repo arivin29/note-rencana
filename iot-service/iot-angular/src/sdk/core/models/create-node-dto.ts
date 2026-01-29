@@ -5,9 +5,19 @@
 export interface CreateNodeDto {
 
   /**
+   * Full address
+   */
+  address?: string;
+
+  /**
    * Battery type
    */
   batteryType?: string;
+
+  /**
+   * City
+   */
+  city?: string;
 
   /**
    * Node code/identifier (unique within project)
@@ -15,9 +25,24 @@ export interface CreateNodeDto {
   code: string;
 
   /**
+   * Commissioning date
+   */
+  commissionedAt?: string;
+
+  /**
    * Connectivity status
    */
   connectivityStatus?: string;
+
+  /**
+   * Country
+   */
+  country?: string;
+
+  /**
+   * Description of the node
+   */
+  description?: string;
 
   /**
    * Device EUI for LoRaWAN
@@ -25,14 +50,19 @@ export interface CreateNodeDto {
   devEui?: string;
 
   /**
+   * Elevation in meters
+   */
+  elevationM?: number;
+
+  /**
+   * Enclosure rating: IP65, IP67, IP68
+   */
+  enclosureRating?: string;
+
+  /**
    * Firmware version
    */
   firmwareVersion?: string;
-
-  /**
-   * Current location ID
-   */
-  idCurrentLocation?: string;
 
   /**
    * Node Model ID
@@ -55,14 +85,89 @@ export interface CreateNodeDto {
   installDate?: string;
 
   /**
+   * Installation type: outdoor, indoor, underground, submerged
+   */
+  installationType?: string;
+
+  /**
    * IP address
    */
   ipAddress?: string;
 
   /**
+   * Last maintenance date
+   */
+  lastMaintenanceAt?: string;
+
+  /**
+   * GPS Latitude
+   */
+  latitude?: number;
+
+  /**
+   * GPS Longitude
+   */
+  longitude?: number;
+
+  /**
+   * Friendly name for the node
+   */
+  name?: string;
+
+  /**
+   * Next scheduled maintenance date
+   */
+  nextMaintenanceAt?: string;
+
+  /**
+   * Additional notes
+   */
+  notes?: string;
+
+  /**
+   * PIC email
+   */
+  picEmail?: string;
+
+  /**
+   * PIC name
+   */
+  picName?: string;
+
+  /**
+   * PIC phone number
+   */
+  picPhone?: string;
+
+  /**
+   * Postal code
+   */
+  postalCode?: string;
+
+  /**
+   * Power source: solar, grid, battery, hybrid
+   */
+  powerSource?: string;
+
+  /**
+   * Province/State
+   */
+  province?: string;
+
+  /**
    * Serial number
    */
   serialNumber?: string;
+
+  /**
+   * Status: active, inactive, maintenance, decommissioned
+   */
+  status?: string;
+
+  /**
+   * Tags for categorization
+   */
+  tags?: Array<string>;
 
   /**
    * Telemetry interval in seconds

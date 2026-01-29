@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../iot-angular"
+		},
+		{
+			"path": "../iot-backend"
+		},
+		{
+			"path": "../desain_widget_dinamis"
+		}
+	],
+    "settings": {}
+}

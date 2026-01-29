@@ -7,17 +7,16 @@
     </ul>
     <h1 class="page-header mb-0">
       {{ isEditMode ? 'Edit Node' : 'Create Node' }} 
-      <span *ngIf="currentNodeId" class="text-theme">{{ currentNodeId }}</span>
+      <span *ngIf="form.name" class="text-theme">{{ form.name }}</span>
+      <span *ngIf="!form.name && currentNodeId" class="text-muted small">{{ currentNodeId }}</span>
     </h1>
   </div>
   <div class="ms-auto">
     <a *ngIf="isEditMode && currentNodeId" [routerLink]="['/iot/nodes', currentNodeId]" class="btn btn-outline-default me-2">
-      <i class="fa fa-eye fa-fw me-1"></i>
-      View Detail
+      <i class="fa fa-eye fa-fw me-1"></i>View Detail
     </a>
     <button class="btn btn-outline-secondary me-2" (click)="cancel()">
-      <i class="fa fa-arrow-left fa-fw me-1"></i>
-      Cancel
+      <i class="fa fa-arrow-left fa-fw me-1"></i>Cancel
     </button>
     <button class="btn btn-theme" (click)="saveNode()" [disabled]="loading || saving">
       <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
@@ -27,27 +26,23 @@
   </div>
 </div>
 
-<!-- Loading State -->
 <div *ngIf="loading" class="text-center py-5">
-  <div class="spinner-border text-theme" role="status">
-    <span class="visually-hidden">Loading...</span>
-  </div>
+  <div class="spinner-border text-theme" role="status"><span class="visually-hidden">Loading...</span></div>
   <p class="text-muted mt-3">Loading form data...</p>
 </div>
 
-<!-- Error State -->
 <div *ngIf="error && !loading" class="alert alert-danger">
-  <i class="fa fa-exclamation-triangle me-2"></i>
-  {{ error }}
+  <i class="fa fa-exclamation-triangle me-2"></i>{{ error }}
 </div>
 
 <div class="row" *ngIf="!loading">
   <div class="col-xl-9">
-    <!-- Project & Node Model Selection -->
-    <card id="sectionProject" class="border-0 shadow-sm mb-4">
+    
+    <!-- Section 1: Basic Info -->
+    <card id="sectionBasic" class="border-0 shadow-sm mb-4">
       <div class="card-header border-0 bg-transparent">
-        <div class="card-title mb-0">Project & Node Model</div>
-        <div class="text-muted small">Pilih project dan model node yang sesuai.</div>
+        <div class="card-title mb-0"><i class="fa fa-microchip text-theme me-2"></i>Basic Information</div>
+        <div class="text-muted small">Informasi dasar node dan identifikasi.</div>
       </div>
       <div class="card-body">
         <div class="row g-3">
@@ -62,62 +57,220 @@
             <label class="form-label text-uppercase small text-muted">Node Model <span class="text-danger">*</span></label>
             <select class="form-select" [ngModel]="form.idNodeModel" (ngModelChange)="onNodeModelChange($event)">
               <option value="">-- Select Node Model --</option>
-              <option *ngFor="let model of nodeModels" [value]="model.idNodeModel">
-                {{ model.vendor }} – {{ model.modelName }}
-              </option>
+              <option *ngFor="let model of nodeModels" [value]="model.idNodeModel">{{ model.vendor }} – {{ model.modelName }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Node Code <span class="text-danger">*</span></label>
+            <input class="form-control" [(ngModel)]="form.code" placeholder="e.g. HELIO-350544503213269">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Node Name</label>
+            <input class="form-control" [(ngModel)]="form.name" placeholder="e.g. Panel DMA-01 Cikini">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="form.description" placeholder="Brief description..."></textarea>
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <!-- Section 2: Hardware & Connectivity -->
+    <card id="sectionHardware" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0"><i class="fa fa-cog text-theme me-2"></i>Hardware & Connectivity</div>
+        <div class="text-muted small">Detail teknis hardware dan koneksi.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Serial Number</label>
+            <input class="form-control" [(ngModel)]="form.serialNumber" placeholder="SN-2024-001">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">DevEUI</label>
+            <input class="form-control" [(ngModel)]="form.devEui" placeholder="A84041B6C1D2E3F4">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">IP Address</label>
+            <input class="form-control" [(ngModel)]="form.ipAddress" placeholder="192.168.1.100">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Firmware Version</label>
+            <input class="form-control" [(ngModel)]="form.firmwareVersion" placeholder="v1.3.2">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Battery Type</label>
+            <select class="form-select" [(ngModel)]="form.batteryType">
+              <option value="">-- Select --</option>
+              <option *ngFor="let type of batteryTypes" [value]="type">{{ type }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Telemetry Interval (sec)</label>
+            <input type="number" class="form-control" min="30" step="30" [(ngModel)]="form.telemetryIntervalSec">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Connectivity Status</label>
+            <select class="form-select" [(ngModel)]="form.connectivityStatus">
+              <option *ngFor="let status of connectivityStatuses" [value]="status">{{ status | titlecase }}</option>
             </select>
           </div>
         </div>
       </div>
     </card>
 
-    <!-- Node Identity & Telemetry -->
-    <card id="sectionIdentity" class="border-0 shadow-sm mb-4">
+    <!-- Section 3: Location -->
+    <card id="sectionLocation" class="border-0 shadow-sm mb-4">
       <div class="card-header border-0 bg-transparent">
-        <div class="card-title mb-0">Node Identity & Telemetry</div>
-        <div class="text-muted small">Pastikan metadata sesuai hardware terbaru.</div>
+        <div class="card-title mb-0"><i class="fa fa-map-marker-alt text-theme me-2"></i>Location</div>
+        <div class="text-muted small">Lokasi fisik pemasangan node.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Address</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="form.address" placeholder="Full address..."></textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">City</label>
+            <input class="form-control" [(ngModel)]="form.city" placeholder="Jakarta Pusat">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Province</label>
+            <select class="form-select" [(ngModel)]="form.province">
+              <option value="">-- Select Province --</option>
+              <option *ngFor="let prov of provinces" [value]="prov">{{ prov }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Postal Code</label>
+            <input class="form-control" [(ngModel)]="form.postalCode" placeholder="10110">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Latitude</label>
+            <input type="number" class="form-control" step="0.00000001" [(ngModel)]="form.latitude" placeholder="-6.20876543">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Longitude</label>
+            <input type="number" class="form-control" step="0.00000001" [(ngModel)]="form.longitude" placeholder="106.84567890">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Elevation (m)</label>
+            <input type="number" class="form-control" step="0.01" [(ngModel)]="form.elevationM" placeholder="25.5">
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <!-- Section 4: Environment & Installation -->
+    <card id="sectionEnvironment" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0"><i class="fa fa-cloud-sun text-theme me-2"></i>Environment & Installation</div>
+        <div class="text-muted small">Kondisi lingkungan dan tipe instalasi.</div>
       </div>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label">Node Code <span class="text-danger">*</span></label>
-            <input class="form-control" [(ngModel)]="form.code" [ngModelOptions]="{standalone: true}" placeholder="e.g. HELIO-350544503213269">
+            <label class="form-label">Installation Type</label>
+            <select class="form-select" [(ngModel)]="form.installationType">
+              <option value="">-- Select --</option>
+              <option *ngFor="let type of installationTypes" [value]="type">{{ type | titlecase }}</option>
+            </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label">Serial Number</label>
-            <input class="form-control" [(ngModel)]="form.serialNumber" [ngModelOptions]="{standalone: true}" placeholder="e.g. SN-2024-001">
+            <label class="form-label">Enclosure Rating</label>
+            <select class="form-select" [(ngModel)]="form.enclosureRating">
+              <option value="">-- Select --</option>
+              <option *ngFor="let rating of enclosureRatings" [value]="rating">{{ rating }}</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Power Source</label>
+            <select class="form-select" [(ngModel)]="form.powerSource">
+              <option value="">-- Select --</option>
+              <option *ngFor="let source of powerSources" [value]="source">{{ source | titlecase }}</option>
+            </select>
           </div>
           <div class="col-md-4">
             <label class="form-label">Install Date</label>
-            <input type="date" class="form-control" [(ngModel)]="form.installDate" [ngModelOptions]="{standalone: true}">
+            <input type="date" class="form-control" [(ngModel)]="form.installDate">
           </div>
           <div class="col-md-4">
-            <label class="form-label">DevEUI</label>
-            <input class="form-control" [(ngModel)]="form.devEui" [ngModelOptions]="{standalone: true}" placeholder="e.g. A84041B6C1D2E3F4">
+            <label class="form-label">Commissioned At</label>
+            <input type="date" class="form-control" [(ngModel)]="form.commissionedAt">
           </div>
           <div class="col-md-4">
-            <label class="form-label">IP Address</label>
-            <input class="form-control" [(ngModel)]="form.ipAddress" [ngModelOptions]="{standalone: true}" placeholder="e.g. 192.168.1.100">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Firmware Version</label>
-            <input class="form-control" [(ngModel)]="form.firmwareVersion" [ngModelOptions]="{standalone: true}" placeholder="e.g. v1.3.2">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Battery Type</label>
-            <select class="form-select" [(ngModel)]="form.batteryType" [ngModelOptions]="{standalone: true}">
-              <option *ngFor="let type of batteryTypes" [value]="type">{{ type }}</option>
+            <label class="form-label">Node Status</label>
+            <select class="form-select" [(ngModel)]="form.status">
+              <option *ngFor="let s of nodeStatuses" [value]="s">{{ s | titlecase }}</option>
             </select>
           </div>
+        </div>
+      </div>
+    </card>
+
+    <!-- Section 5: Maintenance -->
+    <card id="sectionMaintenance" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0"><i class="fa fa-tools text-theme me-2"></i>Maintenance</div>
+        <div class="text-muted small">Jadwal dan histori pemeliharaan.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Last Maintenance</label>
+            <input type="date" class="form-control" [(ngModel)]="form.lastMaintenanceAt">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Next Scheduled Maintenance</label>
+            <input type="date" class="form-control" [(ngModel)]="form.nextMaintenanceAt">
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <!-- Section 6: PIC -->
+    <card id="sectionPIC" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0"><i class="fa fa-user text-theme me-2"></i>Person In Charge (PIC)</div>
+        <div class="text-muted small">Kontak penanggung jawab node.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label">Telemetry Interval (sec)</label>
-            <input type="number" class="form-control" min="30" step="30" [(ngModel)]="form.telemetryIntervalSec" [ngModelOptions]="{standalone: true}">
+            <label class="form-label">PIC Name</label>
+            <input class="form-control" [(ngModel)]="form.picName" placeholder="Budi Santoso">
           </div>
           <div class="col-md-4">
-            <label class="form-label">Connectivity Status</label>
-            <select class="form-select" [(ngModel)]="form.connectivityStatus" [ngModelOptions]="{standalone: true}">
-              <option *ngFor="let status of connectivityStatuses" [value]="status">{{ status | titlecase }}</option>
-            </select>
+            <label class="form-label">PIC Phone</label>
+            <input class="form-control" [(ngModel)]="form.picPhone" placeholder="08123456789">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">PIC Email</label>
+            <input type="email" class="form-control" [(ngModel)]="form.picEmail" placeholder="budi@example.com">
+          </div>
+        </div>
+      </div>
+    </card>
+
+    <!-- Section 7: Notes & Tags -->
+    <card id="sectionNotes" class="border-0 shadow-sm mb-4">
+      <div class="card-header border-0 bg-transparent">
+        <div class="card-title mb-0"><i class="fa fa-sticky-note text-theme me-2"></i>Notes & Tags</div>
+        <div class="text-muted small">Catatan tambahan dan kategorisasi.</div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="form.notes" placeholder="Additional notes..."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Tags</label>
+            <input class="form-control" [ngModel]="tagsInput" (ngModelChange)="onTagsChange($event)" placeholder="Comma-separated: DMA, Zone-A, Priority">
+            <small class="text-muted">Separate multiple tags with commas</small>
           </div>
         </div>
       </div>
@@ -126,11 +279,11 @@
     <!-- Payload Preview -->
     <card id="sectionPreview" class="border-0 shadow-sm">
       <div class="card-header border-0 bg-transparent">
-        <div class="card-title mb-0">Preview Payload</div>
+        <div class="card-title mb-0"><i class="fa fa-code text-theme me-2"></i>Payload Preview</div>
         <div class="text-muted small">Pratinjau request yang dikirim ke API.</div>
       </div>
       <div class="card-body">
-        <pre class="bg-dark text-white rounded-3 p-3 small mb-0">{{ payloadPreview | json }}</pre>
+        <pre class="bg-dark text-white rounded-3 p-3 small mb-0" style="max-height: 300px; overflow-y: auto;">{{ payloadPreview | json }}</pre>
       </div>
     </card>
   </div>
@@ -138,9 +291,14 @@
   <div class="col-xl-3">
     <div class="sticky-top" style="top: 6rem;">
       <nav-scroll>
-        <a class="nav-link" href="#sectionProject" data-toggle="scroll-to">Project & Node Model</a>
-        <a class="nav-link" href="#sectionIdentity" data-toggle="scroll-to">Identity & Telemetry</a>
-        <a class="nav-link" href="#sectionPreview" data-toggle="scroll-to">Payload Preview</a>
+        <a class="nav-link" href="#sectionBasic" data-toggle="scroll-to">Basic Info</a>
+        <a class="nav-link" href="#sectionHardware" data-toggle="scroll-to">Hardware</a>
+        <a class="nav-link" href="#sectionLocation" data-toggle="scroll-to">Location</a>
+        <a class="nav-link" href="#sectionEnvironment" data-toggle="scroll-to">Environment</a>
+        <a class="nav-link" href="#sectionMaintenance" data-toggle="scroll-to">Maintenance</a>
+        <a class="nav-link" href="#sectionPIC" data-toggle="scroll-to">PIC</a>
+        <a class="nav-link" href="#sectionNotes" data-toggle="scroll-to">Notes & Tags</a>
+        <a class="nav-link" href="#sectionPreview" data-toggle="scroll-to">Payload</a>
       </nav-scroll>
     </div>
   </div>

@@ -72,12 +72,27 @@ export class StepReviewSubmitComponent implements OnInit, OnChanges {
                     mode: newNode.telemetryMode,
                     intervalSec: newNode.telemetryIntervalSec
                 },
-                location: {
-                    type: newNode.locationType,
-                    latitude: newNode.latitude,
-                    longitude: newNode.longitude,
-                    address: newNode.address
-                }
+                // Location fields (now directly on node)
+                name: newNode.name,
+                description: newNode.description,
+                address: newNode.address,
+                city: newNode.city,
+                province: newNode.province,
+                postalCode: newNode.postalCode,
+                country: newNode.country,
+                latitude: newNode.latitude ? parseFloat(newNode.latitude) : undefined,
+                longitude: newNode.longitude ? parseFloat(newNode.longitude) : undefined,
+                elevationM: newNode.elevationM ? parseFloat(newNode.elevationM) : undefined,
+                // Status & Environment
+                status: newNode.status,
+                installationType: newNode.installationType,
+                enclosureRating: newNode.enclosureRating,
+                powerSource: newNode.powerSource,
+                // PIC
+                picName: newNode.picName,
+                picPhone: newNode.picPhone,
+                picEmail: newNode.picEmail,
+                notes: newNode.notes
             };
         }
 

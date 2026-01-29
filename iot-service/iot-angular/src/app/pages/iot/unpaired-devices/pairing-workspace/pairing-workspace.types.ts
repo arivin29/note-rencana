@@ -22,10 +22,13 @@ export interface NodeConfig {
 export interface ExistingNode {
   idNode: string;
   code: string;
+  name?: string;
   serialNumber: string;
   idNodeModel: string;
   connectivityStatus?: string;
   lastSeenAt?: string;
+  city?: string;
+  address?: string;
   nodeModel?: { name?: string };
 }
 
@@ -34,6 +37,8 @@ export interface NewNodeForm {
   projectId?: string;
   nodeModelId: string;
   code: string;
+  name: string;
+  description: string;
   serialNumber: string;
   devEui: string;
   ipAddress: string;
@@ -41,10 +46,26 @@ export interface NewNodeForm {
   batteryType: string;
   telemetryMode: 'push' | 'pull';
   telemetryIntervalSec: number;
-  locationType: 'manual' | 'gps';
+  // Location fields
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
   latitude: string;
   longitude: string;
-  address: string;
+  elevationM: string;
+  // Status & Environment
+  status: string;
+  installationType: string;
+  enclosureRating: string;
+  powerSource: string;
+  // PIC
+  picName: string;
+  picPhone: string;
+  picEmail: string;
+  // Notes
+  notes: string;
 }
 
 export interface NodeModel {

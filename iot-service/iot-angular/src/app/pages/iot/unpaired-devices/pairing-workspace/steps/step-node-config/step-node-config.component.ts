@@ -51,8 +51,16 @@ export class StepNodeConfigComponent implements OnInit {
 
     // Form dropdowns
     telemetryModes: Array<'push' | 'pull'> = ['push', 'pull'];
-    batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains'];
-    locationTypes: Array<'manual' | 'gps'> = ['manual', 'gps'];
+    batteryTypes = ['Li-SOCl2', 'Li-ion', 'AC Mains', 'Solar'];
+    nodeStatuses = ['active', 'inactive', 'maintenance'];
+    installationTypes = ['outdoor', 'indoor', 'underground', 'submerged'];
+    enclosureRatings = ['IP54', 'IP65', 'IP67', 'IP68'];
+    powerSources = ['solar', 'grid', 'battery', 'hybrid'];
+    provinces = [
+        'DKI Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur', 'Banten',
+        'Bali', 'Sumatera Utara', 'Sumatera Barat', 'Sumatera Selatan',
+        'Kalimantan Timur', 'Kalimantan Selatan', 'Sulawesi Selatan', 'Papua'
+    ];
 
     // HELIO device detection
     isHelioDevice = false;
@@ -246,16 +254,38 @@ export class StepNodeConfigComponent implements OnInit {
             return;
         }
 
-        const createNodeDto = {
+        const createNodeDto: any = {
             idProject: formData.projectId,
             idNodeModel: formData.nodeModelId,
             code: formData.code,
+            name: formData.name || undefined,
+            description: formData.description || undefined,
             serialNumber: formData.serialNumber,
             devEui: formData.devEui || undefined,
             ipAddress: formData.ipAddress || undefined,
             firmwareVersion: formData.firmwareVersion || undefined,
             batteryType: formData.batteryType || undefined,
-            telemetryIntervalSec: formData.telemetryIntervalSec
+            telemetryIntervalSec: formData.telemetryIntervalSec,
+            // Location fields
+            address: formData.address || undefined,
+            city: formData.city || undefined,
+            province: formData.province || undefined,
+            postalCode: formData.postalCode || undefined,
+            country: formData.country || 'Indonesia',
+            latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
+            longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
+            elevationM: formData.elevationM ? parseFloat(formData.elevationM) : undefined,
+            // Status & Environment
+            status: formData.status || 'active',
+            installationType: formData.installationType || undefined,
+            enclosureRating: formData.enclosureRating || undefined,
+            powerSource: formData.powerSource || undefined,
+            // PIC
+            picName: formData.picName || undefined,
+            picPhone: formData.picPhone || undefined,
+            picEmail: formData.picEmail || undefined,
+            // Notes
+            notes: formData.notes || undefined
         };
 
         this.nodesService.nodesControllerCreate({

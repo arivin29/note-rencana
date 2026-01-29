@@ -116,9 +116,9 @@
                     <tr>
                         <th class="pt-0 pb-2 w-10px"></th>
                         <th class="pt-0 pb-2">Node</th>
+                        <th class="pt-0 pb-2">Location</th>
                         <th class="pt-0 pb-2">Owner / Project</th>
                         <th class="pt-0 pb-2">Status</th>
-                        <th class="pt-0 pb-2">Firmware</th>
                         <th class="pt-0 pb-2">Telemetry</th>
                         <th class="pt-0 pb-2 text-end">Last Seen</th>
                     </tr>
@@ -140,11 +140,16 @@
                                 <div class="ms-3">
                                     <a [routerLink]="['/iot/nodes', node.idNode]"
                                         class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
-                                        {{ node.code }}
+                                        {{ node.name || node.code }}
                                     </a>
-                                    <div class="text-muted small">SN: {{ node.serialNumber || 'N/A' }}</div>
+                                    <div class="text-muted small">{{ node.code }}</div>
                                 </div>
                             </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold" *ngIf="node.city">{{ node.city }}</div>
+                            <div class="fw-semibold" *ngIf="!node.city">-</div>
+                            <div class="text-muted small" *ngIf="node.address">{{ node.address | slice:0:30 }}{{ node.address && node.address.length > 30 ? '...' : '' }}</div>
                         </td>
                         <td>
                             <div class="fw-semibold">{{ getOwnerName(node) }}</div>
@@ -152,10 +157,7 @@
                         </td>
                         <td>
                             <span [class]="badgeClass(node.connectivityStatus)">{{ node.connectivityStatus | titlecase }}</span>
-                        </td>
-                        <td>
-                            <div class="fw-semibold">{{ node.firmwareVersion || 'N/A' }}</div>
-                            <div class="text-muted small">Firmware</div>
+                            <div class="text-muted small" *ngIf="node.status && node.status !== 'active'">{{ node.status | titlecase }}</div>
                         </td>
                         <td class="text-capitalize">
                             <div class="fw-semibold">{{ getTelemetryMode(node) }}</div>
