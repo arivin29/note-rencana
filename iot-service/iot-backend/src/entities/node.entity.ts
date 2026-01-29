@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { Project } from './project.entity';
 import { NodeModel } from './node-model.entity';
-import { NodeLocation } from './node-location.entity';
 import { NodeProfile } from './node-profile.entity';
 import { Sensor } from './sensor.entity';
 
@@ -27,6 +26,12 @@ export class Node {
 
   @Column({ type: 'text', nullable: false })
   code: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
   @Column({ type: 'text', nullable: true, name: 'serial_number' })
   serialNumber: string;
@@ -55,19 +60,82 @@ export class Node {
   @Column({ type: 'timestamptz', nullable: true, name: 'last_seen_at' })
   lastSeenAt: Date;
 
-  @Column({ type: 'uuid', nullable: true, name: 'id_current_location' })
-  idCurrentLocation: string;
-
   @Column({ type: 'uuid', nullable: true, name: 'id_node_profile' })
   idNodeProfile: string;
 
+  // ========== Location Fields ==========
+  @Column({ type: 'text', nullable: true })
+  address: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  city: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  province: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true, name: 'postal_code' })
+  postalCode: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true, default: 'Indonesia' })
+  country: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitude: number;
+
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitude: number;
+
+  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true, name: 'elevation_m' })
+  elevationM: number;
+
+  // ========== Status & Maintenance ==========
+  @Column({ type: 'varchar', length: 20, nullable: true, default: 'active' })
+  status: string;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'commissioned_at' })
+  commissionedAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'last_maintenance_at' })
+  lastMaintenanceAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'next_maintenance_at' })
+  nextMaintenanceAt: Date;
+
+  // ========== Environment ==========
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'installation_type' })
+  installationType: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true, name: 'enclosure_rating' })
+  enclosureRating: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'power_source' })
+  powerSource: string;
+
+  // ========== PIC (Person In Charge) ==========
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'pic_name' })
+  picName: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'pic_phone' })
+  picPhone: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'pic_email' })
+  picEmail: string;
+
+  // ========== Notes & Tags ==========
+  @Column({ type: 'text', nullable: true })
+  notes: string;
+
+  @Column({ type: 'text', array: true, nullable: true })
+  tags: string[];
+
+  // ========== Timestamps ==========
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
 
-  // Relations
+  // ========== Relations ==========
   @ManyToOne(() => Project, (project) => project.nodes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_project' })
   project: Project;
@@ -75,10 +143,6 @@ export class Node {
   @ManyToOne(() => NodeModel, (nodeModel) => nodeModel.nodes, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'id_node_model' })
   nodeModel: NodeModel;
-
-  @ManyToOne(() => NodeLocation, { nullable: true })
-  @JoinColumn({ name: 'id_current_location' })
-  currentLocation: NodeLocation;
 
   @ManyToOne(() => NodeProfile, (profile) => profile.nodes, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'id_node_profile' })

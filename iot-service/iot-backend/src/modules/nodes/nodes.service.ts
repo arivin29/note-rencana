@@ -27,13 +27,13 @@ export class NodesService {
     if (isUUID(identifier)) {
       node = await this.nodeRepository.findOne({
         where: { idNode: identifier },
-        relations: ['project', 'project.owner', 'nodeModel', 'currentLocation', 'sensors'],
+        relations: ['project', 'project.owner', 'nodeModel', 'sensors'],
       });
     } else {
       // Search by code
       node = await this.nodeRepository.findOne({
         where: { code: identifier },
-        relations: ['project', 'project.owner', 'nodeModel', 'currentLocation', 'sensors'],
+        relations: ['project', 'project.owner', 'nodeModel', 'sensors'],
       });
     }
 
@@ -63,6 +63,8 @@ export class NodesService {
       idProject: createDto.idProject,
       idNodeModel: createDto.idNodeModel,
       code: createDto.code,
+      name: createDto.name,
+      description: createDto.description,
       serialNumber: createDto.serialNumber,
       devEui: createDto.devEui,
       ipAddress: createDto.ipAddress,
@@ -71,7 +73,32 @@ export class NodesService {
       batteryType: createDto.batteryType,
       telemetryIntervalSec: createDto.telemetryIntervalSec ?? 300,
       connectivityStatus: createDto.connectivityStatus ?? 'offline',
-      idCurrentLocation: createDto.idCurrentLocation,
+      idNodeProfile: createDto.idNodeProfile,
+      // Location fields
+      address: createDto.address,
+      city: createDto.city,
+      province: createDto.province,
+      postalCode: createDto.postalCode,
+      country: createDto.country ?? 'Indonesia',
+      latitude: createDto.latitude,
+      longitude: createDto.longitude,
+      elevationM: createDto.elevationM,
+      // Status & Maintenance
+      status: createDto.status ?? 'active',
+      commissionedAt: createDto.commissionedAt ? new Date(createDto.commissionedAt) : undefined,
+      lastMaintenanceAt: createDto.lastMaintenanceAt ? new Date(createDto.lastMaintenanceAt) : undefined,
+      nextMaintenanceAt: createDto.nextMaintenanceAt ? new Date(createDto.nextMaintenanceAt) : undefined,
+      // Environment
+      installationType: createDto.installationType,
+      enclosureRating: createDto.enclosureRating,
+      powerSource: createDto.powerSource,
+      // PIC
+      picName: createDto.picName,
+      picPhone: createDto.picPhone,
+      picEmail: createDto.picEmail,
+      // Notes & Tags
+      notes: createDto.notes,
+      tags: createDto.tags,
     });
 
     const saved = await this.nodeRepository.save(node);
@@ -97,8 +124,7 @@ export class NodesService {
     const queryBuilder = this.nodeRepository
       .createQueryBuilder('node')
       .leftJoinAndSelect('node.project', 'project')
-      .leftJoinAndSelect('node.nodeModel', 'nodeModel')
-      .leftJoinAndSelect('node.currentLocation', 'currentLocation');
+      .leftJoinAndSelect('node.nodeModel', 'nodeModel');
 
     // Apply owner filter via project relationship
     if (params.ownerId) {
@@ -151,7 +177,7 @@ export class NodesService {
   async findOne(id: string): Promise<NodeResponseDto> {
     const node = await this.nodeRepository.findOne({
       where: { idNode: id },
-      relations: ['project', 'nodeModel', 'currentLocation'],
+      relations: ['project', 'project.owner', 'nodeModel'],
     });
 
     if (!node) {
@@ -164,7 +190,7 @@ export class NodesService {
   async findOneDetailed(id: string): Promise<NodeDetailedResponseDto> {
     const node = await this.nodeRepository.findOne({
       where: { idNode: id },
-      relations: ['project', 'nodeModel', 'currentLocation', 'sensors'],
+      relations: ['project', 'project.owner', 'nodeModel', 'sensors'],
     });
 
     if (!node) {
@@ -243,6 +269,8 @@ export class NodesService {
       idProject: node.idProject,
       idNodeModel: node.idNodeModel,
       code: node.code,
+      name: node.name,
+      description: node.description,
       serialNumber: node.serialNumber,
       devEui: node.devEui,
       ipAddress: node.ipAddress,
@@ -252,10 +280,36 @@ export class NodesService {
       telemetryIntervalSec: node.telemetryIntervalSec,
       connectivityStatus: node.connectivityStatus,
       lastSeenAt: node.lastSeenAt,
-      idCurrentLocation: node.idCurrentLocation,
       idNodeProfile: node.idNodeProfile,
+      // Location fields
+      address: node.address,
+      city: node.city,
+      province: node.province,
+      postalCode: node.postalCode,
+      country: node.country,
+      latitude: node.latitude ? Number(node.latitude) : undefined,
+      longitude: node.longitude ? Number(node.longitude) : undefined,
+      elevationM: node.elevationM ? Number(node.elevationM) : undefined,
+      // Status & Maintenance
+      status: node.status,
+      commissionedAt: node.commissionedAt,
+      lastMaintenanceAt: node.lastMaintenanceAt,
+      nextMaintenanceAt: node.nextMaintenanceAt,
+      // Environment
+      installationType: node.installationType,
+      enclosureRating: node.enclosureRating,
+      powerSource: node.powerSource,
+      // PIC
+      picName: node.picName,
+      picPhone: node.picPhone,
+      picEmail: node.picEmail,
+      // Notes & Tags
+      notes: node.notes,
+      tags: node.tags,
+      // Timestamps
       createdAt: node.createdAt,
       updatedAt: node.updatedAt,
+      // Relations
       project: node.project ? {
         idProject: node.project.idProject,
         name: node.project.name,
@@ -272,11 +326,6 @@ export class NodesService {
         vendor: node.nodeModel.vendor,
         modelName: node.nodeModel.modelName,
         protocol: node.nodeModel.protocol,
-      } : undefined,
-      currentLocation: node.currentLocation ? {
-        idNodeLocation: node.currentLocation.idNodeLocation,
-        type: node.currentLocation.type,
-        address: node.currentLocation.address,
       } : undefined,
     };
   }

@@ -14,6 +14,12 @@ export class NodeResponseDto {
   code: string;
 
   @ApiPropertyOptional()
+  name?: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiPropertyOptional()
   serialNumber?: string;
 
   @ApiPropertyOptional()
@@ -40,26 +46,87 @@ export class NodeResponseDto {
   @ApiPropertyOptional()
   lastSeenAt?: Date;
 
-  @ApiPropertyOptional()
-  idCurrentLocation?: string;
-
   @ApiPropertyOptional({ description: 'Node Profile ID for payload parsing' })
   idNodeProfile?: string;
 
+  // ========== Location Fields ==========
+  @ApiPropertyOptional()
+  address?: string;
+
+  @ApiPropertyOptional()
+  city?: string;
+
+  @ApiPropertyOptional()
+  province?: string;
+
+  @ApiPropertyOptional()
+  postalCode?: string;
+
+  @ApiPropertyOptional()
+  country?: string;
+
+  @ApiPropertyOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  longitude?: number;
+
+  @ApiPropertyOptional()
+  elevationM?: number;
+
+  // ========== Status & Maintenance ==========
+  @ApiPropertyOptional()
+  status?: string;
+
+  @ApiPropertyOptional()
+  commissionedAt?: Date;
+
+  @ApiPropertyOptional()
+  lastMaintenanceAt?: Date;
+
+  @ApiPropertyOptional()
+  nextMaintenanceAt?: Date;
+
+  // ========== Environment ==========
+  @ApiPropertyOptional()
+  installationType?: string;
+
+  @ApiPropertyOptional()
+  enclosureRating?: string;
+
+  @ApiPropertyOptional()
+  powerSource?: string;
+
+  // ========== PIC ==========
+  @ApiPropertyOptional()
+  picName?: string;
+
+  @ApiPropertyOptional()
+  picPhone?: string;
+
+  @ApiPropertyOptional()
+  picEmail?: string;
+
+  // ========== Notes & Tags ==========
+  @ApiPropertyOptional()
+  notes?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  tags?: string[];
+
+  // ========== Timestamps ==========
   @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
   updatedAt: Date;
 
+  // ========== Relations ==========
   @ApiPropertyOptional({ description: 'Project details' })
   project?: any;
 
   @ApiPropertyOptional({ description: 'Node model details' })
   nodeModel?: any;
-
-  @ApiPropertyOptional({ description: 'Current location details' })
-  currentLocation?: any;
 }
 
 export class NodeDetailedResponseDto extends NodeResponseDto {
