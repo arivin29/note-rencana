@@ -7,6 +7,114 @@
 
 ---
 
+## 🔧 CONFIG MANAGEMENT SYSTEM (CRITICAL!)
+
+### **⚠️ Config Loading Priority (MUST FOLLOW THIS ORDER!)**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 1: Load Hardcoded Defaults (config.h)                 │
+│ Status: ✅ DONE (always available)                         │
+│                                                             │
+│ Why: Ensure device ALWAYS has valid config                 │
+│ When: On boot, before anything else                        │
+│ Source: config.h constants                                 │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 2: Try Load from SD Card (/sdcard/config.json)        │
+│ Status: ❌ NOT IMPLEMENTED YET                             │
+│                                                             │
+│ Why: Work offline with last known good config              │
+│ When: After SD init, before network connection             │
+│ If success: Override defaults with SD config               │
+│ If fail: Keep hardcoded defaults                           │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│ STEP 3: Request from Server (MQTT)                         │
+│ Status: ⏳ PARTIAL (request sent, not saved to SD yet)     │
+│                                                             │
+│ Why: Get LATEST config from server                         │
+│ When: After MQTT connected (first connect)                 │
+│                                                             │
+│ Flow:                                                       │
+│ 1. Send request to: get_config/{device_id}                 │
+│ 2. Subscribe to: stream_config/{device_id}                 │
+│ 3. Wait for response (max 30 seconds)                      │
+│ 4. If received:                                             │
+│    ✅ Apply to runtime (in RAM)                            │
+│    ✅ Save to SD card (/sdcard/config.json) ⚠️ CRITICAL!  │
+│    ✅ Send ACK to server                                   │
+│ 5. If timeout (30s):                                        │
+│    ⚠️ Keep current config (SD or defaults)                 │
+│    ⚠️ Log: "Server config timeout"                         │
+│    ✅ Continue normal operation                            │
+└─────────────────────────────────────────────────────────────┘
+
+Result After Boot Sequence:
+┌─────────────────────────────────────────────────────────────┐
+│ Runtime Config (in RAM) = Best available:                   │
+│   • If online: Server config (most recent)                  │
+│   • If offline: SD config (last known good)                 │
+│   • If no SD: Hardcoded defaults (fallback)                 │
+│                                                             │
+│ SD Card Config (/sdcard/config.json):                      │
+│   • Updated every time server sends config                  │
+│   • Used for next boot if offline                           │
+│   • Backup for server config                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### **Config Update During Runtime (Anytime)**
+
+```
+Server sends config update (any time during operation)
+    ↓
+Topic: stream_config/{device_id}
+Payload: {full config JSON}
+    ↓
+Device receives in mqttCallback()
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 1. Parse JSON                                               │
+│ 2. Validate all values (ranges, types)                      │
+│ 3. If VALID:                                                │
+│    ✅ Apply to runtime config (RAM)                         │
+│    ✅ Save to SD card (/sdcard/config.json) ⚠️ MUST!       │
+│    ✅ Send ACK to server                                    │
+│    ✅ Log: "Config updated from server"                     │
+│ 4. If INVALID:                                              │
+│    ❌ Reject (don't apply)                                  │
+│    ❌ Keep current config                                   │
+│    ❌ Send NACK to server                                   │
+│    ⚠️ Log: "Invalid config received"                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### **Why This Matters:**
+
+1. **Server is PRIMARY source** - Always get latest config when online
+2. **SD is BACKUP** - Device can work offline with last good config
+3. **Defaults are FALLBACK** - Device never stuck without config
+4. **Auto-save is CRITICAL** - Every server config must be saved to SD
+
+### **What's Implemented vs Not:**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Hardcoded defaults | ✅ DONE | config.h constants working |
+| Load from SD | ❌ NOT IMPLEMENTED | Need loadConfigFromSD() |
+| Request from server | ✅ PARTIAL | Request sent, but not saved to SD yet |
+| Save to SD | ❌ NOT IMPLEMENTED | Need saveConfigToSD() |
+| Config validation | ❌ NOT IMPLEMENTED | Need validation function |
+| ACK/NACK to server | ❌ NOT IMPLEMENTED | Need confirmation sending |
+| 30s timeout | ❌ NOT IMPLEMENTED | Need timeout handler |
+
+---
+
 ## 🎯 PROBLEM STATEMENT (ORIGINAL)
 
 ### **Critical Issues Before Implementation:**
@@ -855,21 +963,108 @@ if (sdAvailable) {
 }
 ```
 
-### **Config Loading Priority:**
+### **Config Loading Priority (CORRECTED):**
 
 ```cpp
-1. Try load from SD card: /sdcard/config.json
+⚠️ CRITICAL: Config loading MUST prioritize server first!
+
+1. PRIMARY SOURCE: Request from server via MQTT (when connected)
+   → Topic: get_config/{device_id}
+   → Server responds to: stream_config/{device_id}
+   → If success: 
+     • Use config from server
+     • Save/overwrite to SD card (/sdcard/config.json)
+     • Config now available for offline use
+   → If timeout (30s no response):
+     • Fall back to SD card
+
+2. FALLBACK: Load from SD card (/sdcard/config.json)
+   → Used when:
+     • Server doesn't respond
+     • Device is offline
+     • First boot before internet connection
    → If success: Use SD config
    → If fail: Use hardcoded defaults
 
-2. Hardcoded defaults in config.h (fallback)
+3. LAST RESORT: Hardcoded defaults in config.h
    → Always available
    → Cannot be changed without reflash
+   → Only used if no server config AND no SD config
 
-3. Runtime override via MQTT command (optional)
-   → Update specific parameters
-   → Save to SD card
-   → Effective immediately
+Flow Diagram:
+┌────────────────────────────────────────────────────────────┐
+│ Device boots up                                            │
+└─────────────────┬──────────────────────────────────────────┘
+                  │
+                  ▼
+┌────────────────────────────────────────────────────────────┐
+│ Load hardcoded defaults (config.h) - Always load first     │
+└─────────────────┬──────────────────────────────────────────┘
+                  │
+                  ▼
+┌────────────────────────────────────────────────────────────┐
+│ Check if SD card available                                 │
+│   YES: Load config.json from SD (if exists)                │
+│   NO: Continue with hardcoded defaults                     │
+└─────────────────┬──────────────────────────────────────────┘
+                  │
+                  ▼
+┌────────────────────────────────────────────────────────────┐
+│ Start connecting to network...                             │
+└─────────────────┬──────────────────────────────────────────┘
+                  │
+                  ▼
+┌────────────────────────────────────────────────────────────┐
+│ When MQTT connected (first time):                          │
+│   1. Send request to: get_config/DEMO1-00D42390A994        │
+│   2. Wait for response on: stream_config/DEMO1-00D42390A994│
+│   3. Set timeout: 30 seconds                               │
+└─────────────────┬──────────────────────────────────────────┘
+                  │
+                  ├─────────────┬──────────────┐
+                  │             │              │
+        Server responds    Timeout (30s)   No response
+                  │             │              │
+                  ▼             ▼              ▼
+┌──────────────────────┐  ┌────────────────────────────────┐
+│ Config received ✅   │  │ Use current config (SD or      │
+│                      │  │ hardcoded) ⚠️                  │
+│ Actions:             │  │                                │
+│ 1. Parse JSON        │  │ Log: "Server config timeout"   │
+│ 2. Validate values   │  └────────────────────────────────┘
+│ 3. Apply to runtime  │
+│ 4. Save to SD card   │
+│    (/sdcard/config.json) │
+│ 5. Log: "Config updated from server" │
+└──────────────────────┘
+
+Result:
+• Runtime config = Server config (most up-to-date)
+• SD card config = Server config (backup for next offline boot)
+• Device now has latest config both in RAM and SD
+```
+
+### **Config Update Flow (During Runtime):**
+
+```cpp
+When server sends config update (anytime during operation):
+
+Topic: stream_config/{device_id}
+Payload: {full config JSON}
+
+Actions:
+1. Receive via MQTT callback (mqttCallback function)
+2. Parse JSON
+3. Validate all values
+4. If valid:
+   • Apply to runtime config
+   • Save to SD card (overwrite)
+   • Send ACK to server
+   • Log: "Config updated from server"
+5. If invalid:
+   • Keep current config
+   • Send NACK to server
+   • Log: "Invalid config received"
 ```
 
 ---
@@ -1443,11 +1638,69 @@ pio run -t clean && pio run -t upload
 ## 📝 NEXT STEPS FOR FUTURE IMPLEMENTATION
 
 ### **Priority 1: Config System** (Week 1)
-- [ ] Create config.json structure on SD
-- [ ] Implement loadConfig() function
-- [ ] Implement saveConfig() function
-- [ ] Add MQTT config update handler
-- [ ] Test config reload without reboot
+
+#### **CRITICAL: Config Loading Priority (CORRECTED)**
+
+**⚠️ Config MUST be loaded in this exact order:**
+
+**Step 1: Load Hardcoded Defaults** (Always first)
+```cpp
+// On boot, before anything else
+loadDefaultConfig();  // From config.h
+// Purpose: Ensure device always has valid config
+```
+
+**Step 2: Try Load from SD Card** (Fallback for offline)
+```cpp
+// After SD card initialized, before network
+if (sdAvailable) {
+    if (loadConfigFromSD()) {
+        // Override defaults with SD config
+        log("Config loaded from SD card");
+    } else {
+        log("No SD config, using defaults");
+    }
+}
+// Purpose: Work offline with last known good config
+```
+
+**Step 3: Request from Server** (Primary source when online)
+```cpp
+// After MQTT connected (first time)
+requestConfigFromServer();  // Send to get_config/{device_id}
+
+// Wait for response (max 30 seconds)
+// If received on stream_config/{device_id}:
+if (configReceivedFromServer) {
+    applyConfig(serverConfig);      // Use in runtime
+    saveConfigToSD(serverConfig);   // ⚠️ MUST SAVE TO SD!
+    log("Config updated from server");
+} else {
+    // Timeout (30s no response)
+    log("Server config timeout, using local config");
+    // Continue with current config (SD or defaults)
+}
+// Purpose: Get latest config from server
+```
+
+#### **Implementation Tasks:**
+- [ ] Create Config struct matching config.json format
+- [ ] Implement `loadDefaultConfig()` - Load from config.h
+- [ ] Implement `loadConfigFromSD()` - Read /sdcard/config.json
+- [ ] Implement `requestConfigFromServer()` - Send MQTT request
+- [ ] Add 30-second timeout for server response
+- [ ] Implement `saveConfigToSD(Config& cfg)` - **Auto-save server config**
+- [ ] Add config validation (range checks, type checks)
+- [ ] Add MQTT config update handler in callback
+- [ ] Send ACK/NACK to server after config update
+- [ ] Test config priority: Server > SD > Defaults
+
+**Why This Order Matters:**
+1. **Defaults first** = Device never stuck without config
+2. **SD second** = Can work offline with last good config
+3. **Server last** = Get fresh config when online + save to SD for next offline boot
+
+---
 
 ### **Priority 2: Explicit Offline Mode** (Week 2)
 - [ ] Implement offline cycle counter
