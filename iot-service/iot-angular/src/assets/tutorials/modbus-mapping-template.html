@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modbus Register Mapping Template - Devetek Helios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --secondary-color: #6c757d;
+      --success-color: #198754;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --dark-bg: #1a1d21;
+      --card-bg: #212529;
+      --border-color: #373b3e;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #1a1d21 0%, #2d3436 100%);
+      color: #e9ecef;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .hero-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 3rem 0;
+      margin-bottom: 2rem;
+    }
+    
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+    
+    .card-header {
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+    }
+    
+    .code-block {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      position: relative;
+    }
+    
+    .code-block pre {
+      margin: 0;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .copy-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .copy-btn.copied {
+      background: var(--success-color);
+      border-color: var(--success-color);
+    }
+    
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .json-key { color: #7ee787; }
+    .json-string { color: #a5d6ff; }
+    .json-number { color: #f2cc60; }
+    .json-boolean { color: #ff7b72; }
+    .json-comment { color: #8b949e; font-style: italic; }
+    
+    .table-dark-custom {
+      --bs-table-bg: #2d3436;
+      --bs-table-border-color: var(--border-color);
+    }
+    
+    .table-dark-custom th {
+      background: rgba(13, 110, 253, 0.2);
+      color: #a5d6ff;
+    }
+    
+    .badge-category {
+      font-size: 0.7rem;
+      padding: 4px 8px;
+    }
+    
+    .alert-custom {
+      background: rgba(255, 193, 7, 0.1);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: #ffc107;
+    }
+    
+    .checklist-item {
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .checklist-item:hover {
+      background: rgba(255,255,255,0.06);
+    }
+    
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .toc-link {
+      color: #a5d6ff;
+      text-decoration: none;
+      padding: 6px 12px;
+      display: block;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .toc-link:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    
+    .sticky-toc {
+      position: sticky;
+      top: 20px;
+    }
+    
+    @media (max-width: 991px) {
+      .sticky-toc {
+        position: relative;
+        margin-bottom: 20px;
+      }
+    }
+    
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      border-radius: 0 8px 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <h1 class="display-5 fw-bold mb-3">
+            <i class="fas fa-microchip me-3"></i>
+            Modbus Register Mapping Template
+          </h1>
+          <p class="lead mb-0 opacity-75">
+            Panduan lengkap untuk tim Devetek dalam mapping sensor/device baru ke sistem Helios IoT Platform
+          </p>
+        </div>
+        <div class="col-lg-4 text-end d-none d-lg-block">
+          <i class="fas fa-network-wired" style="font-size: 6rem; opacity: 0.3;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container pb-5">
+    <div class="row">
+      <!-- Table of Contents - Sidebar -->
+      <div class="col-lg-3 mb-4">
+        <div class="sticky-toc">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-list me-2"></i> Daftar Isi
+            </div>
+            <div class="card-body p-2">
+              <a href="#cara-pakai" class="toc-link"><i class="fas fa-play-circle me-2"></i>Cara Pakai</a>
+              <a href="#prompt-template" class="toc-link"><i class="fas fa-copy me-2"></i>Prompt Template</a>
+              <a href="#struktur-json" class="toc-link"><i class="fas fa-code me-2"></i>Struktur JSON</a>
+              <a href="#rules-konversi" class="toc-link"><i class="fas fa-exchange-alt me-2"></i>Rules Konversi</a>
+              <a href="#contoh-datasheet" class="toc-link"><i class="fas fa-file-alt me-2"></i>Contoh Datasheet</a>
+              <a href="#checklist" class="toc-link"><i class="fas fa-check-square me-2"></i>Checklist</a>
+              <a href="#troubleshooting" class="toc-link"><i class="fas fa-tools me-2"></i>Troubleshooting</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-lg-9">
+        
+        <!-- Cara Pakai -->
+        <section id="cara-pakai" class="mb-5">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-play-circle me-2 text-success"></i> Cara Pakai
+            </div>
+            <div class="card-body">
+              <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                  <div class="text-center p-3 rounded" style="background: rgba(13, 110, 253, 0.1);">
+                    <span class="step-number">1</span>
+                    <h6 class="mt-3 mb-2">Copy Prompt</h6>
+                    <small class="text-muted">Copy seluruh prompt template di bawah</small>
+                  </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                  <div class="text-center p-3 rounded" style="background: rgba(25, 135, 84, 0.1);">
+                    <span class="step-number" style="background: var(--success-color);">2</span>
+                    <h6 class="mt-3 mb-2">Paste ke AI</h6>
+                    <small class="text-muted">ChatGPT / Claude / AI lainnya</small>
+                  </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                  <div class="text-center p-3 rounded" style="background: rgba(255, 193, 7, 0.1);">
+                    <span class="step-number" style="background: var(--warning-color); color: #000;">3</span>
+                    <h6 class="mt-3 mb-2">Paste Datasheet</h6>
+                    <small class="text-muted">Ganti bagian [DATASHEET]</small>
+                  </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                  <div class="text-center p-3 rounded" style="background: rgba(111, 66, 193, 0.1);">
+                    <span class="step-number" style="background: #6f42c1;">4</span>
+                    <h6 class="mt-3 mb-2">Dapat JSON</h6>
+                    <small class="text-muted">Siap paste ke sistem!</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Prompt Template -->
+        <section id="prompt-template" class="mb-5">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-copy me-2 text-primary"></i> Prompt Template (Copy Ini!)</span>
+              <button class="btn btn-sm btn-outline-light" onclick="copyPrompt()">
+                <i class="fas fa-copy me-1"></i> Copy All
+              </button>
+            </div>
+            <div class="card-body p-0">
+              <div class="code-block" id="prompt-code">
+                <button class="copy-btn" onclick="copyPrompt()">
+                  <i class="fas fa-copy me-1"></i> Copy
+                </button>
+<pre id="prompt-text"># MODBUS REGISTER MAPPING REQUEST
+
+## KONTEKS SISTEM
+Saya menggunakan ESP32 IoT device yang membaca sensor/device via RS485 Modbus RTU.
+Config register disimpan dalam format JSON dengan struktur berikut:
+
+```json
+{
+    "reg": 28713,           // Register address dalam DECIMAL
+    "swap": false,          // true jika device pakai Little Endian
+    "type": "uint16",       // Tipe: uint16, int16, uint32, int32, float32, hex16
+    "unit": "Hz",           // Satuan: Hz, V, A, kW, %, °C, m³/h, dll
+    "label": "Frequency",   // Nama singkat untuk display
+    "scale": 0.01,          // Faktor pengali (raw × scale = actual)
+    "words": 1,             // 1 untuk 16-bit, 2 untuk 32-bit
+    "category": "operating_status",
+    "description": "Operating frequency (U0-00, 0x7000)"
+}
+```
+
+## RULES KONVERSI
+1. **Hex ke Decimal**: 0x7000 = 28672, 0x100A = 4106
+2. **Words**: uint16/int16/hex16 = 1, uint32/int32/float32 = 2
+3. **Swap**: Default false, set true jika "Little Endian" / "Word Swap"
+4. **Scale**: "Resolution 0.01" → 0.01, "Value × 10" → 0.1
+
+## TUGAS
+Generate JSON config LENGKAP:
+
+```json
+{
+    "notes": "Catatan penting",
+    "version": 1,
+    "baud_rate": 9600,
+    "registers": [ ... ],
+    "data_format": "8N1",
+    "description": "Deskripsi device",
+    "device_type": "Device-Name",
+    "modbus_address": 1,
+    "scan_interval_ms": 3000
+}
+```
+
+---
+
+## DATASHEET DEVICE
+
+[PASTE DATASHEET / REGISTER TABLE DI SINI]
+
+---
+
+## OUTPUT
+Berikan JSON yang VALID dan LENGKAP, siap copy-paste ke sistem.
+Sertakan SEMUA register dari datasheet.</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Struktur JSON -->
+        <section id="struktur-json" class="mb-5">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-code me-2 text-info"></i> Struktur JSON Config
+            </div>
+            <div class="card-body">
+              <h6 class="text-warning mb-3"><i class="fas fa-cog me-2"></i>Main Config</h6>
+              <div class="table-responsive mb-4">
+                <table class="table table-dark-custom table-sm">
+                  <thead>
+                    <tr>
+                      <th>Property</th>
+                      <th>Type</th>
+                      <th>Contoh</th>
+                      <th>Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code class="json-key">device_type</code></td>
+                      <td>string</td>
+                      <td><code>"ZK1800-VFD"</code></td>
+                      <td>Nama device tanpa spasi</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">description</code></td>
+                      <td>string</td>
+                      <td><code>"VFD Inverter 7.5kW"</code></td>
+                      <td>Deskripsi lengkap</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">modbus_address</code></td>
+                      <td>number</td>
+                      <td><code>1</code></td>
+                      <td>Slave address (1-247)</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">baud_rate</code></td>
+                      <td>number</td>
+                      <td><code>9600</code></td>
+                      <td>9600, 19200, 38400, dll</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">data_format</code></td>
+                      <td>string</td>
+                      <td><code>"8N1"</code></td>
+                      <td>8N1, 8N2, 8E1, 8O1</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">scan_interval_ms</code></td>
+                      <td>number</td>
+                      <td><code>3000</code></td>
+                      <td>Interval baca (ms)</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">version</code></td>
+                      <td>number</td>
+                      <td><code>1</code></td>
+                      <td>Version config</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h6 class="text-warning mb-3"><i class="fas fa-list-alt me-2"></i>Register Object</h6>
+              <div class="table-responsive">
+                <table class="table table-dark-custom table-sm">
+                  <thead>
+                    <tr>
+                      <th>Property</th>
+                      <th>Type</th>
+                      <th>Contoh</th>
+                      <th>Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code class="json-key">reg</code></td>
+                      <td>number</td>
+                      <td><code>28672</code></td>
+                      <td>Register address (DECIMAL!)</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">label</code></td>
+                      <td>string</td>
+                      <td><code>"Output Voltage"</code></td>
+                      <td>Nama untuk display</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">type</code></td>
+                      <td>string</td>
+                      <td><code>"uint16"</code></td>
+                      <td>uint16, int16, uint32, int32, float32</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">unit</code></td>
+                      <td>string</td>
+                      <td><code>"V"</code></td>
+                      <td>Satuan measurement</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">scale</code></td>
+                      <td>number</td>
+                      <td><code>0.1</code></td>
+                      <td>raw × scale = actual</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">words</code></td>
+                      <td>number</td>
+                      <td><code>1</code></td>
+                      <td>1 = 16bit, 2 = 32bit</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">swap</code></td>
+                      <td>boolean</td>
+                      <td><code>false</code></td>
+                      <td>Byte swap untuk Little Endian</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">category</code></td>
+                      <td>string</td>
+                      <td><code>"voltage"</code></td>
+                      <td>Kategori untuk grouping</td>
+                    </tr>
+                    <tr>
+                      <td><code class="json-key">description</code></td>
+                      <td>string</td>
+                      <td><code>"Output voltage (0x7003)"</code></td>
+                      <td>Deskripsi + alamat hex</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Rules Konversi -->
+        <section id="rules-konversi" class="mb-5">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-exchange-alt me-2 text-warning"></i> Rules Konversi
+            </div>
+            <div class="card-body">
+              <div class="row g-4">
+                <!-- Hex to Decimal -->
+                <div class="col-md-6">
+                  <div class="highlight-box h-100">
+                    <h6><i class="fas fa-hashtag me-2"></i>Hex ke Decimal</h6>
+                    <div class="code-block mt-2" style="background: #000;">
+<pre>0x0000 = 0
+0x0001 = 1
+0x000A = 10
+0x0064 = 100
+0x03E8 = 1000
+0x100A = 4106
+0x7000 = 28672
+0x7FFF = 32767
+0xFFFF = 65535</pre>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                      <i class="fas fa-lightbulb me-1"></i>
+                      Rumus: Setiap digit × 16^posisi
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Words by Type -->
+                <div class="col-md-6">
+                  <div class="highlight-box h-100">
+                    <h6><i class="fas fa-layer-group me-2"></i>Words berdasarkan Type</h6>
+                    <table class="table table-sm table-dark-custom mt-2 mb-0">
+                      <tr>
+                        <td><code>uint16, int16, hex16</code></td>
+                        <td><span class="badge bg-primary">1 word</span></td>
+                      </tr>
+                      <tr>
+                        <td><code>uint32, int32</code></td>
+                        <td><span class="badge bg-warning text-dark">2 words</span></td>
+                      </tr>
+                      <tr>
+                        <td><code>float32</code></td>
+                        <td><span class="badge bg-warning text-dark">2 words</span></td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Scale -->
+                <div class="col-md-6">
+                  <div class="highlight-box h-100">
+                    <h6><i class="fas fa-balance-scale me-2"></i>Scale dari Documentation</h6>
+                    <table class="table table-sm table-dark-custom mt-2 mb-0">
+                      <tr>
+                        <td>"Resolution 0.01"</td>
+                        <td>→</td>
+                        <td><code>scale: 0.01</code></td>
+                      </tr>
+                      <tr>
+                        <td>"Value × 10"</td>
+                        <td>→</td>
+                        <td><code>scale: 0.1</code></td>
+                      </tr>
+                      <tr>
+                        <td>"Value / 100"</td>
+                        <td>→</td>
+                        <td><code>scale: 0.01</code></td>
+                      </tr>
+                      <tr>
+                        <td>Tidak disebutkan</td>
+                        <td>→</td>
+                        <td><code>scale: 1</code></td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Swap -->
+                <div class="col-md-6">
+                  <div class="highlight-box h-100">
+                    <h6><i class="fas fa-sync-alt me-2"></i>Swap (Byte Order)</h6>
+                    <div class="mt-2">
+                      <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success me-2">swap: false</span>
+                        <small>Big Endian (Default Modbus)</small>
+                      </div>
+                      <div class="d-flex align-items-center">
+                        <span class="badge bg-danger me-2">swap: true</span>
+                        <small>Little Endian / Word Swap</small>
+                      </div>
+                    </div>
+                    <div class="alert alert-custom mt-3 mb-0 py-2 small">
+                      <i class="fas fa-info-circle me-1"></i>
+                      Set <code>swap: true</code> jika dokumentasi menyebut "Little Endian", "LSB First", atau "Word Swap"
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Category Options -->
+              <h6 class="mt-4 mb-3"><i class="fas fa-tags me-2"></i>Category Options</h6>
+              <div class="d-flex flex-wrap gap-2">
+                <span class="badge badge-category bg-primary">operating_status</span>
+                <span class="badge badge-category bg-info">voltage</span>
+                <span class="badge badge-category bg-info">current</span>
+                <span class="badge badge-category bg-success">power</span>
+                <span class="badge badge-category bg-success">energy</span>
+                <span class="badge badge-category bg-warning text-dark">temperature</span>
+                <span class="badge badge-category bg-warning text-dark">pressure</span>
+                <span class="badge badge-category bg-secondary">flow</span>
+                <span class="badge badge-category bg-secondary">analog_input</span>
+                <span class="badge badge-category bg-secondary">digital_input</span>
+                <span class="badge badge-category bg-danger">fault</span>
+                <span class="badge badge-category bg-danger">alarm</span>
+                <span class="badge badge-category bg-dark">config</span>
+                <span class="badge badge-category bg-dark">control</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Contoh Datasheet -->
+        <section id="contoh-datasheet" class="mb-5">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-file-alt me-2 text-success"></i> Contoh Format Datasheet Input
+            </div>
+            <div class="card-body">
+              <div class="row g-4">
+                <!-- Table Format -->
+                <div class="col-lg-6">
+                  <h6 class="text-info"><i class="fas fa-table me-2"></i>Format Tabel</h6>
+                  <div class="code-block">
+<pre>| Address | Name          | Type    | Unit | Scale |
+|---------|---------------|---------|------|-------|
+| 0x0000  | Voltage       | Float32 | V    | 0.1   |
+| 0x0002  | Current       | Float32 | A    | 0.01  |
+| 0x0004  | Power         | Float32 | kW   | 0.001 |
+| 0x0006  | Frequency     | uint16  | Hz   | 0.01  |</pre>
+                  </div>
+                </div>
+
+                <!-- List Format -->
+                <div class="col-lg-6">
+                  <h6 class="text-info"><i class="fas fa-list me-2"></i>Format List</h6>
+                  <div class="code-block">
+<pre>Register 0x7000: Operating Frequency 
+  - Type: uint16
+  - Scale: 0.01 Hz
+  - Description: U0-00
+  
+Register 0x7001: Bus Voltage
+  - Type: uint16  
+  - Scale: 0.1 V
+  - Description: U0-01</pre>
+                  </div>
+                </div>
+
+                <!-- Image Description -->
+                <div class="col-12">
+                  <h6 class="text-info"><i class="fas fa-image me-2"></i>Dari Screenshot/Gambar</h6>
+                  <div class="code-block">
+<pre>Dari gambar halaman 45 datasheet:
+- Register 0x100A = AI1 voltage, uint16, 0-10V range, scale 0.01
+- Register 0x100B = AI2 voltage, uint16, 0-10V range, scale 0.01  
+- Register 0x100C = AI3 voltage, uint16, 0-10V range, scale 0.01
+- Register 0x100D = DI Status, uint16, bit-mapped digital inputs
+
+Communication: 9600 baud, 8N1, slave address 1-247 configurable</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Checklist -->
+        <section id="checklist" class="mb-5">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-check-square me-2 text-success"></i> Checklist Setelah Dapat Output
+            </div>
+            <div class="card-body">
+              <div class="checklist-item">
+                <input type="checkbox" id="check1">
+                <label for="check1">Semua register address sudah dalam <strong>DECIMAL</strong></label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check2">
+                <label for="check2">Type sesuai (uint16 / int16 / uint32 / float32)</label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check3">
+                <label for="check3">Words benar (1 untuk 16-bit, 2 untuk 32-bit)</label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check4">
+                <label for="check4">Scale sesuai dokumentasi device</label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check5">
+                <label for="check5">Unit terisi untuk semua register</label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check6">
+                <label for="check6">JSON valid (tidak ada syntax error)</label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check7">
+                <label for="check7">modbus_address sesuai setting device</label>
+              </div>
+              <div class="checklist-item">
+                <input type="checkbox" id="check8">
+                <label for="check8">baud_rate dan data_format sesuai</label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section id="troubleshooting" class="mb-5">
+          <div class="card">
+            <div class="card-header">
+              <i class="fas fa-tools me-2 text-danger"></i> Troubleshooting
+            </div>
+            <div class="card-body">
+              <div class="accordion" id="troubleshootAccordion">
+                <!-- Problem 1 -->
+                <div class="accordion-item bg-dark border-secondary">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#trouble1">
+                      <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                      Data terbaca tapi nilai SALAH?
+                    </button>
+                  </h2>
+                  <div id="trouble1" class="accordion-collapse collapse show" data-bs-parent="#troubleshootAccordion">
+                    <div class="accordion-body">
+                      <ul class="mb-0">
+                        <li>Coba toggle <code>"swap": true</code> / <code>false</code></li>
+                        <li>Periksa <code>scale</code> - mungkin perlu dikalikan/dibagi 10 atau 100</li>
+                        <li>Cek <code>type</code> - mungkin seharusnya <code>int16</code> bukan <code>uint16</code></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Problem 2 -->
+                <div class="accordion-item bg-dark border-secondary">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#trouble2">
+                      <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                      Data selalu 0?
+                    </button>
+                  </h2>
+                  <div id="trouble2" class="accordion-collapse collapse" data-bs-parent="#troubleshootAccordion">
+                    <div class="accordion-body">
+                      <ul class="mb-0">
+                        <li>Cek register address - pastikan sudah dikonversi dari HEX ke DECIMAL</li>
+                        <li>Cek <code>modbus_address</code> device (setting di device fisik)</li>
+                        <li>Pastikan koneksi RS485 A/B tidak terbalik</li>
+                        <li>Coba register lain yang dipastikan ada data</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Problem 3 -->
+                <div class="accordion-item bg-dark border-secondary">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#trouble3">
+                      <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                      Error CRC atau Timeout?
+                    </button>
+                  </h2>
+                  <div id="trouble3" class="accordion-collapse collapse" data-bs-parent="#troubleshootAccordion">
+                    <div class="accordion-body">
+                      <ul class="mb-0">
+                        <li>Cek <code>baud_rate</code> - harus sama dengan setting device</li>
+                        <li>Cek <code>data_format</code> (8N1 vs 8N2 vs 8E1)</li>
+                        <li>Coba kurangi <code>scan_interval_ms</code> atau tambah delay</li>
+                        <li>Periksa kabel RS485 - jarak maksimal 1200m dengan terminator</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Problem 4 -->
+                <div class="accordion-item bg-dark border-secondary">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#trouble4">
+                      <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                      Hanya sebagian register terbaca?
+                    </button>
+                  </h2>
+                  <div id="trouble4" class="accordion-collapse collapse" data-bs-parent="#troubleshootAccordion">
+                    <div class="accordion-body">
+                      <ul class="mb-0">
+                        <li>Beberapa device membatasi jumlah register per request</li>
+                        <li>Coba bagi ke multiple request dengan <code>scan_interval_ms</code> lebih tinggi</li>
+                        <li>Periksa apakah register address berurutan atau ada gap</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Contact -->
+        <section class="mb-5">
+          <div class="card bg-primary bg-opacity-10 border-primary">
+            <div class="card-body text-center py-4">
+              <h5><i class="fas fa-headset me-2"></i>Butuh Bantuan?</h5>
+              <p class="mb-3 text-muted">Jika ada masalah atau pertanyaan terkait mapping device baru</p>
+              <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="#" class="btn btn-outline-primary">
+                  <i class="fas fa-book me-1"></i> Documentation
+                </a>
+                <a href="#" class="btn btn-outline-success">
+                  <i class="fab fa-whatsapp me-1"></i> WhatsApp Support
+                </a>
+                <a href="#" class="btn btn-outline-info">
+                  <i class="fas fa-envelope me-1"></i> Email Team
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="py-4 mt-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container text-center">
+      <p class="mb-1 text-muted">
+        <i class="fas fa-bolt me-1"></i>
+        Devetek Helios IoT Platform
+      </p>
+      <small class="text-muted">© 2026 PT Devetek Indonesia. All rights reserved.</small>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function copyPrompt() {
+      const text = document.getElementById('prompt-text').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btns = document.querySelectorAll('.copy-btn, [onclick="copyPrompt()"]');
+        btns.forEach(btn => {
+          const originalHtml = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+    }
+
+    // Smooth scroll for TOC links
+    document.querySelectorAll('.toc-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -221,7 +221,7 @@
                                 <tr>
                                     <th>Sensor Type</th>
                                     <th>Metric</th>
-                                    <th>Channel ID</th>
+                                    <!-- <th>Channel ID</th> -->
                                     <th class="text-end">Latest</th>
                                     <th>Status</th>
                                     <th>Trend</th>
@@ -241,7 +241,7 @@
                                         <div>{{ channel.metric }}</div>
                                         <div class="text-muted small text-uppercase">{{ channel.unit }}</div>
                                     </td>
-                                    <td class="text-muted small">{{ channel.id }}</td>
+                                    <!-- <td class="text-muted small">{{ channel.id }}</td> -->
                                     <td class="text-end fw-semibold">{{ channel.latest }} {{ channel.unit }}</td>
                                     <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase
                                             }}</span>

@@ -143,18 +143,20 @@
     </div>
   </card>
 
-  <!-- Default Channels Configuration -->
-  <card class="shadow-sm mb-4" *ngIf="catalog.defaultChannelsJson">
+  <!-- Default Channels Configuration (RS485/Modbus Editor) -->
+  <card class="shadow-sm mb-4">
     <div class="card-body">
-      <h4 class="mb-3">Default Channels Configuration</h4>
-      <div class="bg-dark bg-opacity-50 rounded p-3">
-        <pre class="mb-0 text-white small">{{ catalog.defaultChannelsJson | json }}</pre>
-      </div>
+      <app-channels-config-editor 
+        [config]="catalog.defaultChannelsJson"
+        [catalogId]="catalog.idSensorCatalog"
+        (save)="handleChannelsConfigSave($event)"
+        (saveDisabled)="handleChannelsConfigDisable()">
+      </app-channels-config-editor>
     </div>
   </card>
 
   <!-- Default Thresholds Configuration -->
-  <card class="shadow-sm" *ngIf="catalog.defaultThresholdsJson">
+  <card class="shadow-sm mb-4" *ngIf="catalog.defaultThresholdsJson">
     <div class="card-body">
       <h4 class="mb-3">Default Thresholds Configuration</h4>
       <div class="bg-dark bg-opacity-50 rounded p-3">
@@ -162,6 +164,184 @@
       </div>
     </div>
   </card>
+
+  <!-- ===== MODBUS REGISTER MAPPING TUTORIAL ===== -->
+  <card class="shadow-sm mb-4">
+    <div class="card-header bg-primary bg-opacity-10">
+      <h4 class="mb-0">
+        <i class="fa fa-wrench me-2"></i>
+        Modbus Register Mapping Template
+      </h4>
+      <small class="text-muted">Untuk Tim Devetek - Mapping Sensor/Device Baru</small>
+    </div>
+    <div class="card-body">
+      
+      <!-- Cara Pakai -->
+      <div class="mb-4">
+        <h5 class="text-primary mb-3">
+          <i class="fa fa-list-ol me-2"></i>Cara Pakai
+        </h5>
+        <div class="row g-3">
+          <div class="col-md-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-primary bg-opacity-10 h-100">
+              <div class="badge bg-primary rounded-circle fs-5 mb-2" style="width: 40px; height: 40px; line-height: 32px;">1</div>
+              <h6 class="mb-1">Copy Prompt</h6>
+              <small class="text-muted">Copy seluruh prompt di bawah</small>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-success bg-opacity-10 h-100">
+              <div class="badge bg-success rounded-circle fs-5 mb-2" style="width: 40px; height: 40px; line-height: 32px;">2</div>
+              <h6 class="mb-1">Paste ke AI</h6>
+              <small class="text-muted">ChatGPT / Claude / AI lainnya</small>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-warning bg-opacity-10 h-100">
+              <div class="badge bg-warning text-dark rounded-circle fs-5 mb-2" style="width: 40px; height: 40px; line-height: 32px;">3</div>
+              <h6 class="mb-1">Paste Datasheet</h6>
+              <small class="text-muted">Ganti bagian [DATASHEET]</small>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-info bg-opacity-10 h-100">
+              <div class="badge bg-info rounded-circle fs-5 mb-2" style="width: 40px; height: 40px; line-height: 32px;">4</div>
+              <h6 class="mb-1">Dapat JSON</h6>
+              <small class="text-muted">Siap paste ke sistem!</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt Template -->
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="text-primary mb-0">
+            <i class="fa fa-copy me-2"></i>Prompt Template (Copy Ini!)
+          </h5>
+          <button class="btn btn-sm btn-outline-primary" (click)="copyPromptTemplate()">
+            <i class="fa fa-copy me-1"></i> Copy All
+          </button>
+        </div>
+        <div class="bg-dark rounded p-3 position-relative">
+          <pre class="text-white small mb-0" style="white-space: pre-wrap;" #promptTemplate>{{ modbusPromptTemplate }}</pre>
+        </div>
+      </div>
+
+      <!-- Contoh Datasheet Input -->
+      <div class="mb-4">
+        <h5 class="text-primary mb-3">
+          <i class="fa fa-table me-2"></i>Contoh Datasheet Input
+        </h5>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="card bg-dark bg-opacity-50 h-100">
+              <div class="card-header small fw-bold">Contoh 1: Table Format</div>
+              <div class="card-body">
+<pre class="text-white small mb-0">| Address | Name    | Type    | Unit | Scale |
+|---------|---------|---------|------|-------|
+| 0x0000  | Voltage | Float32 | V    | 0.1   |
+| 0x0002  | Current | Float32 | A    | 0.01  |</pre>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-dark bg-opacity-50 h-100">
+              <div class="card-header small fw-bold">Contoh 2: List Format</div>
+              <div class="card-body">
+<pre class="text-white small mb-0">Register 0x7000: Operating Frequency
+  (U0-00), uint16, 0.01 Hz
+
+Register 0x7001: Bus Voltage
+  (U0-01), uint16, 0.1 V</pre>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-dark bg-opacity-50 h-100">
+              <div class="card-header small fw-bold">Contoh 3: Screenshot/Image</div>
+              <div class="card-body">
+<pre class="text-white small mb-0">Dari gambar halaman 45:
+- 100A = AI1 voltage
+- 100B = AI2 voltage  
+- 100C = AI3 voltage
+All are uint16, 0-10V range</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checklist -->
+      <div class="mb-4">
+        <h5 class="text-success mb-3">
+          <i class="fa fa-check-square me-2"></i>Checklist Setelah Dapat Output
+        </h5>
+        <div class="row g-2">
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">Semua register address sudah dalam DECIMAL</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">Type sesuai (uint16/int16/uint32/float32)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">Words benar (1 untuk 16-bit, 2 untuk 32-bit)</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">Scale sesuai dokumentasi</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">Unit terisi</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" disabled>
+              <label class="form-check-label">JSON valid (tidak ada syntax error)</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Troubleshooting -->
+      <div class="mb-0">
+        <h5 class="text-warning mb-3">
+          <i class="fa fa-exclamation-triangle me-2"></i>Troubleshooting
+        </h5>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="alert alert-warning mb-0 h-100">
+              <strong>Data terbaca tapi nilai SALAH?</strong>
+              <p class="mb-0 mt-2 small">→ Coba toggle <code>"swap": true/false</code></p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="alert alert-danger mb-0 h-100">
+              <strong>Data selalu 0?</strong>
+              <p class="mb-0 mt-2 small">
+                → Cek register address (mungkin salah convert hex)<br>
+                → Cek modbus_address device
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="alert alert-info mb-0 h-100">
+              <strong>Error CRC?</strong>
+              <p class="mb-0 mt-2 small">→ Cek baud_rate dan data_format (8N1 vs 8N2)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </card>
+  <!-- ===== END MODBUS TUTORIAL ===== -->
 
 </div>
 <!-- End Content -->
