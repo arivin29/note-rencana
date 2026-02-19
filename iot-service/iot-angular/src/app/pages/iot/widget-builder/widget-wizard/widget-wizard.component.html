@@ -331,12 +331,21 @@
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                                 data-bs-toggle="dropdown">
-                                <i class="fa fa-file-code me-1"></i> Templates
+                                <i class="fa fa-file-code me-1"></i> Templates 
+                                <span class="badge bg-secondary ms-1">{{ getSqlTemplates().length }}</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li *ngFor="let tpl of sqlTemplates">
-                                    <a class="dropdown-item" href="javascript:;" (click)="applySqlTemplate(tpl)">
-                                        {{ tpl.name }}
+                            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px;">
+                                <li class="dropdown-header" *ngIf="selectedDataSource === 'postgresql'">
+                                    <i class="fa fa-database me-1"></i> PostgreSQL Templates
+                                </li>
+                                <li class="dropdown-header" *ngIf="selectedDataSource === 'clickhouse'">
+                                    <i class="fa fa-bolt me-1"></i> ClickHouse Templates
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li *ngFor="let tpl of getSqlTemplates()">
+                                    <a class="dropdown-item d-flex flex-column py-2" href="javascript:;" (click)="applySqlTemplate(tpl)">
+                                        <span class="fw-semibold">{{ tpl.name }}</span>
+                                        <small class="text-muted" *ngIf="tpl.description">{{ tpl.description }}</small>
                                     </a>
                                 </li>
                             </ul>
@@ -362,6 +371,156 @@
                         <i class="fa fa-bolt me-1 text-warning"></i>
                         ClickHouse: Optimized for time-series analytics and aggregations
                     </small>
+                </div>
+
+                <!-- Query Filters: Node, Sensor, Channel -->
+                <div class="query-filters px-3 py-2 border-bottom bg-dark bg-opacity-25">
+                    <div class="row g-2 align-items-end">
+                        <!-- Node Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-server me-1 text-info"></i> Node
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedNodeId" (ngModelChange)="onNodeChange()">
+                                <option value="">All Nodes</option>
+                                <option *ngFor="let node of nodesList" [value]="node.id">
+                                    {{ node.label }} <span *ngIf="node.code">({{ node.code }})</span>
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Sensor Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-microchip me-1 text-success"></i> Sensor
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedSensorId" (ngModelChange)="onSensorChange()">
+                                <option value="">All Sensors</option>
+                                <option *ngFor="let sensor of filteredSensors" [value]="sensor.id">
+                                    {{ sensor.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Channel Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-chart-line me-1 text-warning"></i> Channel
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedChannelId">
+                                <option value="">All Channels</option>
+                                <option *ngFor="let channel of filteredChannels" [value]="channel.id">
+                                    {{ channel.label }} <span *ngIf="channel.unit">({{ channel.unit }})</span>
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Insert Filter Button -->
+                        <div class="col-md-3">
+                            <div class="btn-group w-100">
+                                <button type="button" class="btn btn-sm btn-outline-info dropdown-toggle" 
+                                    data-bs-toggle="dropdown" 
+                                    [disabled]="!selectedNodeId && !selectedSensorId && !selectedChannelId">
+                                    <i class="fa fa-filter me-1"></i> Insert Filter
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li *ngIf="selectedNodeId">
+                                        <a class="dropdown-item" href="javascript:;" (click)="insertFilterPlaceholder('node')">
+                                            <i class="fa fa-server me-2 text-info"></i> Filter by Node
+                                        </a>
+                                    </li>
+                                    <li *ngIf="selectedSensorId">
+                                        <a class="dropdown-item" href="javascript:;" (click)="insertFilterPlaceholder('sensor')">
+                                            <i class="fa fa-microchip me-2 text-success"></i> Filter by Sensor
+                                        </a>
+                                    </li>
+                                    <li *ngIf="selectedChannelId">
+                                        <a class="dropdown-item" href="javascript:;" (click)="insertFilterPlaceholder('channel')">
+                                            <i class="fa fa-chart-line me-2 text-warning"></i> Filter by Channel
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Filter Summary -->
+                    <div class="mt-2" *ngIf="selectedNodeId || selectedSensorId || selectedChannelId">
+                        <small class="text-muted">
+                            <i class="fa fa-filter me-1"></i> Active filters:
+                            <span *ngIf="selectedNodeId" class="badge bg-info me-1">
+                                Node: {{ getSelectedNodeLabel() }}
+                            </span>
+                            <span *ngIf="selectedSensorId" class="badge bg-success me-1">
+                                Sensor: {{ getSelectedSensorLabel() }}
+                            </span>
+                            <span *ngIf="selectedChannelId" class="badge bg-warning text-dark">
+                                Channel: {{ getSelectedChannelLabel() }}
+                            </span>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Query Builder: Group By & Aggregation -->
+                <div class="query-builder px-3 py-2 border-bottom bg-dark bg-opacity-10">
+                    <div class="row g-2 align-items-end">
+                        <!-- Time Grouping -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-clock me-1 text-primary"></i> Group by Time
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedGroupByTime">
+                                <option *ngFor="let opt of groupByTimeOptions" [value]="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Entity Grouping -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-layer-group me-1 text-purple"></i> Group by Entity
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedGroupByEntity">
+                                <option *ngFor="let opt of groupByEntityOptions" [value]="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Aggregation Function -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-calculator me-1 text-success"></i> Aggregation
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedAggregation">
+                                <option *ngFor="let opt of aggregationOptions" [value]="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Generate Query Button -->
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-sm btn-theme w-100" 
+                                (click)="generateGroupedQuery()"
+                                [disabled]="!selectedGroupByTime && !selectedGroupByEntity">
+                                <i class="fa fa-magic me-1"></i> Generate Query
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Info -->
+                    <div class="mt-2" *ngIf="selectedGroupByTime || selectedGroupByEntity">
+                        <small class="text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Will generate: 
+                            <code *ngIf="selectedGroupByTime">{{ getSelectedGroupByTimeLabel() }}</code>
+                            <span *ngIf="selectedGroupByTime && selectedGroupByEntity"> + </span>
+                            <code *ngIf="selectedGroupByEntity">{{ getSelectedGroupByEntityLabel() }}</code>
+                            → <code>{{ getSelectedAggregationLabel() }}</code>
+                        </small>
+                    </div>
                 </div>
 
                 <card-body class="p-0">
@@ -796,6 +955,61 @@
                                     <option [ngValue]="3">3</option>
                                 </select>
                             </div>
+                        </div>
+                    </card-body>
+                </card>
+
+                <!-- Gauge Config Card (for gauge widget type) -->
+                <card class="mb-2" *ngIf="selectedType === 'gauge' || selectedType === 'stat-card'">
+                    <card-header class="py-2 cursor-pointer" (click)="expandedSections.gaugeConfig = !expandedSections.gaugeConfig">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fa fa-tachometer-alt me-2 text-theme"></i>
+                                <span class="fw-bold">Gauge Config</span>
+                            </div>
+                            <i class="fa" [class.fa-chevron-down]="!expandedSections.gaugeConfig"
+                                [class.fa-chevron-up]="expandedSections.gaugeConfig"></i>
+                        </div>
+                    </card-header>
+                    <card-body *ngIf="expandedSections.gaugeConfig !== false" class="py-2">
+                        <!-- Min / Max -->
+                        <div class="option-row py-2 border-bottom">
+                            <div class="text-white-50 mb-1">Min / Max Value</div>
+                            <div class="d-flex gap-2">
+                                <div class="flex-fill">
+                                    <label class="form-label small mb-1">Min</label>
+                                    <input type="number" class="form-control form-control-sm" 
+                                        [(ngModel)]="form.yAxis.min"
+                                        (ngModelChange)="updatePreview()" placeholder="0">
+                                </div>
+                                <div class="flex-fill">
+                                    <label class="form-label small mb-1">Max</label>
+                                    <input type="number" class="form-control form-control-sm" 
+                                        [(ngModel)]="form.yAxis.max"
+                                        (ngModelChange)="updatePreview()" placeholder="100">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Unit -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Unit</span>
+                            <select class="form-select form-select-sm" style="width: 150px;"
+                                [(ngModel)]="form.yAxis.unit" (ngModelChange)="updatePreview()">
+                                <option value="">None</option>
+                                <option *ngFor="let u of unitPresets" [value]="u.value">{{ u.label }}</option>
+                            </select>
+                        </div>
+                        <!-- Decimals -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2">
+                            <span class="text-white-50">Decimals</span>
+                            <select class="form-select form-select-sm" style="width: 100px;"
+                                [(ngModel)]="form.yAxis.decimals" (ngModelChange)="updatePreview()">
+                                <option [ngValue]="0">0</option>
+                                <option [ngValue]="1">1</option>
+                                <option [ngValue]="2">2</option>
+                                <option [ngValue]="3">3</option>
+                                <option [ngValue]="4">4</option>
+                            </select>
                         </div>
                     </card-body>
                 </card>

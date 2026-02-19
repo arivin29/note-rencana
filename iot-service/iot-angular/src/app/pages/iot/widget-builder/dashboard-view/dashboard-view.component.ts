@@ -267,14 +267,24 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   addWidget(): void {
     if (this.dashboard) {
+      // Navigate to new widget mode selector (Template or Expert)
+      this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'widget', 'new']);
+    }
+  }
+
+  // For backward compatibility - direct expert mode
+  addWidgetExpert(): void {
+    if (this.dashboard) {
       this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'add-widget']);
     }
   }
 
   editWidget(widgetId: string): void {
-    if (this.dashboard) {
-      this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'edit-widget', widgetId]);
-    }
+    if (!this.dashboard) return;
+    
+    // Always navigate to Expert Mode for editing (regardless of creation mode)
+    // Expert Mode now loads templateConfig filters (node, sensor, channel) if available
+    this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'edit-widget', widgetId]);
   }
 
   deleteWidget(widgetId: string): void {

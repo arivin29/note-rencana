@@ -52,6 +52,42 @@ export interface WidgetConfig {
   yAxis?: WidgetYAxisConfig;
   thresholds?: WidgetThreshold[];
   display?: WidgetDisplayConfig;
+  
+  // === TEMPLATE MODE SUPPORT ===
+  /**
+   * How this widget was created
+   * - 'template': Created using Template Wizard (no-code)
+   * - 'expert': Created using SQL Editor
+   * - undefined: Legacy widgets
+   */
+  creationMode?: 'template' | 'expert';
+  
+  /**
+   * Template identifier (e.g., 'gauge-speedometer', 'line-chart-area')
+   */
+  templateId?: string;
+  
+  /**
+   * Original template configuration for re-editing
+   */
+  templateConfig?: TemplateConfiguration;
+}
+
+/**
+ * Template configuration stored for re-editing template widgets
+ */
+export interface TemplateConfiguration {
+  // Data source selections
+  nodeId?: string;
+  nodeName?: string;
+  sensorId?: string;
+  sensorName?: string;
+  channelId?: string;
+  channelName?: string;
+  channelIds?: string[];  // For multi-channel charts
+  
+  // Template-specific settings
+  settings: Record<string, any>;
 }
 
 // New structured field mapping

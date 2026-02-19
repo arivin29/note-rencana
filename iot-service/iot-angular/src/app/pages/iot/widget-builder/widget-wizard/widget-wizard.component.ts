@@ -5,6 +5,9 @@ import {
   QueryResult
 } from '../models/widget.models';
 import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
+import { NodesService } from '../../../../../sdk/core/services/nodes.service';
+import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
+import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
 import { ExecuteQueryResponseDto, ValidateQueryResponseDto } from '../../../../../sdk/core/models';
 
 @Component({
@@ -37,7 +40,8 @@ export class WidgetWizardComponent implements OnInit {
     axis: false,
     series: true,
     thresholds: true,
-    pieLegend: true
+    pieLegend: true,
+    gaugeConfig: true
   };
 
   // ============================================
@@ -191,6 +195,80 @@ export class WidgetWizardComponent implements OnInit {
   };
   selectedDataSource: 'postgresql' | 'clickhouse' = 'postgresql';
 
+  // ============================================
+  // QUERY FILTERS - Node, Sensor, Channel selection
+  // ============================================
+  
+  // Available data for dropdowns
+  nodesList: { id: string; label: string; code: string }[] = [];
+  sensorsList: { id: string; label: string; nodeId: string }[] = [];
+  channelsList: { id: string; label: string; metricCode: string; sensorId: string; unit: string }[] = [];
+  
+  // Selected filters
+  selectedNodeId: string = '';
+  selectedSensorId: string = '';
+  selectedChannelId: string = '';
+  
+  // Filtered lists based on selection
+  get filteredSensors() {
+    if (!this.selectedNodeId) return this.sensorsList;
+    return this.sensorsList.filter(s => s.nodeId === this.selectedNodeId);
+  }
+  
+  get filteredChannels() {
+    if (!this.selectedSensorId) {
+      // If node is selected but not sensor, show all channels for that node's sensors
+      if (this.selectedNodeId) {
+        const nodeSensorIds = this.filteredSensors.map(s => s.id);
+        return this.channelsList.filter(c => nodeSensorIds.includes(c.sensorId));
+      }
+      return this.channelsList;
+    }
+    return this.channelsList.filter(c => c.sensorId === this.selectedSensorId);
+  }
+
+  // ============================================
+  // GROUP BY OPTIONS
+  // ============================================
+  
+  // Time-based grouping options
+  groupByTimeOptions = [
+    { value: '', label: 'No Grouping', sql: '' },
+    { value: 'minute', label: '⏱️ Per Minute', sqlPg: "DATE_TRUNC('minute', sl.ts)", sqlCh: 'toStartOfMinute(event_time)' },
+    { value: '5min', label: '⏱️ Per 5 Minutes', sqlPg: "DATE_TRUNC('hour', sl.ts) + INTERVAL '5 min' * FLOOR(EXTRACT(MINUTE FROM sl.ts) / 5)", sqlCh: 'toStartOfFiveMinutes(event_time)' },
+    { value: '10min', label: '⏱️ Per 10 Minutes', sqlPg: "DATE_TRUNC('hour', sl.ts) + INTERVAL '10 min' * FLOOR(EXTRACT(MINUTE FROM sl.ts) / 10)", sqlCh: 'toStartOfTenMinutes(event_time)' },
+    { value: '15min', label: '⏱️ Per 15 Minutes', sqlPg: "DATE_TRUNC('hour', sl.ts) + INTERVAL '15 min' * FLOOR(EXTRACT(MINUTE FROM sl.ts) / 15)", sqlCh: 'toStartOfFifteenMinutes(event_time)' },
+    { value: 'hour', label: '🕐 Per Hour', sqlPg: "DATE_TRUNC('hour', sl.ts)", sqlCh: 'toStartOfHour(event_time)' },
+    { value: 'day', label: '📅 Per Day', sqlPg: "DATE_TRUNC('day', sl.ts)", sqlCh: 'toStartOfDay(event_time)' },
+    { value: 'week', label: '📆 Per Week', sqlPg: "DATE_TRUNC('week', sl.ts)", sqlCh: 'toStartOfWeek(event_time)' },
+    { value: 'month', label: '📆 Per Month', sqlPg: "DATE_TRUNC('month', sl.ts)", sqlCh: 'toStartOfMonth(event_time)' },
+  ];
+
+  // Entity-based grouping options
+  groupByEntityOptions = [
+    { value: '', label: 'No Entity Grouping' },
+    { value: 'node', label: '🖥️ By Node', sqlPg: 'n.label AS node_name, sl.id_node', sqlCh: 'node_code, node_label' },
+    { value: 'sensor', label: '📡 By Sensor', sqlPg: 's.label AS sensor_name, sl.id_sensor', sqlCh: 'sensor_id, sensor_label' },
+    { value: 'channel', label: '📊 By Channel', sqlPg: 'sc.label AS channel_name, sl.id_sensor_channel', sqlCh: 'channel_id, metric_code' },
+    { value: 'metric', label: '📈 By Metric Code', sqlPg: 'sc.metric_code', sqlCh: 'metric_code' },
+  ];
+
+  // Aggregation functions
+  aggregationOptions = [
+    { value: 'avg', label: '📊 Average', sqlPg: 'ROUND(AVG(sl.value_engineered)::numeric, 2)', sqlCh: 'round(avg(eng_value), 2)' },
+    { value: 'sum', label: '➕ Sum', sqlPg: 'ROUND(SUM(sl.value_engineered)::numeric, 2)', sqlCh: 'round(sum(eng_value), 2)' },
+    { value: 'min', label: '⬇️ Minimum', sqlPg: 'MIN(sl.value_engineered)', sqlCh: 'min(eng_value)' },
+    { value: 'max', label: '⬆️ Maximum', sqlPg: 'MAX(sl.value_engineered)', sqlCh: 'max(eng_value)' },
+    { value: 'count', label: '🔢 Count', sqlPg: 'COUNT(*)', sqlCh: 'count()' },
+    { value: 'last', label: '📌 Last Value', sqlPg: '(ARRAY_AGG(sl.value_engineered ORDER BY sl.ts DESC))[1]', sqlCh: 'argMax(eng_value, event_time)' },
+    { value: 'first', label: '📌 First Value', sqlPg: '(ARRAY_AGG(sl.value_engineered ORDER BY sl.ts ASC))[1]', sqlCh: 'argMin(eng_value, event_time)' },
+  ];
+
+  // Selected group by values
+  selectedGroupByTime: string = '';
+  selectedGroupByEntity: string = '';
+  selectedAggregation: string = 'avg';
+
   // Threshold presets
   thresholdColors = [
     { name: 'Red', value: '#ef4444' },
@@ -227,45 +305,50 @@ export class WidgetWizardComponent implements OnInit {
   previewOptions: any = null;
 
   // Sample SQL Templates - using correct table: sensor_logs
-  // Variables: ${ownerId} - current user's owner, ${timeRange} - selected time range (e.g., '6 hours')
+  // Variables: ${fromTime}/${toTime} are ISO timestamps injected by backend
+  // ${ownerId} is auto-injected by backend based on logged-in user
   sqlTemplates = [
     {
-      name: 'Time Series (Single)',
+      name: '📈 Time Series (Single)',
+      description: 'Raw telemetry data over time',
       sql: `SELECT 
   sl.ts AS timestamp,
   sl.value_engineered AS value
 FROM sensor_logs sl
-WHERE sl.id_owner = '\${ownerId}'
-  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
 ORDER BY sl.ts ASC
 LIMIT 1000`
     },
     {
-      name: 'Hourly Average',
+      name: '📈 Hourly Average',
+      description: 'Aggregated hourly averages',
       sql: `SELECT 
   DATE_TRUNC('hour', sl.ts) AS timestamp,
   ROUND(AVG(sl.value_engineered)::numeric, 2) AS value
 FROM sensor_logs sl
-WHERE sl.id_owner = '\${ownerId}'
-  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
 GROUP BY DATE_TRUNC('hour', sl.ts)
 ORDER BY timestamp ASC`
     },
     {
-      name: 'Multi-Series by Metric',
+      name: '📊 Multi-Series by Metric',
+      description: 'Compare multiple metrics on one chart',
       sql: `SELECT 
   DATE_TRUNC('hour', sl.ts) AS timestamp,
   sc.metric_code,
   ROUND(AVG(sl.value_engineered)::numeric, 2) AS value
 FROM sensor_logs sl
 JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
-WHERE sl.id_owner = '\${ownerId}'
-  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
 GROUP BY DATE_TRUNC('hour', sl.ts), sc.metric_code
 ORDER BY timestamp`
     },
     {
-      name: 'Latest Sensor Values',
+      name: '📋 Latest Sensor Values',
+      description: 'Most recent value per sensor channel',
       sql: `SELECT DISTINCT ON (sc.id_sensor_channel)
   s.label AS sensor_name,
   sc.metric_code,
@@ -275,12 +358,13 @@ ORDER BY timestamp`
 FROM sensor_logs sl
 JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
 JOIN sensors s ON sc.id_sensor = s.id_sensor
-WHERE sl.id_owner = '\${ownerId}'
-  AND sl.ts >= NOW() - INTERVAL '1 hour'
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
 ORDER BY sc.id_sensor_channel, sl.ts DESC`
     },
     {
-      name: 'Current Value (Gauge)',
+      name: '📈 Current Value (Gauge)',
+      description: 'Single current value for gauge widget',
       sql: `SELECT 
   sl.value_engineered AS value,
   sc.unit,
@@ -288,50 +372,273 @@ ORDER BY sc.id_sensor_channel, sl.ts DESC`
   sc.max_threshold
 FROM sensor_logs sl
 JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
-WHERE sl.id_owner = '\${ownerId}'
+WHERE sl.ts <= '\${toTime}'::timestamp
 ORDER BY sl.ts DESC
 LIMIT 1`
     },
     {
-      name: 'Node Status Count',
+      name: '📊 Node Status Count',
+      description: 'Count nodes by connectivity status',
       sql: `SELECT 
   COALESCE(connectivity_status, 'unknown') AS status,
   COUNT(*) AS count
 FROM nodes n
 JOIN projects p ON n.id_project = p.id_project
-WHERE p.id_owner = '\${ownerId}'
 GROUP BY connectivity_status`
     },
     {
-      name: 'Average by Sensor',
+      name: '📊 Average by Sensor',
+      description: 'Average values grouped by sensor',
       sql: `SELECT 
   s.label AS sensor_name,
   ROUND(AVG(sl.value_engineered)::numeric, 2) AS avg_value
 FROM sensor_logs sl
 JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
 JOIN sensors s ON sc.id_sensor = s.id_sensor
-WHERE sl.id_owner = '\${ownerId}'
-  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
 GROUP BY s.label
 ORDER BY avg_value DESC`
     },
     {
-      name: 'Stats Summary',
+      name: '📊 Stats Summary',
+      description: 'Overall statistics: count, avg, min, max',
       sql: `SELECT 
   COUNT(*) AS total_readings,
   ROUND(AVG(sl.value_engineered)::numeric, 2) AS avg_value,
   ROUND(MAX(sl.value_engineered)::numeric, 2) AS max_value,
   ROUND(MIN(sl.value_engineered)::numeric, 2) AS min_value
 FROM sensor_logs sl
-WHERE sl.id_owner = '\${ownerId}'
-  AND sl.ts >= NOW() - INTERVAL '\${timeRange}'`
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp`
+    },
+    {
+      name: '📈 Channel Time Series',
+      description: 'Time series for single channel with metric info',
+      sql: `SELECT 
+  sl.ts AS timestamp,
+  sl.value_engineered AS value,
+  sc.metric_code,
+  sc.unit
+FROM sensor_logs sl
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
+ORDER BY sl.ts ASC
+LIMIT 1000`
+    },
+    {
+      name: '📊 Node Sensors Overview',
+      description: 'All sensors under a node with latest values',
+      sql: `SELECT DISTINCT ON (s.id_sensor)
+  n.label AS node_name,
+  s.label AS sensor_name,
+  sc.metric_code,
+  sl.value_engineered AS value,
+  sc.unit,
+  sl.ts AS timestamp
+FROM sensor_logs sl
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+JOIN sensors s ON sc.id_sensor = s.id_sensor
+JOIN nodes n ON s.id_node = n.id_node
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
+ORDER BY s.id_sensor, sl.ts DESC`
+    },
+    {
+      name: '📊 Compare Channels',
+      description: 'Compare multiple channels side by side',
+      sql: `SELECT 
+  DATE_TRUNC('hour', sl.ts) AS timestamp,
+  sc.label AS channel_name,
+  sc.metric_code,
+  ROUND(AVG(sl.value_engineered)::numeric, 2) AS avg_value,
+  sc.unit
+FROM sensor_logs sl
+JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel
+WHERE sl.ts >= '\${fromTime}'::timestamp
+  AND sl.ts <= '\${toTime}'::timestamp
+GROUP BY DATE_TRUNC('hour', sl.ts), sc.label, sc.metric_code, sc.unit
+ORDER BY timestamp, channel_name`
     }
   ];
+
+  // ClickHouse SQL Templates - for time-series analytics
+  // Uses iot.sensor_telemetry and aggregated tables
+  // ClickHouse SQL Templates - for time-series analytics
+  // Variables: ${fromTime}/${toTime} are ISO timestamps injected by backend
+  clickhouseTemplates = [
+    {
+      name: '📊 Realtime - Current Values',
+      description: 'Latest value per sensor channel',
+      sql: `SELECT 
+    node_code,
+    sensor_label,
+    metric_code,
+    eng_value AS value,
+    metric_unit AS unit,
+    last_update AS timestamp,
+    dateDiff('second', last_update, now()) AS age_seconds
+FROM iot.sensor_channel_latest FINAL
+ORDER BY node_code, sensor_label`
+    },
+    {
+      name: '📈 Time Series - Raw',
+      description: 'Raw telemetry data with 5-min intervals',
+      sql: `SELECT 
+    toStartOfInterval(event_time, INTERVAL 5 minute) AS time,
+    metric_code,
+    avg(eng_value) AS value
+FROM iot.sensor_telemetry
+WHERE event_time >= parseDateTimeBestEffort('\${fromTime}')
+    AND event_time <= parseDateTimeBestEffort('\${toTime}')
+GROUP BY time, metric_code
+ORDER BY time`
+    },
+    {
+      name: '📈 Time Series - 10min Agg',
+      description: '10-minute aggregated data',
+      sql: `SELECT 
+    time_bucket AS time,
+    metric_code,
+    avg_value AS value,
+    min_value,
+    max_value,
+    sample_count
+FROM iot.sensor_telemetry_10min
+WHERE time_bucket >= parseDateTimeBestEffort('\${fromTime}')
+    AND time_bucket <= parseDateTimeBestEffort('\${toTime}')
+ORDER BY time`
+    },
+    {
+      name: '📈 Time Series - Hourly',
+      description: 'Hourly aggregated data',
+      sql: `SELECT 
+    time_bucket AS time,
+    metric_code,
+    avg_value AS value,
+    min_value,
+    max_value,
+    sample_count
+FROM iot.sensor_telemetry_1hour
+WHERE time_bucket >= parseDateTimeBestEffort('\${fromTime}')
+    AND time_bucket <= parseDateTimeBestEffort('\${toTime}')
+ORDER BY time`
+    },
+    {
+      name: '📈 Time Series - Daily',
+      description: 'Daily aggregated data for trends',
+      sql: `SELECT 
+    event_date AS time,
+    metric_code,
+    avg_value AS value,
+    min_value,
+    max_value,
+    sample_count
+FROM iot.sensor_telemetry_daily
+WHERE event_date >= toDate(parseDateTimeBestEffort('\${fromTime}'))
+    AND event_date <= toDate(parseDateTimeBestEffort('\${toTime}'))
+ORDER BY time`
+    },
+    {
+      name: '📊 Multi-Series by Sensor',
+      description: 'Compare multiple sensors',
+      sql: `SELECT 
+    toStartOfInterval(event_time, INTERVAL 10 minute) AS time,
+    sensor_label,
+    metric_code,
+    avg(eng_value) AS value
+FROM iot.sensor_telemetry
+WHERE event_time >= parseDateTimeBestEffort('\${fromTime}')
+    AND event_time <= parseDateTimeBestEffort('\${toTime}')
+GROUP BY time, sensor_label, metric_code
+ORDER BY time`
+    },
+    {
+      name: '🥧 Distribution by Metric',
+      description: 'Pie chart - readings distribution',
+      sql: `SELECT 
+    metric_code,
+    count() AS count,
+    round(avg(eng_value), 2) AS avg_value
+FROM iot.sensor_telemetry
+WHERE event_time >= parseDateTimeBestEffort('\${fromTime}')
+    AND event_time <= parseDateTimeBestEffort('\${toTime}')
+GROUP BY metric_code
+ORDER BY count DESC`
+    },
+    {
+      name: '📊 Node Status Overview',
+      description: 'Latest status per node',
+      sql: `SELECT 
+    node_code,
+    node_label,
+    last_event_time AS timestamp,
+    dateDiff('minute', last_event_time, now()) AS minutes_ago,
+    CASE 
+        WHEN dateDiff('minute', last_event_time, now()) < 5 THEN 'online'
+        WHEN dateDiff('minute', last_event_time, now()) < 30 THEN 'warning'
+        ELSE 'offline'
+    END AS status
+FROM iot.node_latest FINAL
+ORDER BY last_event_time DESC`
+    },
+    {
+      name: '📈 Gauge - Current Value',
+      description: 'Single current value for gauge widget',
+      sql: `SELECT 
+    eng_value AS value,
+    metric_unit AS unit,
+    metric_code,
+    last_update AS timestamp
+FROM iot.sensor_channel_latest FINAL
+WHERE channel_id = '\${channelId}'
+LIMIT 1`
+    },
+    {
+      name: '📊 Stats Summary',
+      description: 'Statistics overview',
+      sql: `SELECT 
+    count() AS total_readings,
+    round(avg(eng_value), 2) AS avg_value,
+    round(max(eng_value), 2) AS max_value,
+    round(min(eng_value), 2) AS min_value,
+    uniq(sensor_id) AS sensor_count,
+    uniq(node_id) AS node_count
+FROM iot.sensor_telemetry
+WHERE event_time >= parseDateTimeBestEffort('\${fromTime}')
+    AND event_time <= parseDateTimeBestEffort('\${toTime}')`
+    },
+    {
+      name: '🔥 Heatmap - Hourly Activity',
+      description: 'Activity heatmap by hour',
+      sql: `SELECT 
+    toDayOfWeek(event_time) AS day_of_week,
+    toHour(event_time) AS hour,
+    count() AS activity_count,
+    round(avg(eng_value), 2) AS avg_value
+FROM iot.sensor_telemetry
+WHERE event_time >= parseDateTimeBestEffort('\${fromTime}')
+    AND event_time <= parseDateTimeBestEffort('\${toTime}')
+GROUP BY day_of_week, hour
+ORDER BY day_of_week, hour`
+    }
+  ];
+
+  // Get templates based on selected data source
+  get activeTemplates() {
+    return this.selectedDataSource === 'clickhouse' 
+      ? this.clickhouseTemplates 
+      : this.sqlTemplates;
+  }
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private widgetBuilderService: WidgetBuilderService
+    private widgetBuilderService: WidgetBuilderService,
+    private nodesService: NodesService,
+    private sensorsService: SensorsService,
+    private sensorChannelsService: SensorChannelsService
   ) {}
 
   ngOnInit(): void {
@@ -347,6 +654,9 @@ WHERE sl.id_owner = '\${ownerId}'
     
     // Load available data sources
     this.loadDataSources();
+    
+    // Load filter data (nodes, sensors, channels)
+    this.loadFilterData();
     
     if (this.isEditMode) {
       this.loadWidget();
@@ -369,6 +679,488 @@ WHERE sl.id_owner = '\${ownerId}'
         console.error('Failed to load data sources:', err);
       }
     });
+  }
+
+  /**
+   * Load filter data - nodes, sensors, channels for dropdown selection
+   */
+  loadFilterData(): void {
+    // Load Nodes
+    this.nodesService.nodesControllerFindAll$Response().subscribe({
+      next: (response: any) => {
+        try {
+          const body = response.body;
+          // Handle different response formats
+          let data: any[] = [];
+          if (Array.isArray(body)) {
+            data = body;
+          } else if (body?.data && Array.isArray(body.data)) {
+            data = body.data;
+          } else if (typeof body === 'string') {
+            const parsed = JSON.parse(body);
+            data = Array.isArray(parsed) ? parsed : (parsed?.data || []);
+          }
+          
+          this.nodesList = data.map((n: any) => ({
+            id: n.id_node || n.idNode || n.id,
+            label: n.name || n.label || n.code || n.serialNumber || 'Unnamed Node',
+            code: n.code || n.node_code || n.nodeCode || n.serialNumber || ''
+          }));
+          console.log('Loaded nodes:', this.nodesList.length);
+        } catch (e) {
+          console.error('Error parsing nodes:', e);
+          this.nodesList = [];
+        }
+      },
+      error: (err) => console.error('Failed to load nodes:', err)
+    });
+
+    // Load Sensors
+    this.sensorsService.sensorsControllerFindAll$Response().subscribe({
+      next: (response: any) => {
+        try {
+          const body = response.body;
+          let data: any[] = [];
+          if (Array.isArray(body)) {
+            data = body;
+          } else if (body?.data && Array.isArray(body.data)) {
+            data = body.data;
+          } else if (typeof body === 'string') {
+            const parsed = JSON.parse(body);
+            data = Array.isArray(parsed) ? parsed : (parsed?.data || []);
+          }
+          
+          this.sensorsList = data.map((s: any) => ({
+            id: s.id_sensor || s.idSensor || s.id,
+            label: s.label || s.name || 'Unnamed Sensor',
+            nodeId: s.id_node || s.idNode || ''
+          }));
+          console.log('Loaded sensors:', this.sensorsList.length);
+        } catch (e) {
+          console.error('Error parsing sensors:', e);
+          this.sensorsList = [];
+        }
+      },
+      error: (err) => console.error('Failed to load sensors:', err)
+    });
+
+    // Load Sensor Channels
+    this.sensorChannelsService.sensorChannelsControllerFindAll$Response().subscribe({
+      next: (response: any) => {
+        try {
+          const body = response.body;
+          let data: any[] = [];
+          if (Array.isArray(body)) {
+            data = body;
+          } else if (body?.data && Array.isArray(body.data)) {
+            data = body.data;
+          } else if (typeof body === 'string') {
+            const parsed = JSON.parse(body);
+            data = Array.isArray(parsed) ? parsed : (parsed?.data || []);
+          }
+          
+          this.channelsList = data.map((c: any) => ({
+            id: c.id_sensor_channel || c.idSensorChannel || c.id,
+            label: c.label || c.metric_code || c.metricCode || 'Unnamed Channel',
+            metricCode: c.metric_code || c.metricCode || '',
+            sensorId: c.id_sensor || c.idSensor || '',
+            unit: c.unit || ''
+          }));
+          console.log('Loaded channels:', this.channelsList.length);
+        } catch (e) {
+          console.error('Error parsing channels:', e);
+          this.channelsList = [];
+        }
+      },
+      error: (err) => console.error('Failed to load channels:', err)
+    });
+  }
+
+  /**
+   * Handle node selection change - reset dependent filters
+   */
+  onNodeChange(): void {
+    // Reset sensor and channel when node changes
+    this.selectedSensorId = '';
+    this.selectedChannelId = '';
+  }
+
+  /**
+   * Handle sensor selection change - reset channel
+   */
+  onSensorChange(): void {
+    this.selectedChannelId = '';
+  }
+
+  /**
+   * Extract filter IDs from SQL query and auto-select dropdowns
+   * Parses id_sensor_channel, id_sensor, id_node from WHERE clause
+   */
+  extractFiltersFromSql(sql: string): void {
+    if (!sql) return;
+    
+    // Extract id_sensor_channel from SQL
+    const channelMatch = sql.match(/id_sensor_channel\s*=\s*'([^']+)'/i);
+    if (channelMatch) {
+      this.selectedChannelId = channelMatch[1];
+      console.log('Extracted channelId from SQL:', this.selectedChannelId);
+      
+      // Wait for filter data to load, then resolve sensor and node
+      this.resolveParentFiltersFromChannel(this.selectedChannelId);
+    }
+    
+    // Extract id_sensor from SQL (if no channel)
+    if (!this.selectedChannelId) {
+      const sensorMatch = sql.match(/id_sensor\s*=\s*'([^']+)'/i);
+      if (sensorMatch) {
+        this.selectedSensorId = sensorMatch[1];
+        console.log('Extracted sensorId from SQL:', this.selectedSensorId);
+        
+        // Wait for filter data to load, then resolve node
+        this.resolveParentFiltersFromSensor(this.selectedSensorId);
+      }
+    }
+    
+    // Extract id_node from SQL (if no sensor)
+    if (!this.selectedSensorId) {
+      const nodeMatch = sql.match(/id_node\s*=\s*'([^']+)'/i);
+      if (nodeMatch) {
+        this.selectedNodeId = nodeMatch[1];
+        console.log('Extracted nodeId from SQL:', this.selectedNodeId);
+      }
+    }
+  }
+
+  /**
+   * Resolve sensor and node from channel ID
+   * Waits for filter data to be loaded
+   */
+  private resolveParentFiltersFromChannel(channelId: string): void {
+    // Use interval to wait for data to load
+    const checkInterval = setInterval(() => {
+      if (this.channelsList.length > 0) {
+        clearInterval(checkInterval);
+        
+        const channel = this.channelsList.find(c => c.id === channelId);
+        if (channel && channel.sensorId) {
+          this.selectedSensorId = channel.sensorId;
+          console.log('Resolved sensorId from channel:', this.selectedSensorId);
+          
+          // Now resolve node from sensor
+          this.resolveParentFiltersFromSensor(channel.sensorId);
+        }
+      }
+    }, 100);
+    
+    // Timeout after 5 seconds
+    setTimeout(() => clearInterval(checkInterval), 5000);
+  }
+
+  /**
+   * Resolve node from sensor ID
+   */
+  private resolveParentFiltersFromSensor(sensorId: string): void {
+    const checkInterval = setInterval(() => {
+      if (this.sensorsList.length > 0) {
+        clearInterval(checkInterval);
+        
+        const sensor = this.sensorsList.find(s => s.id === sensorId);
+        if (sensor && sensor.nodeId) {
+          this.selectedNodeId = sensor.nodeId;
+          console.log('Resolved nodeId from sensor:', this.selectedNodeId);
+        }
+      }
+    }, 100);
+    
+    // Timeout after 5 seconds
+    setTimeout(() => clearInterval(checkInterval), 5000);
+  }
+
+  /**
+   * Get selected node label for display
+   */
+  getSelectedNodeLabel(): string {
+    const node = this.nodesList.find(n => n.id === this.selectedNodeId);
+    return node?.label || '';
+  }
+
+  /**
+   * Get selected sensor label for display
+   */
+  getSelectedSensorLabel(): string {
+    const sensor = this.sensorsList.find(s => s.id === this.selectedSensorId);
+    return sensor?.label || '';
+  }
+
+  /**
+   * Get selected channel label for display
+   */
+  getSelectedChannelLabel(): string {
+    const channel = this.channelsList.find(c => c.id === this.selectedChannelId);
+    return channel?.label || '';
+  }
+
+  /**
+   * Get selected Group By Time label for display
+   */
+  getSelectedGroupByTimeLabel(): string {
+    const opt = this.groupByTimeOptions.find(o => o.value === this.selectedGroupByTime);
+    return opt?.label || '';
+  }
+
+  /**
+   * Get selected Group By Entity label for display
+   */
+  getSelectedGroupByEntityLabel(): string {
+    const opt = this.groupByEntityOptions.find(o => o.value === this.selectedGroupByEntity);
+    return opt?.label || '';
+  }
+
+  /**
+   * Get selected Aggregation label for display
+   */
+  getSelectedAggregationLabel(): string {
+    const opt = this.aggregationOptions.find(o => o.value === this.selectedAggregation);
+    return opt?.label || '';
+  }
+
+  /**
+   * Insert filter placeholder into SQL at cursor or append to WHERE clause
+   */
+  insertFilterPlaceholder(filterType: 'node' | 'sensor' | 'channel'): void {
+    let placeholder = '';
+    let value = '';
+    
+    switch (filterType) {
+      case 'node':
+        value = this.selectedNodeId;
+        placeholder = `sl.id_node = '${value}'`;
+        break;
+      case 'sensor':
+        value = this.selectedSensorId;
+        placeholder = `sl.id_sensor = '${value}'`;
+        break;
+      case 'channel':
+        value = this.selectedChannelId;
+        placeholder = `sl.id_sensor_channel = '${value}'`;
+        break;
+    }
+    
+    if (!value) {
+      alert(`Please select a ${filterType} first`);
+      return;
+    }
+    
+    // Append to SQL - smart insert
+    if (this.form.sql.toUpperCase().includes('WHERE')) {
+      // Add as AND condition
+      this.form.sql = this.form.sql.replace(/(WHERE\s+)/i, `$1${placeholder} AND `);
+    } else {
+      // No WHERE clause, just append comment
+      this.form.sql += `\n-- Add to WHERE: ${placeholder}`;
+    }
+  }
+
+  /**
+   * Generate SQL query based on group by selections
+   */
+  generateGroupedQuery(): void {
+    const isClickHouse = this.selectedDataSource === 'clickhouse';
+    
+    // Get selected options
+    const timeGroup = this.groupByTimeOptions.find(o => o.value === this.selectedGroupByTime);
+    const entityGroup = this.groupByEntityOptions.find(o => o.value === this.selectedGroupByEntity);
+    const aggregation = this.aggregationOptions.find(o => o.value === this.selectedAggregation);
+    
+    if (!aggregation) {
+      alert('Please select an aggregation function');
+      return;
+    }
+
+    let sql = '';
+    
+    if (isClickHouse) {
+      sql = this.generateClickHouseGroupedQuery(timeGroup, entityGroup, aggregation);
+    } else {
+      sql = this.generatePostgreSQLGroupedQuery(timeGroup, entityGroup, aggregation);
+    }
+    
+    this.form.sql = sql;
+  }
+
+  /**
+   * Generate PostgreSQL grouped query
+   */
+  private generatePostgreSQLGroupedQuery(
+    timeGroup: any, 
+    entityGroup: any, 
+    aggregation: any
+  ): string {
+    const selectParts: string[] = [];
+    const groupByParts: string[] = [];
+    const joinParts: string[] = [];
+    const whereParts: string[] = [
+      "sl.ts >= '${fromTime}'::timestamp",
+      "sl.ts <= '${toTime}'::timestamp"
+    ];
+    
+    // Time grouping
+    if (timeGroup?.sqlPg) {
+      selectParts.push(`${timeGroup.sqlPg} AS timestamp`);
+      groupByParts.push(timeGroup.sqlPg);
+    }
+    
+    // Entity grouping
+    if (entityGroup?.value) {
+      switch (entityGroup.value) {
+        case 'node':
+          selectParts.push('n.label AS node_name');
+          joinParts.push('JOIN sensors s ON sl.id_sensor = s.id_sensor');
+          joinParts.push('JOIN nodes n ON s.id_node = n.id_node');
+          groupByParts.push('n.label');
+          break;
+        case 'sensor':
+          selectParts.push('s.label AS sensor_name');
+          joinParts.push('JOIN sensors s ON sl.id_sensor = s.id_sensor');
+          groupByParts.push('s.label');
+          break;
+        case 'channel':
+          selectParts.push('sc.label AS channel_name');
+          joinParts.push('JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel');
+          groupByParts.push('sc.label');
+          break;
+        case 'metric':
+          selectParts.push('sc.metric_code');
+          joinParts.push('JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel');
+          groupByParts.push('sc.metric_code');
+          break;
+      }
+    }
+    
+    // Aggregation
+    selectParts.push(`${aggregation.sqlPg} AS value`);
+    
+    // Add count for reference
+    if (aggregation.value !== 'count') {
+      selectParts.push('COUNT(*) AS sample_count');
+    }
+    
+    // Entity filters
+    if (this.selectedNodeId) {
+      joinParts.push('JOIN sensors s2 ON sl.id_sensor = s2.id_sensor');
+      whereParts.push(`s2.id_node = '${this.selectedNodeId}'`);
+    }
+    if (this.selectedSensorId) {
+      whereParts.push(`sl.id_sensor = '${this.selectedSensorId}'`);
+    }
+    if (this.selectedChannelId) {
+      whereParts.push(`sl.id_sensor_channel = '${this.selectedChannelId}'`);
+    }
+    
+    // Build query
+    const uniqueJoins = [...new Set(joinParts)];
+    
+    let sql = `SELECT\n  ${selectParts.join(',\n  ')}\n`;
+    sql += `FROM sensor_logs sl\n`;
+    sql += uniqueJoins.map(j => j + '\n').join('');
+    sql += `WHERE ${whereParts.join('\n  AND ')}\n`;
+    
+    if (groupByParts.length > 0) {
+      sql += `GROUP BY ${groupByParts.join(', ')}\n`;
+    }
+    
+    // Order by timestamp if available
+    if (timeGroup?.sqlPg) {
+      sql += `ORDER BY timestamp ASC`;
+    } else if (entityGroup?.value) {
+      sql += `ORDER BY value DESC`;
+    }
+    
+    return sql;
+  }
+
+  /**
+   * Generate ClickHouse grouped query
+   */
+  private generateClickHouseGroupedQuery(
+    timeGroup: any, 
+    entityGroup: any, 
+    aggregation: any
+  ): string {
+    const selectParts: string[] = [];
+    const groupByParts: string[] = [];
+    const whereParts: string[] = [
+      "event_time >= parseDateTimeBestEffort('${fromTime}')",
+      "event_time <= parseDateTimeBestEffort('${toTime}')"
+    ];
+    
+    // Time grouping
+    if (timeGroup?.sqlCh) {
+      selectParts.push(`${timeGroup.sqlCh} AS timestamp`);
+      groupByParts.push('timestamp');
+    }
+    
+    // Entity grouping
+    if (entityGroup?.value) {
+      switch (entityGroup.value) {
+        case 'node':
+          selectParts.push('node_code', 'node_label');
+          groupByParts.push('node_code', 'node_label');
+          break;
+        case 'sensor':
+          selectParts.push('sensor_id', 'sensor_label');
+          groupByParts.push('sensor_id', 'sensor_label');
+          break;
+        case 'channel':
+          selectParts.push('channel_id', 'metric_code');
+          groupByParts.push('channel_id', 'metric_code');
+          break;
+        case 'metric':
+          selectParts.push('metric_code');
+          groupByParts.push('metric_code');
+          break;
+      }
+    }
+    
+    // Aggregation
+    selectParts.push(`${aggregation.sqlCh} AS value`);
+    
+    // Add count for reference
+    if (aggregation.value !== 'count') {
+      selectParts.push('count() AS sample_count');
+    }
+    
+    // Entity filters
+    if (this.selectedNodeId) {
+      const node = this.nodesList.find(n => n.id === this.selectedNodeId);
+      if (node?.code) {
+        whereParts.push(`node_code = '${node.code}'`);
+      }
+    }
+    if (this.selectedSensorId) {
+      whereParts.push(`sensor_id = '${this.selectedSensorId}'`);
+    }
+    if (this.selectedChannelId) {
+      whereParts.push(`channel_id = '${this.selectedChannelId}'`);
+    }
+    
+    // Build query
+    let sql = `SELECT\n  ${selectParts.join(',\n  ')}\n`;
+    sql += `FROM iot.sensor_telemetry\n`;
+    sql += `WHERE ${whereParts.join('\n  AND ')}\n`;
+    
+    if (groupByParts.length > 0) {
+      sql += `GROUP BY ${groupByParts.join(', ')}\n`;
+    }
+    
+    // Order by timestamp if available
+    if (timeGroup?.sqlCh) {
+      sql += `ORDER BY timestamp ASC`;
+    } else if (entityGroup?.value) {
+      sql += `ORDER BY value DESC`;
+    }
+    
+    return sql;
   }
 
   /**
@@ -683,22 +1475,30 @@ WHERE sl.id_owner = '\${ownerId}'
           }
           
           // Y-Axis - use values from DB, only use default if truly undefined
+          // Ensure numeric types (handle string values from DB)
           if (config.yAxis) {
             this.form.yAxis = {
               label: config.yAxis.label || '',
               unit: config.yAxis.unit || '',
-              decimals: config.yAxis.decimals ?? 2, // Default 2 if not in DB
-              min: config.yAxis.min ?? null,
-              max: config.yAxis.max ?? null,
+              decimals: parseInt(String(config.yAxis.decimals), 10) || 2,
+              min: config.yAxis.min != null ? Number(config.yAxis.min) : null,
+              max: config.yAxis.max != null ? Number(config.yAxis.max) : null,
               scale: config.yAxis.scale || 'linear',
               placement: config.yAxis.placement || 'left',
               showGrid: config.yAxis.showGrid || 'auto'
             };
           }
           
-          // Thresholds
+          // Thresholds - handle both Expert Mode and Template Mode formats
           if (config.thresholds && Array.isArray(config.thresholds)) {
-            this.form.thresholds = config.thresholds;
+            this.form.thresholds = config.thresholds.map((t: any) => ({
+              mode: t.mode || 'manual',
+              value: t.value ?? 0,
+              field: t.field || '',
+              label: t.label || '',
+              color: t.color || '#ef4444',
+              lineStyle: t.lineStyle || 'dashed'
+            }));
           }
           
           // Display
@@ -725,6 +1525,42 @@ WHERE sl.id_owner = '\${ownerId}'
           if (config.dataSource && (config.dataSource === 'postgresql' || config.dataSource === 'clickhouse')) {
             this.selectedDataSource = config.dataSource;
           }
+          
+          // Load templateConfig filters (from Template Mode widgets)
+          if (config.templateConfig) {
+            const tc = config.templateConfig;
+            // Set filter values - they will be matched with dropdown options after loadFilterData completes
+            if (tc.channelId) {
+              this.selectedChannelId = tc.channelId;
+              // Resolve parent filters (sensor, node) from channel
+              this.resolveParentFiltersFromChannel(tc.channelId);
+            }
+            if (tc.sensorId) {
+              this.selectedSensorId = tc.sensorId;
+              // If no channelId, resolve node from sensor
+              if (!tc.channelId) {
+                this.resolveParentFiltersFromSensor(tc.sensorId);
+              }
+            }
+            if (tc.nodeId) {
+              this.selectedNodeId = tc.nodeId;
+            }
+            // Optionally set aggregation if available
+            if (tc.aggregation) {
+              this.selectedAggregation = tc.aggregation;
+            }
+            if (tc.groupByTime) {
+              this.selectedGroupByTime = tc.groupByTime;
+            }
+            console.log('Loaded templateConfig filters:', { 
+              nodeId: this.selectedNodeId, 
+              sensorId: this.selectedSensorId, 
+              channelId: this.selectedChannelId 
+            });
+          } else {
+            // No templateConfig - try to extract channel ID from SQL query
+            this.extractFiltersFromSql(this.form.sql);
+          }
         }
         
         // Run query to show preview if SQL exists
@@ -740,8 +1576,75 @@ WHERE sl.id_owner = '\${ownerId}'
     });
   }
 
-  applySqlTemplate(template: { name: string; sql: string }): void {
-    this.form.sql = template.sql;
+  /**
+   * Get SQL templates based on selected data source
+   * @returns Array of SQL templates for PostgreSQL or ClickHouse
+   */
+  getSqlTemplates(): { name: string; sql: string; description?: string }[] {
+    if (this.selectedDataSource === 'clickhouse') {
+      return this.clickhouseTemplates;
+    }
+    return this.sqlTemplates;
+  }
+
+  /**
+   * Apply SQL template with auto-injected filters based on selection
+   */
+  applySqlTemplate(template: { name: string; sql: string; description?: string }): void {
+    let sql = template.sql;
+    
+    // Build filter conditions based on selected filters
+    const filters: string[] = [];
+    
+    if (this.selectedDataSource === 'postgresql') {
+      // PostgreSQL filters
+      if (this.selectedNodeId) {
+        filters.push(`sl.id_node = '${this.selectedNodeId}'`);
+      }
+      if (this.selectedSensorId) {
+        filters.push(`sl.id_sensor = '${this.selectedSensorId}'`);
+      }
+      if (this.selectedChannelId) {
+        filters.push(`sl.id_sensor_channel = '${this.selectedChannelId}'`);
+      }
+    } else {
+      // ClickHouse filters
+      if (this.selectedNodeId) {
+        const node = this.nodesList.find(n => n.id === this.selectedNodeId);
+        if (node?.code) {
+          filters.push(`node_code = '${node.code}'`);
+        } else {
+          filters.push(`node_id = '${this.selectedNodeId}'`);
+        }
+      }
+      if (this.selectedSensorId) {
+        filters.push(`sensor_id = '${this.selectedSensorId}'`);
+      }
+      if (this.selectedChannelId) {
+        filters.push(`channel_id = '${this.selectedChannelId}'`);
+      }
+    }
+    
+    // If filters selected, inject them into SQL
+    if (filters.length > 0) {
+      const filterClause = filters.join('\n  AND ');
+      
+      // Check if SQL has WHERE clause
+      if (sql.toUpperCase().includes('WHERE')) {
+        // Insert after WHERE
+        sql = sql.replace(/(WHERE\s+)/i, `$1${filterClause}\n  AND `);
+      } else if (sql.toUpperCase().includes('FROM')) {
+        // Add WHERE before ORDER BY or GROUP BY or at end
+        const insertPoint = sql.search(/\b(ORDER BY|GROUP BY|LIMIT)\b/i);
+        if (insertPoint > -1) {
+          sql = sql.slice(0, insertPoint) + `WHERE ${filterClause}\n` + sql.slice(insertPoint);
+        } else {
+          sql += `\nWHERE ${filterClause}`;
+        }
+      }
+    }
+    
+    this.form.sql = sql;
   }
 
   testQuery(): void {
@@ -907,27 +1810,61 @@ WHERE sl.id_owner = '\${ownerId}'
         
       case 'gauge':
         const gaugeValue = data[0]?.[this.form.mapping.valueField] || 0;
+        const gaugeMin = this.form.yAxis.min ?? 0;
+        const gaugeMax = this.form.yAxis.max ?? 100;
+        const gaugeUnit = this.form.yAxis.unit || '';
+        const gaugeDecimals = this.form.yAxis.decimals ?? 2;
+        
+        // Build axis color ranges from thresholds
+        const axisColorRanges = this.buildGaugeAxisColors(gaugeMin, gaugeMax);
+        
         return {
           series: [{
             type: 'gauge',
             radius: '90%',
-            startAngle: 180,
-            endAngle: 0,
-            min: 0,
-            max: 100,
+            startAngle: 200,
+            endAngle: -20,
+            min: gaugeMin,
+            max: gaugeMax,
             progress: { show: true, width: 18, itemStyle: { color: '#73bf69' } },
-            axisLine: { lineStyle: { width: 18, color: [[1, 'rgba(255,255,255,0.1)']] } },
-            axisTick: { show: false },
-            splitLine: { show: false },
-            axisLabel: { show: false },
-            pointer: { show: false },
+            axisLine: { lineStyle: { width: 18, color: axisColorRanges } },
+            axisTick: { 
+              show: true, 
+              distance: -30, 
+              length: 8, 
+              lineStyle: { color: 'rgba(255,255,255,0.3)', width: 2 } 
+            },
+            splitLine: { 
+              show: true, 
+              distance: -30, 
+              length: 14, 
+              lineStyle: { color: 'rgba(255,255,255,0.4)', width: 3 } 
+            },
+            axisLabel: { 
+              show: true, 
+              distance: -20,
+              color: 'rgba(255,255,255,0.6)', 
+              fontSize: 12,
+              formatter: (value: number) => value.toFixed(0)
+            },
+            pointer: {
+              show: true,
+              length: '60%',
+              width: 6,
+              itemStyle: { color: '#73bf69' }
+            },
+            anchor: {
+              show: true,
+              size: 15,
+              itemStyle: { borderColor: '#73bf69', borderWidth: 2 }
+            },
             detail: { 
               valueAnimation: true, 
-              fontSize: 36,
+              fontSize: 32,
               fontWeight: 'bold',
               color: '#fff',
-              offsetCenter: [0, '0%'],
-              formatter: '{value}%'
+              offsetCenter: [0, '70%'],
+              formatter: (value: number) => value.toFixed(gaugeDecimals) + gaugeUnit
             },
             data: [{ value: gaugeValue }]
           }]
@@ -971,25 +1908,127 @@ WHERE sl.id_owner = '\${ownerId}'
     }
   }
 
+  /**
+   * Build gauge axis color ranges from thresholds
+   * Returns array of [percentage, color] for ECharts gauge axisLine.color
+   */
+  buildGaugeAxisColors(min: number, max: number): [number, string][] {
+    const range = max - min;
+    if (range <= 0 || !this.form.thresholds || this.form.thresholds.length === 0) {
+      // Default: full green
+      return [[1, '#73bf69']];
+    }
+    
+    // Sort thresholds by value
+    const sortedThresholds = [...this.form.thresholds]
+      .filter(t => t.value != null)
+      .sort((a, b) => a.value - b.value);
+    
+    if (sortedThresholds.length === 0) {
+      return [[1, '#73bf69']];
+    }
+    
+    const colors: [number, string][] = [];
+    let lastPercent = 0;
+    
+    for (const threshold of sortedThresholds) {
+      const percent = (threshold.value - min) / range;
+      if (percent > lastPercent && percent <= 1) {
+        // Color before this threshold (green zone)
+        colors.push([percent, '#73bf69']);
+        lastPercent = percent;
+      }
+    }
+    
+    // Add remaining as last threshold color (or red/warning zone)
+    if (lastPercent < 1) {
+      const lastColor = sortedThresholds[sortedThresholds.length - 1]?.color || '#ef4444';
+      colors.push([1, lastColor]);
+    }
+    
+    // If no colors added, default
+    if (colors.length === 0) {
+      return [[1, '#73bf69']];
+    }
+    
+    return colors;
+  }
+
   buildLineChartOptions(data: any[]): any {
     const { xField, yField, yFields, seriesField } = this.form.mapping;
     const { showLegend, lineStyle, lineWidth, fillOpacity, showPoints } = this.form.display;
     const yAxisConfig = this.form.yAxis;
 
+    // Store original timestamps for tooltip
+    const originalXValues = data.map(d => d[xField]);
+
     // Time format helper
     const formatXValue = (val: any) => {
       if (!val) return '';
-      if (typeof val === 'string' && val.includes('T')) {
+      if (typeof val === 'string' && (val.includes('T') || val.includes('-'))) {
         const date = new Date(val);
-        switch (this.form.xAxis.timeFormat) {
-          case 'HH:mm:ss': return date.toLocaleTimeString('id-ID');
-          case 'DD/MM': return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
-          case 'DD/MM HH:mm': return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })} ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
-          case 'YYYY-MM-DD': return date.toISOString().split('T')[0];
-          default: return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        if (!isNaN(date.getTime())) {
+          switch (this.form.xAxis.timeFormat) {
+            case 'HH:mm:ss': return date.toLocaleTimeString('id-ID');
+            case 'DD/MM': return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+            case 'DD/MM HH:mm': return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })} ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+            case 'YYYY-MM-DD': return date.toISOString().split('T')[0];
+            default: return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          }
         }
       }
       return val;
+    };
+
+    // Custom tooltip formatter with full timestamp
+    const tooltipFormatter = (params: any) => {
+      if (!Array.isArray(params)) params = [params];
+      
+      // Get original timestamp from dataIndex
+      const dataIndex = params[0]?.dataIndex;
+      let timeLabel = '';
+      if (dataIndex !== undefined && originalXValues[dataIndex]) {
+        const date = new Date(originalXValues[dataIndex]);
+        if (!isNaN(date.getTime())) {
+          // Full date-time format for tooltip
+          timeLabel = `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${date.toLocaleTimeString('id-ID')}`;
+        } else {
+          timeLabel = originalXValues[dataIndex];
+        }
+      } else {
+        timeLabel = params[0]?.axisValue || '';
+      }
+      
+      let html = `<div style="font-weight:600;margin-bottom:4px">${timeLabel}</div>`;
+      
+      params.forEach((item: any) => {
+        if (item.seriesType === 'line' && item.data !== undefined) {
+          const seriesConfig = this.form.series.find(s => 
+            s.label === item.seriesName || 
+            s.field === item.seriesName ||
+            this.form.mapping.yFields?.includes(item.seriesName)
+          );
+          
+          const decimals = seriesConfig?.decimals ?? this.form.yAxis.decimals ?? 2;
+          const unit = seriesConfig?.unit || this.form.yAxis.unit || '';
+          
+          let value: string;
+          if (typeof item.data === 'number') {
+            value = item.data.toFixed(decimals);
+          } else if (typeof item.data === 'string' && !isNaN(parseFloat(item.data))) {
+            value = parseFloat(item.data).toFixed(decimals);
+          } else {
+            value = String(item.data);
+          }
+          
+          html += `<div style="display:flex;justify-content:space-between;gap:20px">
+            <span>${item.marker} ${item.seriesName}</span>
+            <span style="font-weight:600">${value}${unit}</span>
+          </div>`;
+        }
+      });
+      
+      return html;
     };
 
     const baseConfig = {
@@ -998,7 +2037,7 @@ WHERE sl.id_owner = '\${ownerId}'
         backgroundColor: 'rgba(30,30,30,0.9)',
         borderColor: 'rgba(255,255,255,0.2)',
         textStyle: { color: '#fff' },
-        formatter: (params: any) => this.formatTooltip(params)
+        formatter: tooltipFormatter
       },
       legend: { 
         show: showLegend,
@@ -1114,7 +2153,19 @@ WHERE sl.id_owner = '\${ownerId}'
   formatTooltip(params: any): string {
     if (!Array.isArray(params)) params = [params];
     
-    let html = `<div style="font-weight:600;margin-bottom:4px">${params[0]?.axisValue || ''}</div>`;
+    // Format timestamp from axisValue
+    let timeLabel = params[0]?.axisValue || '';
+    if (timeLabel) {
+      // Try to parse and format the timestamp
+      const date = new Date(timeLabel);
+      if (!isNaN(date.getTime())) {
+        // Format based on selected time format or default
+        const timeFormat = this.form.xAxis?.timeFormat || 'DD/MM HH:mm';
+        timeLabel = this.formatDateByPattern(date, timeFormat);
+      }
+    }
+    
+    let html = `<div style="font-weight:600;margin-bottom:4px">${timeLabel}</div>`;
     
     params.forEach((item: any) => {
       if (item.seriesType === 'line' && item.data !== undefined) {
@@ -1148,6 +2199,37 @@ WHERE sl.id_owner = '\${ownerId}'
     });
     
     return html;
+  }
+
+  /**
+   * Format date based on pattern string
+   */
+  formatDateByPattern(date: Date, pattern: string): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+    
+    switch (pattern) {
+      case 'HH:mm':
+        return `${hours}:${minutes}`;
+      case 'HH:mm:ss':
+        return `${hours}:${minutes}:${seconds}`;
+      case 'DD/MM':
+        return `${day}/${month}`;
+      case 'DD/MM HH:mm':
+        return `${day}/${month} ${hours}:${minutes}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      case 'YYYY-MM-DD HH:mm':
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+      default:
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
   }
 
   // Format Y-axis value with unit and decimals

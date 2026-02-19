@@ -330,46 +330,134 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   buildGaugeOptions(rows: any[], columns: string[], mapping: any, config: any): any {
     const valueField = mapping.valueField || 'value';
     const value = rows.length > 0 ? parseFloat(rows[0][valueField]) || 0 : 0;
-    const min = mapping.minField && rows[0] ? parseFloat(rows[0][mapping.minField]) : 0;
-    const max = mapping.maxField && rows[0] ? parseFloat(rows[0][mapping.maxField]) : 100;
-    const unit = config.yAxis?.unit || rows[0]?.unit || '';
-    const decimals = config.yAxis?.decimals ?? 2;
+    
+    // Get min/max from config.yAxis (template mode) or mapping fields (expert mode)
+    const yAxis = config.yAxis || {};
+    const min = yAxis.min !== undefined ? parseFloat(yAxis.min) : 
+                (mapping.minField && rows[0] ? parseFloat(rows[0][mapping.minField]) : 0);
+    const max = yAxis.max !== undefined ? parseFloat(yAxis.max) : 
+                (mapping.maxField && rows[0] ? parseFloat(rows[0][mapping.maxField]) : 100);
+    const unit = yAxis.unit || rows[0]?.unit || '';
+    // Handle decimals as string "2.000" or number 2
+    const decimals = Math.floor(parseFloat(String(yAxis.decimals))) || 2;
+    
+    // Get thresholds from templateConfig.settings or config.thresholds
+    const templateConfig = config.templateConfig?.settings || {};
+    const thresholds = config.thresholds || [];
+    const warningThreshold = templateConfig.warningThreshold;
+    const criticalThreshold = templateConfig.criticalThreshold;
     
     const textColor = 'rgba(255, 255, 255, 0.8)';
+    
+    // Build axis line color stops based on thresholds (like Expert Mode)
+    let axisLineColors: [number, string][] = [];
+    const range = max - min;
+    
+    if (thresholds.length > 0 && range > 0) {
+      // Use thresholds from config.thresholds array
+      const sortedThresholds = [...thresholds]
+        .filter((t: any) => t.value != null)
+        .sort((a: any, b: any) => a.value - b.value);
+      
+      let lastPercent = 0;
+      for (const t of sortedThresholds) {
+        const percent = (t.value - min) / range;
+        if (percent > lastPercent && percent <= 1) {
+          axisLineColors.push([percent, '#10b981']); // Green before threshold
+          lastPercent = percent;
+        }
+      }
+      if (lastPercent < 1) {
+        const lastColor = sortedThresholds[sortedThresholds.length - 1]?.color || '#ef4444';
+        axisLineColors.push([1, lastColor]);
+      }
+    } else if (criticalThreshold !== null && criticalThreshold !== undefined && range > 0) {
+      const normalEnd = (warningThreshold ?? criticalThreshold - min) / range;
+      const warningEnd = (criticalThreshold - min) / range;
+      axisLineColors = [
+        [Math.min(Math.max(normalEnd, 0), 1), '#10b981'],  // Green
+        [Math.min(Math.max(warningEnd, 0), 1), '#f59e0b'], // Yellow/Warning
+        [1, '#ef4444']                                      // Red/Critical
+      ];
+    } else if (warningThreshold !== null && warningThreshold !== undefined && range > 0) {
+      const normalEnd = (warningThreshold - min) / range;
+      axisLineColors = [
+        [Math.min(Math.max(normalEnd, 0), 1), '#10b981'],  // Green
+        [1, '#f59e0b']                                      // Yellow/Warning
+      ];
+    } else {
+      // Default: use blue color like Expert Mode
+      axisLineColors = [[1, '#5794f2']];
+    }
+    
+    // Filter out invalid entries
+    axisLineColors = axisLineColors.filter(c => c[0] > 0);
+    if (axisLineColors.length === 0) {
+      axisLineColors = [[1, '#5794f2']];
+    }
     
     return {
       series: [{
         type: 'gauge',
-        startAngle: 180,
-        endAngle: 0,
+        radius: '90%',
+        startAngle: 200,
+        endAngle: -20,
         min: min,
         max: max,
-        progress: { show: true, width: 18 },
+        splitNumber: 5,
+        itemStyle: { color: '#73bf69' },
+        progress: {
+          show: true,
+          width: 18,
+          itemStyle: { color: '#73bf69' }  // Green progress like Expert Mode
+        },
+        pointer: {
+          show: true,
+          length: '60%',
+          width: 6,
+          itemStyle: { color: '#73bf69' }  // Green pointer like Expert Mode
+        },
+        anchor: {
+          show: true,
+          size: 12,
+          itemStyle: { borderColor: '#73bf69', borderWidth: 2 }
+        },
         axisLine: {
           lineStyle: {
             width: 18,
-            color: [
-              [0.3, '#67e0e3'],
-              [0.7, '#37a2da'],
-              [1, '#fd666d']
-            ]
+            color: axisLineColors  // Threshold colors on axis
           }
         },
-        axisTick: { show: false },
-        splitLine: { show: false },
-        axisLabel: { show: false },
-        pointer: { show: false },
+        axisTick: {
+          show: true,
+          distance: -30,
+          length: 8,
+          lineStyle: { color: 'rgba(255,255,255,0.3)', width: 2 }
+        },
+        splitLine: {
+          show: true,
+          distance: -30,
+          length: 14,
+          lineStyle: { color: 'rgba(255,255,255,0.4)', width: 3 }
+        },
+        axisLabel: {
+          show: true,
+          distance: -20,
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: 12,
+          formatter: (val: number) => val.toFixed(0)
+        },
         title: {
           show: true,
-          offsetCenter: [0, '30%'],
+          offsetCenter: [0, '85%'],
           fontSize: 12,
           color: textColor
         },
         detail: {
           valueAnimation: true,
-          fontSize: 28,
+          fontSize: 24,
           fontWeight: 'bold',
-          offsetCenter: [0, '-10%'],
+          offsetCenter: [0, '60%'],
           formatter: (val: number) => val.toFixed(decimals) + unit,
           color: textColor
         },
@@ -466,5 +554,12 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   onRefresh(): void {
     this.loadWidgetData();
     this.refresh.emit();
+  }
+
+  confirmDelete(): void {
+    const widgetName = this.widget?.name || 'this widget';
+    if (confirm(`Are you sure you want to delete "${widgetName}"?`)) {
+      this.delete.emit();
+    }
   }
 }

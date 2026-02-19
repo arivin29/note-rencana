@@ -1,0 +1,103 @@
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4">
+        <button class="btn btn-outline-default me-3" (click)="goBack()">
+            <i class="fa fa-arrow-left"></i>
+        </button>
+        <div>
+            <h1 class="page-header mb-0">Add Widget</h1>
+            <p class="text-muted mb-0">Choose how you want to create your widget</p>
+        </div>
+    </div>
+
+    <!-- Two Options: Template Mode vs Expert Mode -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <!-- Option Cards -->
+            <div class="row g-4 mb-5">
+                <!-- Template Mode Card -->
+                <div class="col-md-6">
+                    <card class="h-100 cursor-pointer hover-shadow" 
+                          style="border: 2px solid transparent; transition: all 0.3s;"
+                          (click)="categories.length > 0 ? null : null">
+                        <card-body class="text-center p-5">
+                            <div class="mb-4">
+                                <i class="fa fa-layer-group fa-4x text-theme"></i>
+                            </div>
+                            <h3 class="mb-3">Use Template</h3>
+                            <p class="text-muted mb-4">
+                                Quick and easy! Choose from pre-built widget templates. 
+                                Just select your data source and customize the appearance.
+                            </p>
+                            <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+                                <span class="badge bg-theme bg-opacity-15 text-theme">Gauge</span>
+                                <span class="badge bg-theme bg-opacity-15 text-theme">Line Chart</span>
+                                <span class="badge bg-theme bg-opacity-15 text-theme">Bar Chart</span>
+                                <span class="badge bg-theme bg-opacity-15 text-theme">Single Value</span>
+                                <span class="badge bg-theme bg-opacity-15 text-theme">Table</span>
+                            </div>
+                            <p class="small text-success mb-0">
+                                <i class="fa fa-check-circle me-1"></i> Recommended for most users
+                            </p>
+                        </card-body>
+                    </card>
+                </div>
+
+                <!-- Expert Mode Card -->
+                <div class="col-md-6">
+                    <card class="h-100 cursor-pointer hover-shadow" 
+                          style="border: 2px solid transparent; transition: all 0.3s;"
+                          (click)="openExpertMode()">
+                        <card-body class="text-center p-5">
+                            <div class="mb-4">
+                                <i class="fa fa-code fa-4x text-warning"></i>
+                            </div>
+                            <h3 class="mb-3">Expert Mode</h3>
+                            <p class="text-muted mb-4">
+                                Full control! Write custom SQL queries and configure 
+                                every aspect of your widget manually.
+                            </p>
+                            <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+                                <span class="badge bg-warning bg-opacity-15 text-warning">Custom SQL</span>
+                                <span class="badge bg-warning bg-opacity-15 text-warning">Advanced Mapping</span>
+                                <span class="badge bg-warning bg-opacity-15 text-warning">Full Customization</span>
+                            </div>
+                            <p class="small text-muted mb-0">
+                                <i class="fa fa-info-circle me-1"></i> For advanced users
+                            </p>
+                        </card-body>
+                    </card>
+                </div>
+            </div>
+
+            <!-- Template Categories Section -->
+            <div class="mb-4">
+                <h4 class="mb-3">
+                    <i class="fa fa-th-large me-2 text-theme"></i>
+                    Or choose a template category directly:
+                </h4>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-3 col-sm-6" *ngFor="let category of categories">
+                    <card class="h-100 cursor-pointer template-category-card" 
+                          (click)="selectCategory(category)"
+                          [style.border-color]="category.color">
+                        <card-body class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="fa {{ category.icon }} fa-2x" [style.color]="category.color"></i>
+                            </div>
+                            <h5 class="mb-2">{{ category.name }}</h5>
+                            <p class="text-muted small mb-2">{{ category.description }}</p>
+                            <span class="badge bg-secondary">
+                                {{ category.templates.length }} templates
+                            </span>
+                        </card-body>
+                    </card>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

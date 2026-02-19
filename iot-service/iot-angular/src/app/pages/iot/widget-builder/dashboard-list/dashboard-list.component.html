@@ -37,8 +37,8 @@
 <!-- Dashboard Grid -->
 <div *ngIf="!loading && dashboards.length > 0" class="row g-4">
   <div *ngFor="let dashboard of dashboards" class="col-md-6 col-lg-4">
-    <div class="card shadow-sm h-100 cursor-pointer" (click)="openDashboard(dashboard)">
-      <div class="card-body">
+    <card class="shadow-sm h-100 cursor-pointer" (click)="openDashboard(dashboard)">
+      <card-body>
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div class="rounded bg-theme bg-opacity-15 p-3">
@@ -94,13 +94,13 @@
             {{ dashboard.updatedAt | date:'short' }}
           </span>
         </div>
-      </div>
-      <div class="card-footer bg-none">
+      </card-body>
+      <card-footer class="bg-none">
         <button class="btn btn-outline-theme w-100" (click)="openDashboard(dashboard)">
           <i class="fa fa-eye me-1"></i>
           Open Dashboard
         </button>
-      </div>
-    </div>
+      </card-footer>
+    </card>
   </div>
 </div>

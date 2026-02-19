@@ -1,0 +1,497 @@
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4">
+        <button class="btn btn-outline-default me-3" (click)="goBack()">
+            <i class="fa fa-arrow-left"></i>
+        </button>
+        <div>
+            <h1 class="page-header mb-0">
+                {{ isEditMode ? 'Edit Widget' : 'Create Widget from Template' }}
+            </h1>
+            <p class="text-muted mb-0">
+                Step {{ currentStep }} of {{ totalSteps }}
+            </p>
+        </div>
+        <div class="ms-auto">
+            <button class="btn btn-outline-secondary" (click)="cancel()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <card class="mb-4">
+        <card-body class="py-3">
+            <div class="d-flex justify-content-between">
+                <div class="text-center flex-fill" *ngFor="let step of steps; let i = index">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                             [class.bg-theme]="currentStep >= i + 1"
+                             [class.bg-secondary]="currentStep < i + 1"
+                             [class.bg-opacity-25]="currentStep < i + 1"
+                             style="width: 40px; height: 40px; cursor: pointer;"
+                             (click)="goToStep(i + 1)">
+                            <i class="fa" 
+                               [class.fa-check]="currentStep > i + 1" 
+                               [class.text-white]="currentStep >= i + 1"
+                               [ngClass]="currentStep <= i + 1 ? step.icon : ''"></i>
+                        </div>
+                    </div>
+                    <div [class.text-theme]="currentStep === i + 1" 
+                         [class.fw-semibold]="currentStep === i + 1"
+                         class="small">{{ step.label }}</div>
+                </div>
+            </div>
+        </card-body>
+    </card>
+
+    <!-- Step Content -->
+    <div class="wizard-content">
+        
+        <!-- ============================================ -->
+        <!-- STEP 1: Select Template -->
+        <!-- ============================================ -->
+        <div *ngIf="currentStep === 1">
+            <div class="row">
+                <!-- Category Selection -->
+                <div class="col-md-3">
+                    <card class="mb-4">
+                        <card-header class="bg-inverse bg-opacity-10 fw-semibold">
+                            <i class="fa fa-layer-group me-2"></i>Widget Type
+                        </card-header>
+                        <card-body class="p-0">
+                            <div class="list-group list-group-flush">
+                                <button *ngFor="let cat of categories" 
+                                        type="button"
+                                        class="list-group-item list-group-item-action d-flex align-items-center py-3"
+                                        [class.active]="selectedCategoryId === cat.id"
+                                        (click)="selectCategory(cat.id)">
+                                    <i class="fa {{ cat.icon }} me-3 fa-lg" [style.color]="selectedCategoryId === cat.id ? 'white' : cat.color"></i>
+                                    <div>
+                                        <div class="fw-semibold">{{ cat.name }}</div>
+                                        <small [class.text-white-50]="selectedCategoryId === cat.id" 
+                                               [class.text-muted]="selectedCategoryId !== cat.id">
+                                            {{ cat.templates.length }} templates
+                                        </small>
+                                    </div>
+                                </button>
+                            </div>
+                        </card-body>
+                    </card>
+                </div>
+                
+                <!-- Template Selection -->
+                <div class="col-md-9">
+                    <card class="mb-4">
+                        <card-header class="bg-inverse bg-opacity-10 fw-semibold">
+                            <i class="fa fa-th-large me-2"></i>
+                            <span *ngIf="!selectedCategoryId">Select a widget type first</span>
+                            <span *ngIf="selectedCategoryId">Choose a {{ selectedCategory?.name }} template</span>
+                        </card-header>
+                        <card-body>
+                            <div class="row g-3" *ngIf="selectedCategoryId">
+                                <div class="col-md-4" *ngFor="let template of availableTemplates">
+                                    <card class="h-100 cursor-pointer" 
+                                          [class.border-theme]="selectedTemplate?.id === template.id"
+                                          (click)="selectTemplate(template)">
+                                        <card-body class="text-center p-3">
+                                            <!-- SVG Preview (sanitized) -->
+                                            <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;"
+                                                 [innerHTML]="getSafeHtml(template.previewSvg)"
+                                                 *ngIf="template.previewSvg">
+                                            </div>
+                                            <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;" *ngIf="!template.previewSvg">
+                                                <i class="fa {{ template.icon }} fa-3x text-muted"></i>
+                                            </div>
+                                            
+                                            <h6 class="mb-1">{{ template.name }}</h6>
+                                            <p class="text-muted small mb-0">{{ template.description }}</p>
+                                        </card-body>
+                                        <card-footer class="bg-none text-center py-2" *ngIf="selectedTemplate?.id === template.id">
+                                            <i class="fa fa-check-circle text-success me-1"></i>
+                                            <span class="text-success small">Selected</span>
+                                        </card-footer>
+                                    </card>
+                                </div>
+                            </div>
+                            
+                            <!-- Empty state -->
+                            <div class="text-center py-5 text-muted" *ngIf="!selectedCategoryId">
+                                <i class="fa fa-hand-point-left fa-3x mb-3"></i>
+                                <p>Select a widget type from the left panel</p>
+                            </div>
+                        </card-body>
+                    </card>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- STEP 2: Data Source Selection -->
+        <!-- ============================================ -->
+        <div *ngIf="currentStep === 2">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <card class="mb-4">
+                        <card-header class="bg-inverse bg-opacity-10 fw-semibold">
+                            <i class="fa fa-database me-2"></i>
+                            Select Data Source for {{ selectedTemplate?.name }}
+                        </card-header>
+                        <card-body>
+                            <!-- Data Source Type -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Database</label>
+                                <div class="btn-group w-100">
+                                    <button type="button" class="btn" 
+                                            [class.btn-theme]="selectedDataSource === 'postgresql'"
+                                            [class.btn-outline-secondary]="selectedDataSource !== 'postgresql'"
+                                            (click)="selectedDataSource = 'postgresql'">
+                                        <i class="fa fa-database me-2"></i>PostgreSQL
+                                    </button>
+                                    <button type="button" class="btn"
+                                            [class.btn-theme]="selectedDataSource === 'clickhouse'"
+                                            [class.btn-outline-secondary]="selectedDataSource !== 'clickhouse'"
+                                            (click)="selectedDataSource = 'clickhouse'">
+                                        <i class="fa fa-bolt me-2"></i>ClickHouse
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Node Selection -->
+                            <div class="mb-3" *ngIf="selectedTemplate?.requiredFilters?.includes('node')">
+                                <label class="form-label fw-semibold">
+                                    Node <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" [(ngModel)]="selectedNodeId" (ngModelChange)="onNodeChange()">
+                                    <option value="">-- Select Node --</option>
+                                    <option *ngFor="let node of nodes" [value]="node.idNode">
+                                        {{ node.code }}
+                                    </option>
+                                </select>
+                            </div>
+                             
+                            <!-- Sensor Selection -->
+                            <div class="mb-3" *ngIf="selectedTemplate?.requiredFilters?.includes('sensor')">
+                                <label class="form-label fw-semibold">
+                                    Sensor <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" [(ngModel)]="selectedSensorId" (ngModelChange)="onSensorChange()"
+                                        [disabled]="!selectedNodeId">
+                                    <option value="">-- Select Sensor --</option>
+                                    <option *ngFor="let sensor of sensors" [value]="sensor.idSensor">
+                                        {{ sensor.label }}
+                                    </option>
+                                </select>
+                                <small class="text-muted" *ngIf="!selectedNodeId">Select a node first</small>
+                            </div>
+                            
+                            <!-- Channel Selection (Single) -->
+                            <div class="mb-3" *ngIf="selectedTemplate?.requiredFilters?.includes('channel') && !isMultiChannelTemplate()">
+                                <label class="form-label fw-semibold">
+                                    Channel <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" [(ngModel)]="selectedChannelId" (ngModelChange)="onChannelChange()"
+                                        [disabled]="!selectedSensorId">
+                                    <option value="">-- Select Channel --</option>
+                                    <option *ngFor="let channel of channels" [value]="channel.idSensorChannel">
+                                        {{ channel.metricCode }} ({{ channel.unit || 'no unit' }})
+                                    </option>
+                                </select>
+                                <small class="text-muted" *ngIf="!selectedSensorId">Select a sensor first</small>
+                            </div>
+                            
+                            <!-- Channel Selection (Multi) -->
+                            <div class="mb-3" *ngIf="selectedTemplate?.requiredFilters?.includes('channel') && isMultiChannelTemplate()">
+                                <label class="form-label fw-semibold">
+                                    Channels <span class="text-danger">*</span>
+                                    <span class="badge bg-secondary ms-2">Select multiple</span>
+                                </label>
+                                <div class="list-group" *ngIf="channels.length > 0">
+                                    <label *ngFor="let channel of channels" 
+                                           class="list-group-item list-group-item-action d-flex align-items-center cursor-pointer">
+                                        <input type="checkbox" class="form-check-input me-3"
+                                               [checked]="isChannelSelected(channel.idSensorChannel)"
+                                               (change)="toggleChannelSelection(channel.idSensorChannel)">
+                                        <div>
+                                            <div>{{ channel.metricCode }}</div>
+                                            <small class="text-muted">{{ channel.metricCode }} ({{ channel.unit || 'no unit' }})</small>
+                                        </div>
+                                    </label>
+                                </div>
+                                <small class="text-muted" *ngIf="!selectedSensorId">Select a sensor first</small>
+                                <small class="text-muted" *ngIf="selectedSensorId && channels.length === 0">No channels found</small>
+                            </div>
+
+                            <!-- Selection Summary -->
+                            <div class="alert alert-success mt-4" *ngIf="isDataSelectionValid()">
+                                <h6 class="alert-heading mb-2">
+                                    <i class="fa fa-check-circle me-2"></i>
+                                    Data Source Selected
+                                </h6>
+                                <p class="mb-0 small">
+                                    <strong>Node:</strong> {{ getNodeName(selectedNodeId) }}<br>
+                                    <span *ngIf="selectedSensorId"><strong>Sensor:</strong> {{ getSensorName(selectedSensorId) }}<br></span>
+                                    <span *ngIf="selectedChannelId"><strong>Channel:</strong> {{ getChannelName(selectedChannelId) }}</span>
+                                    <span *ngIf="selectedChannelIds.length > 0"><strong>Channels:</strong> {{ selectedChannelIds.length }} selected</span>
+                                </p>
+                            </div>
+                        </card-body>
+                    </card>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- STEP 3: Configuration -->
+        <!-- ============================================ -->
+        <div *ngIf="currentStep === 3">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <card class="mb-4">
+                        <card-header class="bg-inverse bg-opacity-10 fw-semibold">
+                            <i class="fa fa-sliders-h me-2"></i>
+                            Configure {{ selectedTemplate?.name }}
+                        </card-header>
+                        <card-body>
+                            <!-- Dynamic Options -->
+                            <div *ngFor="let option of selectedTemplate?.options" class="mb-3">
+                                <!-- Number Input -->
+                                <ng-container *ngIf="option.type === 'number'">
+                                    <label class="form-label">
+                                        {{ option.label }}
+                                        <span class="text-danger" *ngIf="option.required">*</span>
+                                    </label>
+                                    <input type="number" class="form-control"
+                                           [placeholder]="option.placeholder || ''"
+                                           [min]="option.min ?? null"
+                                           [max]="option.max ?? null"
+                                           [ngModel]="getOptionValue(option.key)"
+                                           (ngModelChange)="setOptionValue(option.key, $event)">
+                                    <small class="text-muted" *ngIf="option.helpText">{{ option.helpText }}</small>
+                                </ng-container>
+                                
+                                <!-- String Input -->
+                                <ng-container *ngIf="option.type === 'string'">
+                                    <label class="form-label">
+                                        {{ option.label }}
+                                        <span class="text-danger" *ngIf="option.required">*</span>
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           [placeholder]="option.placeholder || ''"
+                                           [ngModel]="getOptionValue(option.key)"
+                                           (ngModelChange)="setOptionValue(option.key, $event)">
+                                    <small class="text-muted" *ngIf="option.helpText">{{ option.helpText }}</small>
+                                </ng-container>
+                                
+                                <!-- Select Input -->
+                                <ng-container *ngIf="option.type === 'select'">
+                                    <label class="form-label">
+                                        {{ option.label }}
+                                        <span class="text-danger" *ngIf="option.required">*</span>
+                                    </label>
+                                    <select class="form-select"
+                                            [ngModel]="getOptionValue(option.key)"
+                                            (ngModelChange)="setOptionValue(option.key, $event)">
+                                        <option *ngFor="let opt of option.options" [value]="opt.value">
+                                            {{ opt.label }}
+                                        </option>
+                                    </select>
+                                </ng-container>
+                                
+                                <!-- Boolean Input -->
+                                <ng-container *ngIf="option.type === 'boolean'">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" class="form-check-input" 
+                                               [id]="'opt-' + option.key"
+                                               [ngModel]="getOptionValue(option.key)"
+                                               (ngModelChange)="setOptionValue(option.key, $event)">
+                                        <label class="form-check-label" [for]="'opt-' + option.key">
+                                            {{ option.label }}
+                                        </label>
+                                    </div>
+                                    <small class="text-muted" *ngIf="option.helpText">{{ option.helpText }}</small>
+                                </ng-container>
+                                
+                                <!-- Color Input -->
+                                <ng-container *ngIf="option.type === 'color'">
+                                    <label class="form-label">{{ option.label }}</label>
+                                    <input type="color" class="form-control form-control-color"
+                                           [ngModel]="getOptionValue(option.key)"
+                                           (ngModelChange)="setOptionValue(option.key, $event)">
+                                </ng-container>
+                            </div>
+                            
+                            <!-- Empty state -->
+                            <div class="text-center py-4 text-muted" *ngIf="!selectedTemplate?.options?.length">
+                                <i class="fa fa-check-circle fa-3x text-success mb-3"></i>
+                                <p>This template has no additional configuration options.</p>
+                                <p class="small">You can proceed to preview.</p>
+                            </div>
+                        </card-body>
+                    </card>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- STEP 4: Preview & Save -->
+        <!-- ============================================ -->
+        <div *ngIf="currentStep === 4">
+            <div class="row">
+                <!-- Preview Panel -->
+                <div class="col-md-6 mb-4">
+                    <card class="h-100">
+                        <card-header class="bg-inverse bg-opacity-10 d-flex align-items-center fw-semibold">
+                            <i class="fa fa-eye me-2"></i>
+                            Preview
+                            <button class="btn btn-sm btn-outline-theme ms-auto" (click)="runPreview()" [disabled]="previewLoading">
+                                <i class="fa me-1" [class.fa-play]="!previewLoading" [class.fa-spinner]="previewLoading" [class.fa-spin]="previewLoading"></i>
+                                Run Preview
+                            </button>
+                        </card-header>
+                        <card-body>
+                            <!-- Loading -->
+                            <div class="text-center py-4" *ngIf="previewLoading">
+                                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                                <p class="mt-2">Running query...</p>
+                            </div>
+                            
+                            <!-- No data -->
+                            <div class="text-center py-4 text-muted" *ngIf="!previewLoading && previewData.length === 0">
+                                <i class="fa fa-chart-bar fa-3x mb-3"></i>
+                                <p>Click "Run Preview" to see sample data</p>
+                            </div>
+                            
+                            <!-- Chart Preview -->
+                            <div *ngIf="!previewLoading && previewData.length > 0 && previewOptions">
+                                <!-- Gauge Chart -->
+                                <div *ngIf="selectedTemplate?.categoryId === 'gauge'" class="chart-preview-container" style="height: 280px;">
+                                    <div echarts [options]="previewOptions" class="w-100 h-100"></div>
+                                </div>
+                                
+                                <!-- Time Series Chart -->
+                                <div *ngIf="selectedTemplate?.categoryId === 'timeseries'" class="chart-preview-container" style="height: 280px;">
+                                    <div echarts [options]="previewOptions" class="w-100 h-100"></div>
+                                </div>
+                                
+                                <!-- Single Value / Stat Card -->
+                                <div *ngIf="selectedTemplate?.categoryId === 'singlevalue'" class="stat-preview text-center py-4">
+                                    <div class="display-3 fw-bold text-theme">{{ previewOptions.value }}</div>
+                                    <div class="h5 text-muted">{{ previewOptions.unit }}</div>
+                                </div>
+                                
+                                <!-- Table (show data table) -->
+                                <div *ngIf="selectedTemplate?.categoryId === 'table'">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th *ngFor="let key of previewData[0] | keyvalue">{{ key.key }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr *ngFor="let row of previewData">
+                                                    <td *ngFor="let cell of row | keyvalue">{{ cell.value }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Data Table (always show raw data below chart) -->
+                            <div *ngIf="!previewLoading && previewData.length > 0 && selectedTemplate?.categoryId !== 'table'" class="mt-3 pt-3 border-top">
+                                <div class="d-flex align-items-center mb-2">
+                                    <small class="text-muted fw-semibold">
+                                        <i class="fa fa-table me-1"></i> Raw Data
+                                    </small>
+                                </div>
+                                <div class="table-responsive" style="max-height: 150px; overflow-y: auto;">
+                                    <table class="table table-sm table-striped mb-0 small">
+                                        <thead>
+                                            <tr>
+                                                <th *ngFor="let key of previewData[0] | keyvalue">{{ key.key }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr *ngFor="let row of previewData">
+                                                <td *ngFor="let cell of row | keyvalue">{{ cell.value }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="text-muted">Showing first {{ previewData.length }} rows</small>
+                            </div>
+                        </card-body>
+                    </card>
+                </div>
+                
+                <!-- Save Panel -->
+                <div class="col-md-6 mb-4">
+                    <card class="mb-4">
+                        <card-header class="bg-inverse bg-opacity-10 fw-semibold">
+                            <i class="fa fa-save me-2"></i>
+                            Widget Details
+                        </card-header>
+                        <card-body>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Widget Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" [(ngModel)]="widgetName"
+                                       placeholder="Enter widget name">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" rows="2" [(ngModel)]="widgetDescription"
+                                          placeholder="Optional description"></textarea>
+                            </div>
+                            
+                            <!-- Generated SQL (collapsible) -->
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center">
+                                    <i class="fa fa-code me-2"></i>
+                                    Generated SQL
+                                    <span class="badge bg-secondary ms-2">Auto-generated</span>
+                                </label>
+                                <pre class="bg-dark text-light p-3 rounded small overflow-auto" style="max-height: 200px;"><code>{{ generatedSql }}</code></pre>
+                            </div>
+                            
+                            <!-- Summary -->
+                            <div class="alert alert-secondary mb-0">
+                                <h6 class="alert-heading mb-2">Summary</h6>
+                                <div class="small">
+                                    <div><strong>Template:</strong> {{ selectedTemplate?.name }}</div>
+                                    <div><strong>Type:</strong> {{ selectedTemplate?.widgetType }}</div>
+                                    <div><strong>Data Source:</strong> {{ selectedDataSource }}</div>
+                                </div>
+                            </div>
+                        </card-body>
+                    </card>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Navigation -->
+    <card class="mt-4">
+        <card-body class="d-flex justify-content-between py-3">
+            <button class="btn btn-outline-secondary" (click)="prevStep()" [disabled]="currentStep === 1">
+                <i class="fa fa-arrow-left me-2"></i>
+                Previous
+            </button>
+            
+            <div>
+                <button class="btn btn-theme" (click)="nextStep()" *ngIf="currentStep < totalSteps" [disabled]="!canProceed">
+                    Next
+                    <i class="fa fa-arrow-right ms-2"></i>
+                </button>
+                
+                <button class="btn btn-success" (click)="saveWidget()" *ngIf="currentStep === totalSteps" 
+                        [disabled]="!canProceed || saving">
+                    <i class="fa me-2" [class.fa-save]="!saving" [class.fa-spinner]="saving" [class.fa-spin]="saving"></i>
+                    {{ saving ? 'Saving...' : 'Save Widget' }}
+                </button>
+            </div>
+        </card-body>
+    </card>
+</div>

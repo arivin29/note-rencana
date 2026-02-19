@@ -46,9 +46,15 @@ import { SqlEditorComponent } from './components/sql-editor/sql-editor.component
 import { FieldMappingComponent } from './components/field-mapping/field-mapping.component';
 import { DashboardModalComponent } from './components/dashboard-modal/dashboard-modal.component';
 
+// Template System Components
+import { WidgetCreateComponent } from './widget-create/widget-create.component';
+import { WidgetTemplateWizardComponent } from './widget-template-wizard/widget-template-wizard.component';
+
 const routes: Routes = [
   { path: '', component: DashboardListComponent },
   { path: ':id', component: DashboardViewComponent },
+  { path: ':id/widget/new', component: WidgetCreateComponent },
+  { path: ':id/widget/template', component: WidgetTemplateWizardComponent },
   { path: ':id/add-widget', component: WidgetWizardComponent },
   { path: ':id/edit-widget/:widgetId', component: WidgetWizardComponent },
 ];
@@ -69,6 +75,9 @@ const routes: Routes = [
     SqlEditorComponent,
     FieldMappingComponent,
     DashboardModalComponent,
+    // Template System
+    WidgetCreateComponent,
+    WidgetTemplateWizardComponent,
   ],
   imports: [
     CommonModule,
