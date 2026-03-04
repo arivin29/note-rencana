@@ -1,0 +1,40 @@
+<widget-container [title]="config.label" [icon]="config.icon" [iconColor]="config.iconColor" [showHeader]="false">
+  <div class="big-number-content">
+    <!-- Icon with gradient background -->
+    <div class="big-number-icon-wrapper mb-3" *ngIf="config.icon">
+      <div class="icon-box" [style.background]="getGradientBackground()">
+        <i [class]="'fa ' + config.icon + ' fa-2x'"></i>
+      </div>
+    </div>
+
+    <!-- Value with animation -->
+    <div class="big-number-value mb-1">
+      {{ config.value | number: '1.0-2' }}
+      <span class="big-number-unit ms-1">{{ config.unit }}</span>
+    </div>
+
+    <!-- Label -->
+    <div class="big-number-label text-inverse text-opacity-50 mb-3">
+      {{ config.label }}
+    </div>
+
+    <!-- Status & Update Time -->
+    <div class="big-number-footer" *ngIf="config.status || config.updateTime">
+      <div class="d-flex align-items-center justify-content-center gap-3 small">
+        <span *ngIf="config.status" class="badge rounded-pill" 
+              [ngClass]="{
+                'bg-success': config.status === 'online',
+                'bg-warning': config.status === 'warning',
+                'bg-danger': config.status === 'offline' || config.status === 'error'
+              }">
+          <i class="fa fa-circle fa-xs me-1"></i>
+          {{ config.status | titlecase }}
+        </span>
+        <span *ngIf="config.updateTime" class="text-inverse text-opacity-50">
+          <i class="far fa-clock fa-fw"></i>
+          {{ config.updateTime }}
+        </span>
+      </div>
+    </div>
+  </div>
+</widget-container>

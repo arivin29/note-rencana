@@ -276,6 +276,9 @@ export class UsersService {
 
     // For non-admin users, verify current password
     if (currentUser.role !== UserRole.ADMIN) {
+      if (!changePasswordDto.currentPassword) {
+        throw new BadRequestException('Current password is required');
+      }
       const isPasswordValid = await bcrypt.compare(
         changePasswordDto.currentPassword,
         user.password,

@@ -120,10 +120,31 @@ card-body,
 
 /* Right Panel Scrollable */
 .config-panel-scroll {
-  max-height: calc(100vh - 120px);
+  position: sticky;
+  top: 10px;
+  max-height: calc(100vh - 80px);
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 8px;
+}
+
+/* Multi-Query Tabs */
+.query-tab {
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.query-tab:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.query-tab.active {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+.query-tabs::-webkit-scrollbar {
+  height: 3px;
+}
+.query-tabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
 }
 
 .config-panel-scroll::-webkit-scrollbar {

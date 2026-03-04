@@ -35,16 +35,18 @@ import { DashboardListComponent } from './dashboard-list/dashboard-list.componen
 import { DashboardViewComponent } from './dashboard-view/dashboard-view.component';
 import { WidgetWizardComponent } from './widget-wizard/widget-wizard.component';
 import { WidgetContainerComponent } from './components/widget-container/widget-container.component';
-import { LineChartWidgetComponent } from './components/widgets/line-chart-widget.component';
-import { BarChartWidgetComponent } from './components/widgets/bar-chart-widget.component';
-import { GaugeWidgetComponent } from './components/widgets/gauge-widget.component';
-import { PieChartWidgetComponent } from './components/widgets/pie-chart-widget.component';
-import { ValueCardWidgetComponent } from './components/widgets/value-card-widget.component';
-import { DataTableWidgetComponent } from './components/widgets/data-table-widget.component';
 import { TimeRangePickerComponent } from './components/time-range-picker/time-range-picker.component';
 import { SqlEditorComponent } from './components/sql-editor/sql-editor.component';
 import { FieldMappingComponent } from './components/field-mapping/field-mapping.component';
 import { DashboardModalComponent } from './components/dashboard-modal/dashboard-modal.component';
+
+// Widget Components (Separated by Type)
+import { LineChartWidgetComponent } from './components/widgets/line-chart/line-chart-widget.component';
+import { BarChartWidgetComponent } from './components/widgets/bar-chart/bar-chart-widget.component';
+import { GaugeWidgetComponent } from './components/widgets/gauge/gauge-widget.component';
+import { PieChartWidgetComponent } from './components/widgets/pie-chart/pie-chart-widget.component';
+import { StatCardWidgetComponent } from './components/widgets/stat-card/stat-card-widget.component';
+import { TableWidgetComponent } from './components/widgets/table/table-widget.component';
 
 // Template System Components
 import { WidgetCreateComponent } from './widget-create/widget-create.component';
@@ -65,12 +67,14 @@ const routes: Routes = [
     DashboardViewComponent,
     WidgetWizardComponent,
     WidgetContainerComponent,
+    // Widget Components
     LineChartWidgetComponent,
     BarChartWidgetComponent,
     GaugeWidgetComponent,
     PieChartWidgetComponent,
-    ValueCardWidgetComponent,
-    DataTableWidgetComponent,
+    StatCardWidgetComponent,
+    TableWidgetComponent,
+    // Other Components
     TimeRangePickerComponent,
     SqlEditorComponent,
     FieldMappingComponent,

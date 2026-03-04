@@ -2,12 +2,13 @@ import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { 
   Widget, WidgetType,
-  QueryResult
+  QueryResult, WidgetQueryDef
 } from '../models/widget.models';
 import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
 import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
+import { SensorTypesService } from '../../../../../sdk/core/services/sensor-types.service';
 import { ExecuteQueryResponseDto, ValidateQueryResponseDto } from '../../../../../sdk/core/models';
 
 @Component({
@@ -126,22 +127,8 @@ export class WidgetWizardComponent implements OnInit {
     '#b877d9', '#ff6eb4', '#4ec5d4', '#fade2a'
   ];
 
-  // Unit presets for quick selection
-  unitPresets = [
-    { label: 'None', value: '' },
-    { label: '°C (Celsius)', value: '°C' },
-    { label: '°F (Fahrenheit)', value: '°F' },
-    { label: '% (Percent)', value: '%' },
-    { label: 'hPa (Pressure)', value: 'hPa' },
-    { label: 'ppm', value: 'ppm' },
-    { label: 'V (Volt)', value: 'V' },
-    { label: 'A (Ampere)', value: 'A' },
-    { label: 'W (Watt)', value: 'W' },
-    { label: 'kWh', value: 'kWh' },
-    { label: 'Hz', value: 'Hz' },
-    { label: 'm/s', value: 'm/s' },
-    { label: 'Custom...', value: 'custom' }
-  ];
+  // Unit presets - loaded dynamically from sensor_types API
+  unitPresets: { label: string; value: string }[] = [];
 
   // Time format options
   timeFormatOptions = [
@@ -194,6 +181,13 @@ export class WidgetWizardComponent implements OnInit {
     clickhouse: { available: false, name: 'ClickHouse', description: 'Time-series analytics database', status: 'disabled' }
   };
   selectedDataSource: 'postgresql' | 'clickhouse' = 'postgresql';
+
+  // ============================================
+  // MULTI-QUERY SUPPORT
+  // ============================================
+  queries: WidgetQueryDef[] = [];
+  activeQueryIndex = 0;
+  queryResults: Map<string, QueryResult> = new Map(); // per-query results
 
   // ============================================
   // QUERY FILTERS - Node, Sensor, Channel selection
@@ -281,8 +275,7 @@ export class WidgetWizardComponent implements OnInit {
   
   // Widget Types with FA icons - use kebab-case consistently
   widgetTypes: { type: WidgetType; label: string; icon: string; description: string }[] = [
-    { type: 'line-chart', label: 'Time Series', icon: 'fa-chart-line', description: 'Time based line, area and bar charts' },
-    { type: 'multi-line-chart', label: 'Multi-Line Chart', icon: 'fa-chart-area', description: 'Compare multiple series over time' },
+    { type: 'line-chart', label: 'Time Series', icon: 'fa-chart-line', description: 'Time based line, area and bar charts (single & multi-line)' },
     { type: 'bar-chart', label: 'Bar Chart', icon: 'fa-chart-bar', description: 'Categorical charts with group support' },
     { type: 'stat-card', label: 'Stat Card', icon: 'fa-digital-tachograph', description: 'Big stat values & sparklines' },
     { type: 'gauge', label: 'Gauge', icon: 'fa-tachometer-alt', description: 'Standard gauge visualization' },
@@ -638,7 +631,8 @@ ORDER BY day_of_week, hour`
     private widgetBuilderService: WidgetBuilderService,
     private nodesService: NodesService,
     private sensorsService: SensorsService,
-    private sensorChannelsService: SensorChannelsService
+    private sensorChannelsService: SensorChannelsService,
+    private sensorTypesService: SensorTypesService
   ) {}
 
   ngOnInit(): void {
@@ -658,8 +652,14 @@ ORDER BY day_of_week, hour`
     // Load filter data (nodes, sensors, channels)
     this.loadFilterData();
     
+    // Load unit presets from sensor_types API
+    this.loadUnitPresets();
+    
     if (this.isEditMode) {
       this.loadWidget();
+    } else {
+      // New widget: initialize default query
+      this.initDefaultQuery();
     }
   }
 
@@ -677,6 +677,38 @@ ORDER BY day_of_week, hour`
       },
       error: (err) => {
         console.error('Failed to load data sources:', err);
+      }
+    });
+  }
+
+  /**
+   * Load unit presets from sensor_types API (distinct defaultUnit values)
+   */
+  loadUnitPresets(): void {
+    this.sensorTypesService.sensorTypesControllerFindAll().subscribe({
+      next: (sensorTypes) => {
+        // Extract unique non-empty units
+        const unitSet = new Set<string>();
+        for (const st of sensorTypes) {
+          if (st.defaultUnit && st.defaultUnit.trim()) {
+            unitSet.add(st.defaultUnit.trim());
+          }
+        }
+        // Sort alphabetically and build presets
+        const sorted = Array.from(unitSet).sort((a, b) => a.localeCompare(b));
+        this.unitPresets = sorted.map(u => ({ label: u, value: u }));
+      },
+      error: (err) => {
+        console.error('Failed to load unit presets:', err);
+        // Fallback to common units if API fails
+        this.unitPresets = [
+          { label: '°C', value: '°C' },
+          { label: 'bar', value: 'bar' },
+          { label: '%', value: '%' },
+          { label: 'ppm', value: 'ppm' },
+          { label: 'Hz', value: 'Hz' },
+          { label: 'm/s', value: 'm/s' },
+        ];
       }
     });
   }
@@ -1405,12 +1437,60 @@ ORDER BY day_of_week, hour`
     this.updatePreview();
   }
 
+  loadThresholdsFromChannel(): void {
+    if (!this.selectedChannelId) return;
+    
+    this.sensorChannelsService.sensorChannelsControllerFindOne({ id: this.selectedChannelId }).subscribe({
+      next: (channel: any) => {
+        const minVal = channel?.minThreshold ?? channel?.min_threshold;
+        const maxVal = channel?.maxThreshold ?? channel?.max_threshold;
+        
+        if (minVal == null && maxVal == null) {
+          alert('This sensor channel has no min/max thresholds configured in the database.');
+          return;
+        }
+        
+        // Remove existing Min/Max thresholds to avoid duplicates
+        this.form.thresholds = this.form.thresholds.filter(
+          (t: any) => t.label !== 'Min' && t.label !== 'Max'
+        );
+        
+        if (minVal != null) {
+          this.form.thresholds.push({
+            mode: 'manual',
+            value: parseFloat(minVal),
+            field: '',
+            label: 'Min',
+            color: '#3b82f6',
+            lineStyle: 'dashed'
+          });
+        }
+        if (maxVal != null) {
+          this.form.thresholds.push({
+            mode: 'manual',
+            value: parseFloat(maxVal),
+            field: '',
+            label: 'Max',
+            color: '#ef4444',
+            lineStyle: 'dashed'
+          });
+        }
+        this.updatePreview();
+      },
+      error: (err: any) => {
+        console.error('Failed to load sensor channel thresholds:', err);
+        alert('Failed to load thresholds from sensor channel.');
+      }
+    });
+  }
+
   // Get numeric columns for Y-axis selection
   getNumericColumns(): string[] {
     if (!this.queryResult || !this.queryResult.rows.length) return [];
     
     const firstRow = this.queryResult.rows[0];
     return Object.keys(firstRow).filter(key => {
+      if (key.startsWith('_')) return false; // Exclude internal columns (_source)
       const val = firstRow[key];
       return typeof val === 'number' || !isNaN(parseFloat(val));
     });
@@ -1437,6 +1517,15 @@ ORDER BY day_of_week, hour`
         this.form.title = widget.name || '';
         this.form.sql = widget.sqlQuery || '';
         this.selectedType = widget.widgetType || 'line-chart';
+        // Normalize deprecated multi-line-chart → line-chart (unified Time Series)
+        if (this.selectedType === 'multi-line-chart') {
+          this.selectedType = 'line-chart';
+        }
+        
+        // Data source - check top-level first (entity column), then config fallback
+        if (widget.dataSource && (widget.dataSource === 'postgresql' || widget.dataSource === 'clickhouse')) {
+          this.selectedDataSource = widget.dataSource;
+        }
         
         // Load config if exists
         if (widget.config) {
@@ -1524,6 +1613,31 @@ ORDER BY day_of_week, hour`
           // Data source
           if (config.dataSource && (config.dataSource === 'postgresql' || config.dataSource === 'clickhouse')) {
             this.selectedDataSource = config.dataSource;
+          }
+
+          // Multi-query definitions
+          if (config.queries && Array.isArray(config.queries) && config.queries.length > 1) {
+            this.queries = config.queries.map((q: any) => ({
+              id: q.id || this.generateQueryId(),
+              name: q.name || 'Query',
+              alias: q.alias || q.name?.charAt(q.name.length - 1) || 'A',
+              sql: q.sql || '',
+              dataSource: q.dataSource || 'postgresql',
+              enabled: q.enabled !== false,
+              color: q.color
+            }));
+            this.activeQueryIndex = 0;
+            this.syncActiveQueryToForm();
+          } else {
+            // Single query mode — initialize queries array from form.sql
+            this.queries = [{
+              id: this.generateQueryId(),
+              name: 'Query A',
+              alias: 'A',
+              sql: this.form.sql,
+              dataSource: this.selectedDataSource,
+              enabled: true
+            }];
           }
           
           // Load templateConfig filters (from Template Mode widgets)
@@ -1647,12 +1761,211 @@ ORDER BY day_of_week, hour`
     this.form.sql = sql;
   }
 
+  // ============================================
+  // MULTI-QUERY MANAGEMENT
+  // ============================================
+
+  get activeQuery(): WidgetQueryDef | null {
+    return this.queries[this.activeQueryIndex] || null;
+  }
+
+  get isMultiQuery(): boolean {
+    return this.queries.length > 1;
+  }
+
+  initDefaultQuery(): void {
+    if (this.queries.length === 0) {
+      this.queries = [{
+        id: this.generateQueryId(),
+        name: 'Query A',
+        alias: 'A',
+        sql: this.form.sql || '',
+        dataSource: this.selectedDataSource,
+        enabled: true,
+        color: this.seriesColors[0]
+      }];
+      this.activeQueryIndex = 0;
+    }
+  }
+
+  addQuery(): void {
+    const letter = String.fromCharCode(65 + this.queries.length); // A, B, C...
+    const idx = this.queries.length;
+    this.queries.push({
+      id: this.generateQueryId(),
+      name: `Query ${letter}`,
+      alias: letter,
+      sql: '',
+      dataSource: 'postgresql',
+      enabled: true,
+      color: this.seriesColors[idx % this.seriesColors.length]
+    });
+    this.activeQueryIndex = this.queries.length - 1;
+    this.syncActiveQueryToForm();
+  }
+
+  removeQuery(index: number): void {
+    if (this.queries.length <= 1) return; // Keep at least 1 query
+    this.queries.splice(index, 1);
+    this.queryResults.delete(this.queries[index]?.id);
+    if (this.activeQueryIndex >= this.queries.length) {
+      this.activeQueryIndex = this.queries.length - 1;
+    }
+    this.syncActiveQueryToForm();
+    this.mergeAllQueryResults();
+  }
+
+  selectQuery(index: number): void {
+    // Save current form.sql to the active query before switching
+    this.syncFormToActiveQuery();
+    this.activeQueryIndex = index;
+    this.syncActiveQueryToForm();
+  }
+
+  /** Sync form.sql / selectedDataSource → active query object */
+  syncFormToActiveQuery(): void {
+    const q = this.queries[this.activeQueryIndex];
+    if (q) {
+      q.sql = this.form.sql;
+      q.dataSource = this.selectedDataSource;
+    }
+  }
+
+  /** Sync active query object → form.sql / selectedDataSource */
+  syncActiveQueryToForm(): void {
+    const q = this.queries[this.activeQueryIndex];
+    if (q) {
+      this.form.sql = q.sql;
+      this.selectedDataSource = q.dataSource;
+    }
+  }
+
+  toggleQueryEnabled(index: number, event: Event): void {
+    event.stopPropagation();
+    this.queries[index].enabled = !this.queries[index].enabled;
+    this.mergeAllQueryResults();
+  }
+
+  updateQueryName(index: number, name: string): void {
+    this.queries[index].name = name;
+  }
+
+  private generateQueryId(): string {
+    return 'q-' + Math.random().toString(36).substring(2, 10);
+  }
+
+  /** Execute all enabled queries and merge results */
+  executeAllQueries(): void {
+    this.syncFormToActiveQuery();
+    
+    const enabledQueries = this.queries.filter(q => q.enabled && q.sql.trim());
+    if (enabledQueries.length === 0) {
+      this.queryError = 'No enabled queries with SQL to execute';
+      return;
+    }
+
+    this.queryLoading = true;
+    this.queryError = null;
+    this.queryResult = null;
+    this.queryResults.clear();
+
+    let completed = 0;
+    let hasError = false;
+
+    for (const q of enabledQueries) {
+      this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
+        body: {
+          sql: q.sql,
+          dataSource: q.dataSource,
+          from: this.timeFrom,
+          to: this.timeTo,
+          variables: {}
+        }
+      }).subscribe({
+        next: (response: any) => {
+          this.queryResults.set(q.id, {
+            columns: response.columns || [],
+            rows: (response.rows || []).map((row: any) => ({ ...row, _source: q.alias })),
+            rowCount: response.rowCount || 0,
+            executionTime: response.executionTime || 0
+          });
+          completed++;
+          if (completed === enabledQueries.length) {
+            this.mergeAllQueryResults();
+            this.queryLoading = false;
+          }
+        },
+        error: (err: any) => {
+          if (!hasError) {
+            hasError = true;
+            this.queryError = `[${q.name}] ${err.error?.message || err.message || 'Query failed'}`;
+          }
+          completed++;
+          if (completed === enabledQueries.length) {
+            this.mergeAllQueryResults();
+            this.queryLoading = false;
+          }
+        }
+      });
+    }
+  }
+
+  /** Merge all query results into a single queryResult for chart rendering */
+  mergeAllQueryResults(): void {
+    const allColumns = new Set<string>();
+    let allRows: any[] = [];
+    let totalTime = 0;
+
+    allColumns.add('_source');
+
+    for (const q of this.queries) {
+      if (!q.enabled) continue;
+      const result = this.queryResults.get(q.id);
+      if (!result) continue;
+      result.columns.forEach(c => allColumns.add(c));
+      allRows = allRows.concat(result.rows);
+      totalTime += result.executionTime;
+    }
+
+    if (allRows.length > 0) {
+      this.queryResult = {
+        columns: Array.from(allColumns),
+        rows: allRows,
+        rowCount: allRows.length,
+        executionTime: totalTime
+      };
+      this.availableColumns = this.queryResult.columns;
+
+      // Multi-query: auto-set seriesField to '_source' so chart groups by query alias
+      if (this.isMultiQuery) {
+        this.form.mapping.seriesField = '_source';
+      }
+
+      this.autoMapFields();
+      // Populate Series Override from seriesField unique values
+      this.refreshSeriesFromData();
+    } else {
+      this.queryResult = null;
+    }
+  }
+
   testQuery(): void {
+    // Multi-query mode: execute all queries
+    if (this.isMultiQuery) {
+      this.syncFormToActiveQuery();
+      this.executeAllQueries();
+      return;
+    }
+
+    // Single-query mode (legacy / default)
     // Validate SQL first
     if (!this.isValidSelectQuery()) {
       this.queryError = this.getSqlValidationError() || 'Invalid SQL query';
       return;
     }
+
+    // Also sync to queries[0] for consistency
+    this.syncFormToActiveQuery();
 
     this.queryLoading = true;
     this.queryError = null;
@@ -1693,26 +2006,28 @@ ORDER BY day_of_week, hour`
     if (!this.queryResult) return;
     
     const columns = this.queryResult.columns;
+    // Exclude internal columns (_source) for auto-detection fallbacks
+    const userColumns = columns.filter(c => !c.startsWith('_'));
     
-    const timestampField = columns.find(c => 
+    const timestampField = userColumns.find(c => 
       c.toLowerCase().includes('timestamp') || 
       c.toLowerCase().includes('time') ||
       c.toLowerCase() === 'ts'
     );
     
-    const valueField = columns.find(c => 
+    const valueField = userColumns.find(c => 
       c.toLowerCase().includes('value') ||
       c.toLowerCase().includes('avg') ||
       c.toLowerCase().includes('sum')
     );
     
-    const labelField = columns.find(c => 
+    const labelField = userColumns.find(c => 
       c.toLowerCase().includes('name') ||
       c.toLowerCase().includes('label') ||
       c.toLowerCase().includes('category')
     );
 
-    const seriesField = columns.find(c => 
+    const seriesField = userColumns.find(c => 
       c.toLowerCase().includes('series') ||
       c.toLowerCase().includes('metric') ||
       c.toLowerCase().includes('sensor')
@@ -1721,9 +2036,14 @@ ORDER BY day_of_week, hour`
     switch (this.selectedType) {
       case 'line-chart':
       case 'multi-line-chart':
-        this.form.mapping.xField = timestampField || columns[0];
-        this.form.mapping.yField = valueField || columns[1];
-        this.form.mapping.seriesField = seriesField || '';
+        this.form.mapping.xField = timestampField || userColumns[0];
+        this.form.mapping.yField = valueField || userColumns[1];
+        // Multi-query: keep '_source' as seriesField (set by mergeAllQueryResults)
+        if (this.isMultiQuery && this.form.mapping.seriesField === '_source') {
+          // preserve — don't overwrite
+        } else {
+          this.form.mapping.seriesField = seriesField || '';
+        }
         
         // Auto-select numeric fields for multi-line (exclude timestamp and threshold fields)
         const numericCols = this.getNumericColumns();
@@ -1744,27 +2064,41 @@ ORDER BY day_of_week, hour`
         // Only create new series config if empty (new widget)
         // Otherwise preserve existing config with user's decimals, colors, etc.
         if (this.form.series.length === 0) {
-          this.form.series = selectedFields.map((field, idx) => ({
-            field,
-            label: field,
-            color: this.seriesColors[idx % this.seriesColors.length],
-            unit: '',
-            decimals: 2, // Default 2
-            visible: true
-          }));
+          // If seriesField is set, populate from unique seriesField values
+          const activeSeriesField = this.form.mapping.seriesField;
+          if (activeSeriesField && this.queryResult?.rows.some(d => d[activeSeriesField])) {
+            const uniqueValues = [...new Set(this.queryResult.rows.map(d => d[activeSeriesField]).filter(Boolean))] as string[];
+            this.form.series = uniqueValues.map((val, idx) => ({
+              field: val,
+              label: val,
+              color: this.seriesColors[idx % this.seriesColors.length],
+              unit: '',
+              decimals: 2,
+              visible: true
+            }));
+          } else {
+            this.form.series = selectedFields.map((field, idx) => ({
+              field,
+              label: field,
+              color: this.seriesColors[idx % this.seriesColors.length],
+              unit: '',
+              decimals: 2, // Default 2
+              visible: true
+            }));
+          }
         }
         break;
       case 'bar-chart':
-        this.form.mapping.xField = labelField || columns[0];
-        this.form.mapping.yField = valueField || columns[1];
+        this.form.mapping.xField = labelField || userColumns[0];
+        this.form.mapping.yField = valueField || userColumns[1];
         break;
       case 'pie-chart':
-        this.form.mapping.labelField = labelField || columns[0];
-        this.form.mapping.valueField = valueField || columns[1];
+        this.form.mapping.labelField = labelField || userColumns[0];
+        this.form.mapping.valueField = valueField || userColumns[1];
         break;
       case 'gauge':
       case 'stat-card':
-        this.form.mapping.valueField = valueField || columns[0];
+        this.form.mapping.valueField = valueField || userColumns[0];
         break;
     }
     
@@ -1781,6 +2115,7 @@ ORDER BY day_of_week, hour`
   buildChartOptions(data: any[]): any {
     switch (this.selectedType) {
       case 'line-chart':
+      case 'multi-line-chart':
         return this.buildLineChartOptions(data);
         
       case 'bar-chart':
@@ -1934,8 +2269,7 @@ ORDER BY day_of_week, hour`
     for (const threshold of sortedThresholds) {
       const percent = (threshold.value - min) / range;
       if (percent > lastPercent && percent <= 1) {
-        // Color before this threshold (green zone)
-        colors.push([percent, '#73bf69']);
+        colors.push([percent, threshold.color || '#73bf69']);
         lastPercent = percent;
       }
     }
@@ -2078,20 +2412,43 @@ ORDER BY day_of_week, hour`
 
       const uniqueXValues = [...new Set(data.map(d => d[xField]))];
       
-      series = Array.from(seriesMap.entries()).map(([name, seriesData], idx) => ({
-        name,
-        type: 'line',
-        smooth: lineStyle === 'smooth',
-        step: lineStyle === 'step' ? 'middle' : false,
-        lineStyle: { width: lineWidth },
-        showSymbol: showPoints === 'always',
-        areaStyle: fillOpacity > 0 ? { opacity: fillOpacity / 100 } : undefined,
-        itemStyle: { color: this.getColorByIndex(idx) },
-        data: uniqueXValues.map(x => {
-          const point = seriesData.find(d => d[xField] === x);
-          return point ? point[yField] : null;
-        })
-      }));
+      // Determine the actual Y field to use for series data
+      // Prefer yField if it's a real numeric field, otherwise fall back to yFields[0]
+      const effectiveYField = (yField && yField !== xField && data.some(d => typeof d[yField] === 'number'))
+        ? yField
+        : (yFields && yFields.length > 0 ? yFields[0] : yField);
+      
+      series = Array.from(seriesMap.entries()).map(([name, seriesData], idx) => {
+        // Use Series Override config (form.series) for color/label
+        const sc = this.form.series.find(s => s.field === name);
+        let color = sc?.color || this.getColorByIndex(idx);
+        // Multi-query _source: fallback to per-query color 
+        if (!sc?.color && seriesField === '_source' && this.queries.length > 1) {
+          const matchingQuery = this.queries.find(q => q.alias === name || q.name === name);
+          if (matchingQuery?.color) color = matchingQuery.color;
+        }
+        // Display name: use Series Override label, or multi-query format, or raw name
+        let displayName = sc?.label && sc.label !== name ? sc.label : name;
+        if (seriesField === '_source' && this.queries.length > 1 && (!sc?.label || sc.label === name)) {
+          displayName = `${name}: ${effectiveYField}`;
+        }
+        // Check visibility from Series Override
+        const visible = sc?.visible !== false;
+        return {
+          name: displayName,
+          type: 'line',
+          smooth: lineStyle === 'smooth',
+          step: lineStyle === 'step' ? 'middle' : false,
+          lineStyle: { width: visible ? lineWidth : 0, opacity: visible ? 1 : 0 },
+          showSymbol: visible && showPoints === 'always',
+          areaStyle: fillOpacity > 0 && visible ? { opacity: fillOpacity / 100 } : undefined,
+          itemStyle: { color, opacity: visible ? 1 : 0 },
+          data: uniqueXValues.map(x => {
+            const point = seriesData.find(d => d[xField] === x);
+            return point ? point[effectiveYField] : null;
+          })
+        };
+      });
 
       return {
         ...baseConfig,
@@ -2297,6 +2654,61 @@ ORDER BY day_of_week, hour`
     return colors[index % colors.length];
   }
 
+  /**
+   * Refresh form.series from current data based on seriesField or yFields.
+   * Called when seriesField dropdown changes or after query execution.
+   * Preserves existing user customizations (colors, labels, etc).
+   */
+  refreshSeriesFromData(): void {
+    if (!this.queryResult || !this.queryResult.rows.length) return;
+    const sf = this.form.mapping.seriesField;
+    const data = this.queryResult.rows;
+
+    if (sf && data.some(d => d[sf])) {
+      // SeriesField grouping mode: populate from unique seriesField values
+      const uniqueValues = [...new Set(data.map(d => d[sf]).filter(Boolean))] as string[];
+      const existingSeries = [...this.form.series];
+      this.form.series = uniqueValues.map((val, idx) => {
+        // Preserve existing override if user already customized this series
+        const existing = existingSeries.find(s => s.field === val);
+        if (existing) return existing;
+        // Multi-query _source: use per-query color
+        let color = this.seriesColors[idx % this.seriesColors.length];
+        if (sf === '_source' && this.queries.length > 1) {
+          const matchingQuery = this.queries.find(q => q.alias === val || q.name === val);
+          if (matchingQuery?.color) color = matchingQuery.color;
+        }
+        return {
+          field: val,
+          label: val,
+          color,
+          unit: '',
+          decimals: 2,
+          visible: true
+        };
+      });
+    } else {
+      // No seriesField: populate from yFields (multi-column mode)
+      const yFields = this.form.mapping.yFields || [];
+      if (yFields.length > 0) {
+        const existingSeries = [...this.form.series];
+        this.form.series = yFields.map((field, idx) => {
+          const existing = existingSeries.find(s => s.field === field);
+          if (existing) return existing;
+          return {
+            field,
+            label: field,
+            color: this.seriesColors[idx % this.seriesColors.length],
+            unit: '',
+            decimals: 2,
+            visible: true
+          };
+        });
+      }
+    }
+    this.updatePreview();
+  }
+
   // Validation
   canSave(): boolean {
     return this.form.title.length > 0 && 
@@ -2346,12 +2758,15 @@ ORDER BY day_of_week, hour`
   saveWidget(): void {
     if (!this.canSave()) return;
 
+    // Sync current SQL editor to active query
+    this.syncFormToActiveQuery();
+
     // Build widget config for DB storage
-    const widgetConfig = {
+    const widgetConfig: any = {
       title: this.form.title,
       description: this.form.description,
-      // Data source (postgresql or clickhouse)
-      dataSource: this.selectedDataSource,
+      // Data source (postgresql or clickhouse) — first query's source for backward compat
+      dataSource: this.queries.length > 0 ? this.queries[0].dataSource : this.selectedDataSource,
       // Field mapping for data binding
       mapping: this.form.mapping,
       // Series configuration (multi-line)
@@ -2368,6 +2783,22 @@ ORDER BY day_of_week, hour`
       timeRange: this.form.timeRange
     };
 
+    // Save multi-query definitions if more than 1 query
+    if (this.queries.length > 1) {
+      widgetConfig.queries = this.queries.map(q => ({
+        id: q.id,
+        name: q.name,
+        alias: q.alias,
+        sql: q.sql,
+        dataSource: q.dataSource,
+        enabled: q.enabled,
+        color: q.color
+      }));
+    }
+
+    // Primary SQL: first query's SQL for backward compat
+    const primarySql = this.queries.length > 0 ? this.queries[0].sql : this.form.sql;
+
     if (this.isEditMode && this.widgetId) {
       // Update existing widget
       this.widgetBuilderService.widgetBuilderControllerUpdateWidget({
@@ -2376,7 +2807,7 @@ ORDER BY day_of_week, hour`
         body: {
           name: this.form.name,
           widgetType: this.selectedType,
-          sqlQuery: this.form.sql,
+          sqlQuery: primarySql,
           config: widgetConfig
         }
       }).subscribe({
@@ -2396,7 +2827,7 @@ ORDER BY day_of_week, hour`
         body: {
           name: this.form.name,
           widgetType: this.selectedType,
-          sqlQuery: this.form.sql,
+          sqlQuery: primarySql,
           config: widgetConfig,
           positionX: 0,
           positionY: 0,

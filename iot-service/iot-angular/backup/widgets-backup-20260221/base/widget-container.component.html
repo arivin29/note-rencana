@@ -1,0 +1,12 @@
+<div class="widget-container" [class.widget-small]="size === 'small'" [class.widget-medium]="size === 'medium'"
+  [class.widget-large]="size === 'large'">
+  <div class="widget-header" *ngIf="showHeader && (title || icon)">
+    <div class="d-flex align-items-center">
+      <i *ngIf="icon" [class]="'fa ' + icon + ' me-2'" [style.color]="iconColor"></i>
+      <span class="widget-title">{{ title }}</span>
+    </div>
+  </div>
+  <div class="widget-body">
+    <ng-content></ng-content>
+  </div>
+</div>

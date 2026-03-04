@@ -314,17 +314,7 @@
                 <card-header class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
                         <i class="fa fa-database text-theme"></i>
-                        <span class="fw-bold">Data Source</span>
-                        <!-- Data Source Selector -->
-                        <select class="form-select form-select-sm datasource-select" [(ngModel)]="selectedDataSource"
-                            (ngModelChange)="onDataSourceChange()" style="width: auto; min-width: 140px;">
-                            <option value="postgresql" [disabled]="!dataSources.postgresql.available">
-                                <i class="fa fa-database"></i> PostgreSQL
-                            </option>
-                            <option value="clickhouse" [disabled]="!dataSources.clickhouse.available">
-                                ClickHouse {{ !dataSources.clickhouse.available ? '(unavailable)' : '' }}
-                            </option>
-                        </select>
+                        <span class="fw-bold">Queries</span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <!-- Templates Dropdown -->
@@ -355,14 +345,67 @@
                             [disabled]="!form.sql || queryLoading">
                             <span *ngIf="queryLoading" class="spinner-border spinner-border-sm me-1"></span>
                             <i *ngIf="!queryLoading" class="fa fa-play me-1"></i>
-                            Run Query
+                            {{ isMultiQuery ? 'Run All' : 'Run Query' }}
                         </button>
                     </div>
                 </card-header>
 
-                <!-- Data Source Info Banner -->
-                <div class="datasource-info px-3 py-2 border-bottom"
+                <!-- Multi-Query Tabs -->
+                <div class="query-tabs px-3 py-2 border-bottom d-flex align-items-center gap-1 bg-dark bg-opacity-25" style="overflow-x: auto;">
+                    <div *ngFor="let q of queries; let i = index"
+                        class="query-tab d-flex align-items-center gap-1 px-2 py-1 rounded-1 cursor-pointer"
+                        [class.active]="i === activeQueryIndex"
+                        [class.bg-theme]="i === activeQueryIndex"
+                        [class.bg-opacity-25]="i === activeQueryIndex"
+                        [class.text-white-50]="i !== activeQueryIndex"
+                        [class.opacity-50]="!q.enabled"
+                        (click)="selectQuery(i)"
+                        style="white-space: nowrap; font-size: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                        <input type="color" [value]="q.color || '#73bf69'"
+                            (input)="q.color = $any($event.target).value"
+                            (click)="$event.stopPropagation()"
+                            style="width: 14px; height: 14px; border: none; padding: 0; cursor: pointer; border-radius: 2px; background: transparent;">
+                        <span class="badge me-1"
+                            [class.bg-success]="q.dataSource === 'clickhouse' && q.enabled"
+                            [class.bg-primary]="q.dataSource === 'postgresql' && q.enabled"
+                            [class.bg-secondary]="!q.enabled"
+                            style="font-size: 9px; padding: 2px 4px;">
+                            {{ q.dataSource === 'clickhouse' ? 'CH' : 'PG' }}
+                        </span>
+                        <span class="fw-semibold">{{ q.name }}</span>
+                        <button *ngIf="queries.length > 1" class="btn btn-link btn-sm p-0 ms-1 text-white-50"
+                            (click)="toggleQueryEnabled(i, $event)" 
+                            [title]="q.enabled ? 'Disable query' : 'Enable query'"
+                            style="font-size: 10px; line-height: 1;">
+                            <i class="fa" [class.fa-eye]="q.enabled" [class.fa-eye-slash]="!q.enabled"></i>
+                        </button>
+                        <button *ngIf="queries.length > 1" class="btn btn-link btn-sm p-0 ms-1 text-danger"
+                            (click)="removeQuery(i); $event.stopPropagation()" title="Remove query"
+                            style="font-size: 10px; line-height: 1;">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" (click)="addQuery()"
+                        title="Add another data source query" style="font-size: 11px;">
+                        <i class="fa fa-plus me-1"></i> Add Query
+                    </button>
+                    <span *ngIf="isMultiQuery" class="ms-auto text-white-50 small">
+                        <i class="fa fa-info-circle me-1"></i> Results merged with _source column
+                    </span>
+                </div>
+
+                <!-- Data Source Selector + Info Banner (per active query) -->
+                <div class="datasource-info px-3 py-2 border-bottom d-flex align-items-center gap-3"
                     [class.bg-info-subtle]="selectedDataSource === 'clickhouse'">
+                    <select class="form-select form-select-sm datasource-select" [(ngModel)]="selectedDataSource"
+                        (ngModelChange)="onDataSourceChange(); syncFormToActiveQuery()" style="width: auto; min-width: 150px;">
+                        <option value="postgresql" [disabled]="!dataSources.postgresql.available">
+                            PostgreSQL
+                        </option>
+                        <option value="clickhouse" [disabled]="!dataSources.clickhouse.available">
+                            ClickHouse {{ !dataSources.clickhouse.available ? '(unavailable)' : '' }}
+                        </option>
+                    </select>
                     <small class="text-muted" *ngIf="selectedDataSource === 'postgresql'">
                         <i class="fa fa-info-circle me-1"></i>
                         PostgreSQL: Best for real-time data, transactions, and complex joins
@@ -635,7 +678,7 @@
                             <div class="mb-0">
                                 <label class="form-label">Series Field (Group By)</label>
                                 <select class="form-select" [(ngModel)]="form.mapping.seriesField"
-                                    (ngModelChange)="updatePreview()">
+                                    (ngModelChange)="refreshSeriesFromData()">
                                     <option value="">None</option>
                                     <option *ngFor="let col of availableColumns" [value]="col">{{ col }}</option>
                                 </select>
@@ -1095,6 +1138,20 @@
                                         [class.btn-outline-secondary]="threshold.lineStyle !== 'dashed'"
                                         (click)="threshold.lineStyle = 'dashed'; updateThreshold(i)">┄</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto Load from Sensor Channel -->
+                        <div class="mt-2 pt-2 border-top">
+                            <button class="btn btn-sm btn-outline-info w-100"
+                                (click)="loadThresholdsFromChannel()"
+                                [disabled]="!selectedChannelId"
+                                title="Load min/max thresholds from sensor channel configuration">
+                                <i class="fa fa-download me-1"></i>
+                                Load from Sensor Channel
+                            </button>
+                            <div *ngIf="!selectedChannelId" class="text-white-50 small mt-1 text-center">
+                                Select a channel in filter above first
                             </div>
                         </div>
 

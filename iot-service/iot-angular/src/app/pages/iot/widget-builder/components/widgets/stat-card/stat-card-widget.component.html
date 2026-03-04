@@ -1,0 +1,15 @@
+<div class="value-card-widget text-center py-3" *ngIf="displayData">
+  <div class="value-main">
+    <span class="value text-theme fs-1 fw-bold">{{ displayData.formattedValue || displayData.value }}</span>
+    <span class="unit text-white-50 ms-1">{{ displayData.unit }}</span>
+  </div>
+  <div class="value-trend mt-2" 
+       *ngIf="displayData.trend"
+       [class.text-success]="displayData.trend === 'up'" 
+       [class.text-danger]="displayData.trend === 'down'">
+    <i class="fa" 
+       [class.fa-arrow-up]="displayData.trend === 'up'" 
+       [class.fa-arrow-down]="displayData.trend === 'down'"></i>
+    <span class="ms-1">{{ displayData.trendValue }}%</span>
+  </div>
+</div>

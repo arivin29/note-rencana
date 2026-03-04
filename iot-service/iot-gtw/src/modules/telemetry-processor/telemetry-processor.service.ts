@@ -421,6 +421,8 @@ export class TelemetryProcessorService {
               metric_unit: channel.unit || '',
               raw_value: parsedChannel.value,
               eng_value: valueEngineered,
+              min_threshold: minThreshold ?? 0,
+              max_threshold: maxThreshold ?? 0,
               signal_quality: parsedTelemetry.metadata?.signalQuality || 0,
               firmware_version: node.firmwareVersion || '',
               iot_log_id: iotLog.id,
@@ -447,6 +449,8 @@ export class TelemetryProcessorService {
               metric_unit: channel.unit || '',
               raw_value: parsedChannel.value,
               eng_value: valueEngineered,
+              min_threshold: minThreshold ?? 0,
+              max_threshold: maxThreshold ?? 0,
               signal_quality: parsedTelemetry.metadata?.signalQuality || 0,
               last_iot_log_id: iotLog.id,
             };

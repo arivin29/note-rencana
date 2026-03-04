@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { CustomDashboard } from '../../entities/custom-dashboard.entity';
 import { CustomWidget } from '../../entities/custom-widget.entity';
 import { WidgetQueryTemplate } from '../../entities/widget-query-template.entity';
+import { Owner } from '../../entities/owner.entity';
 import { ClickhouseService } from '../clickhouse/clickhouse.service';
 import { 
   CreateCustomDashboardDto, 
@@ -55,6 +56,8 @@ const CLICKHOUSE_TIME_RANGE_MAP: Record<string, string> = {
 @Injectable()
 export class WidgetBuilderService {
   private readonly logger = new Logger(WidgetBuilderService.name);
+  // Cache ownerCode lookups to avoid repeated DB queries
+  private ownerCodeCache = new Map<string, string>();
 
   constructor(
     @InjectRepository(CustomDashboard)
@@ -63,6 +66,8 @@ export class WidgetBuilderService {
     private widgetRepository: Repository<CustomWidget>,
     @InjectRepository(WidgetQueryTemplate)
     private templateRepository: Repository<WidgetQueryTemplate>,
+    @InjectRepository(Owner)
+    private ownerRepository: Repository<Owner>,
     private dataSource: DataSource,
     private clickhouseService: ClickhouseService,
   ) {}
@@ -297,7 +302,7 @@ export class WidgetBuilderService {
     }
 
     // Prepare SQL with variable replacements
-    const sql = this.prepareQuery(dto, ownerId, dataSourceType);
+    const sql = await this.prepareQuery(dto, ownerId, dataSourceType);
 
     this.logger.debug(`Executing query on ${dataSourceType}: ${sql.substring(0, 200)}...`);
 
@@ -312,15 +317,19 @@ export class WidgetBuilderService {
   /**
    * Prepare SQL query with variable replacements
    */
-  private prepareQuery(dto: ExecuteQueryDto, ownerId: string | null, dataSourceType: DataSourceEnum): string {
+  private async prepareQuery(dto: ExecuteQueryDto, ownerId: string | null, dataSourceType: DataSourceEnum): Promise<string> {
     let sql = dto.sql;
     const isClickHouse = dataSourceType === DataSourceEnum.CLICKHOUSE;
     
     // Priority: Use epoch timestamps (from/to) if provided, otherwise use preset
     if (dto.from && dto.to) {
       // Convert epoch milliseconds to appropriate format
-      const fromDate = new Date(dto.from).toISOString();
-      const toDate = new Date(dto.to).toISOString();
+      const fromDate = isClickHouse
+        ? this.toClickHouseDateTime(new Date(dto.from))
+        : new Date(dto.from).toISOString();
+      const toDate = isClickHouse
+        ? this.toClickHouseDateTime(new Date(dto.to))
+        : new Date(dto.to).toISOString();
       
       // Replace ${fromTime} and ${toTime} placeholders
       sql = sql.replace(/\$\{fromTime\}/g, fromDate);
@@ -362,8 +371,12 @@ export class WidgetBuilderService {
       const duration = this.getTimeRangeDuration(dto.timeRange);
       if (duration) {
         const now = new Date();
-        const fromDate = new Date(now.getTime() - duration).toISOString();
-        const toDate = now.toISOString();
+        const fromDate = isClickHouse
+          ? this.toClickHouseDateTime(new Date(now.getTime() - duration))
+          : new Date(now.getTime() - duration).toISOString();
+        const toDate = isClickHouse
+          ? this.toClickHouseDateTime(now)
+          : now.toISOString();
         sql = sql.replace(/\$\{fromTime\}/g, fromDate);
         sql = sql.replace(/\$\{toTime\}/g, toDate);
       }
@@ -377,6 +390,14 @@ export class WidgetBuilderService {
       sql = sql.replace(/id_owner\s*=\s*'\$\{ownerId\}'/gi, '1=1');
       sql = sql.replace(/WHERE\s+id_owner\s*=\s*'\$\{ownerId\}'/gi, 'WHERE 1=1');
       sql = sql.replace(/'\$\{ownerId\}'/g, "'00000000-0000-0000-0000-000000000000'");
+    }
+
+    // Auto-resolve ${ownerCode} from ownerId lookup
+    if (sql.includes('${ownerCode}') && ownerId) {
+      const ownerCode = await this.resolveOwnerCode(ownerId);
+      if (ownerCode) {
+        sql = sql.replace(/\$\{ownerCode\}/g, ownerCode);
+      }
     }
 
     // Replace custom variables
@@ -466,6 +487,37 @@ export class WidgetBuilderService {
   // ==========================================
   // HELPER METHODS
   // ==========================================
+
+  /**
+   * Resolve ownerCode from ownerId with in-memory cache
+   */
+  private async resolveOwnerCode(ownerId: string): Promise<string | null> {
+    // Check cache first
+    if (this.ownerCodeCache.has(ownerId)) {
+      return this.ownerCodeCache.get(ownerId)!;
+    }
+
+    try {
+      const owner = await this.ownerRepository.findOne({
+        where: { idOwner: ownerId },
+        select: ['ownerCode'],
+      });
+      if (owner?.ownerCode) {
+        this.ownerCodeCache.set(ownerId, owner.ownerCode);
+        return owner.ownerCode;
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to resolve ownerCode for ${ownerId}: ${error.message}`);
+    }
+    return null;
+  }
+
+  /**
+   * Convert a JS Date to ClickHouse-compatible DateTime string: 'YYYY-MM-DD HH:MM:SS'
+   */
+  private toClickHouseDateTime(date: Date): string {
+    return date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  }
 
   private getTimeRangeDuration(preset: string): number | null {
     const durations: Record<string, number> = {

@@ -5,9 +5,9 @@
 export interface ChangePasswordDto {
 
   /**
-   * Current password
+   * Current password (required for non-admin users)
    */
-  currentPassword: string;
+  currentPassword?: string;
 
   /**
    * New password (min 8 characters)

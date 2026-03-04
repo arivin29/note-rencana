@@ -302,8 +302,8 @@ ORDER BY ts ASC`
   {
     id: 'timeseries-multiline',
     categoryId: 'timeseries',
-    widgetType: 'multi-line-chart',
-    name: 'Multi-Line Chart',
+    widgetType: 'line-chart',
+    name: 'Multi-Line Time Series',
     description: 'Compare multiple sensors/channels',
     icon: 'fa-project-diagram',
     previewSvg: `<svg viewBox="0 0 100 50"><polyline points="5,35 25,25 45,30 65,20 95,15" fill="none" stroke="#3b82f6" stroke-width="2"/><polyline points="5,40 25,35 45,25 65,30 95,20" fill="none" stroke="#10b981" stroke-width="2"/><polyline points="5,30 25,40 45,35 65,40 95,35" fill="none" stroke="#f59e0b" stroke-width="2"/></svg>`,

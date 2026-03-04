@@ -13,5 +13,9 @@
 			"path": "../desain_widget_dinamis"
 		}
 	],
-    "settings": {}
+    "settings": {
+        "chat.tools.terminal.autoApprove": {
+            "psql": true
+        }
+    }
 }

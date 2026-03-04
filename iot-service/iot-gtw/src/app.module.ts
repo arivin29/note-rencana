@@ -6,6 +6,7 @@ import mqttConfig from './config/mqtt.config';
 import deviceDefaultsConfig from './config/device-defaults.config';
 import teltonikaConfig from './config/teltonika.config';
 import clickhouseConfig from './config/clickhouse.config';
+import opensearchConfig from './config/opensearch.config';
 import { IotLog } from './entities';
 import {
     Node,
@@ -26,13 +27,14 @@ import { HealthModule } from './modules/health/health.module';
 import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
 import { TeltonikaModule } from './modules/teltonika/teltonika.module';
 import { ClickhouseModule } from './modules/clickhouse/clickhouse.module';
+import { MlModule } from './modules/ml/ml.module';
 
 @Module({
     imports: [
         // Config Module
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [databaseConfig, mqttConfig, deviceDefaultsConfig, clickhouseConfig, teltonikaConfig],
+            load: [databaseConfig, mqttConfig, deviceDefaultsConfig, clickhouseConfig, teltonikaConfig, opensearchConfig],
             envFilePath: '.env',
         }),
 
@@ -75,6 +77,7 @@ import { ClickhouseModule } from './modules/clickhouse/clickhouse.module';
         ClickhouseModule, // ClickHouse for time-series telemetry
         SchedulerAppModule, // Auto-process telemetry every 30 seconds
         TeltonikaModule, // Teltonika FM125 TCP Gateway
+        MlModule, // ML/AI Anomaly Detection & Forecasting
     ],
 })
 export class AppModule { }

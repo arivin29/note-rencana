@@ -1,0 +1,33 @@
+<div class="table-widget" *ngIf="tableData">
+  <div class="table-responsive console-table">
+    <table class="table table-sm mb-0 text-white">
+      <thead>
+        <tr>
+          <th *ngFor="let col of tableData.columns">{{ col }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of tableData.rows">
+          <td *ngFor="let col of tableData.columns">
+            <ng-container [ngSwitch]="col">
+              <ng-container *ngSwitchCase="'timestamp'">
+                {{ row[col] | date:'short' }}
+              </ng-container>
+              <ng-container *ngSwitchCase="'status'">
+                <span class="badge" 
+                      [class.bg-success]="row[col] === 'Normal'" 
+                      [class.bg-warning]="row[col] === 'Warning'"
+                      [class.bg-danger]="row[col] === 'Critical'">
+                  {{ row[col] }}
+                </span>
+              </ng-container>
+              <ng-container *ngSwitchDefault>
+                {{ row[col] }}
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

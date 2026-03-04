@@ -3,12 +3,12 @@
 .dashboard-grid,
 .dashboard-gridster {
   flex: 1;
-  min-height: calc(100vh - 200px);
+  min-height: calc(100vh - 160px);
 }
 
 .widget-item,
 .widget-gridster-item {
-  border-radius: 0px;
+  border-radius: 2px;
   overflow: hidden;
 }
 

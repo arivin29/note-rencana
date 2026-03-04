@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.value-card-widget {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.value-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.value {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.unit {
+  font-size: 1rem;
+}
+
+.value-trend {
+  font-size: 0.875rem;
+}

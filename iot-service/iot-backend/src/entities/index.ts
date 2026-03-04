@@ -16,6 +16,8 @@ export { SensorChannel } from './sensor-channel.entity';
 export { SensorLog } from './sensor-log.entity';
 export { AlertRule } from './alert-rule.entity';
 export { AlertEvent } from './alert-event.entity';
+export { AnomalyResult } from './anomaly-result.entity';
+export { ForecastResult } from './forecast-result.entity';
 export { UserDashboard } from './user-dashboard.entity';
 export { DashboardWidget } from './dashboard-widget.entity';
 export { OwnerForwardingWebhook } from './owner-forwarding-webhook.entity';

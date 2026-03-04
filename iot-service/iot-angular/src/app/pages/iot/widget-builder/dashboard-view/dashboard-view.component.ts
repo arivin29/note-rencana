@@ -17,6 +17,7 @@ interface DashboardResponse {
   isDefault: boolean;
   idOwner?: string;
   ownerId?: string;
+  layoutConfig?: Record<string, any>;
   owner?: { name: string };
   widgets?: WidgetResponse[];
   createdAt: string;
@@ -31,6 +32,7 @@ interface WidgetResponse {
   name: string;
   widgetType: string;
   sqlQuery: string;
+  dataSource?: string;
   config: any;
   positionX: number;
   positionY: number;
@@ -52,6 +54,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   dashboard: Dashboard | null = null;
   widgets: GridsterItem[] = [];
   widgetData: Map<string, Widget> = new Map();
+  /** Variables from dashboard layoutConfig.variables for SQL substitution */
+  dashboardVariables: Record<string, string> = {};
   
   // Gridster config
   gridsterOptions: GridsterConfig = {};
@@ -133,12 +137,12 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
       minItemRows: 2,
       maxItemCols: 12,
       maxItemRows: 10,
-      margin: 10,
+      margin: 4,
       outerMargin: true,
-      outerMarginTop: 10,
-      outerMarginRight: 10,
-      outerMarginBottom: 10,
-      outerMarginLeft: 10,
+      outerMarginTop: 4,
+      outerMarginRight: 4,
+      outerMarginBottom: 4,
+      outerMarginLeft: 4,
       scrollSensitivity: 10,
       scrollSpeed: 20,
       itemChangeCallback: this.onItemChange.bind(this),
@@ -166,6 +170,11 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
           createdAt: new Date(data.createdAt),
           updatedAt: new Date(data.updatedAt)
         };
+
+        // Extract dashboard-level variables from layoutConfig
+        if (data.layoutConfig?.['variables']) {
+          this.dashboardVariables = data.layoutConfig['variables'];
+        }
         
         if (data.widgets && data.widgets.length > 0) {
           this.widgets = data.widgets.map((w: WidgetResponse) => {
@@ -190,7 +199,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
               sqlQuery: w.sqlQuery,  // Store SQL query at top level for widget-container
               config: {
                 ...w.config,
-                sqlQuery: w.sqlQuery  // Also store in config as fallback
+                sqlQuery: w.sqlQuery,  // Also store in config as fallback
+                dataSource: w.dataSource || 'postgresql'  // Carry data source into config
               },
               position: {
                 x: w.positionX || 0,

@@ -1,14 +1,14 @@
 <!-- Page Header -->
-<div class="d-flex align-items-center mb-3">
+<div class="d-flex align-items-center mb-2">
     <div>
-        <ul class="breadcrumb mb-1">
+        <ul class="breadcrumb mb-0" style="font-size: 11px;">
             <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/widget-builder">Widget Builder</a></li>
             <li class="breadcrumb-item"><a href="javascript:;">Dashboards</a></li>
             <li class="breadcrumb-item active">{{ dashboard?.name || 'Dashboard' }}</li>
         </ul>
-        <h1 class="page-header mb-0">
+        <h1 class="page-header mb-0" style="font-size: 18px;">
             {{ dashboard?.name || 'Loading...' }}
-            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal">
+            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal" style="font-size: 12px !important;">
                 {{ dashboard?.description }}
             </small>
         </h1>
@@ -289,6 +289,7 @@
         <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
             <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
                 [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
+                [dashboardVariables]="dashboardVariables"
                 (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
                 (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
                 (duplicate)="duplicateWidget(item['id'])">
@@ -306,6 +307,7 @@
         </button>
         <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" 
             [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()"
+            [dashboardVariables]="dashboardVariables"
             [isFullscreen]="true" (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
         </app-widget-container>
     </div>

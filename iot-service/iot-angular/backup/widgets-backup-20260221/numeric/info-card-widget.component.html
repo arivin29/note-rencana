@@ -1,0 +1,70 @@
+<widget-container [showHeader]="false">
+  <div class="info-card-content">
+    <!-- Icon & Value Row -->
+    <div class="d-flex align-items-center mb-3">
+      <!-- Icon with gradient background -->
+      <div class="info-card-icon-box" [style.background]="getGradientBackground()">
+        <i [class]="'fa ' + config.icon + ' fa-lg'"></i>
+      </div>
+      
+      <!-- Value & Unit -->
+      <div class="ms-3 flex-1">
+        <div class="info-card-value">
+          {{ config.value | number: '1.0-2' }}
+          <span class="info-card-unit">{{ config.unit }}</span>
+        </div>
+        <div class="info-card-label text-inverse text-opacity-50">
+          {{ config.label }}
+        </div>
+      </div>
+
+      <!-- Trend Badge -->
+      <div *ngIf="config.trend" class="ms-auto">
+        <div class="trend-badge" 
+             [ngClass]="{
+               'trend-up': config.trend.direction === 'up',
+               'trend-down': config.trend.direction === 'down',
+               'trend-stable': config.trend.direction === 'stable'
+             }">
+          <i class="fa fa-xs"
+             [class.fa-arrow-up]="config.trend.direction === 'up'"
+             [class.fa-arrow-down]="config.trend.direction === 'down'"
+             [class.fa-minus]="config.trend.direction === 'stable'"></i>
+          {{ config.trend.value | number: '1.0-1' }}%
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="info-card-stats" *ngIf="config.stats">
+      <div class="progress mb-2" style="height: 4px;">
+        <div class="progress-bar bg-theme" 
+             [style.width]="getProgressPercentage() + '%'"
+             role="progressbar"></div>
+      </div>
+      <div class="d-flex justify-content-between text-inverse text-opacity-50 fs-11px">
+        <span><i class="fa fa-circle fa-xs text-success me-1"></i>Min: {{ config.stats.min | number: '1.0-2' }}</span>
+        <span><i class="fa fa-circle fa-xs text-danger me-1"></i>Max: {{ config.stats.max | number: '1.0-2' }}</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="info-card-footer mt-3 pt-2 border-top border-inverse border-opacity-10" *ngIf="config.updateTime || config.status">
+      <div class="d-flex align-items-center justify-content-between text-inverse text-opacity-50 fs-11px">
+        <span *ngIf="config.updateTime">
+          <i class="far fa-clock fa-fw"></i>
+          {{ config.updateTime }}
+        </span>
+        <span *ngIf="config.status" 
+              class="badge rounded-pill"
+              [ngClass]="{
+                'bg-theme text-theme-900': config.status === 'online',
+                'bg-warning': config.status === 'warning',
+                'bg-danger': config.status === 'offline'
+              }">
+          <i class="fa fa-circle fa-xs"></i>
+        </span>
+      </div>
+    </div>
+  </div>
+</widget-container>

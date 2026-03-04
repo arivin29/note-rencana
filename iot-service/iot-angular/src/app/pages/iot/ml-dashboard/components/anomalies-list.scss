@@ -1,0 +1,67 @@
+// Anomalies List Styles
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  
+  &:hover {
+    background-color: #f3f4f6;
+  }
+  
+  i {
+    font-size: 0.75rem;
+    opacity: 0.5;
+  }
+}
+
+.table {
+  th {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+  
+  td {
+    vertical-align: middle;
+  }
+  
+  tr.selected {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+  }
+}
+
+.bg-orange {
+  background-color: #ea580c !important;
+}
+
+.bg-yellow {
+  background-color: #ca8a04 !important;
+}
+
+.badge {
+  font-weight: 500;
+}
+
+// Checkbox styling
+.form-check-input {
+  cursor: pointer;
+}
+
+// Button group
+.btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+}
+
+// Responsive
+@media (max-width: 992px) {
+  .table {
+    font-size: 0.875rem;
+  }
+  
+  .btn-group-sm .btn {
+    padding: 0.2rem 0.4rem;
+  }
+}

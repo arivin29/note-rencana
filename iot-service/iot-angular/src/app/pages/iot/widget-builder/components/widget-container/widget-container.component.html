@@ -1,10 +1,10 @@
 <div class="widget-wrapper h-100">
   <card class="console-panel h-100" [class.fullscreen]="isFullscreen">
     <card-body>
-      <!-- Widget Header -->
+      <!-- Widget Header - Grafana-compact style -->
       <div class="panel-head d-flex justify-content-between align-items-center">
-        <div class="panel-label text-white text-truncate">{{ widget?.name || 'Widget' }}</div>
-        <div class="dropdown ms-2">
+        <div class="panel-label text-truncate" [title]="widget?.name || 'Widget'">{{ widget?.name || 'Widget' }}</div>
+        <div class="dropdown ms-1 flex-shrink-0">
           <button class="icon-button" data-bs-toggle="dropdown">
             <i class="fa fa-ellipsis-v"></i>
           </button>
@@ -32,78 +32,68 @@
       <!-- Widget Content -->
     <div class="widget-content">
       <!-- Loading State -->
-      <div *ngIf="loading" class="text-center py-4">
+      <div *ngIf="loading" class="text-center py-2">
         <div class="spinner-border spinner-border-sm text-theme" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
       <!-- Error State -->
-      <div *ngIf="error && !loading" class="text-center py-4 text-danger">
-        <i class="fa fa-exclamation-triangle fa-2x mb-2"></i>
-        <p class="mb-2">{{ error }}</p>
-        <button class="btn btn-sm btn-outline-theme" (click)="onRefresh()">Retry</button>
+      <div *ngIf="error && !loading" class="text-center py-2 text-danger small">
+        <i class="fa fa-exclamation-triangle mb-1"></i>
+        <p class="mb-1 small">{{ error }}</p>
+        <button class="btn btn-sm btn-outline-theme btn-xs" (click)="onRefresh()">Retry</button>
       </div>
 
       <!-- Chart Content -->
       <ng-container *ngIf="!loading && !error && widget">
         <!-- Line Chart -->
-        <div *ngIf="widget.type === 'line-chart'" class="chart-wrapper">
-          <div echarts [options]="chartOptions" class="echart"></div>
-        </div>
+        <app-line-chart-widget 
+          *ngIf="widget.type === 'line-chart' || widget.type === 'multi-line-chart'"
+          [widget]="widget"
+          [data]="chartData"
+          [columns]="columns">
+        </app-line-chart-widget>
 
         <!-- Bar Chart -->
-        <div *ngIf="widget.type === 'bar-chart'" class="chart-wrapper">
-          <div echarts [options]="chartOptions" class="echart"></div>
-        </div>
+        <app-bar-chart-widget 
+          *ngIf="widget.type === 'bar-chart'"
+          [widget]="widget"
+          [data]="chartData"
+          [columns]="columns">
+        </app-bar-chart-widget>
 
         <!-- Gauge -->
-        <div *ngIf="widget.type === 'gauge'" class="chart-wrapper gauge">
-          <div echarts [options]="chartOptions" class="echart"></div>
-        </div>
+        <app-gauge-widget 
+          *ngIf="widget.type === 'gauge'"
+          [widget]="widget"
+          [data]="chartData"
+          [columns]="columns">
+        </app-gauge-widget>
 
         <!-- Pie Chart -->
-        <div *ngIf="widget.type === 'pie-chart'" class="chart-wrapper">
-          <div echarts [options]="chartOptions" class="echart"></div>
-        </div>
+        <app-pie-chart-widget 
+          *ngIf="widget.type === 'pie-chart'"
+          [widget]="widget"
+          [data]="chartData"
+          [columns]="columns">
+        </app-pie-chart-widget>
 
-        <!-- Value Card -->
-        <div *ngIf="widget.type === 'stat-card'" class="value-card-widget text-center py-3">
-          <div class="value-main">
-            <span class="value text-theme fs-1 fw-bold">{{ chartOptions?.formattedValue || chartOptions?.value }}</span>
-            <span class="unit text-white-50 ms-1">{{ chartOptions?.unit }}</span>
-          </div>
-          <div class="value-trend mt-2" [class.text-success]="chartOptions?.trend === 'up'" [class.text-danger]="chartOptions?.trend === 'down'">
-            <i class="fa" [class.fa-arrow-up]="chartOptions?.trend === 'up'" [class.fa-arrow-down]="chartOptions?.trend === 'down'"></i>
-            <span class="ms-1">{{ chartOptions?.trendValue }}%</span>
-          </div>
-        </div>
+        <!-- Stat Card -->
+        <app-stat-card-widget 
+          *ngIf="widget.type === 'stat-card'"
+          [widget]="widget"
+          [data]="chartData"
+          [columns]="columns">
+        </app-stat-card-widget>
 
-        <!-- Data Table -->
-        <div *ngIf="widget.type === 'table'" class="table-widget">
-          <div class="table-responsive console-table">
-            <table class="table table-sm mb-0 text-white">
-              <thead>
-                <tr>
-                  <th *ngFor="let col of chartOptions?.columns">{{ col }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let row of chartOptions?.rows">
-                  <td>{{ row.timestamp | date:'short' }}</td>
-                  <td>{{ row.sensor }}</td>
-                  <td>{{ row.value }}</td>
-                  <td>{{ row.unit }}</td>
-                  <td>
-                    <span class="badge" [class.bg-success]="row.status === 'Normal'" [class.bg-warning]="row.status === 'Warning'">
-                      {{ row.status }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <!-- Table -->
+        <app-table-widget 
+          *ngIf="widget.type === 'table'"
+          [widget]="widget"
+          [data]="chartData"
+          [columns]="columns">
+        </app-table-widget>
       </ng-container>
     </div>
   </card-body>

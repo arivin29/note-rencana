@@ -269,16 +269,19 @@ export class NodesDetailPage implements OnInit {
                     health: this.mapSensorStatus(sensor.status),
                     protocolChannel: sensor.protocolChannel || '-',
                     samplingRate: sensor.samplingRate || null,
-                    channels: (sensor.channels || []).map((channel: any) => ({
-                        id: channel.idSensorChannel,
-                        metric: channel.metricCode,
-                        unit: channel.unit,
-                        latest: channel.latestValue !== null ? parseFloat(channel.latestValue) : 0,
-                        status: this.mapChannelStatus(channel.status),
-                        trend: 'stable' as const,
-                        sensorTypeId: channel.sensorTypeId || 'unknown',
-                        sensorTypeLabel: channel.sensorTypeLabel || channel.metricCode
-                    }))
+                    channels: (sensor.channels || [])
+                        .map((channel: any) => ({
+                            id: channel.idSensorChannel,
+                            metric: channel.metricCode,
+                            unit: channel.unit,
+                            latest: channel.latestValue !== null ? parseFloat(channel.latestValue) : 0,
+                            status: this.mapChannelStatus(channel.status),
+                            trend: 'stable' as const,
+                            sensorTypeId: channel.sensorTypeId || 'unknown',
+                            sensorTypeLabel: channel.sensorTypeLabel || channel.metricCode
+                        }))
+                        // Sort channels alphabetically by metricCode
+                        .sort((a: any, b: any) => (a.metric || '').localeCompare(b.metric || ''))
                 }));
 
                 // Map telemetry records (from health and stats)

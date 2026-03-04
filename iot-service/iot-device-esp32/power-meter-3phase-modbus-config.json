@@ -1,87 +1,112 @@
 {
-  "version": 3,
-  "device_type": "3Phase-PowerMeter-V2305",
-  "description": "3-Phase Power Meter - Pompa Monitoring (Volt, Ampere, kWh) - TEST SWAP",
-  "modbus_address": 1,
-  "baud_rate": 9600,
-  "scan_interval_ms": 3000,
-  "registers": [
-    {
-      "reg": 66,
-      "swap": false,
-      "type": "uint32",
-      "unit": "V",
-      "label": "Voltage L1",
-      "words": 2,
-      "scale": 0.0001,
-      "category": "voltage",
-      "comment": "A phase voltage (0042-0043 hex) - TEST swap=false"
-    },
-    {
-      "reg": 68,
-      "swap": false,
-      "type": "uint32",
-      "unit": "V",
-      "label": "Voltage L2",
-      "words": 2,
-      "scale": 0.0001,
-      "category": "voltage",
-      "comment": "B phase voltage (0044-0045 hex) - TEST swap=false"
-    },
-    {
-      "reg": 70,
-      "swap": false,
-      "type": "uint32",
-      "unit": "V",
-      "label": "Voltage L3",
-      "words": 2,
-      "scale": 0.0001,
-      "category": "voltage",
-      "comment": "C phase voltage (0046-0047 hex) - TEST swap=false"
-    },
-    {
-      "reg": 88,
-      "swap": false,
-      "type": "uint32",
-      "unit": "A",
-      "label": "Current L1",
-      "words": 2,
-      "scale": 0.0001,
-      "category": "current",
-      "comment": "A phase current (0058-0059 hex) - TEST swap=false"
-    },
-    {
-      "reg": 90,
-      "swap": false,
-      "type": "uint32",
-      "unit": "A",
-      "label": "Current L2",
-      "words": 2,
-      "scale": 0.0001,
-      "category": "current",
-      "comment": "B phase current (005A-005B hex) - TEST swap=false"
-    },
-    {
-      "reg": 92,
-      "swap": false,
-      "type": "uint32",
-      "unit": "A",
-      "label": "Current L3",
-      "words": 2,
-      "scale": 0.0001,
-      "category": "current",
-      "comment": "C phase current (005C-005D hex) - TEST swap=false"
-    },
-    {
-      "reg": 130,
-      "swap": false,
-      "type": "uint32",
-      "unit": "kWh",
-      "label": "Total Energy",
-      "words": 2,
-      "scale": 0.001,
-      "category": "energy",
-      "comment": "Total positive active energy (0082-0083 hex) - TEST swap=false"
-    }
-  ]
+    "version": 2,
+    "device_type": "3Phase-PowerMeter-V2305",
+    "description": "Generic 3-Phase Power Meter with RS485 Modbus-RTU",
+    "modbus_address": 1,
+    "baud_rate": 9600,
+    "scan_interval_ms": 3000,
+    "registers": [
+        {
+            "reg": 66,
+            "swap": true,
+            "type": "uint32",
+            "unit": "V",
+            "label": "[0042] Voltage L1",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "phase_L1"
+        },
+        {
+            "reg": 68,
+            "swap": true,
+            "type": "uint32",
+            "unit": "V",
+            "label": "[0044] Voltage L2",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "phase_L2"
+        },
+        {
+            "reg": 70,
+            "swap": true,
+            "type": "uint32",
+            "unit": "V",
+            "label": "[0046] Voltage L3",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "phase_L3"
+        },
+        {
+            "reg": 72,
+            "swap": true,
+            "type": "uint32",
+            "unit": "V",
+            "label": "[0048] Average Phase Voltage",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "total"
+        },
+        {
+            "reg": 88,
+            "swap": true,
+            "type": "uint32",
+            "unit": "A",
+            "label": "[0058] Current L1",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "phase_L1"
+        },
+        {
+            "reg": 90,
+            "swap": true,
+            "type": "uint32",
+            "unit": "A",
+            "label": "[005A] Current L2",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "phase_L2"
+        },
+        {
+            "reg": 92,
+            "swap": true,
+            "type": "uint32",
+            "unit": "A",
+            "label": "[005C] Current L3",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "phase_L3"
+        },
+        {
+            "reg": 94,
+            "swap": true,
+            "type": "uint32",
+            "unit": "A",
+            "label": "[005E] Average Current",
+            "words": 2,
+            "scale": 0.0001,
+            "category": "total"
+        },
+         
+       
+        {
+            "reg": 128,
+            "swap": true,
+            "type": "uint16",
+            "unit": "Hz",
+            "label": "[0080] Frequency",
+            "words": 1,
+            "scale": 0.01,
+            "category": "total"
+        },
+        {
+            "reg": 130,
+            "swap": true,
+            "type": "uint32",
+            "unit": "kWh",
+            "label": "[0082] Total Energy",
+            "words": 2,
+            "scale": 0.001,
+            "category": "energy"
+        }
+    ]
 }
