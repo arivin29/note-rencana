@@ -1,6 +1,11 @@
-<div class="widget-wrapper h-100">
+<div class="widget-wrapper h-100" #widgetWrapper>
   <card class="console-panel h-100" [class.fullscreen]="isFullscreen">
     <card-body>
+      <!-- Debug: Container Pixel Dimensions -->
+      <div *ngIf="debugMode" class="debug-size-badge">
+        {{ containerWidth }} x {{ containerHeight }} px
+      </div>
+      
       <!-- Widget Header - Grafana-compact style -->
       <div class="panel-head d-flex justify-content-between align-items-center">
         <div class="panel-label text-truncate" [title]="widget?.name || 'Widget'">{{ widget?.name || 'Widget' }}</div>
@@ -52,7 +57,9 @@
           *ngIf="widget.type === 'line-chart' || widget.type === 'multi-line-chart'"
           [widget]="widget"
           [data]="chartData"
-          [columns]="columns">
+          [columns]="columns"
+          [containerWidth]="containerWidth"
+          [containerHeight]="containerHeight">
         </app-line-chart-widget>
 
         <!-- Bar Chart -->
@@ -60,7 +67,9 @@
           *ngIf="widget.type === 'bar-chart'"
           [widget]="widget"
           [data]="chartData"
-          [columns]="columns">
+          [columns]="columns"
+          [containerWidth]="containerWidth"
+          [containerHeight]="containerHeight">
         </app-bar-chart-widget>
 
         <!-- Gauge -->

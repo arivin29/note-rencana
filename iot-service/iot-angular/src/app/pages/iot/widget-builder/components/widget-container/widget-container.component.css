@@ -1,5 +1,13 @@
 /* Widget Container - Grafana-like compact style */
 
+/* Host element must fill gridster-item */
+:host {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 /* Wrapper to allow resize handles to be accessible */
 .widget-wrapper {
   position: absolute;
@@ -111,4 +119,20 @@
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+/* Debug Size Badge */
+.debug-size-badge {
+  position: absolute;
+  top: 4px;
+  right: 40px;
+  background: rgba(0, 200, 255, 0.85);
+  color: #000;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 100;
+  font-family: monospace;
+  pointer-events: none;
 }

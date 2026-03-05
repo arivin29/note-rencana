@@ -42,7 +42,10 @@ export class WidgetWizardComponent implements OnInit {
     series: true,
     thresholds: true,
     pieLegend: true,
-    gaugeConfig: true
+    gaugeConfig: true,
+    tableOptions: true,
+    tableColumns: false,
+    statCardConfig: true
   };
 
   // ============================================
@@ -83,7 +86,7 @@ export class WidgetWizardComponent implements OnInit {
     // X-Axis Configuration
     xAxis: {
       label: '',            // Axis label (e.g., "Time")
-      timeFormat: 'HH:mm' as 'HH:mm' | 'HH:mm:ss' | 'DD/MM' | 'DD/MM HH:mm' | 'YYYY-MM-DD',
+      timeFormat: 'auto' as 'auto' | 'HH:mm' | 'HH:mm:ss' | 'DD/MM' | 'DD/MM HH:mm' | 'YYYY-MM-DD',
     },
     
     // Y-Axis Configuration  
@@ -118,6 +121,66 @@ export class WidgetWizardComponent implements OnInit {
       fillOpacity: 20,
       showPoints: 'auto' as 'auto' | 'always' | 'never',
       tooltipMode: 'all' as 'single' | 'all' | 'hidden',
+      // Bar chart specific
+      barOrientation: 'vertical' as 'vertical' | 'horizontal',
+      showDataLabels: false,
+      // Table widget specific
+      tableOptions: {
+        striped: true,
+        hover: true,
+        bordered: false,
+        compact: false,
+        sortable: true,
+        fontSize: 12,
+        headerBackground: '#1a1a2e',
+        columns: [] as {
+          field: string;
+          displayName: string;
+          align: 'left' | 'center' | 'right';
+          width: string;
+          visible: boolean;
+          // Value formatting
+          type: 'text' | 'number' | 'date' | 'status' | 'badge';
+          decimals: number;
+          unit: string;
+          dateFormat: string;
+          // Conditional coloring (thresholds)
+          thresholds: {
+            value: number;
+            color: string;
+            bgColor: string;
+          }[];
+          // Status/Badge mapping
+          statusMap: {
+            value: string;
+            label: string;
+            color: 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary';
+          }[];
+        }[]
+      },
+      // Data Smoothing (Line chart outlier detection)
+      smoothing: {
+        enabled: false,
+        threshold: 50,      // % deviation from neighbors to flag as outlier
+        minConsecutive: 3,  // Minimum consecutive outliers to treat as real data
+        method: 'interpolate' as 'interpolate' | 'average' | 'previous'
+      },
+      // Stat Card widget specific
+      statCardOptions: {
+        layout: 'centered' as 'centered' | 'left-aligned' | 'with-icon' | 'compact',
+        icon: '',           // Font Awesome icon class (e.g., 'fa-thermometer-half')
+        iconColor: '#73bf69',
+        prefix: '',         // Text before value (e.g., 'Rp', '$')
+        suffix: '',         // Text after value (e.g., 'per jam', '/s')
+        showTrend: false,   // Show trend indicator
+        trendField: '',     // Field to compare for trend (or 'previous' for auto)
+        showSparkline: false, // Show mini sparkline chart
+        sparklineField: '', // Field for sparkline data
+        thresholdColors: true, // Apply threshold colors to value
+        fontSize: 'large' as 'small' | 'medium' | 'large' | 'xlarge',
+        valueColor: '#ffffff',
+        backgroundColor: ''   // Custom background color
+      }
     }
   };
 
@@ -132,6 +195,7 @@ export class WidgetWizardComponent implements OnInit {
 
   // Time format options
   timeFormatOptions = [
+    { label: 'Auto', value: 'auto', example: 'Smart detect' },
     { label: 'HH:mm', value: 'HH:mm', example: '14:30' },
     { label: 'HH:mm:ss', value: 'HH:mm:ss', example: '14:30:45' },
     { label: 'DD/MM', value: 'DD/MM', example: '26/01' },
@@ -1559,7 +1623,7 @@ ORDER BY day_of_week, hour`
           if (config.xAxis) {
             this.form.xAxis = {
               label: config.xAxis.label || '',
-              timeFormat: config.xAxis.timeFormat || 'HH:mm'
+              timeFormat: config.xAxis.timeFormat || 'auto'
             };
           }
           
@@ -1600,7 +1664,44 @@ ORDER BY day_of_week, hour`
               lineWidth: config.display.lineWidth ?? 2,
               fillOpacity: config.display.fillOpacity ?? 20,
               showPoints: config.display.showPoints || 'auto',
-              tooltipMode: config.display.tooltipMode || 'all'
+              tooltipMode: config.display.tooltipMode || 'all',
+              // Data Smoothing
+              smoothing: config.display.smoothing || {
+                enabled: false,
+                threshold: 50,
+                minConsecutive: 3,
+                method: 'interpolate'
+              },
+              // Bar chart specific
+              barOrientation: config.display.barOrientation || 'vertical',
+              showDataLabels: config.display.showDataLabels ?? false,
+              // Table widget specific
+              tableOptions: config.display.tableOptions || {
+                striped: true,
+                hover: true,
+                bordered: false,
+                compact: false,
+                sortable: true,
+                fontSize: 12,
+                headerBackground: '#1a1a2e',
+                columns: []
+              },
+              // Stat Card widget specific
+              statCardOptions: config.display.statCardOptions || {
+                layout: 'centered',
+                icon: '',
+                iconColor: '#73bf69',
+                prefix: '',
+                suffix: '',
+                showTrend: false,
+                trendField: '',
+                showSparkline: false,
+                sparklineField: '',
+                thresholdColors: true,
+                fontSize: 'large',
+                valueColor: '#ffffff',
+                backgroundColor: ''
+              }
             };
           }
           
@@ -1941,6 +2042,11 @@ ORDER BY day_of_week, hour`
         this.form.mapping.seriesField = '_source';
       }
 
+      // Auto-generate table columns if table widget and no columns configured yet
+      if (this.selectedType === 'table' && this.form.display.tableOptions.columns.length === 0) {
+        this.autoGenerateTableColumns();
+      }
+
       this.autoMapFields();
       // Populate Series Override from seriesField unique values
       this.refreshSeriesFromData();
@@ -1991,6 +2097,12 @@ ORDER BY day_of_week, hour`
         };
         
         this.availableColumns = this.queryResult.columns;
+        
+        // Auto-generate table columns if table widget and no columns configured yet
+        if (this.selectedType === 'table' && this.form.display.tableOptions.columns.length === 0) {
+          this.autoGenerateTableColumns();
+        }
+        
         this.autoMapFields();
         this.queryLoading = false;
       },
@@ -2039,8 +2151,11 @@ ORDER BY day_of_week, hour`
         this.form.mapping.xField = timestampField || userColumns[0];
         this.form.mapping.yField = valueField || userColumns[1];
         // Multi-query: keep '_source' as seriesField (set by mergeAllQueryResults)
+        // Also preserve user's saved seriesField in edit mode
         if (this.isMultiQuery && this.form.mapping.seriesField === '_source') {
           // preserve — don't overwrite
+        } else if (this.isEditMode && this.form.mapping.seriesField) {
+          // preserve user's saved seriesField in edit mode — don't overwrite
         } else {
           this.form.mapping.seriesField = seriesField || '';
         }
@@ -2119,29 +2234,7 @@ ORDER BY day_of_week, hour`
         return this.buildLineChartOptions(data);
         
       case 'bar-chart':
-        return {
-          tooltip: { trigger: 'axis' },
-          grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-          xAxis: {
-            type: 'category',
-            data: data.map(d => d[this.form.mapping.xField]),
-            axisLabel: { color: 'rgba(255,255,255,0.6)' },
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
-          },
-          yAxis: { 
-            type: 'value',
-            axisLabel: { color: 'rgba(255,255,255,0.6)' },
-            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
-          },
-          series: [{
-            type: 'bar',
-            data: data.map(d => d[this.form.mapping.yField]),
-            itemStyle: { 
-              borderRadius: [4, 4, 0, 0],
-              color: '#73bf69'
-            }
-          }]
-        };
+        return this.buildBarChartOptions(data);
         
       case 'gauge':
         const gaugeValue = data[0]?.[this.form.mapping.valueField] || 0;
@@ -2210,10 +2303,19 @@ ORDER BY day_of_week, hour`
           tooltip: { trigger: 'item' },
           legend: { 
             show: this.form.display.showLegend, 
+            type: 'scroll',
             orient: 'vertical', 
             right: 10,
             top: 'center',
-            textStyle: { color: 'rgba(255,255,255,0.8)' }
+            textStyle: { 
+              color: 'rgba(255,255,255,0.8)',
+              width: 100,
+              overflow: 'truncate',
+              ellipsis: '...'
+            },
+            pageIconColor: '#73bf69',
+            pageIconInactiveColor: '#555',
+            formatter: (name: string) => name.length > 16 ? name.substring(0, 13) + '...' : name
           },
           series: [{
             type: 'pie',
@@ -2233,9 +2335,23 @@ ORDER BY day_of_week, hour`
         };
         
       case 'stat-card':
+        const currentValue = parseFloat(data[0]?.[this.form.mapping.valueField]) || 0;
+        const previousValue = data.length > 1 ? parseFloat(data[1]?.[this.form.mapping.valueField]) || 0 : 0;
+        let trend: 'up' | 'down' | null = null;
+        let trendPercent = '';
+        
+        if (this.form.display.statCardOptions.showTrend && previousValue !== 0) {
+          const diff = currentValue - previousValue;
+          const percent = (diff / Math.abs(previousValue)) * 100;
+          trendPercent = Math.abs(percent).toFixed(1) + '%';
+          trend = diff > 0 ? 'up' : diff < 0 ? 'down' : null;
+        }
+        
         return {
-          value: data[0]?.[this.form.mapping.valueField] || 0,
-          title: this.form.title || 'Value'
+          value: currentValue,
+          title: this.form.title || 'Value',
+          trend,
+          trendPercent
         };
         
       default:
@@ -2288,31 +2404,323 @@ ORDER BY day_of_week, hour`
     return colors;
   }
 
+  buildBarChartOptions(data: any[]): any {
+    const { xField, yField, seriesField } = this.form.mapping;
+    const { showLegend, legendPosition, barOrientation, showDataLabels } = this.form.display;
+    const yAxisConfig = this.form.yAxis;
+    const seriesConfig = this.form.series;
+    
+    const textColor = 'rgba(255, 255, 255, 0.8)';
+    const axisLineColor = 'rgba(255, 255, 255, 0.2)';
+    const decimals = yAxisConfig.decimals ?? 2;
+    const unit = yAxisConfig.unit || '';
+    const isHorizontal = barOrientation === 'horizontal';
+    
+    const colors = this.seriesColors;
+    
+    let series: any[] = [];
+    let categoryData: string[] = [];
+    let legendData: string[] = [];
+    
+    // Border radius: [topLeft, topRight, bottomRight, bottomLeft]
+    // For vertical: round top corners; For horizontal: round right corners
+    const borderRadius = isHorizontal ? [0, 4, 4, 0] : [4, 4, 0, 0];
+    
+    // Check if we have seriesField (Group By) - for multi-bar grouped chart
+    if (seriesField && data.length > 0 && data[0][seriesField] !== undefined) {
+      const categories = [...new Set(data.map(r => String(r[xField])))];
+      const seriesNames = [...new Set(data.map(r => String(r[seriesField])))];
+      
+      categoryData = categories;
+      legendData = seriesNames;
+      
+      // Group data by series
+      const groupedData: Record<string, Record<string, number>> = {};
+      data.forEach(row => {
+        const cat = String(row[xField]);
+        const sName = String(row[seriesField]);
+        const yVal = parseFloat(row[yField]) || 0;
+        
+        if (!groupedData[sName]) groupedData[sName] = {};
+        groupedData[sName][cat] = yVal;
+      });
+      
+      // Create series for each group
+      series = seriesNames.map((name, idx) => {
+        const sc = seriesConfig.find(s => s.field === name);
+        const color = sc?.color || colors[idx % colors.length];
+        
+        return {
+          name: sc?.label || name,
+          type: 'bar',
+          data: categories.map(cat => groupedData[name]?.[cat] ?? 0),
+          itemStyle: { color, borderRadius },
+          barGap: '10%',
+          emphasis: { focus: 'series' },
+          label: showDataLabels ? {
+            show: true,
+            position: isHorizontal ? 'right' : 'top',
+            color: textColor,
+            fontSize: 10,
+            formatter: (p: any) => (p.data as number).toFixed(decimals)
+          } : { show: false }
+        };
+      });
+    } else {
+      // Simple bar chart
+      categoryData = data.map(r => String(r[xField]));
+      
+      series = [{
+        name: yField,
+        type: 'bar',
+        data: data.map(r => parseFloat(r[yField]) || 0),
+        itemStyle: { 
+          color: seriesConfig[0]?.color || colors[0],
+          borderRadius
+        },
+        barMaxWidth: 60,
+        label: showDataLabels ? {
+          show: true,
+          position: isHorizontal ? 'right' : 'top',
+          color: textColor,
+          fontSize: 10,
+          formatter: (p: any) => (p.data as number).toFixed(decimals)
+        } : { show: false }
+      }];
+    }
+    
+    // Add threshold lines (on value axis)
+    if (this.form.thresholds.length > 0 && series.length > 0) {
+      series[0].markLine = {
+        silent: true,
+        symbol: 'none',
+        data: this.form.thresholds.map(t => ({
+          [isHorizontal ? 'xAxis' : 'yAxis']: t.value,
+          label: { 
+            show: true, 
+            formatter: t.label || `${t.value}`,
+            color: t.color || '#f2495c',
+            position: 'end'
+          },
+          lineStyle: {
+            color: t.color || '#f2495c',
+            type: t.lineStyle || 'dashed',
+            width: 2
+          }
+        }))
+      };
+    }
+    
+    const showValueAxis = yAxisConfig.placement !== 'hidden';
+    const valueAxisPosition = yAxisConfig.placement === 'right' ? 'right' : 'left';
+    const showGridLines = yAxisConfig.showGrid === 'on' || yAxisConfig.showGrid === 'auto';
+    
+    // Category axis config (labels)
+    const categoryAxisConfig: any = {
+      type: 'category',
+      data: categoryData,
+      axisLabel: { 
+        color: textColor,
+        fontSize: 10,
+        interval: 0,
+        rotate: !isHorizontal && categoryData.length > 6 ? 30 : 0,
+        width: isHorizontal ? 100 : 80,
+        overflow: 'truncate'
+      },
+      axisLine: { lineStyle: { color: axisLineColor } },
+      axisTick: { alignWithLabel: true }
+    };
+    
+    // Value axis config (numbers)
+    const valueAxisConfig: any = {
+      type: 'value',
+      show: showValueAxis,
+      position: valueAxisPosition,
+      name: yAxisConfig.label || '',
+      nameTextStyle: { color: textColor, fontSize: 11 },
+      min: yAxisConfig.min ?? undefined,
+      max: yAxisConfig.max ?? undefined,
+      axisLabel: { 
+        color: textColor,
+        fontSize: 10,
+        formatter: (value: number) => value?.toFixed(decimals) || '0'
+      },
+      axisLine: { show: true, lineStyle: { color: axisLineColor } },
+      splitLine: { show: showGridLines, lineStyle: { color: axisLineColor, type: 'dashed' } }
+    };
+    
+    return {
+      tooltip: { 
+        trigger: 'axis',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        textStyle: { color: '#fff', fontSize: 12 },
+        axisPointer: { type: 'shadow' },
+        formatter: (params: any) => {
+          if (!Array.isArray(params)) params = [params];
+          let html = `<div style="font-weight:600;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:4px">${params[0]?.axisValue || ''}</div>`;
+          params.forEach((item: any) => {
+            if (item.data !== undefined && item.data !== null) {
+              const sc = seriesConfig.find(s => s.field === item.seriesName || s.label === item.seriesName);
+              const d = sc?.decimals ?? decimals;
+              const u = sc?.unit || unit;
+              const val = typeof item.data === 'number' ? item.data.toFixed(d) : (parseFloat(item.data)?.toFixed(d) || item.data);
+              html += `<div style="display:flex;justify-content:space-between;gap:20px;padding:2px 0">
+                <span>${item.marker} ${item.seriesName}</span>
+                <span style="font-weight:600">${val}${u ? ' ' + u : ''}</span>
+              </div>`;
+            }
+          });
+          return html;
+        }
+      },
+      legend: showLegend && legendData.length > 1 ? {
+        show: true,
+        type: 'scroll',
+        data: legendData,
+        // Position legend properly based on settings
+        top: legendPosition === 'bottom' ? undefined : 8,
+        bottom: legendPosition === 'bottom' ? 0 : undefined,
+        left: legendPosition === 'right' ? undefined : 'center',
+        right: legendPosition === 'right' ? 10 : undefined,
+        orient: legendPosition === 'right' ? 'vertical' : 'horizontal',
+        textStyle: { 
+          color: textColor, 
+          fontSize: 11,
+          width: 120,
+          overflow: 'truncate',
+          ellipsis: '...'
+        },
+        itemWidth: 14,
+        itemHeight: 10,
+        pageIconColor: '#73bf69',
+        pageIconInactiveColor: '#555',
+        pageTextStyle: { color: textColor },
+        formatter: (name: string) => name.length > 18 ? name.substring(0, 15) + '...' : name
+      } : { show: false },
+      grid: { 
+        left: isHorizontal ? 100 : (showValueAxis && valueAxisPosition === 'left' ? 55 : 12), 
+        right: isHorizontal 
+          ? (showDataLabels ? 50 : 20) 
+          : (legendPosition === 'right' && showLegend && legendData.length > 1 ? 140 : (showValueAxis && valueAxisPosition === 'right' ? 55 : 12)), 
+        // Top: add space for legend at top
+        top: legendPosition !== 'bottom' && showLegend && legendData.length > 1 ? 35 : 20, 
+        // Bottom: add space for legend at bottom + labels
+        bottom: legendPosition === 'bottom' && showLegend && legendData.length > 1 ? 50 : 30, 
+        containLabel: false 
+      },
+      // For horizontal: xAxis is value, yAxis is category
+      // For vertical: xAxis is category, yAxis is value
+      xAxis: isHorizontal ? valueAxisConfig : categoryAxisConfig,
+      yAxis: isHorizontal ? categoryAxisConfig : valueAxisConfig,
+      series
+    };
+  }
+
   buildLineChartOptions(data: any[]): any {
     const { xField, yField, yFields, seriesField } = this.form.mapping;
-    const { showLegend, lineStyle, lineWidth, fillOpacity, showPoints } = this.form.display;
+    const { showLegend, legendPosition, lineStyle, lineWidth, fillOpacity, showPoints, smoothing } = this.form.display;
     const yAxisConfig = this.form.yAxis;
+
+    // Helper function for data smoothing (outlier removal)
+    const smoothData = (values: (number | null)[]): (number | null)[] => {
+      if (!smoothing?.enabled || values.length < 3) return values;
+      
+      const threshold = (smoothing.threshold || 50) / 100;
+      const minConsecutive = smoothing.minConsecutive || 3;
+      const method = smoothing.method || 'interpolate';
+      
+      // Calculate median for threshold baseline
+      const validValues = values.filter(v => v !== null && v !== undefined) as number[];
+      if (validValues.length < 3) return values;
+      
+      const sorted = [...validValues].sort((a, b) => a - b);
+      const median = sorted[Math.floor(sorted.length / 2)];
+      const lowerBound = median * threshold;
+      const upperBound = median * (2 - threshold);
+      
+      // Detect outliers
+      const isOutlier = values.map(v => {
+        if (v === null || v === undefined) return false;
+        return v < lowerBound || v > upperBound;
+      });
+      
+      // Find consecutive outlier runs
+      const result = [...values];
+      let i = 0;
+      while (i < values.length) {
+        if (isOutlier[i]) {
+          let runLength = 1;
+          while (i + runLength < values.length && isOutlier[i + runLength]) {
+            runLength++;
+          }
+          // Only smooth if run is shorter than minConsecutive (isolated spikes)
+          if (runLength < minConsecutive) {
+            for (let j = i; j < i + runLength; j++) {
+              const prev = j > 0 ? result[j - 1] : null;
+              const next = j + runLength < values.length ? values[j + runLength] : null;
+              if (method === 'interpolate' && prev !== null && next !== null) {
+                const progress = (j - i + 1) / (runLength + 1);
+                result[j] = prev + (next - prev) * progress;
+              } else if (method === 'average' && prev !== null && next !== null) {
+                result[j] = (prev + next) / 2;
+              } else if (method === 'previous' && prev !== null) {
+                result[j] = prev;
+              }
+            }
+          }
+          i += runLength;
+        } else {
+          i++;
+        }
+      }
+      return result;
+    };
 
     // Store original timestamps for tooltip
     const originalXValues = data.map(d => d[xField]);
 
-    // Time format helper
+    // Auto-detect time span for smart formatting
+    const getTimeSpanHours = (): number => {
+      if (data.length < 2) return 1;
+      const first = new Date(data[0]?.[xField]);
+      const last = new Date(data[data.length - 1]?.[xField]);
+      if (isNaN(first.getTime()) || isNaN(last.getTime())) return 1;
+      return Math.abs(last.getTime() - first.getTime()) / (1000 * 60 * 60);
+    };
+    const timeSpanHours = getTimeSpanHours();
+
+    // Time format helper — Grafana-style smart auto-detection
     const formatXValue = (val: any) => {
       if (!val) return '';
       if (typeof val === 'string' && (val.includes('T') || val.includes('-'))) {
         const date = new Date(val);
         if (!isNaN(date.getTime())) {
-          switch (this.form.xAxis.timeFormat) {
-            case 'HH:mm:ss': return date.toLocaleTimeString('id-ID');
-            case 'DD/MM': return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
-            case 'DD/MM HH:mm': return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })} ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
-            case 'YYYY-MM-DD': return date.toISOString().split('T')[0];
-            default: return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          // If user explicitly set a format, respect it
+          if (this.form.xAxis.timeFormat && this.form.xAxis.timeFormat !== 'auto') {
+            switch (this.form.xAxis.timeFormat) {
+              case 'HH:mm:ss': return date.toLocaleTimeString('id-ID');
+              case 'DD/MM': return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+              case 'DD/MM HH:mm': return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })} ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+              case 'YYYY-MM-DD': return date.toISOString().split('T')[0];
+            }
+          }
+          // Auto-detect based on time span
+          if (timeSpanHours <= 24) {
+            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          } else if (timeSpanHours <= 168) {
+            return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })} ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+          } else if (timeSpanHours <= 2160) {
+            return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+          } else {
+            return date.toLocaleDateString('id-ID', { month: '2-digit', year: 'numeric' });
           }
         }
       }
       return val;
     };
+    // Calculate label interval (~8-12 labels visible)
+    const labelInterval = data.length <= 12 ? 0 : Math.floor(data.length / 10) - 1;
 
     // Custom tooltip formatter with full timestamp
     const tooltipFormatter = (params: any) => {
@@ -2375,14 +2783,43 @@ ORDER BY day_of_week, hour`
       },
       legend: { 
         show: showLegend,
-        textStyle: { color: 'rgba(255,255,255,0.8)' }
+        type: 'scroll',
+        // Position legend properly based on settings
+        top: legendPosition === 'bottom' ? undefined : 8,
+        bottom: legendPosition === 'bottom' ? 0 : undefined,
+        left: legendPosition === 'right' ? undefined : 'center',
+        right: legendPosition === 'right' ? 10 : undefined,
+        orient: legendPosition === 'right' ? 'vertical' : 'horizontal',
+        textStyle: { 
+          color: 'rgba(255,255,255,0.8)',
+          width: 120,
+          overflow: 'truncate',
+          ellipsis: '...'
+        },
+        pageIconColor: '#73bf69',
+        pageIconInactiveColor: '#555',
+        pageTextStyle: { color: 'rgba(255,255,255,0.8)' },
+        formatter: (name: string) => name.length > 18 ? name.substring(0, 15) + '...' : name
       },
-      grid: { left: '3%', right: '4%', bottom: '3%', top: showLegend ? '15%' : '10%', containLabel: true },
+      grid: { 
+        left: 45, 
+        right: legendPosition === 'right' && showLegend ? 140 : 12, 
+        // Top: add space for legend at top
+        top: legendPosition !== 'bottom' && showLegend ? 35 : 20,
+        // Bottom: add space for legend at bottom
+        bottom: legendPosition === 'bottom' && showLegend ? 50 : 24, 
+        containLabel: false 
+      },
       xAxis: {
         type: 'category',
         name: this.form.xAxis.label || '',
         boundaryGap: false,
-        axisLabel: { color: 'rgba(255,255,255,0.6)' },
+        axisLabel: {
+          color: 'rgba(255,255,255,0.6)',
+          interval: labelInterval,
+          showMinLabel: true,
+          showMaxLabel: true
+        },
         axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
       },
       yAxis: { 
@@ -2434,6 +2871,10 @@ ORDER BY day_of_week, hour`
         }
         // Check visibility from Series Override
         const visible = sc?.visible !== false;
+        const rawData = uniqueXValues.map(x => {
+          const point = seriesData.find(d => d[xField] === x);
+          return point ? point[effectiveYField] : null;
+        });
         return {
           name: displayName,
           type: 'line',
@@ -2443,10 +2884,7 @@ ORDER BY day_of_week, hour`
           showSymbol: visible && showPoints === 'always',
           areaStyle: fillOpacity > 0 && visible ? { opacity: fillOpacity / 100 } : undefined,
           itemStyle: { color, opacity: visible ? 1 : 0 },
-          data: uniqueXValues.map(x => {
-            const point = seriesData.find(d => d[xField] === x);
-            return point ? point[effectiveYField] : null;
-          })
+          data: smoothData(rawData)
         };
       });
 
@@ -2463,6 +2901,7 @@ ORDER BY day_of_week, hour`
         const seriesConfig = this.form.series.find(s => s.field === field);
         const color = seriesConfig?.color || this.seriesColors[idx % this.seriesColors.length];
         const label = seriesConfig?.label || field;
+        const rawData = data.map(d => d[field]);
         
         return {
           name: label,
@@ -2473,7 +2912,7 @@ ORDER BY day_of_week, hour`
           showSymbol: showPoints === 'always',
           areaStyle: fillOpacity > 0 ? { opacity: fillOpacity / 100, color } : undefined,
           itemStyle: { color },
-          data: data.map(d => d[field])
+          data: smoothData(rawData)
         };
       });
 
@@ -2486,6 +2925,7 @@ ORDER BY day_of_week, hour`
 
     // Single line (fallback to yField)
     if (yField) {
+      const rawData = data.map(d => d[yField]);
       series = [{
         name: yField,
         type: 'line',
@@ -2495,7 +2935,7 @@ ORDER BY day_of_week, hour`
         showSymbol: showPoints === 'always',
         areaStyle: fillOpacity > 0 ? { opacity: fillOpacity / 100, color: '#73bf69' } : undefined,
         itemStyle: { color: '#73bf69' },
-        data: data.map(d => d[yField])
+        data: smoothData(rawData)
       }];
     }
 
@@ -2655,6 +3095,38 @@ ORDER BY day_of_week, hour`
   }
 
   /**
+   * Get font size class for stat card preview
+   */
+  getStatFontSizeClass(): string {
+    switch (this.form.display.statCardOptions.fontSize) {
+      case 'small': return 'fs-4';
+      case 'medium': return 'fs-2';
+      case 'large': return 'fs-1';
+      case 'xlarge': return 'display-4';
+      default: return 'fs-1';
+    }
+  }
+
+  /**
+   * Get value color for stat card based on thresholds
+   */
+  getStatValueColor(value: number): string {
+    if (!this.form.display.statCardOptions.thresholdColors || this.form.thresholds.length === 0) {
+      return this.form.display.statCardOptions.valueColor || '#ffffff';
+    }
+    
+    // Sort thresholds descending
+    const sorted = [...this.form.thresholds].sort((a, b) => b.value - a.value);
+    for (const t of sorted) {
+      if (value >= t.value) {
+        return t.color;
+      }
+    }
+    
+    return this.form.display.statCardOptions.valueColor || '#ffffff';
+  }
+
+  /**
    * Refresh form.series from current data based on seriesField or yFields.
    * Called when seriesField dropdown changes or after query execution.
    * Preserves existing user customizations (colors, labels, etc).
@@ -2740,6 +3212,83 @@ ORDER BY day_of_week, hour`
     }
   }
 
+  // ============================================
+  // TABLE WIDGET HELPERS
+  // ============================================
+
+  getTableColumns(): string[] {
+    if (!this.queryResult?.rows?.length) return [];
+    return Object.keys(this.queryResult.rows[0]);
+  }
+
+  autoGenerateTableColumns(): void {
+    const columns = this.getTableColumns();
+    this.form.display.tableOptions.columns = columns.map(field => this.generateColumnConfig(field));
+  }
+
+  private generateColumnConfig(field: string): any {
+    const lowerField = field.toLowerCase();
+    
+    let type: 'text' | 'number' | 'date' | 'status' | 'badge' = 'text';
+    let decimals = 0;
+    let unit = '';
+    let dateFormat = 'DD/MM/YYYY HH:mm';
+    let statusMap: { value: string; label: string; color: string }[] = [];
+
+    // Detect type from field name
+    if (lowerField.includes('time') || lowerField.includes('date') || lowerField === 'ts' || lowerField === 'timestamp') {
+      type = 'date';
+    } else if (lowerField.includes('status') || lowerField.includes('state')) {
+      type = 'status';
+      statusMap = [
+        { value: 'Normal', label: 'Normal', color: 'success' },
+        { value: 'OK', label: 'OK', color: 'success' },
+        { value: 'Online', label: 'Online', color: 'success' },
+        { value: 'Warning', label: 'Warning', color: 'warning' },
+        { value: 'Offline', label: 'Offline', color: 'danger' },
+        { value: 'Critical', label: 'Critical', color: 'danger' },
+        { value: 'Error', label: 'Error', color: 'danger' },
+      ];
+    } else if (lowerField.includes('value') || lowerField.includes('avg') || 
+               lowerField.includes('min') || lowerField.includes('max') ||
+               lowerField.includes('count') || lowerField.includes('sum') ||
+               lowerField.includes('tekanan') || lowerField.includes('flow') ||
+               lowerField.includes('pressure') || lowerField.includes('temperature')) {
+      type = 'number';
+      decimals = 2;
+    }
+
+    // Detect unit from field name
+    if (lowerField.includes('tekanan') || lowerField.includes('pressure')) {
+      unit = 'bar';
+    } else if (lowerField.includes('flow')) {
+      unit = 'm³/h';
+    } else if (lowerField.includes('temp')) {
+      unit = '°C';
+    }
+
+    return {
+      field,
+      displayName: this.formatFieldName(field),
+      align: type === 'number' ? 'right' : 'left',
+      width: 'auto',
+      visible: true,
+      type,
+      decimals,
+      unit,
+      dateFormat,
+      thresholds: [],
+      statusMap
+    };
+  }
+
+  private formatFieldName(field: string): string {
+    return field
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
+
   formatCellValue(value: any): string {
     if (value === null || value === undefined) return '-';
     if (typeof value === 'string' && value.length > 30) {
@@ -2753,6 +3302,54 @@ ORDER BY day_of_week, hour`
       }
     }
     return String(value);
+  }
+
+  formatNumberCell(value: any, decimals: number = 2, unit: string = ''): string {
+    if (value === null || value === undefined) return '-';
+    const num = parseFloat(value);
+    if (isNaN(num)) return String(value);
+    const formatted = num.toFixed(decimals);
+    return unit ? `${formatted} ${unit}` : formatted;
+  }
+
+  formatDateCell(value: any, format: string = 'DD/MM/YYYY HH:mm'): string {
+    if (value === null || value === undefined) return '-';
+    try {
+      const date = new Date(value);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      
+      const year = date.getFullYear();
+      const month = pad(date.getMonth() + 1);
+      const day = pad(date.getDate());
+      const hours = pad(date.getHours());
+      const minutes = pad(date.getMinutes());
+      const seconds = pad(date.getSeconds());
+
+      return format
+        .replace('YYYY', year.toString())
+        .replace('MM', month)
+        .replace('DD', day)
+        .replace('HH', hours)
+        .replace('mm', minutes)
+        .replace('ss', seconds);
+    } catch {
+      return String(value);
+    }
+  }
+
+  getStatusBadgeClass(value: any): string {
+    if (value === null || value === undefined) return 'bg-secondary';
+    const lower = String(value).toLowerCase();
+    if (lower === 'normal' || lower === 'ok' || lower === 'online' || lower === 'active') {
+      return 'bg-success';
+    }
+    if (lower === 'warning' || lower === 'warn') {
+      return 'bg-warning text-dark';
+    }
+    if (lower === 'critical' || lower === 'error' || lower === 'offline' || lower === 'fail') {
+      return 'bg-danger';
+    }
+    return 'bg-secondary';
   }
 
   saveWidget(): void {

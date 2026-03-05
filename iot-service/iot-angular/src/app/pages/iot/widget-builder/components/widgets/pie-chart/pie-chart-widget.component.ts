@@ -110,10 +110,20 @@ export class PieChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
         formatter: (params: any) => `${params.name}: ${params.value.toFixed(decimals)} (${params.percent.toFixed(1)}%)`
       },
       legend: display.showLegend !== false ? {
+        type: 'scroll',
         orient: 'vertical',
         left: 'left',
         top: 'middle',
-        textStyle: { color: textColor }
+        textStyle: { 
+          color: textColor,
+          width: 100,
+          overflow: 'truncate',
+          ellipsis: '...'
+        },
+        pageIconColor: '#73bf69',
+        pageIconInactiveColor: '#555',
+        pageTextStyle: { color: textColor },
+        formatter: (name: string) => name.length > 16 ? name.substring(0, 13) + '...' : name
       } : { show: false },
       series: [{
         name: this.widget?.name || 'Distribution',

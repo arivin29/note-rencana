@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, AfterViewInit, NgZone, ViewChild } from '@angular/core';
 import { Widget } from '../../models/widget.models';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -10,8 +10,12 @@ import { WidgetBuilderService } from 'src/sdk/core/services';
   templateUrl: './widget-container.component.html',
   styleUrls: ['./widget-container.component.css']
 })
-export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
+export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
   private destroy$ = new Subject<void>();
+  private resizeObserver: ResizeObserver | null = null;
+
+  /** Reference to widget wrapper element for size tracking */
+  @ViewChild('widgetWrapper', { static: false }) widgetWrapper!: ElementRef<HTMLDivElement>;
 
   @Input() widget: Widget | undefined;
   @Input() editMode = false;
@@ -21,6 +25,8 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   @Input() isFullscreen = false;
   /** Dashboard-level variables from layoutConfig.variables */
   @Input() dashboardVariables: Record<string, string> = {};
+  /** Enable debug mode to show container dimensions */
+  @Input() debugMode = true;
 
   @Output() edit = new EventEmitter<void>();
   @Output() delete = new EventEmitter<void>();
@@ -33,12 +39,43 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   chartData: any[] = [];
   columns: string[] = [];
 
+  /** Container pixel dimensions (updated via ResizeObserver) */
+  containerWidth = 0;
+  containerHeight = 0;
+
   constructor(
-    private widgetBuilderService: WidgetBuilderService
+    private widgetBuilderService: WidgetBuilderService,
+    private elementRef: ElementRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
     this.loadWidgetData();
+  }
+
+  ngAfterViewInit(): void {
+    this.initResizeObserver();
+  }
+
+  private initResizeObserver(): void {
+    // Wait a tick to ensure ViewChild is available
+    setTimeout(() => {
+      const targetElement = this.widgetWrapper?.nativeElement || this.elementRef.nativeElement;
+      
+      // Use ResizeObserver to track container pixel dimensions
+      this.resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          this.ngZone.run(() => {
+            this.containerWidth = Math.round(width);
+            this.containerHeight = Math.round(height);
+            console.log(`[Widget: ${this.widget?.name}] Container Size: ${this.containerWidth}px x ${this.containerHeight}px (cols: ${this.widget?.position?.cols}, rows: ${this.widget?.position?.rows})`);
+          });
+        }
+      });
+
+      this.resizeObserver.observe(targetElement);
+    }, 0);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -52,6 +89,12 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    
+    // Clean up ResizeObserver
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
   }
 
   loadWidgetData(): void {

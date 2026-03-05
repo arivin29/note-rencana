@@ -1,15 +1,99 @@
-<div class="value-card-widget text-center py-3" *ngIf="displayData">
-  <div class="value-main">
-    <span class="value text-theme fs-1 fw-bold">{{ displayData.formattedValue || displayData.value }}</span>
-    <span class="unit text-white-50 ms-1">{{ displayData.unit }}</span>
-  </div>
-  <div class="value-trend mt-2" 
-       *ngIf="displayData.trend"
-       [class.text-success]="displayData.trend === 'up'" 
-       [class.text-danger]="displayData.trend === 'down'">
-    <i class="fa" 
-       [class.fa-arrow-up]="displayData.trend === 'up'" 
-       [class.fa-arrow-down]="displayData.trend === 'down'"></i>
-    <span class="ms-1">{{ displayData.trendValue }}%</span>
+<div class="stat-card-widget" [class]="getLayoutClass()" *ngIf="displayData">
+  <!-- With Icon Layout -->
+  <ng-container *ngIf="displayData.layout === 'with-icon'">
+    <div class="stat-card-row">
+      <div class="stat-icon" *ngIf="displayData.icon">
+        <i class="fa {{ displayData.icon }}" [style.color]="displayData.iconColor"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value-row">
+          <span class="stat-prefix" *ngIf="displayData.prefix">{{ displayData.prefix }}</span>
+          <span class="stat-value" [class]="getFontSizeClass()" [style.color]="displayData.valueColor">
+            {{ displayData.formattedValue }}
+          </span>
+          <span class="stat-unit" *ngIf="displayData.unit">{{ displayData.unit }}</span>
+          <span class="stat-suffix" *ngIf="displayData.suffix">{{ displayData.suffix }}</span>
+        </div>
+        <div class="stat-trend" *ngIf="displayData.trend"
+             [class.trend-up]="displayData.trend === 'up'" 
+             [class.trend-down]="displayData.trend === 'down'">
+          <i class="fa" [class.fa-arrow-up]="displayData.trend === 'up'" [class.fa-arrow-down]="displayData.trend === 'down'"></i>
+          <span>{{ displayData.trendPercent }}</span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Left Aligned Layout -->
+  <ng-container *ngIf="displayData.layout === 'left-aligned'">
+    <div class="stat-left-aligned">
+      <div class="stat-value-row">
+        <span class="stat-icon-inline" *ngIf="displayData.icon">
+          <i class="fa {{ displayData.icon }}" [style.color]="displayData.iconColor"></i>
+        </span>
+        <span class="stat-prefix" *ngIf="displayData.prefix">{{ displayData.prefix }}</span>
+        <span class="stat-value" [class]="getFontSizeClass()" [style.color]="displayData.valueColor">
+          {{ displayData.formattedValue }}
+        </span>
+        <span class="stat-unit" *ngIf="displayData.unit">{{ displayData.unit }}</span>
+        <span class="stat-suffix" *ngIf="displayData.suffix">{{ displayData.suffix }}</span>
+      </div>
+      <div class="stat-trend" *ngIf="displayData.trend"
+           [class.trend-up]="displayData.trend === 'up'" 
+           [class.trend-down]="displayData.trend === 'down'">
+        <i class="fa" [class.fa-arrow-up]="displayData.trend === 'up'" [class.fa-arrow-down]="displayData.trend === 'down'"></i>
+        <span>{{ displayData.trendPercent }}</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Compact Layout -->
+  <ng-container *ngIf="displayData.layout === 'compact'">
+    <div class="stat-compact">
+      <span class="stat-icon-small" *ngIf="displayData.icon">
+        <i class="fa {{ displayData.icon }}" [style.color]="displayData.iconColor"></i>
+      </span>
+      <span class="stat-prefix" *ngIf="displayData.prefix">{{ displayData.prefix }}</span>
+      <span class="stat-value stat-value-compact" [style.color]="displayData.valueColor">
+        {{ displayData.formattedValue }}
+      </span>
+      <span class="stat-unit" *ngIf="displayData.unit">{{ displayData.unit }}</span>
+      <span class="stat-trend-inline" *ngIf="displayData.trend"
+           [class.trend-up]="displayData.trend === 'up'" 
+           [class.trend-down]="displayData.trend === 'down'">
+        <i class="fa fa-xs" [class.fa-arrow-up]="displayData.trend === 'up'" [class.fa-arrow-down]="displayData.trend === 'down'"></i>
+        {{ displayData.trendPercent }}
+      </span>
+    </div>
+  </ng-container>
+
+  <!-- Centered Layout (default) -->
+  <ng-container *ngIf="displayData.layout === 'centered' || !displayData.layout">
+    <div class="stat-centered">
+      <div class="stat-icon-top" *ngIf="displayData.icon">
+        <i class="fa {{ displayData.icon }} fa-2x" [style.color]="displayData.iconColor"></i>
+      </div>
+      <div class="stat-value-row">
+        <span class="stat-prefix" *ngIf="displayData.prefix">{{ displayData.prefix }}</span>
+        <span class="stat-value" [class]="getFontSizeClass()" [style.color]="displayData.valueColor">
+          {{ displayData.formattedValue }}
+        </span>
+        <span class="stat-unit" *ngIf="displayData.unit">{{ displayData.unit }}</span>
+      </div>
+      <div class="stat-suffix-row" *ngIf="displayData.suffix">
+        <span class="stat-suffix">{{ displayData.suffix }}</span>
+      </div>
+      <div class="stat-trend" *ngIf="displayData.trend"
+           [class.trend-up]="displayData.trend === 'up'" 
+           [class.trend-down]="displayData.trend === 'down'">
+        <i class="fa" [class.fa-arrow-up]="displayData.trend === 'up'" [class.fa-arrow-down]="displayData.trend === 'down'"></i>
+        <span>{{ displayData.trendPercent }}</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Sparkline (shown for all layouts when enabled) -->
+  <div class="stat-sparkline" *ngIf="sparklineOptions">
+    <div echarts [options]="sparklineOptions" style="width: 100%; height: 40px;"></div>
   </div>
 </div>
