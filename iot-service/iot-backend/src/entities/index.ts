@@ -30,3 +30,7 @@ export { CustomDashboard } from './custom-dashboard.entity';
 export { CustomWidget } from './custom-widget.entity';
 export type { WidgetConfig, WidgetFieldMapping, WidgetSeriesConfig, WidgetAxisConfig, WidgetYAxisConfig, WidgetThreshold, WidgetDisplayConfig, WidgetType } from './custom-widget.entity';
 export { WidgetQueryTemplate } from './widget-query-template.entity';
+
+// External API entities
+export { TenantApiKey } from '../modules/external-api/entities/tenant-api-key.entity';
+export { TenantApiLog } from '../modules/external-api/entities/tenant-api-log.entity';
