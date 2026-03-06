@@ -2249,53 +2249,44 @@ ORDER BY day_of_week, hour`
         return {
           series: [{
             type: 'gauge',
-            radius: '90%',
-            startAngle: 200,
-            endAngle: -20,
+            radius: '115%',
+            center: ['50%', '75%'],
+            startAngle: 210,
+            endAngle: -30,
             min: gaugeMin,
             max: gaugeMax,
-            progress: { show: true, width: 18, itemStyle: { color: '#73bf69' } },
-            axisLine: { lineStyle: { width: 18, color: axisColorRanges } },
+            progress: { show: true, width: 14, roundCap: true, itemStyle: { color: '#73bf69' } },
+            axisLine: { lineStyle: { width: 14, color: axisColorRanges, opacity: 0.25 } },
             axisTick: { 
               show: true, 
-              distance: -30, 
-              length: 8, 
-              lineStyle: { color: 'rgba(255,255,255,0.3)', width: 2 } 
+              distance: -18, 
+              length: 4, 
+              lineStyle: { color: 'rgba(255,255,255,0.2)', width: 1 } 
             },
             splitLine: { 
               show: true, 
-              distance: -30, 
-              length: 14, 
-              lineStyle: { color: 'rgba(255,255,255,0.4)', width: 3 } 
+              distance: -18, 
+              length: 8, 
+              lineStyle: { color: 'rgba(255,255,255,0.3)', width: 1.5 } 
             },
-            axisLabel: { 
-              show: true, 
-              distance: -20,
-              color: 'rgba(255,255,255,0.6)', 
-              fontSize: 12,
-              formatter: (value: number) => value.toFixed(0)
-            },
-            pointer: {
-              show: true,
-              length: '60%',
-              width: 6,
-              itemStyle: { color: '#73bf69' }
-            },
-            anchor: {
-              show: true,
-              size: 15,
-              itemStyle: { borderColor: '#73bf69', borderWidth: 2 }
-            },
+            axisLabel: { show: false },
+            pointer: { show: false },
             detail: { 
               valueAnimation: true, 
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: 'bold',
-              color: '#fff',
-              offsetCenter: [0, '70%'],
-              formatter: (value: number) => value.toFixed(gaugeDecimals) + gaugeUnit
+              fontFamily: "'JetBrains Mono', 'SF Mono', 'Consolas', monospace",
+              color: '#73bf69',
+              offsetCenter: [0, '-15%'],
+              formatter: (value: number) => value.toFixed(gaugeDecimals)
             },
             data: [{ value: gaugeValue }]
-          }]
+          }],
+          graphic: [
+            { type: 'text', left: '8%', bottom: '8%', style: { text: gaugeMin.toFixed(0), fontSize: 10, fill: 'rgba(255, 255, 255, 0.4)', textAlign: 'center' } },
+            { type: 'text', right: '8%', bottom: '8%', style: { text: gaugeMax.toFixed(0), fontSize: 10, fill: 'rgba(255, 255, 255, 0.4)', textAlign: 'center' } },
+            { type: 'text', left: 'center', bottom: '3%', style: { text: gaugeUnit, fontSize: 13, fontWeight: '500', fill: 'rgba(255, 255, 255, 0.5)', textAlign: 'center' } }
+          ]
         };
         
       case 'pie-chart':
@@ -2838,16 +2829,33 @@ ORDER BY day_of_week, hour`
     let series: any[] = [];
     const xValues = data.map(d => formatXValue(d[xField]));
 
+    // Helper: bucket timestamp to nearest minute for alignment
+    const bucketTimestamp = (val: any): string => {
+      if (!val) return '';
+      const date = new Date(val);
+      if (isNaN(date.getTime())) return String(val);
+      date.setSeconds(0, 0);
+      return date.toISOString();
+    };
+
     // Multi-series by field (seriesField) - grouping data by series column
     if (seriesField && data.some(d => d[seriesField])) {
-      const seriesMap = new Map<string, any[]>();
+      // Group data by bucketed timestamp for alignment
+      const groupedData: Record<string, Record<string, number>> = {};
+      const bucketToDisplay: Record<string, string> = {};
+      
       data.forEach(d => {
-        const key = d[seriesField];
-        if (!seriesMap.has(key)) seriesMap.set(key, []);
-        seriesMap.get(key)!.push(d);
+        const bucket = bucketTimestamp(d[xField]);
+        const displayVal = formatXValue(d[xField]);
+        const sName = d[seriesField];
+        
+        if (!groupedData[sName]) groupedData[sName] = {};
+        groupedData[sName][bucket] = d[yField] ?? d[yFields?.[0]] ?? d['value'];
+        bucketToDisplay[bucket] = displayVal;
       });
 
-      const uniqueXValues = [...new Set(data.map(d => d[xField]))];
+      const uniqueBuckets = [...new Set(data.map(d => bucketTimestamp(d[xField])))].sort();
+      const seriesNames = [...new Set(data.map(d => d[seriesField]))];
       
       // Determine the actual Y field to use for series data
       // Prefer yField if it's a real numeric field, otherwise fall back to yFields[0]
@@ -2855,7 +2863,7 @@ ORDER BY day_of_week, hour`
         ? yField
         : (yFields && yFields.length > 0 ? yFields[0] : yField);
       
-      series = Array.from(seriesMap.entries()).map(([name, seriesData], idx) => {
+      series = seriesNames.map((name, idx) => {
         // Use Series Override config (form.series) for color/label
         const sc = this.form.series.find(s => s.field === name);
         let color = sc?.color || this.getColorByIndex(idx);
@@ -2871,10 +2879,7 @@ ORDER BY day_of_week, hour`
         }
         // Check visibility from Series Override
         const visible = sc?.visible !== false;
-        const rawData = uniqueXValues.map(x => {
-          const point = seriesData.find(d => d[xField] === x);
-          return point ? point[effectiveYField] : null;
-        });
+        const rawData: (number | null)[] = uniqueBuckets.map(bucket => groupedData[name]?.[bucket] ?? null);
         return {
           name: displayName,
           type: 'line',
@@ -2890,7 +2895,7 @@ ORDER BY day_of_week, hour`
 
       return {
         ...baseConfig,
-        xAxis: { ...baseConfig.xAxis, data: uniqueXValues.map(formatXValue) },
+        xAxis: { ...baseConfig.xAxis, data: uniqueBuckets.map(b => bucketToDisplay[b] || formatXValue(b)) },
         series: [...series, ...this.buildThresholdSeries()]
       };
     }

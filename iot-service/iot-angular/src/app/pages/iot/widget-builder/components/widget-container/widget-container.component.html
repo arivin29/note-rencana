@@ -77,7 +77,9 @@
           *ngIf="widget.type === 'gauge'"
           [widget]="widget"
           [data]="chartData"
-          [columns]="columns">
+          [columns]="columns"
+          [containerWidth]="containerWidth"
+          [containerHeight]="containerHeight">
         </app-gauge-widget>
 
         <!-- Pie Chart -->

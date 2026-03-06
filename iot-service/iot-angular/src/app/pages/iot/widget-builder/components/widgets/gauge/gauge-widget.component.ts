@@ -17,6 +17,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
   @Input() widget!: Widget;
   @Input() data: any[] = [];
   @Input() columns: string[] = [];
+  @Input() containerWidth = 0;
+  @Input() containerHeight = 0;
 
   @Output() chartInit = new EventEmitter<any>();
 
@@ -41,6 +43,12 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
     if (changes['data'] && !changes['data'].firstChange) {
       this.buildChartOptions();
     }
+    // Resize when container dimensions change
+    if ((changes['containerWidth'] || changes['containerHeight']) && this.echartsInstance) {
+      setTimeout(() => {
+        this.forceResize();
+      }, 50);
+    }
   }
 
   ngOnDestroy(): void {
@@ -55,6 +63,17 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
   onChartInit(ec: any): void {
     this.echartsInstance = ec;
     this.chartInit.emit(ec);
+    
+    // Force resize after init to ensure canvas fills container
+    setTimeout(() => {
+      this.forceResize();
+    }, 100);
+  }
+  
+  private forceResize(): void {
+    if (!this.echartsInstance) return;
+    // Let echarts auto-detect size from container
+    this.echartsInstance.resize();
   }
 
   private setupResizeObserver(): void {
@@ -74,9 +93,7 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
       takeUntil(this.destroy$)
     ).subscribe(() => {
       this.ngZone.run(() => {
-        if (this.echartsInstance) {
-          this.echartsInstance.resize();
-        }
+        this.forceResize();
       });
     });
   }
@@ -167,8 +184,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         // Background arc (track)
         {
           type: 'gauge',
-          radius: '92%',
-          center: ['50%', '58%'],
+          radius: '105%',
+          center: ['50%', '68%'],
           startAngle: 210,
           endAngle: -30,
           min: min,
@@ -193,8 +210,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         // Foreground progress arc (value)
         {
           type: 'gauge',
-          radius: '92%',
-          center: ['50%', '58%'],
+          radius: '105%',
+          center: ['50%', '68%'],
           startAngle: 210,
           endAngle: -30,
           min: min,
@@ -220,8 +237,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         // Tick marks + labels (thin overlay)
         {
           type: 'gauge',
-          radius: '92%',
-          center: ['50%', '58%'],
+          radius: '105%',
+          center: ['50%', '68%'],
           startAngle: 210,
           endAngle: -30,
           min: min,
@@ -249,7 +266,7 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
           title: { show: false },
           detail: {
             valueAnimation: true,
-            offsetCenter: [0, '20%'],
+            offsetCenter: [0, '-15%'],
             fontSize: 28,
             fontWeight: 'bold',
             fontFamily: "'JetBrains Mono', 'SF Mono', 'Consolas', monospace",
@@ -263,8 +280,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
       graphic: [
         {
           type: 'text',
-          left: '18%',
-          top: '76%',
+          left: '8%',
+          bottom: '8%',
           style: {
             text: min.toFixed(0),
             fontSize: 10,
@@ -274,8 +291,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         },
         {
           type: 'text',
-          left: '78%',
-          top: '76%',
+          right: '8%',
+          bottom: '8%',
           style: {
             text: max.toFixed(0),
             fontSize: 10,
@@ -286,7 +303,7 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         {
           type: 'text',
           left: 'center',
-          top: '72%',
+          bottom: '3%',
           style: {
             text: unit,
             fontSize: 13,
