@@ -42,6 +42,9 @@ export class ProjectsDetailPage implements OnInit {
   loading = false;
   error: string | null = null;
   
+  // Tab management
+  activeTab = 'overview';
+  
   // Project data from backend
   project: ProjectDetail | null = null;
   
@@ -289,5 +292,9 @@ export class ProjectsDetailPage implements OnInit {
       return 'Unknown Location';
     }
     return this.project.locations[0].address || 'Unknown Location';
+  }
+
+  setActiveTab(tab: string) {
+    this.activeTab = tab;
   }
 }

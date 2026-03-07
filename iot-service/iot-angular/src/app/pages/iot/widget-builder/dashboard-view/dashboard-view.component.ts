@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem, DisplayGrid, GridType, CompactType } from 'angular-gridster2';
 import { 
@@ -48,8 +48,12 @@ interface WidgetResponse {
   templateUrl: './dashboard-view.component.html',
   styleUrls: ['./dashboard-view.component.css']
 })
-export class DashboardViewComponent implements OnInit, OnDestroy {
+export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   private destroy$ = new Subject<void>();
+  
+  // Inputs for embedded mode
+  @Input() dashboardId: string | null = null;
+  @Input() embeddedMode = false; // Hide toolbar when embedded
   
   dashboard: Dashboard | null = null;
   widgets: GridsterItem[] = [];
@@ -107,7 +111,23 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initGridsterOptions();
-    this.loadDashboard();
+    
+    // If dashboardId is provided via Input, use it
+    // Otherwise, get from route
+    if (!this.dashboardId) {
+      this.dashboardId = this.route.snapshot.paramMap.get('id');
+    }
+    
+    if (this.dashboardId) {
+      this.loadDashboard();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Reload when dashboardId input changes
+    if (changes['dashboardId'] && !changes['dashboardId'].firstChange) {
+      this.loadDashboard();
+    }
   }
 
   ngOnDestroy(): void {
@@ -151,7 +171,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   }
 
   loadDashboard(): void {
-    const dashboardId = this.route.snapshot.paramMap.get('id');
+    const dashboardId = this.dashboardId || this.route.snapshot.paramMap.get('id');
     if (!dashboardId) {
       this.loading = false;
       return;

@@ -12,7 +12,10 @@ interface DashboardResponse {
   description?: string;
   isDefault: boolean;
   idOwner: string;
+  idProject?: string;   // Optional project association
+  projectName?: string; // Project name when loaded
   owner?: { name: string };
+  project?: { name: string };
   widgetCount?: number;
   createdAt: string;
   updatedAt: string;
@@ -59,6 +62,8 @@ export class DashboardListComponent implements OnInit {
           description: d.description,
           isDefault: d.isDefault,
           ownerName: d.owner?.name || 'Unknown',
+          projectId: d.idProject,
+          projectName: d.projectName || d.project?.name || undefined,
           widgetCount: d.widgetCount || 0,
           createdAt: new Date(d.createdAt),
           updatedAt: new Date(d.updatedAt)
@@ -87,7 +92,8 @@ export class DashboardListComponent implements OnInit {
         this.widgetBuilderService.widgetBuilderControllerCreateDashboard({
           body: {
             name: result.name,
-            description: result.description || ''
+            description: result.description || '',
+            idProject: result.idProject || undefined
           }
         }).subscribe({
           next: () => {
@@ -115,7 +121,8 @@ export class DashboardListComponent implements OnInit {
           id: dashboard.id,
           body: {
             name: result.name,
-            description: result.description
+            description: result.description,
+            idProject: result.idProject
           }
         }).subscribe({
           next: () => {

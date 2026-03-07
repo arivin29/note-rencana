@@ -16,6 +16,7 @@ export class AppSettings {
   
   public appSidebarNone: boolean = false;
   public appSidebarCollapsed: boolean = false;
+  public appSidebarMinified: boolean = false;
   
   public appContentClass: string = '';
   public appContentFullHeight: boolean = false;

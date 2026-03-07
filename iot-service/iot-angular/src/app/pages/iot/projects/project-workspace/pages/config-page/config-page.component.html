@@ -1,0 +1,69 @@
+<div class="config-page">
+  <card class="shadow-sm">
+    <card-header class="bg-inverse bg-opacity-10">
+      <i class="fa fa-cog me-2"></i> Project Configuration
+    </card-header>
+    <card-body>
+      <div class="config-section mb-4">
+        <h6 class="text-muted text-uppercase small mb-3">General Settings</h6>
+        <div class="d-flex align-items-center justify-content-between p-3 bg-dark rounded mb-2">
+          <div>
+            <div class="fw-semibold">Edit Project Details</div>
+            <div class="text-muted small">Name, owner, location, and other metadata</div>
+          </div>
+          <button class="btn btn-outline-theme" (click)="editProject()">
+            <i class="fa fa-edit me-1"></i> Edit
+          </button>
+        </div>
+      </div>
+      
+      <div class="config-section mb-4">
+        <h6 class="text-muted text-uppercase small mb-3">Node Management</h6>
+        <div class="d-flex align-items-center justify-content-between p-3 bg-dark rounded mb-2">
+          <div>
+            <div class="fw-semibold">Manage Nodes</div>
+            <div class="text-muted small">Add, edit, or remove nodes from this project</div>
+          </div>
+          <a [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }" class="btn btn-outline-default">
+            <i class="fa fa-hdd me-1"></i> View Nodes
+          </a>
+        </div>
+        <div class="d-flex align-items-center justify-content-between p-3 bg-dark rounded mb-2">
+          <div>
+            <div class="fw-semibold">Sensor Configuration</div>
+            <div class="text-muted small">Configure sensors, thresholds, and alerts</div>
+          </div>
+          <a [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }" class="btn btn-outline-default">
+            <i class="fa fa-microchip me-1"></i> View Sensors
+          </a>
+        </div>
+      </div>
+      
+      <div class="config-section mb-4">
+        <h6 class="text-muted text-uppercase small mb-3">Alert Settings</h6>
+        <div class="d-flex align-items-center justify-content-between p-3 bg-dark rounded mb-2">
+          <div>
+            <div class="fw-semibold">Alert Rules</div>
+            <div class="text-muted small">Configure alert thresholds and notifications</div>
+          </div>
+          <a [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }" class="btn btn-outline-default">
+            <i class="fa fa-bell me-1"></i> Manage Alerts
+          </a>
+        </div>
+      </div>
+      
+      <div class="config-section">
+        <h6 class="text-muted text-uppercase small mb-3">Danger Zone</h6>
+        <div class="d-flex align-items-center justify-content-between p-3 border border-danger rounded">
+          <div>
+            <div class="fw-semibold text-danger">Delete Project</div>
+            <div class="text-muted small">Permanently remove this project and all associated data</div>
+          </div>
+          <button class="btn btn-outline-danger" disabled>
+            <i class="fa fa-trash me-1"></i> Delete
+          </button>
+        </div>
+      </div>
+    </card-body>
+  </card>
+</div>

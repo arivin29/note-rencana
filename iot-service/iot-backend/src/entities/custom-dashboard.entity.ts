@@ -10,15 +10,20 @@ import {
   Index,
 } from 'typeorm';
 import { Owner } from './owner.entity';
+import { Project } from './project.entity';
 
 @Entity('custom_dashboards')
 @Index(['idOwner'])
+@Index(['idProject'])
 export class CustomDashboard {
   @PrimaryGeneratedColumn('uuid', { name: 'id_dashboard' })
   idDashboard: string;
 
   @Column({ type: 'uuid', name: 'id_owner', nullable: false })
   idOwner: string;
+
+  @Column({ type: 'uuid', name: 'id_project', nullable: true })
+  idProject: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   name: string;
@@ -54,6 +59,10 @@ export class CustomDashboard {
   @ManyToOne(() => Owner, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_owner' })
   owner: Owner;
+
+  @ManyToOne(() => Project, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'id_project' })
+  project: Project;
 
   @OneToMany('CustomWidget', 'dashboard', { cascade: true })
   widgets: any[];

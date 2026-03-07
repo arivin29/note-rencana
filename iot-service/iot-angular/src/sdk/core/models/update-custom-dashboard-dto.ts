@@ -10,6 +10,12 @@ export interface UpdateCustomDashboardDto {
   description?: string;
 
   /**
+   * Associated project ID (optional, null to unlink)
+   */
+  idProject?: {
+};
+
+  /**
    * Active status
    */
   isActive?: boolean;

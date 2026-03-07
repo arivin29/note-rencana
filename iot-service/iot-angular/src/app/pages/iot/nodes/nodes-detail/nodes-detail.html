@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center mb-3">
     <div>
-        <ol class="breadcrumb">
+        <ol class="breadcrumb" *ngIf="!embedded">
             <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
             <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
             <li class="breadcrumb-item active">{{ nodeId }}</li>
@@ -8,7 +8,7 @@
         <h1 class="page-header mb-0">Node {{ nodeId }}</h1>
     </div>
     <div class="ms-auto d-flex gap-2">
-        <a [routerLink]="['/iot/nodes', nodeUuid, 'edit']" class="btn btn-outline-theme">
+        <a *ngIf="!embedded" [routerLink]="['/iot/nodes', nodeUuid, 'edit']" class="btn btn-outline-theme">
             <i class="fa fa-pen fa-fw me-1"></i>
             Edit Node
         </a>
@@ -17,7 +17,7 @@
             <i class="fa fa-trash fa-fw me-1"></i>
             Delete Node
         </button>
-        <a routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
+        <a *ngIf="!embedded" routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
     </div>
 </div>
 
@@ -90,8 +90,15 @@
                     <div class="col-md-6">
                         <div class="text-uppercase text-muted small">Owner</div>
                         <div class="fw-semibold">{{ nodeMeta.owner }}</div>
-                        <div class="text-muted small">Contact: {{ nodeMeta.ownerContact }}</div>
-                        <div class="text-muted small">Industry: {{ nodeMeta.ownerPhone }}</div>
+                        <div class="text-muted small" *ngIf="nodeMeta.ownerContact !== '-'">
+                            <i class="fa fa-user me-1"></i>{{ nodeMeta.ownerContact }}
+                        </div>
+                        <div class="text-muted small" *ngIf="nodeMeta.ownerPhone !== '-'">
+                            <i class="fa fa-phone me-1"></i>{{ nodeMeta.ownerPhone }}
+                        </div>
+                        <div class="text-muted small" *ngIf="nodeMeta.ownerIndustry !== '-'">
+                            <i class="fa fa-industry me-1"></i>{{ nodeMeta.ownerIndustry }}
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="text-uppercase text-muted small">Project</div>
@@ -153,10 +160,23 @@
                         <div class="fw-semibold">{{ nodeMeta.picName }}</div>
                         <div class="text-muted small" *ngIf="nodeMeta.picPhone">
                             <i class="fa fa-phone me-1"></i>{{ nodeMeta.picPhone }}
+                            <span class="badge bg-warning-subtle text-warning ms-2" title="Dapat digunakan untuk SMS commands">
+                                <i class="fa fa-sms"></i> SMS
+                            </span>
                         </div>
                         <div class="text-muted small" *ngIf="nodeMeta.picEmail">
                             <i class="fa fa-envelope me-1"></i>{{ nodeMeta.picEmail }}
                         </div>
+                    </div>
+                    <div class="col-md-4" *ngIf="!nodeMeta.picName && nodeMeta.picPhone">
+                        <div class="text-uppercase text-muted small">SMS Control</div>
+                        <div class="fw-semibold">
+                            <i class="fa fa-phone me-1"></i>{{ nodeMeta.picPhone }}
+                            <span class="badge bg-warning-subtle text-warning ms-2" title="Dapat digunakan untuk SMS commands">
+                                <i class="fa fa-sms"></i> SMS
+                            </span>
+                        </div>
+                        <div class="text-muted small">Nomor untuk kirim perintah restart/config via SMS</div>
                     </div>
                     <div class="col-md-4" *ngIf="nodeMeta.description">
                         <div class="text-uppercase text-muted small">Description</div>

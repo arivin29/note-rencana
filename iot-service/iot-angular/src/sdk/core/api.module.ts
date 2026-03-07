@@ -32,6 +32,10 @@ import { WidgetBuilderService } from './services/widget-builder.service';
 import { UsersService } from './services/users.service';
 import { AuditService } from './services/audit.service';
 import { NotificationsService } from './services/notifications.service';
+import { MlNotificationsService } from './services/ml-notifications.service';
+import { MlAnomaliesService } from './services/ml-anomalies.service';
+import { MlForecastsService } from './services/ml-forecasts.service';
+import { MlDashboardService } from './services/ml-dashboard.service';
 
 /**
  * Module that provides all services and configuration.
@@ -67,6 +71,10 @@ import { NotificationsService } from './services/notifications.service';
     UsersService,
     AuditService,
     NotificationsService,
+    MlNotificationsService,
+    MlAnomaliesService,
+    MlForecastsService,
+    MlDashboardService,
     ApiConfiguration
   ],
 })

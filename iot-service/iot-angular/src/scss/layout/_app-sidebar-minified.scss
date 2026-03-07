@@ -1,0 +1,192 @@
+// App Sidebar Minified Mode
+// Shows only icons (60px width), hover reveals menu text as tooltip
+
+$app-sidebar-minified-width: 60px;
+
+.app-sidebar-minified {
+  @include media-breakpoint-up(md) {
+    // Main sidebar - minified to icons only
+    & .app-sidebar {
+      width: $app-sidebar-minified-width;
+      overflow: visible !important;
+      
+      // Override ng-scrollbar overflow to allow tooltip to show
+      ng-scrollbar,
+      .ng-scrollbar,
+      [ng-scrollbar] {
+        overflow: visible !important;
+        
+        .ng-scrollbar-wrapper,
+        .ng-scroll-viewport-wrapper,
+        .ng-scroll-viewport {
+          overflow: visible !important;
+        }
+      }
+      
+      // Sidebar content - allow overflow for tooltips
+      .app-sidebar-content {
+        width: $app-sidebar-minified-width;
+        overflow: visible !important;
+        
+        // Hide bottom documentation button
+        > .p-3,
+        > div[class*="p-3"],
+        > .mt-auto {
+          display: none !important;
+        }
+      }
+      
+      // Menu container
+      .menu {
+        overflow: visible !important;
+        
+        > .menu-item {
+          position: relative;
+          
+          // Menu link styling
+          > .menu-link {
+            position: relative;
+            overflow: visible !important;
+            
+            // Tooltip - positioned outside sidebar
+            .menu-text {
+              position: absolute;
+              left: $app-sidebar-minified-width;
+              top: 50%;
+              transform: translateY(-50%);
+              background: #2d3136;
+              color: #fff;
+              padding: 10px 16px;
+              border-radius: 0 6px 6px 0;
+              white-space: nowrap;
+              z-index: 99999;
+              box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.5);
+              font-size: 0.875rem;
+              opacity: 0;
+              visibility: hidden;
+              transition: opacity 0.15s ease, visibility 0.15s ease;
+              pointer-events: none;
+            }
+            
+            // Hide caret/arrow
+            .menu-caret {
+              display: none;
+            }
+            
+            // Center icon
+            .menu-icon {
+              width: 100%;
+              text-align: center;
+              margin: 0;
+              padding: 0;
+              
+              i, .bi {
+                font-size: 1.25rem;
+              }
+            }
+          }
+          
+          // Show tooltip on hover
+          &:hover > .menu-link .menu-text {
+            opacity: 1;
+            visibility: visible;
+          }
+          
+          // Hide submenu initially
+          > .menu-submenu {
+            display: none !important;
+            position: absolute;
+            left: $app-sidebar-minified-width;
+            top: 0;
+            min-width: 200px;
+            background: #2d3136;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.4);
+            z-index: 1050;
+            padding: 8px 0;
+          }
+          
+          // Show submenu on hover for items with submenu
+          &.has-sub:hover {
+            > .menu-link {
+              background: rgba(255, 255, 255, 0.05);
+              
+              // Hide text tooltip for submenu items (submenu shows instead)
+              .menu-text {
+                opacity: 0;
+                visibility: hidden;
+              }
+            }
+            
+            > .menu-submenu {
+              display: block !important;
+              
+              .menu-item {
+                .menu-link {
+                  padding: 8px 16px;
+                  
+                  .menu-text {
+                    position: static;
+                    background: none;
+                    box-shadow: none;
+                    padding: 0;
+                    opacity: 1;
+                    visibility: visible;
+                    transform: none;
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Hide ALL menu headers completely
+        > .menu-header,
+        .menu-header {
+          display: none !important;
+        }
+        
+        // Hide menu dividers
+        > .menu-divider,
+        .menu-divider {
+          display: none !important;
+        }
+      }
+    }
+    
+    // App content - adjust margin
+    & .app-content {
+      margin-inline-start: $app-sidebar-minified-width;
+    }
+    
+    // App footer - adjust margin
+    & .app-footer {
+      margin-inline-start: $app-sidebar-minified-width;
+    }
+    
+    // Project sidebar - position after minified sidebar
+    & .project-sidebar {
+      left: $app-sidebar-minified-width;
+    }
+  }
+}
+
+// When NOT minified, project sidebar should be after full sidebar
+.app:not(.app-sidebar-minified) {
+  .project-sidebar {
+    left: 270px; // Full app-sidebar width
+  }
+}
+
+// Transition for smooth effect
+.app-sidebar {
+  transition: width 0.2s ease;
+}
+
+.app-content {
+  transition: margin-inline-start 0.2s ease;
+}
+
+.project-sidebar {
+  transition: left 0.2s ease, width 0.2s ease;
+}

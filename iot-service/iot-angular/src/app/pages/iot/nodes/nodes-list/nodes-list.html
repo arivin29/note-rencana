@@ -1,4 +1,5 @@
-<div class="d-flex align-items-center mb-3">
+<!-- Header - hide in embedded mode -->
+<div class="d-flex align-items-center mb-3" *ngIf="!embedded">
     <div>
         <ul class="breadcrumb mb-1">
             <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
@@ -26,7 +27,20 @@
     </div>
 </div>
 
-<div class="mb-sm-4 mb-3 d-sm-flex">
+<!-- Embedded mode header -->
+<div class="d-flex align-items-center mb-3" *ngIf="embedded">
+    <div>
+        <h2 class="mb-0">Nodes / Devices</h2>
+        <span class="text-muted small">{{ totalNodes }} total nodes</span>
+    </div>
+    <div class="ms-auto">
+        <button class="btn btn-sm btn-outline-light" (click)="loadNodes()" [disabled]="loading">
+            <i class="fa fa-sync-alt" [class.fa-spin]="loading"></i>
+        </button>
+    </div>
+</div>
+
+<div class="mb-sm-4 mb-3 d-sm-flex" *ngIf="!embedded">
     <div class="mt-sm-0 mt-2">
         <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
             <i class="fa fa-download fa-fw me-1 text-theme"></i>
@@ -66,8 +80,8 @@
     </ul>
     <div class="p-4">
         <div class="row g-3 mb-4">
-            <!-- Owner Dropdown (Admin Only) -->
-            <div class="col-lg-4 col-md-6" *ngIf="isAdmin">
+            <!-- Owner Dropdown (Admin Only, hide in embedded mode) -->
+            <div class="col-lg-4 col-md-6" *ngIf="isAdmin && !embedded">
                 <label class="text-muted text-uppercase small d-block mb-1">
                     Owner
                     <span class="badge bg-primary ms-2">
@@ -82,8 +96,8 @@
                 </select>
             </div>
             
-            <!-- Project Dropdown -->
-            <div class="col-lg-4 col-md-6">
+            <!-- Project Dropdown (hide in embedded mode) -->
+            <div class="col-lg-4 col-md-6" *ngIf="!embedded">
                 <label class="text-muted text-uppercase small d-block mb-1">Project</label>
                 <select class="form-select" 
                         [(ngModel)]="filters.projectId" 
@@ -99,12 +113,12 @@
                 </small>
             </div>
             
-            <div [class]="isAdmin ? 'col-lg-4 col-md-12' : 'col-lg-4 col-md-6'">
+            <div [class]="embedded ? 'col-12' : (isAdmin ? 'col-lg-4 col-md-12' : 'col-lg-4 col-md-6')">
                 <label class="text-muted text-uppercase small d-block mb-1">Search</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0 text-muted"><i
                             class="fa fa-search opacity-50"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search node code / project"
+                    <input type="text" class="form-control border-start-0 ps-0" [placeholder]="embedded ? 'Search nodes...' : 'Search node code / project'"
                         [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)">
                 </div>
             </div>
@@ -117,7 +131,7 @@
                         <th class="pt-0 pb-2 w-10px"></th>
                         <th class="pt-0 pb-2">Node</th>
                         <th class="pt-0 pb-2">Location</th>
-                        <th class="pt-0 pb-2">Owner / Project</th>
+                        <th class="pt-0 pb-2" *ngIf="!embedded">Owner / Project</th>
                         <th class="pt-0 pb-2">Status</th>
                         <th class="pt-0 pb-2">Telemetry</th>
                         <th class="pt-0 pb-2 text-end">Last Seen</th>
@@ -138,7 +152,7 @@
                                     <i class="fa fa-microchip text-theme"></i>
                                 </div>
                                 <div class="ms-3">
-                                    <a [routerLink]="['/iot/nodes', node.idNode]"
+                                    <a (click)="navigateToNode(node.idNode)" style="cursor: pointer;"
                                         class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
                                         {{ node.name || node.code }}
                                     </a>
@@ -151,7 +165,7 @@
                             <div class="fw-semibold" *ngIf="!node.city">-</div>
                             <div class="text-muted small" *ngIf="node.address">{{ node.address | slice:0:30 }}{{ node.address && node.address.length > 30 ? '...' : '' }}</div>
                         </td>
-                        <td>
+                        <td *ngIf="!embedded">
                             <div class="fw-semibold">{{ getOwnerName(node) }}</div>
                             <div class="text-muted small">{{ getProjectName(node) }}</div>
                         </td>

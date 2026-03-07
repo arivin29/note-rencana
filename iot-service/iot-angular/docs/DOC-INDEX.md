@@ -81,11 +81,20 @@ Quick navigation to all documentation files in this project.
    - **For**: Understanding what's been implemented
    - **Contains**: Completed features, testing results, next steps
 
+### 10. **[project-detail/00-INDEX.md](./project-detail/00-INDEX.md)** 🆕 NEW
+   - **What**: Project Detail Page Redesign Documentation
+   - **For**: Tab-based project detail implementation
+   - **Contains**:
+     - Tab structure (Overview, Monitor, Assets, Map, Analytics, Config)
+     - Integration with Dynamic Widget System
+     - Asset tree view design
+     - Task tracking & phases
+
 ---
 
 ## 🔧 Technical Reference
 
-### 10. **[NODE-DETAIL-DATA-MAPPING.md](./NODE-DETAIL-DATA-MAPPING.md)**
+### 11. **[NODE-DETAIL-DATA-MAPPING.md](./NODE-DETAIL-DATA-MAPPING.md)**
    - **What**: Node detail data mapping guide
    - **For**: Working with node detail pages
    - **Contains**: Data structure mappings, field relationships

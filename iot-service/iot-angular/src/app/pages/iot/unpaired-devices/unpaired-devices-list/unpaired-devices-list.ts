@@ -271,7 +271,7 @@ export class UnpairedDevicesListPage implements OnInit {
     }
 
     get totalUnpaired(): number {
-        return this.stats?.total || this.devices.length;
+        return this.stats?.pending || this.devices.length;
     }
 
     get activeToday(): number {
@@ -283,6 +283,10 @@ export class UnpairedDevicesListPage implements OnInit {
     }
 
     get avgSeenCount(): number {
+        // Use API stats if available, otherwise calculate locally
+        if (this.stats?.avgSeenCount !== undefined) {
+            return this.stats.avgSeenCount;
+        }
         const total = this.devices.length;
         return total
             ? Math.round(this.devices.reduce((sum, device) => sum + device.seenCount, 0) / total)

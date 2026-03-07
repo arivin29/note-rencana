@@ -28,3 +28,7 @@ export { WidgetBuilderService } from './services/widget-builder.service';
 export { UsersService } from './services/users.service';
 export { AuditService } from './services/audit.service';
 export { NotificationsService } from './services/notifications.service';
+export { MlNotificationsService } from './services/ml-notifications.service';
+export { MlAnomaliesService } from './services/ml-anomalies.service';
+export { MlForecastsService } from './services/ml-forecasts.service';
+export { MlDashboardService } from './services/ml-dashboard.service';

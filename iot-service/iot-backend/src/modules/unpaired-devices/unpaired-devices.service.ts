@@ -320,13 +320,18 @@ export class UnpairedDevicesService {
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [seenLast24h, seenLast7d, withSuggestions] = await Promise.all([
+    const [seenLast24h, seenLast7d, withSuggestions, avgResult] = await Promise.all([
       buildQuery().andWhere('device.lastSeenAt >= :last24h', { last24h }).getCount(),
       buildQuery().andWhere('device.lastSeenAt >= :last7d', { last7d }).getCount(),
       buildQuery()
         .andWhere('(device.suggestedProject IS NOT NULL OR device.suggestedOwner IS NOT NULL)')
         .getCount(),
+      buildQuery()
+        .select('COALESCE(AVG(device.seenCount), 0)', 'avg')
+        .getRawOne(),
     ]);
+
+    const avgSeenCount = Math.round(parseFloat(avgResult?.avg || '0'));
 
     return {
       total,
@@ -336,6 +341,7 @@ export class UnpairedDevicesService {
       seenLast24h,
       seenLast7d,
       withSuggestions,
+      avgSeenCount,
     };
   }
 

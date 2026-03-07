@@ -6,6 +6,8 @@ export interface Dashboard {
   description?: string;
   ownerId?: string;
   ownerName?: string;
+  projectId?: string;      // Optional project association
+  projectName?: string;    // Project name when loaded
   isDefault: boolean;
   widgetCount?: number;
   createdAt: Date;

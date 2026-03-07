@@ -1,0 +1,143 @@
+<div class="project-workspace" [class.sidebar-collapsed]="sidebarCollapsed">
+  
+  <!-- Secondary Sidebar -->
+  <aside class="project-sidebar">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <a [routerLink]="['/iot/projects']" class="back-link" title="Back to Projects">
+        <i class="fa fa-arrow-left"></i>
+      </a>
+      <span class="project-title" *ngIf="!sidebarCollapsed">{{ projectName }}</span>
+      <button class="toggle-btn" (click)="toggleSidebar()" [title]="sidebarCollapsed ? 'Expand' : 'Collapse'">
+        <i class="fa" [ngClass]="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+      </button>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav" *ngIf="!sidebarCollapsed">
+      <ng-container *ngFor="let item of navItems">
+        <!-- Nav item with children (expandable) -->
+        <ng-container *ngIf="hasNavChildren(item)">
+          <div class="nav-item-group">
+            <a class="nav-item has-children"
+               [class.active]="isNavActive(item.path)"
+               [class.expanded]="item.expanded"
+               (click)="navigateTo(item.path)">
+              <i class="fa" [ngClass]="item.icon"></i>
+              <span>{{ item.label }}</span>
+              <i class="fa fa-chevron-down expand-icon" 
+                 [class.rotated]="item.expanded"
+                 (click)="toggleNavItem(item, $event)"></i>
+            </a>
+            <!-- Submenu children -->
+            <div class="nav-children" *ngIf="item.expanded">
+              <a class="nav-child"
+                 *ngFor="let child of item.children"
+                 [class.active]="isDashboardActive(child.id)"
+                 (click)="navigateToDashboard(child.id)">
+                <i class="fa fa-chart-area"></i>
+                <span>{{ child.label }}</span>
+              </a>
+            </div>
+          </div>
+        </ng-container>
+        
+        <!-- Nav item without children (simple) -->
+        <a *ngIf="!hasNavChildren(item)"
+           class="nav-item"
+           [class.active]="isNavActive(item.path)"
+           (click)="navigateTo(item.path)">
+          <i class="fa" [ngClass]="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </nav>
+    
+    <!-- Collapsed Navigation Icons -->
+    <nav class="sidebar-nav collapsed-nav" *ngIf="sidebarCollapsed">
+      <a *ngFor="let item of navItems"
+         class="nav-icon"
+         [class.active]="isNavActive(item.path)"
+         (click)="navigateTo(item.path)"
+         [title]="item.label">
+        <i class="fa" [ngClass]="item.icon"></i>
+      </a>
+    </nav>
+    
+    <!-- Divider -->
+    <div class="sidebar-divider" *ngIf="!sidebarCollapsed"></div>
+    
+    <!-- Asset Tree -->
+    <div class="asset-tree" *ngIf="!sidebarCollapsed">
+      <div class="tree-header">
+        <span>Assets</span>
+        <button class="btn-icon" (click)="loadProjectData()" title="Refresh">
+          <i class="fa fa-sync-alt" [class.fa-spin]="loading"></i>
+        </button>
+      </div>
+      
+      <!-- Loading -->
+      <div class="tree-loading" *ngIf="loading">
+        <div class="spinner-border spinner-border-sm"></div>
+        <span>Loading...</span>
+      </div>
+      
+      <!-- Tree Content -->
+      <div class="tree-content" *ngIf="!loading">
+        <!-- Empty State -->
+        <div class="tree-empty" *ngIf="assetTree.length === 0">
+          <i class="fa fa-inbox"></i>
+          <span>No nodes found</span>
+        </div>
+        
+        <!-- Nodes List -->
+        <ng-container *ngFor="let node of assetTree">
+          <!-- Node Level -->
+          <div class="tree-item node"
+               [class.selected]="selectedAssetId === node.id"
+               [class.expanded]="node.expanded"
+               (click)="selectAsset(node)"
+               (contextmenu)="onContextMenu($event, node)">
+            <button class="expand-btn" 
+                    (click)="toggleTreeNode(node); $event.stopPropagation()"
+                    *ngIf="node.children && node.children.length > 0">
+              <i class="fa" [ngClass]="node.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            </button>
+            <span class="expand-placeholder" *ngIf="!node.children || node.children.length === 0"></span>
+            <span class="status-dot" [ngClass]="'status-' + node.status"></span>
+            <i class="fa fa-hdd tree-icon"></i>
+            <span class="tree-label">{{ node.name }}</span>
+          </div>
+          
+          <!-- Sensors Level -->
+          <div class="tree-children" *ngIf="node.expanded && node.children">
+            <div class="tree-item sensor"
+                 *ngFor="let sensor of node.children"
+                 [class.selected]="selectedAssetId === sensor.id"
+                 (click)="selectAsset(sensor)"
+                 (contextmenu)="onContextMenu($event, sensor)">
+              <span class="expand-placeholder"></span>
+              <span class="status-dot" [ngClass]="'status-' + sensor.status"></span>
+              <i class="fa fa-microchip tree-icon"></i>
+              <span class="tree-label">{{ sensor.name }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+    
+    <!-- Collapsed Asset Summary -->
+    <div class="asset-summary" *ngIf="sidebarCollapsed">
+      <div class="summary-item" title="Nodes">
+        <i class="fa fa-hdd"></i>
+        <span class="count">{{ assetTree.length || 0 }}</span>
+      </div>
+    </div>
+  </aside>
+  
+  <!-- Main Content Area -->
+  <main class="workspace-content">
+    <router-outlet></router-outlet>
+  </main>
+  
+</div>

@@ -1,10 +1,15 @@
-import { IsString, IsOptional, IsBoolean, IsObject, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsObject, IsInt, Min, Max, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCustomDashboardDto {
   @ApiProperty({ description: 'Dashboard name' })
   @IsString()
   name: string;
+
+  @ApiPropertyOptional({ description: 'Associated project ID (optional)' })
+  @IsUUID()
+  @IsOptional()
+  idProject?: string;
 
   @ApiPropertyOptional({ description: 'Dashboard description' })
   @IsString()
@@ -39,6 +44,11 @@ export class UpdateCustomDashboardDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @ApiPropertyOptional({ description: 'Associated project ID (optional, null to unlink)' })
+  @IsUUID()
+  @IsOptional()
+  idProject?: string | null;
 
   @ApiPropertyOptional({ description: 'Dashboard description' })
   @IsString()

@@ -54,6 +54,12 @@ export class CustomDashboardResponseDto {
   @ApiProperty({ description: 'Owner ID' })
   idOwner: string;
 
+  @ApiPropertyOptional({ description: 'Associated project ID' })
+  idProject?: string;
+
+  @ApiPropertyOptional({ description: 'Project name (when loaded)' })
+  projectName?: string;
+
   @ApiProperty({ description: 'Dashboard name' })
   name: string;
 

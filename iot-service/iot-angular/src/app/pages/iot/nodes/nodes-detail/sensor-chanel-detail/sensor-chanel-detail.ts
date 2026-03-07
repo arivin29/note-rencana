@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AddChannelFormValue, SensorTypeOption } from '../node-detail-add-channel-drawer/node-detail-add-channel-drawer.component';
 import { SensorChannelsService } from '../../../../../../sdk/core/services/sensor-channels.service';
+import { SensorsService } from '../../../../../../sdk/core/services/sensors.service';
 
 interface SensorReading {
     id: number;
@@ -22,7 +23,10 @@ interface SensorReading {
 export class SensorChanelDetail implements OnInit {
     // Math utility for template
     Math = Math;
-
+    // Input for embedded mode
+    @Input() inputChannelId: string = '';
+    @Input() inputNodeId: string = '';
+    @Input() embedded: boolean = false;
     // Route params
     channelId: string = '';
     nodeId: string = '';
@@ -94,16 +98,36 @@ export class SensorChanelDetail implements OnInit {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private sensorChannelsService: SensorChannelsService
+        private sensorChannelsService: SensorChannelsService,
+        private sensorsService: SensorsService
     ) { }
 
+    ngOnChanges(changes: SimpleChanges) {
+        // Handle embedded mode - when inputs change
+        if ((changes['inputChannelId'] || changes['inputNodeId']) && this.embedded) {
+            if (this.inputChannelId && this.inputNodeId) {
+                this.channelId = this.inputChannelId;
+                this.nodeId = this.inputNodeId;
+                this.loadChannelData();
+            }
+        }
+    }
+
     ngOnInit() {
-        // Get channel ID from route params
+        // For embedded mode, use inputs
+        if (this.embedded && this.inputChannelId && this.inputNodeId) {
+            this.channelId = this.inputChannelId;
+            this.nodeId = this.inputNodeId;
+            this.loadChannelData();
+            return;
+        }
+
+        // Get channel ID from route params (non-embedded mode)
         this.route.paramMap.subscribe((params) => {
             const channelId = params.get('sensorId'); // route param is 'sensorId' but it's actually channelId
             const nodeId = params.get('nodeId');
 
-            if (channelId && nodeId) {
+            if (channelId && nodeId && !this.embedded) {
                 this.channelId = channelId;
                 this.nodeId = nodeId;
                 this.loadChannelData();
@@ -199,8 +223,143 @@ export class SensorChanelDetail implements OnInit {
             },
             error: (err) => {
                 console.error('Error loading channel data:', err);
+                
+                // If embedded mode, the ID might be a sensor ID instead of channel ID
+                // Try to load sensor details and get its first channel
+                if (this.embedded && this.channelId) {
+                    console.log('Trying to load as sensor ID:', this.channelId);
+                    this.loadSensorData(this.channelId);
+                } else {
+                    this.loading = false;
+                    // Fallback to dummy data on error
+                    this.generateDummyData();
+                    this.applyClientSideFilters();
+                }
+            }
+        });
+    }
+
+    /**
+     * Load sensor data when the ID is a sensor UUID (not channel UUID)
+     */
+    loadSensorData(sensorId: string) {
+        this.sensorsService.sensorsControllerFindOneDetailed$Response({ id: sensorId }).subscribe({
+            next: (res) => {
+                let sensor: any = res.body;
+                if (typeof sensor === 'string') {
+                    sensor = JSON.parse(sensor);
+                }
+                
+                console.log('Loaded sensor:', sensor);
+                
+                // Get sensor info
+                this.sensorName = sensor.label || sensor.code || 'Sensor';
+                this.sensorType = sensor.sensorCatalog?.name || sensor.sensorCatalog?.code || 'Unknown';
+                this.sensorLocation = `Node: ${sensor.node?.code || sensor.node?.name || this.nodeId}`;
+                
+                // Get channels from sensor
+                const channels = sensor.channels || sensor.sensorChannels || [];
+                
+                if (channels.length > 0) {
+                    // Use the first channel to load readings
+                    const firstChannel = channels[0];
+                    const channelId = firstChannel.idSensorChannel || firstChannel.id;
+                    
+                    console.log('Loading first channel:', channelId, firstChannel);
+                    
+                    // Update channel meta
+                    this.channelMeta = {
+                        sensorId: sensorId,
+                        channelId: firstChannel.metricCode || '',
+                        metricCode: firstChannel.metricCode || '',
+                        unit: firstChannel.unit || '',
+                        precision: firstChannel.precision || 0.01,
+                        minThreshold: parseFloat(firstChannel.minThreshold) || 0,
+                        maxThreshold: parseFloat(firstChannel.maxThreshold) || 100,
+                        sensorTypeId: firstChannel.idSensorType || '',
+                        sensorTypeLabel: firstChannel.sensorType?.name || ''
+                    };
+                    
+                    this.sensorUnit = firstChannel.unit || '';
+                    
+                    // Now load readings for this channel
+                    this.channelId = channelId;
+                    this.loadChannelReadings(channelId);
+                } else {
+                    // No channels, show sensor info only
+                    this.loading = false;
+                    this.allReadings = [];
+                    this.applyClientSideFilters();
+                }
+            },
+            error: (err) => {
+                console.error('Error loading sensor data:', err);
                 this.loading = false;
-                // Fallback to dummy data on error
+                // Fallback to dummy data
+                this.generateDummyData();
+                this.applyClientSideFilters();
+            }
+        });
+    }
+
+    /**
+     * Load channel readings only (when we already have channel metadata)
+     */
+    loadChannelReadings(channelId: string) {
+        const endDate = new Date();
+        const startDate = this.getFilterStartDate();
+
+        this.sensorChannelsService.sensorChannelsControllerGetReadings({
+            id: channelId,
+            startTime: startDate.toISOString(),
+            endTime: endDate.toISOString()
+        }).subscribe({
+            next: (response: any) => {
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                const dataPoints = data.dataPoints || [];
+
+                this.allReadings = dataPoints.map((dp: any, index: number) => {
+                    const value = dp.value;
+                    const minThresh = this.channelMeta.minThreshold;
+                    const maxThresh = this.channelMeta.maxThreshold;
+
+                    let status: 'online' | 'warning' | 'error' | 'offline' = 'online';
+                    let notes: string | undefined = undefined;
+
+                    if (value !== null && value !== undefined && minThresh !== null && maxThresh !== null) {
+                        if (value < minThresh) {
+                            status = 'error';
+                            notes = `Nilai di bawah batas minimum (${minThresh})`;
+                        } else if (value > maxThresh) {
+                            status = 'error';
+                            notes = `Nilai di luar batas normal`;
+                        } else if (value < minThresh * 1.1 || value > maxThresh * 0.9) {
+                            status = 'warning';
+                            notes = 'Mendekati batas warning';
+                        }
+                    }
+
+                    const rawTs = dp.timestamp || dp.ts;
+                    const parsedDate = rawTs ? new Date(rawTs) : new Date();
+                    const validDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+
+                    return {
+                        id: dataPoints.length - index,
+                        timestamp: validDate,
+                        value: value,
+                        unit: this.sensorUnit,
+                        status: status,
+                        quality: dp.quality === 'good' ? 100 : 70,
+                        notes: notes
+                    };
+                });
+
+                this.applyClientSideFilters();
+                this.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading channel readings:', err);
+                this.loading = false;
                 this.generateDummyData();
                 this.applyClientSideFilters();
             }

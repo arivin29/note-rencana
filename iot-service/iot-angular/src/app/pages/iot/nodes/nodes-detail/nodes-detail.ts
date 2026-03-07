@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
     ApexAxisChartSeries,
@@ -85,7 +85,11 @@ interface SensorDetail {
     styleUrls: ['./nodes-detail.scss'],
     standalone: false
 })
-export class NodesDetailPage implements OnInit {
+export class NodesDetailPage implements OnInit, OnChanges {
+    // Input for embedded mode (when used outside nodes module)
+    @Input() inputNodeId: string = '';
+    @Input() embedded: boolean = false;
+
     nodeId = ''; // Node code from route (e.g., "ESP-CS-F03")
     nodeUuid = ''; // Node UUID from database (for API calls)
     idNodeProfile = ''; // Node Profile UUID
@@ -110,6 +114,8 @@ export class NodesDetailPage implements OnInit {
         owner: '',
         ownerContact: '',
         ownerPhone: '',
+        ownerEmail: '',
+        ownerIndustry: '',
         projectId: '',
         project: '',
         projectCode: '',
@@ -168,9 +174,10 @@ export class NodesDetailPage implements OnInit {
         private sensorChannelsService: SensorChannelsService,
         private iotLogsService: IoTLogsService
     ) {
+        // Only subscribe to route params if not in embedded mode
         this.route.paramMap.subscribe((params) => {
             const paramId = params.get('nodeId');
-            if (paramId) {
+            if (paramId && !this.embedded) {
                 // Route parameter is now UUID (id_node), not code
                 this.nodeUuid = paramId; // Store UUID from route
                 this.loadNodeDashboard(); // Load dashboard using UUID
@@ -178,8 +185,20 @@ export class NodesDetailPage implements OnInit {
         });
     }
 
+    ngOnChanges(changes: SimpleChanges) {
+        // Handle embedded mode - when inputNodeId changes
+        if (changes['inputNodeId'] && this.inputNodeId && this.embedded) {
+            this.nodeUuid = this.inputNodeId;
+            this.loadNodeDashboard();
+        }
+    }
+
     ngOnInit() {
-        // Dashboard loaded in route subscription
+        // For embedded mode, load with inputNodeId
+        if (this.embedded && this.inputNodeId) {
+            this.nodeUuid = this.inputNodeId;
+            this.loadNodeDashboard();
+        }
     }
 
     loadNodeDashboard() {
@@ -219,7 +238,9 @@ export class NodesDetailPage implements OnInit {
                     ownerId: owner.idOwner || '',
                     owner: owner.name || 'Unknown Owner',
                     ownerContact: owner.contactPerson || '-',
-                    ownerPhone: owner.industry || '-',
+                    ownerPhone: owner.phone || '-',
+                    ownerEmail: owner.email || '-',
+                    ownerIndustry: owner.industry || '-',
                     projectId: node.project?.idProject || '',
                     project: node.project?.name || 'Unknown Project',
                     projectCode: node.project?.areaType || '-',

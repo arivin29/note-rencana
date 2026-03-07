@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.sensor-page-wrapper {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

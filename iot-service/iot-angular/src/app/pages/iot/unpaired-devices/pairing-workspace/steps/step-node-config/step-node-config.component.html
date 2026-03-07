@@ -259,8 +259,15 @@
 
             <!-- PIC Section -->
             <h5 class="section-subtitle mt-4 mb-3">
-                <i class="fa fa-user me-2"></i>Person In Charge (PIC)
+                <i class="fa fa-user me-2"></i>Person In Charge (PIC) & SMS Control
+                <span class="badge bg-warning-subtle text-warning ms-2"><i class="fa fa-sms me-1"></i>SMS</span>
             </h5>
+            
+            <div class="alert alert-info py-2 small mb-3">
+                <i class="fa fa-info-circle me-1"></i>
+                <strong>PIC Phone</strong> akan digunakan untuk menerima notifikasi anomali dan mengirim perintah SMS ke device (restart, config, status).
+            </div>
+            
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label text-uppercase small text-muted">PIC Name</label>
@@ -269,9 +276,13 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label text-uppercase small text-muted">PIC Phone</label>
+                    <label class="form-label text-uppercase small text-muted">
+                        PIC Phone
+                        <i class="fa fa-sms text-warning ms-1" ngbTooltip="Untuk perintah SMS"></i>
+                    </label>
                     <input type="text" class="form-control" [(ngModel)]="nodeConfig.newNode!.picPhone"
                         placeholder="e.g., 081234567890">
+                    <small class="text-muted">Format: 08xxx / +62xxx</small>
                 </div>
 
                 <div class="col-md-4">

@@ -31,6 +31,11 @@ export interface CustomDashboardResponseDto {
   idOwner: string;
 
   /**
+   * Associated project ID
+   */
+  idProject?: string;
+
+  /**
    * Active status
    */
   isActive: boolean;
@@ -50,6 +55,11 @@ export interface CustomDashboardResponseDto {
    * Dashboard name
    */
   name: string;
+
+  /**
+   * Project name (when loaded)
+   */
+  projectName?: string;
 
   /**
    * Auto refresh interval in seconds

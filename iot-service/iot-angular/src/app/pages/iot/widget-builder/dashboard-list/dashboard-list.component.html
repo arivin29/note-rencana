@@ -73,7 +73,19 @@
           {{ dashboard.name }}
           <span *ngIf="dashboard.isDefault" class="badge bg-theme ms-2">Default</span>
         </h5>
-        <p class="text-muted small mb-3">{{ dashboard.description || 'No description' }}</p>
+        <p class="text-muted small mb-2">{{ dashboard.description || 'No description' }}</p>
+        
+        <!-- Project Badge -->
+        <div *ngIf="dashboard.projectName" class="mb-3">
+          <span class="badge bg-info bg-opacity-15 text-info">
+            <i class="bi bi-folder me-1"></i>{{ dashboard.projectName }}
+          </span>
+        </div>
+        <div *ngIf="!dashboard.projectName && !dashboard.projectId" class="mb-3">
+          <span class="badge bg-secondary bg-opacity-15 text-secondary">
+            <i class="bi bi-globe me-1"></i>Global
+          </span>
+        </div>
 
         <!-- Stats -->
         <div class="d-flex gap-3 mb-3 text-muted small">

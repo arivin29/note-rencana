@@ -1,0 +1,19 @@
+<div class="node-detail-wrapper">
+  <div class="page-toolbar mb-3" *ngIf="nodeId">
+    <button class="btn btn-sm btn-outline-default" (click)="goBack()">
+      <i class="fa fa-arrow-left me-2"></i>
+      Back to Nodes
+    </button>
+  </div>
+
+  <nodes-detail 
+    *ngIf="nodeId" 
+    [inputNodeId]="nodeId" 
+    [embedded]="true">
+  </nodes-detail>
+
+  <div *ngIf="!nodeId" class="text-center py-5 text-muted">
+    <i class="fa fa-spinner fa-spin fa-2x mb-3"></i>
+    <p>Loading node detail...</p>
+  </div>
+</div>

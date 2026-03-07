@@ -1,3 +1,4 @@
+<!-- Page Header -->
 <div class="d-flex align-items-center mb-3">
   <div>
     <ul class="breadcrumb mb-1">
@@ -11,32 +12,40 @@
     <a routerLink="/iot/projects" class="btn btn-outline-default">Back</a>
   </div>
 </div>
-<div class="mb-3 d-md-flex fw-bold text-inverse">
-  <div class="mt-md-0 mt-2">
-    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
-      <i class="fa fa-download fa-fw me-1 text-theme"></i>
-      Export Report
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-4" *ngIf="!loading && !error">
+  <li class="nav-item">
+    <a class="nav-link" [class.active]="activeTab === 'overview'" (click)="setActiveTab('overview')" href="javascript:;">
+      <i class="fa fa-tachometer-alt me-1"></i> Overview
     </a>
-  </div>
-  <div class="ms-md-4 mt-md-0 mt-2">
-    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75">
-      <i class="fa fa-sync fa-fw me-1 text-theme"></i>
-      Force Sync
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" [class.active]="activeTab === 'monitor'" (click)="setActiveTab('monitor')" href="javascript:;">
+      <i class="fa fa-chart-line me-1"></i> Monitor
     </a>
-  </div>
-  <div class="ms-md-4 mt-md-0 mt-2 dropdown">
-    <a href="javascript:;" class="text-decoration-none text-inverse text-opacity-75 dropdown-toggle"
-      data-bs-toggle="dropdown">
-      More Actions
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" [class.active]="activeTab === 'assets'" (click)="setActiveTab('assets')" href="javascript:;">
+      <i class="fa fa-microchip me-1"></i> Assets
     </a>
-    <div class="dropdown-menu dropdown-menu-end">
-      <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
-      <a class="dropdown-item" href="javascript:;">Assign Owner Admin</a>
-      <div role="separator" class="dropdown-divider"></div>
-      <a class="dropdown-item" href="javascript:;">Archive Project</a>
-    </div>
-  </div>
-</div>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" [class.active]="activeTab === 'map'" (click)="setActiveTab('map')" href="javascript:;">
+      <i class="fa fa-map-marked-alt me-1"></i> Map
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" [class.active]="activeTab === 'analytics'" (click)="setActiveTab('analytics')" href="javascript:;">
+      <i class="fa fa-chart-pie me-1"></i> Analytics
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" [class.active]="activeTab === 'config'" (click)="setActiveTab('config')" href="javascript:;">
+      <i class="fa fa-cog me-1"></i> Config
+    </a>
+  </li>
+</ul>
 
 <!-- Loading State -->
 <div *ngIf="loading" class="text-center py-5">
@@ -52,7 +61,12 @@
   {{ error }}
 </div>
 
-<div class="row g-3 mb-4" *ngIf="!loading && !error && project">
+<!-- Tab Content Container -->
+<div class="tab-content" *ngIf="!loading && !error && project">
+  
+  <!-- ==================== OVERVIEW TAB ==================== -->
+  <div class="tab-pane fade" [class.show]="activeTab === 'overview'" [class.active]="activeTab === 'overview'" id="tab-overview">
+    <div class="row g-3 mb-4">
   <div class="col-xl-8">
     <card class="shadow-sm h-100">
       <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
@@ -150,7 +164,7 @@
         <div class="mb-3">
           <div class="text-muted small">Project Owner</div>
           <div class="fw-semibold">Arif Pratama</div>
-          <div class="text-muted small">arif@iot.dev · (+62) 812-2222-333</div>
+          <div class="text-muted small">arif&#64;iot.dev · (+62) 812-2222-333</div>
         </div>
         <div class="mb-3">
           <div class="text-muted small">Field Engineer</div>
@@ -192,37 +206,27 @@
   </div>
 </div>
 
+<!-- Quick Links -->
+<div class="quick-link-bar mb-3">
+  <div class="text-muted text-uppercase small mb-2">Deep links</div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="quick-link" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
+      <i class="bi bi-bar-chart-line"></i> Sensor Explorer
+    </a>
+    <a class="quick-link" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
+      <i class="bi bi-hdd-network"></i> Nodes / Devices
+    </a>
+    <a class="quick-link" [routerLink]="['/iot/telemetry']" [queryParams]="{ projectId: projectId, range: '24h' }">
+      <i class="bi bi-activity"></i> Telemetry Timeline
+    </a>
+    <a class="quick-link" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
+      <i class="bi bi-exclamation-triangle"></i> Alert Center
+    </a>
+  </div>
+</div>
+
+<!-- Sensor Overview & Alert Summary Row -->
 <div class="row g-3">
-  <div class="col-12" *ngIf="mapNodes.length > 0">
-    <iot-project-map-widget [nodes]="mapNodes"></iot-project-map-widget>
-  </div>
-  <div class="col-12" *ngIf="mapNodes.length === 0">
-    <card class="shadow-sm">
-      <card-body class="text-center text-muted py-5">
-        <i class="fa fa-map-marked-alt fa-3x mb-3 opacity-50"></i>
-        <div>No nodes with GPS coordinates available for this project</div>
-      </card-body>
-    </card>
-  </div>
-  <div class="col-12">
-    <div class="quick-link-bar">
-      <div class="text-muted text-uppercase small">Deep links</div>
-      <div class="d-flex flex-wrap gap-2">
-        <a class="quick-link" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
-          <i class="bi bi-bar-chart-line"></i> Sensor Explorer
-        </a>
-        <a class="quick-link" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
-          <i class="bi bi-hdd-network"></i> Nodes / Devices
-        </a>
-        <a class="quick-link" [routerLink]="['/iot/telemetry']" [queryParams]="{ projectId: projectId, range: '24h' }">
-          <i class="bi bi-activity"></i> Telemetry Timeline
-        </a>
-        <a class="quick-link" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
-          <i class="bi bi-exclamation-triangle"></i> Alert Center
-        </a>
-      </div>
-    </div>
-  </div>
   <div class="col-xl-8">
     <card class="shadow-sm mb-3">
       <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
@@ -298,7 +302,7 @@
       </card-body>
     </card>
 
-    <card class="shadow-sm">
+    <card class="shadow-sm" *ngIf="false">
       <card-header class="d-flex flex-wrap gap-2 align-items-center bg-inverse bg-opacity-10 fw-400">
         Deployment Timeline
         <span class="badge bg-body text-muted border">Ops log</span>
@@ -393,3 +397,95 @@
     </card>
   </div>
 </div>
+  </div>
+  <!-- ==================== END OVERVIEW TAB ==================== -->
+
+  <!-- ==================== MONITOR TAB ==================== -->
+  <div class="tab-pane fade" [class.show]="activeTab === 'monitor'" [class.active]="activeTab === 'monitor'" id="tab-monitor">
+    <card class="shadow-sm">
+      <card-body class="text-center py-5">
+        <i class="fa fa-chart-line fa-4x text-theme opacity-50 mb-3"></i>
+        <h4>Real-time Monitoring</h4>
+        <p class="text-muted mb-4">
+          Live sensor data, telemetry streams, and real-time device status will be displayed here.
+        </p>
+        <p class="text-muted small">Coming soon in Phase 2</p>
+      </card-body>
+    </card>
+  </div>
+  <!-- ==================== END MONITOR TAB ==================== -->
+
+  <!-- ==================== ASSETS TAB ==================== -->
+  <div class="tab-pane fade" [class.show]="activeTab === 'assets'" [class.active]="activeTab === 'assets'" id="tab-assets">
+    <card class="shadow-sm">
+      <card-body class="text-center py-5">
+        <i class="fa fa-microchip fa-4x text-theme opacity-50 mb-3"></i>
+        <h4>Assets Management</h4>
+        <p class="text-muted mb-4">
+          View and manage all nodes, sensors, and devices associated with this project.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+          <a [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }" class="btn btn-outline-theme">
+            <i class="fa fa-hdd me-1"></i> View Nodes
+          </a>
+          <a [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }" class="btn btn-outline-theme">
+            <i class="fa fa-microchip me-1"></i> View Sensors
+          </a>
+        </div>
+      </card-body>
+    </card>
+  </div>
+  <!-- ==================== END ASSETS TAB ==================== -->
+
+  <!-- ==================== MAP TAB ==================== -->
+  <div class="tab-pane fade" [class.show]="activeTab === 'map'" [class.active]="activeTab === 'map'" id="tab-map">
+    <div *ngIf="mapNodes.length > 0">
+      <iot-project-map-widget [nodes]="mapNodes"></iot-project-map-widget>
+    </div>
+    <card class="shadow-sm" *ngIf="mapNodes.length === 0">
+      <card-body class="text-center py-5">
+        <i class="fa fa-map-marked-alt fa-4x text-muted opacity-50 mb-3"></i>
+        <h4 class="text-muted">No Map Data Available</h4>
+        <p class="text-muted">No nodes with GPS coordinates found for this project.</p>
+        <p class="text-muted small">Add GPS coordinates to your nodes to see them on the map.</p>
+      </card-body>
+    </card>
+  </div>
+  <!-- ==================== END MAP TAB ==================== -->
+
+  <!-- ==================== ANALYTICS TAB ==================== -->
+  <div class="tab-pane fade" [class.show]="activeTab === 'analytics'" [class.active]="activeTab === 'analytics'" id="tab-analytics">
+    <card class="shadow-sm">
+      <card-body class="text-center py-5">
+        <i class="fa fa-chart-pie fa-4x text-theme opacity-50 mb-3"></i>
+        <h4>Analytics & Reports</h4>
+        <p class="text-muted mb-4">
+          Data analysis, trends, historical charts, and custom reports will be available here.
+        </p>
+        <p class="text-muted small">Coming soon in Phase 3</p>
+      </card-body>
+    </card>
+  </div>
+  <!-- ==================== END ANALYTICS TAB ==================== -->
+
+  <!-- ==================== CONFIG TAB ==================== -->
+  <div class="tab-pane fade" [class.show]="activeTab === 'config'" [class.active]="activeTab === 'config'" id="tab-config">
+    <card class="shadow-sm">
+      <card-body class="text-center py-5">
+        <i class="fa fa-cog fa-4x text-theme opacity-50 mb-3"></i>
+        <h4>Project Configuration</h4>
+        <p class="text-muted mb-4">
+          Manage project settings, alert rules, thresholds, and integration configurations.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+          <a [routerLink]="['/iot/projects', projectId, 'edit']" class="btn btn-outline-theme">
+            <i class="fa fa-edit me-1"></i> Edit Project
+          </a>
+        </div>
+      </card-body>
+    </card>
+  </div>
+  <!-- ==================== END CONFIG TAB ==================== -->
+
+</div>
+<!-- END Tab Content Container -->

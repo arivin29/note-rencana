@@ -38,6 +38,11 @@ import { NodeMappingUpdateComponent } from './nodes-detail/node-mapping-update/n
     DragDropModule,
     SharedComponentsModule, 
     NodesRoutingModule
+  ],
+  exports: [
+    NodesListPage,  // Export for use in other modules (e.g., ProjectsModule)
+    NodesDetailPage,  // Export for embedded node detail
+    SensorChanelDetail  // Export for embedded sensor detail
   ]
 })
 export class NodesModule {}
