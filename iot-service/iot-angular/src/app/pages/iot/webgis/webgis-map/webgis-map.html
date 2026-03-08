@@ -1,0 +1,209 @@
+<div class="webgis-page">
+  <div class="row g-0 h-100">
+    <!-- Layer Panel -->
+    <div class="col-auto layer-panel-col">
+      <div class="layer-panel">
+        <div class="panel-header">
+          <span class="panel-title">Layers</span>
+          <button class="btn btn-sm btn-primary" routerLink="upload">
+            <i class="bi bi-upload me-1"></i>Upload
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="panel-loading" *ngIf="loadingLayers">
+          <div class="spinner-border spinner-border-sm text-primary"></div>
+          <span>Loading...</span>
+        </div>
+
+        <!-- Error State -->
+        <div class="panel-error" *ngIf="error">
+          <i class="bi bi-exclamation-triangle text-warning"></i>
+          <span>{{ error }}</span>
+          <button class="btn btn-sm btn-outline-light" (click)="loadLayers()">Retry</button>
+        </div>
+
+        <!-- Layer Groups -->
+        <div class="layer-groups" *ngIf="!loadingLayers && !error">
+          
+          <!-- Core Layers Group -->
+          <div class="layer-group">
+            <div class="group-header" (click)="toggleGroup('core')">
+              <i class="bi" [ngClass]="expandedGroups['core'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-database me-2"></i>
+              <span class="group-title">Core</span>
+              <span class="badge bg-secondary ms-auto">{{ getLayersByType('core').length }}</span>
+            </div>
+            <div class="group-content" *ngIf="expandedGroups['core']">
+              <div class="layer-item" *ngFor="let ls of getLayersByType('core')"
+                   [class.active]="ls.visible"
+                   (click)="toggleLayer(ls)">
+                <i class="bi" [ngClass]="ls.visible ? 'bi-check-square' : 'bi-square'"></i>
+                <span class="layer-name">{{ ls.name }}</span>
+                <span class="layer-badge" *ngIf="ls.loading">
+                  <div class="spinner-border spinner-border-sm"></div>
+                </span>
+              </div>
+              <div class="empty-group" *ngIf="getLayersByType('core').length === 0">
+                No core layers
+              </div>
+            </div>
+          </div>
+
+          <!-- Operational Layers Group -->
+          <div class="layer-group">
+            <div class="group-header" (click)="toggleGroup('operational')">
+              <i class="bi" [ngClass]="expandedGroups['operational'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-gear me-2"></i>
+              <span class="group-title">Operational</span>
+              <span class="badge bg-secondary ms-auto">{{ getLayersByType('operational').length }}</span>
+              <button class="btn btn-xs btn-outline-light ms-2" 
+                      (click)="addLayer('operational'); $event.stopPropagation()" 
+                      title="Add Layer">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+            <div class="group-content" *ngIf="expandedGroups['operational']">
+              <div class="layer-item" *ngFor="let ls of getLayersByType('operational'); let i = index"
+                   [class.active]="ls.visible"
+                   (click)="toggleLayer(ls)">
+                <span class="layer-index">{{ ls.layerData?.displayOrder ?? i }}</span>
+                <i class="bi" [ngClass]="ls.visible ? 'bi-check-square' : 'bi-square'"></i>
+                <span class="layer-name">{{ ls.name }}</span>
+                <span class="layer-badge" *ngIf="ls.loading">
+                  <div class="spinner-border spinner-border-sm"></div>
+                </span>
+                <span class="layer-actions" *ngIf="!ls.loading">
+                  <button class="btn btn-xs btn-link" 
+                          (click)="zoomToLayer(ls, $event)" 
+                          title="Zoom to Layer">
+                    <i class="bi bi-geo-alt"></i>
+                  </button>
+                  <button class="btn btn-xs btn-link" 
+                          (click)="editLayer(ls, $event)" 
+                          title="Edit Style">
+                    <i class="bi bi-palette"></i>
+                  </button>
+                </span>
+              </div>
+              <div class="empty-group" *ngIf="getLayersByType('operational').length === 0">
+                No operational layers
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Layers Group -->
+          <div class="layer-group">
+            <div class="group-header" (click)="toggleGroup('custom')">
+              <i class="bi" [ngClass]="expandedGroups['custom'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-layers me-2"></i>
+              <span class="group-title">Custom</span>
+              <span class="badge bg-secondary ms-auto">{{ getLayersByType('custom').length }}</span>
+              <button class="btn btn-xs btn-outline-light ms-2" 
+                      (click)="addLayer('custom'); $event.stopPropagation()" 
+                      title="Add Layer">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+            <div class="group-content" *ngIf="expandedGroups['custom']">
+              <div class="layer-item" *ngFor="let ls of getLayersByType('custom'); let i = index"
+                   [class.active]="ls.visible"
+                   (click)="toggleLayer(ls)">
+                <span class="layer-index">{{ ls.layerData?.displayOrder ?? i }}</span>
+                <i class="bi" [ngClass]="ls.visible ? 'bi-check-square' : 'bi-square'"></i>
+                <span class="layer-name">{{ ls.name }}</span>
+                <span class="layer-badge" *ngIf="ls.loading">
+                  <div class="spinner-border spinner-border-sm"></div>
+                </span>
+                <span class="layer-actions" *ngIf="!ls.loading">
+                  <button class="btn btn-xs btn-link" 
+                          (click)="zoomToLayer(ls, $event)" 
+                          title="Zoom to Layer">
+                    <i class="bi bi-geo-alt"></i>
+                  </button>
+                  <button class="btn btn-xs btn-link" 
+                          (click)="editLayer(ls, $event)" 
+                          title="Edit Style">
+                    <i class="bi bi-palette"></i>
+                  </button>
+                </span>
+              </div>
+              <div class="empty-group" *ngIf="getLayersByType('custom').length === 0">
+                No custom layers
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="col map-col">
+      <div #mapContainer class="map-container"></div>
+      
+      <!-- Map Controls -->
+      <div class="map-controls">
+        <button class="btn btn-light btn-sm" (click)="zoomIn()" title="Zoom In">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+        <button class="btn btn-light btn-sm" (click)="zoomOut()" title="Zoom Out">
+          <i class="bi bi-dash-lg"></i>
+        </button>
+        <button class="btn btn-light btn-sm" (click)="fitToAllLayers()" title="Fit All">
+          <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+      </div>
+
+      <!-- Feature Popup (for non-node features) -->
+      <feature-popup
+        *ngIf="selectedFeature && popupPosition"
+        [feature]="selectedFeature"
+        [position]="popupPosition"
+        (close)="closePopup()">
+      </feature-popup>
+
+      <!-- Sensor Labels Overlay -->
+      <sensor-labels
+        [map]="getMapInstance()"
+        [visible]="sensorLabelsVisible"
+        [sensorData]="sensorChannelData">
+      </sensor-labels>
+
+      <!-- Node Drawer (for node features) -->
+      <node-drawer
+        [node]="selectedNode"
+        [isOpen]="isDrawerOpen"
+        [isDragMode]="isDragMode"
+        [savingDragPosition]="savingDragPosition"
+        (close)="closeDrawer()"
+        (updateCoordinates)="onNodeCoordinatesUpdated($event)"
+        (updateIcon)="onNodeIconUpdated($event)"
+        (nodeUpdated)="onNodeUpdated()"
+        (startDragMode)="startDragMode()"
+        (cancelDragMode)="cancelDragMode()">
+      </node-drawer>
+
+      <!-- Add Layer Drawer -->
+      <add-layer-drawer
+        [isOpen]="isAddLayerDrawerOpen"
+        [projectId]="projectId"
+        [ownerId]="ownerId"
+        [layerType]="addLayerType"
+        (close)="closeAddLayerDrawer()"
+        (layerAdded)="onLayerAdded($event)">
+      </add-layer-drawer>
+
+      <!-- Edit Layer Drawer -->
+      <edit-layer-drawer
+        [isOpen]="isEditLayerDrawerOpen"
+        [layer]="editingLayer"
+        [properties]="editingLayerProperties"
+        (close)="closeEditLayerDrawer()"
+        (styleUpdated)="onLayerStyleUpdated($event)"
+        (styleSaved)="onLayerStyleSaved($event)"
+        (layerDeleted)="onLayerDeleted($event)">
+      </edit-layer-drawer>
+    </div>
+  </div>
+</div>

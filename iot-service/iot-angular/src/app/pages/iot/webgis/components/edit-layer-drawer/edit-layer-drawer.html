@@ -1,0 +1,293 @@
+<div class="edit-layer-drawer" [class.open]="isOpen && layer">
+  <!-- Header -->
+  <div class="drawer-header">
+    <div class="header-content">
+      <div class="layer-icon-preview">
+        <i class="bi bi-layers"></i>
+      </div>
+      <div class="header-text">
+        <h6 class="layer-name">{{ layer?.layerName || 'Edit Layer' }}</h6>
+        <small class="layer-code">{{ layer?.layerCode }}</small>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-close" (click)="onClose()"></button>
+  </div>
+
+  <!-- Layer Type Badge -->
+  <div class="drawer-status" *ngIf="layer">
+    <span class="badge bg-indigo">
+      <i class="bi bi-vector-pen me-1"></i>{{ geometryType }}
+    </span>
+  </div>
+
+  <!-- Content -->
+  <div class="drawer-content" *ngIf="layer">
+    <div class="tab-content">
+      <form [formGroup]="styleForm">
+        
+        <!-- Fill Style (for points and polygons) -->
+        <div class="info-section" *ngIf="isPointLayer || isPolygonLayer">
+          <h6 class="section-title">
+            <i class="bi bi-paint-bucket me-2"></i>Fill Style
+          </h6>
+          
+          <div class="form-item">
+            <label class="form-label">Warna</label>
+            <div class="color-picker-row">
+              <input type="color" class="color-input" formControlName="fillColor">
+              <input type="text" class="form-control form-control-sm color-text" formControlName="fillColor">
+            </div>
+          </div>
+          
+          <div class="color-presets">
+            <button type="button" class="color-preset" *ngFor="let color of colorPresets"
+                    [style.backgroundColor]="color"
+                    [class.selected]="styleForm.get('fillColor')?.value === color"
+                    (click)="selectColor('fillColor', color)">
+            </button>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">
+              Opacity <span class="value-badge">{{ (styleForm.get('fillOpacity')?.value * 100).toFixed(0) }}%</span>
+            </label>
+            <input type="range" class="form-range" min="0" max="1" step="0.05" formControlName="fillOpacity">
+          </div>
+        </div>
+
+        <!-- Stroke Style -->
+        <div class="info-section">
+          <h6 class="section-title">
+            <i class="bi bi-border-width me-2"></i>Stroke Style
+          </h6>
+          
+          <div class="form-item">
+            <label class="form-label">Warna</label>
+            <div class="color-picker-row">
+              <input type="color" class="color-input" formControlName="strokeColor">
+              <input type="text" class="form-control form-control-sm color-text" formControlName="strokeColor">
+            </div>
+          </div>
+          
+          <div class="color-presets">
+            <button type="button" class="color-preset" *ngFor="let color of colorPresets"
+                    [style.backgroundColor]="color"
+                    [class.selected]="styleForm.get('strokeColor')?.value === color"
+                    (click)="selectColor('strokeColor', color)">
+            </button>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">
+              Lebar <span class="value-badge">{{ styleForm.get('strokeWidth')?.value }}px</span>
+            </label>
+            <input type="range" class="form-range" min="0.5" max="10" step="0.5" formControlName="strokeWidth">
+          </div>
+
+          <!-- Data-driven stroke width toggle -->
+          <div class="form-item">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="strokeWidthByField" 
+                     formControlName="strokeWidthByFieldEnabled">
+              <label class="form-check-label" for="strokeWidthByField">
+                <small>Lebar berdasarkan field</small>
+              </label>
+            </div>
+          </div>
+
+          <!-- Data-driven stroke width options -->
+          <ng-container *ngIf="styleForm.get('strokeWidthByFieldEnabled')?.value">
+            <div class="form-item">
+              <label class="form-label">Field Numerik</label>
+              <select class="form-select form-select-sm" formControlName="strokeWidthField">
+                <option value="">-- Pilih Field --</option>
+                <option *ngFor="let prop of availableProperties" [value]="prop">{{ prop }}</option>
+              </select>
+            </div>
+
+            <div class="formula-row">
+              <div class="formula-item">
+                <label class="form-label">Basis</label>
+                <input type="number" class="form-control form-control-sm" 
+                       formControlName="strokeWidthBase" min="0.5" max="20" step="0.5">
+              </div>
+              <div class="formula-item">
+                <label class="form-label">Operasi</label>
+                <select class="form-select form-select-sm" formControlName="strokeWidthOperation">
+                  <option *ngFor="let op of widthOperations" [value]="op.value">{{ op.label }}</option>
+                </select>
+              </div>
+              <div class="formula-item">
+                <label class="form-label">Faktor</label>
+                <input type="number" class="form-control form-control-sm" 
+                       formControlName="strokeWidthFactor" min="0.01" max="100" step="0.1">
+              </div>
+            </div>
+            <small class="formula-hint">
+              Contoh: Basis 2 × field_value ÷ Faktor 10 = lebar dinamis
+            </small>
+          </ng-container>
+
+          <div class="form-item">
+            <label class="form-label">
+              Opacity <span class="value-badge">{{ (styleForm.get('strokeOpacity')?.value * 100).toFixed(0) }}%</span>
+            </label>
+            <input type="range" class="form-range" min="0" max="1" step="0.05" formControlName="strokeOpacity">
+          </div>
+        </div>
+
+        <!-- Point Style (only for point layers) -->
+        <div class="info-section" *ngIf="isPointLayer">
+          <h6 class="section-title">
+            <i class="bi bi-geo-alt me-2"></i>Point Style
+          </h6>
+          
+          <div class="form-item">
+            <label class="form-label">Bentuk</label>
+            <div class="shape-options">
+              <button type="button" class="shape-btn" *ngFor="let shape of pointShapes"
+                      [class.selected]="styleForm.get('pointShape')?.value === shape.value"
+                      (click)="styleForm.patchValue({ pointShape: shape.value })"
+                      [title]="shape.label">
+                <i [class]="'bi ' + shape.icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">
+              Ukuran <span class="value-badge">{{ styleForm.get('pointRadius')?.value }}px</span>
+            </label>
+            <input type="range" class="form-range" min="2" max="20" step="1" formControlName="pointRadius">
+          </div>
+        </div>
+
+        <!-- Label Style (Multi-select) -->
+        <div class="info-section">
+          <h6 class="section-title">
+            <i class="bi bi-fonts me-2"></i>Label
+          </h6>
+          
+          <div class="form-item">
+            <label class="form-label">Fields <small class="text-muted">(multi-select)</small></label>
+            <div class="field-chips">
+              <button type="button" class="field-chip"
+                      *ngFor="let prop of availableProperties"
+                      [class.selected]="isLabelFieldSelected(prop)"
+                      (click)="toggleLabelField(prop)">
+                {{ prop }}
+              </button>
+            </div>
+          </div>
+
+          <ng-container *ngIf="selectedLabelFields.length > 0">
+            <div class="form-item">
+              <label class="form-label">Warna Label</label>
+              <div class="color-picker-row">
+                <input type="color" class="color-input" formControlName="labelColor">
+                <input type="text" class="form-control form-control-sm color-text" formControlName="labelColor">
+              </div>
+            </div>
+
+            <div class="form-item">
+              <label class="form-label">
+                Ukuran <span class="value-badge">{{ styleForm.get('labelSize')?.value }}px</span>
+              </label>
+              <input type="range" class="form-range" min="8" max="24" step="1" formControlName="labelSize">
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Data-driven Color by Field Value -->
+        <div class="info-section">
+          <h6 class="section-title">
+            <i class="bi bi-palette2 me-2"></i>Warna berdasarkan Nilai
+          </h6>
+          
+          <div class="form-item">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="colorByField" 
+                     formControlName="colorByFieldEnabled">
+              <label class="form-check-label" for="colorByField">
+                <small>Aktifkan warna dinamis</small>
+              </label>
+            </div>
+          </div>
+
+          <ng-container *ngIf="styleForm.get('colorByFieldEnabled')?.value">
+            <div class="form-item">
+              <label class="form-label">Field</label>
+              <select class="form-select form-select-sm" formControlName="colorByField"
+                      (change)="loadUniqueValuesForField(styleForm.get('colorByField')?.value)">
+                <option value="">-- Pilih Field --</option>
+                <option *ngFor="let prop of availableProperties" [value]="prop">{{ prop }}</option>
+              </select>
+            </div>
+
+            <div class="form-item">
+              <label class="form-label">Warna Default</label>
+              <div class="color-picker-row">
+                <input type="color" class="color-input" formControlName="colorByFieldDefault">
+                <input type="text" class="form-control form-control-sm color-text" formControlName="colorByFieldDefault">
+              </div>
+            </div>
+
+            <!-- Color mappings list -->
+            <div class="form-item">
+              <label class="form-label">
+                Mapping Warna
+                <button type="button" class="btn btn-xs btn-outline-primary ms-2" (click)="addColorMapping()">
+                  <i class="bi bi-plus"></i> Tambah
+                </button>
+              </label>
+              
+              <div class="color-mapping-list">
+                <div class="color-mapping-item" *ngFor="let mapping of colorMappings; let i = index">
+                  <input type="text" class="form-control form-control-sm mapping-value" 
+                         [value]="mapping.value"
+                         (input)="updateColorMappingValue(i, $any($event.target).value)"
+                         placeholder="Nilai">
+                  <input type="color" class="color-input mapping-color" 
+                         [value]="mapping.color"
+                         (input)="updateColorMappingColor(i, $any($event.target).value)">
+                  <button type="button" class="btn btn-xs btn-link text-danger" (click)="removeColorMapping(i)">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+                <div class="empty-mappings" *ngIf="colorMappings.length === 0">
+                  <small class="text-muted">Belum ada mapping. Klik "Tambah" untuk menambah.</small>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+      </form>
+
+      <!-- Error Message -->
+      <div class="alert alert-danger" *ngIf="saveError">
+        <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="drawer-footer" *ngIf="layer">
+    <button type="button" class="btn btn-sm btn-outline-danger" 
+            (click)="deleteLayer()" [disabled]="isDeleting || isSaving">
+      <span *ngIf="!isDeleting"><i class="bi bi-trash"></i></span>
+      <span *ngIf="isDeleting" class="spinner-border spinner-border-sm"></span>
+    </button>
+    <div class="footer-right">
+      <button type="button" class="btn btn-sm btn-outline-secondary" 
+              (click)="resetStyle()" [disabled]="isSaving" title="Reset">
+        <i class="bi bi-arrow-counterclockwise"></i>
+      </button>
+      <button type="button" class="btn btn-sm btn-primary" 
+              (click)="saveStyle()" [disabled]="isSaving || isDeleting">
+        <span *ngIf="!isSaving"><i class="bi bi-check me-1"></i>Simpan</span>
+        <span *ngIf="isSaving"><span class="spinner-border spinner-border-sm me-1"></span>Simpan</span>
+      </button>
+    </div>
+  </div>
+</div>

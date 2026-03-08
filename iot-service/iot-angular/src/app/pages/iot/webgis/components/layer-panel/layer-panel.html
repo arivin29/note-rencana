@@ -1,0 +1,76 @@
+<div class="layer-panel">
+  <!-- Core Layers -->
+  <div class="layer-group" *ngIf="coreLayers.length > 0">
+    <div class="group-header">
+      <i class="bi bi-database"></i>
+      <span>{{ getTypeLabel('core') }}</span>
+    </div>
+    <div class="layer-item" *ngFor="let item of coreLayers">
+      <label class="layer-toggle">
+        <input 
+          type="checkbox" 
+          [checked]="item.visible"
+          (change)="onToggle(item)"
+          [disabled]="item.loading">
+        <i [class]="getLayerIcon(item.layer)"></i>
+        <span class="layer-name">{{ item.layer.layerName }}</span>
+        <span class="spinner-border spinner-border-sm" *ngIf="item.loading"></span>
+      </label>
+      <span class="feature-count" *ngIf="item.layer.featureCount > 0">
+        {{ item.layer.featureCount }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Operational Layers -->
+  <div class="layer-group" *ngIf="operationalLayers.length > 0">
+    <div class="group-header">
+      <i class="bi bi-gear"></i>
+      <span>{{ getTypeLabel('operational') }}</span>
+    </div>
+    <div class="layer-item" *ngFor="let item of operationalLayers">
+      <label class="layer-toggle">
+        <input 
+          type="checkbox" 
+          [checked]="item.visible"
+          (change)="onToggle(item)"
+          [disabled]="item.loading">
+        <i [class]="getLayerIcon(item.layer)"></i>
+        <span class="layer-name">{{ item.layer.layerName }}</span>
+        <span class="spinner-border spinner-border-sm" *ngIf="item.loading"></span>
+      </label>
+      <span class="feature-count" *ngIf="item.layer.featureCount > 0">
+        {{ item.layer.featureCount }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Custom Layers -->
+  <div class="layer-group" *ngIf="customLayers.length > 0">
+    <div class="group-header">
+      <i class="bi bi-cloud-upload"></i>
+      <span>{{ getTypeLabel('custom') }}</span>
+    </div>
+    <div class="layer-item" *ngFor="let item of customLayers">
+      <label class="layer-toggle">
+        <input 
+          type="checkbox" 
+          [checked]="item.visible"
+          (change)="onToggle(item)"
+          [disabled]="item.loading">
+        <i [class]="getLayerIcon(item.layer)"></i>
+        <span class="layer-name">{{ item.layer.layerName }}</span>
+        <span class="spinner-border spinner-border-sm" *ngIf="item.loading"></span>
+      </label>
+      <span class="feature-count" *ngIf="item.layer.featureCount > 0">
+        {{ item.layer.featureCount }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="layers.length === 0">
+    <i class="bi bi-layers"></i>
+    <p>No layers available</p>
+  </div>
+</div>

@@ -1,0 +1,148 @@
+// Global styles for sensor label overlays
+// These need to be in a global stylesheet since overlays are outside Angular component scope
+
+// Add these to your global styles.scss or include via ::ng-deep
+
+:host {
+  display: block;
+}
+
+// Sensor Label Overlay Styles (glassmorphism effect)
+::ng-deep .sensor-label-overlay {
+  pointer-events: auto;
+  z-index: 100;
+}
+
+::ng-deep .sensor-label-container {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+::ng-deep .sensor-label-card {
+  background: rgba(30, 30, 46, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  padding: 8px 10px;
+  min-width: 120px;
+  max-width: 160px;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  color: #e0e0e0;
+  
+  // Add a small triangle pointer at bottom
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid rgba(30, 30, 46, 0.92);
+  }
+}
+
+::ng-deep .sensor-group {
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+::ng-deep .sensor-name {
+  color: #00E396;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 2px;
+  text-transform: capitalize;
+}
+
+::ng-deep .channel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  
+  &.status-normal {
+    .channel-value {
+      color: #4ade80;
+    }
+  }
+  
+  &.status-warning {
+    .channel-value {
+      color: #fbbf24;
+    }
+  }
+  
+  &.status-critical {
+    .channel-value {
+      color: #f87171;
+      font-weight: 600;
+    }
+  }
+  
+  &.status-unknown {
+    .channel-value {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+::ng-deep .channel-name {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  max-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+::ng-deep .channel-value {
+  font-weight: 600;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'Roboto Mono', monospace;
+}
+
+::ng-deep .more-channels {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 9px;
+  font-style: italic;
+}
+
+::ng-deep .more-indicator {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 9px;
+  padding-top: 4px;
+  font-style: italic;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive adjustments for zoom level
+// When zoomed out, make labels smaller or hide
+::ng-deep .ol-viewport:hover .sensor-label-card {
+  transform: scale(1.02);
+  transition: transform 0.15s ease;
+}

@@ -180,6 +180,12 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: { title: 'ML Dashboard' }
     },
+    {
+        path: 'iot/webgis',
+        loadChildren: () => import('./pages/iot/webgis/webgis.module').then((m) => m.WebgisModule),
+        canActivate: [AuthGuard],
+        data: { title: 'WebGIS Map' }
+    },
     { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
 
     // { path: 'email/inbox', component: EmailInboxPage, data: { title: 'Email Inbox' } },

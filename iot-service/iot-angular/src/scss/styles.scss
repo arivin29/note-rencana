@@ -39,3 +39,129 @@
   z-index: 9998 !important;
 }
 
+// ============================================
+// GLOBAL: WebGIS Sensor Labels (Floating cards above nodes)
+// ============================================
+.sensor-label-overlay {
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.sensor-label-container {
+  animation: sensorLabelFadeIn 0.3s ease-out;
+}
+
+.sensor-label-card {
+  background: rgba(30, 30, 46, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 10px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  padding: 0;
+  min-width: 140px;
+  max-width: 180px;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  color: #e0e0e0;
+  position: relative;
+  
+  // Triangle pointer at bottom
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid rgba(30, 30, 46, 0.95);
+  }
+}
+
+.label-header {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(139, 92, 246, 0.4) 100%);
+  color: white !important;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label-body {
+  padding: 10px 12px;
+  background: rgba(30, 30, 46, 0.95);
+}
+
+.channel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &.status-normal .channel-value {
+    color: #10b981 !important;
+  }
+  
+  &.status-warning .channel-value {
+    color: #f59e0b !important;
+  }
+  
+  &.status-critical .channel-value {
+    color: #ef4444 !important;
+    font-weight: 700;
+  }
+  
+  &.status-unknown .channel-value {
+    color: #9ca3af !important;
+  }
+}
+
+.channel-name {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 10px;
+  max-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-value {
+  font-weight: 600;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #fff !important;
+}
+
+.more-indicator {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 9px;
+  padding-top: 6px;
+  font-style: italic;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 4px;
+}
+
+@keyframes sensorLabelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

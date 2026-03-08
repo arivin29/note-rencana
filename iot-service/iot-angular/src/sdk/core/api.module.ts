@@ -29,6 +29,12 @@ import { NodeProfilesService } from './services/node-profiles.service';
 import { DeviceCommandsService } from './services/device-commands.service';
 import { IoTLogsService } from './services/io-t-logs.service';
 import { WidgetBuilderService } from './services/widget-builder.service';
+import { WebGisLayersService } from './services/web-gis-layers.service';
+import { WebGisCategoriesService } from './services/web-gis-categories.service';
+import { WebGisFeaturesService } from './services/web-gis-features.service';
+import { WebGisUploadService } from './services/web-gis-upload.service';
+import { WebGisCoreGeoJsonService } from './services/web-gis-core-geo-json.service';
+import { DocumentsService } from './services/documents.service';
 import { UsersService } from './services/users.service';
 import { AuditService } from './services/audit.service';
 import { NotificationsService } from './services/notifications.service';
@@ -68,6 +74,12 @@ import { MlDashboardService } from './services/ml-dashboard.service';
     DeviceCommandsService,
     IoTLogsService,
     WidgetBuilderService,
+    WebGisLayersService,
+    WebGisCategoriesService,
+    WebGisFeaturesService,
+    WebGisUploadService,
+    WebGisCoreGeoJsonService,
+    DocumentsService,
     UsersService,
     AuditService,
     NotificationsService,

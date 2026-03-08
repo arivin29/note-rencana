@@ -1,0 +1,296 @@
+<div class="node-drawer" [class.open]="isOpen && node">
+  <!-- Header -->
+  <div class="drawer-header">
+    <div class="header-content">
+      <img [src]="nodeIcon" alt="Node Icon" class="node-icon-preview" 
+           onerror="this.src='assets/icons/node-default.svg'">
+      <div class="header-text">
+        <h6 class="node-name">{{ node?.name || node?.code }}</h6>
+        <small class="node-code text-muted">{{ node?.code }}</small>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-close" (click)="onClose()"></button>
+  </div>
+
+  <!-- Status Badges -->
+  <div class="drawer-status" *ngIf="node">
+    <span [class]="connectivityClass">
+      <i class="bi bi-wifi me-1"></i>{{ node.connectivityStatus }}
+    </span>
+    <span [class]="statusClass" *ngIf="node.status">
+      {{ node.status }}
+    </span>
+    <span class="badge bg-warning text-dark" *ngIf="!node.hasCoordinates" title="Using default coordinates">
+      <i class="bi bi-geo-alt-fill"></i> No GPS
+    </span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="drawer-tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">
+      <i class="bi bi-info-circle me-1"></i>Info
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'actions'" (click)="activeTab = 'actions'">
+      <i class="bi bi-gear me-1"></i>Actions
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="drawer-content" *ngIf="node">
+    
+    <!-- Info Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'info'">
+      <div class="info-section">
+        <h6 class="section-title">
+          <i class="bi bi-geo-alt me-2"></i>Location
+        </h6>
+        <div class="info-item" *ngIf="node.address">
+          <span class="info-label">Address</span>
+          <span class="info-value">{{ node.address }}</span>
+        </div>
+        <div class="info-item" *ngIf="node.city || node.province">
+          <span class="info-label">City/Province</span>
+          <span class="info-value">{{ node.city }}{{ node.city && node.province ? ', ' : '' }}{{ node.province }}</span>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h6 class="section-title">
+          <i class="bi bi-cpu me-2"></i>Device
+        </h6>
+        <div class="info-item" *ngIf="node.modelName">
+          <span class="info-label">Model</span>
+          <span class="info-value">{{ node.modelName }}</span>
+        </div>
+        <div class="info-item" *ngIf="node.manufacturer">
+          <span class="info-label">Manufacturer</span>
+          <span class="info-value">{{ node.manufacturer }}</span>
+        </div>
+        <div class="info-item" *ngIf="node.serialNumber">
+          <span class="info-label">Serial Number</span>
+          <span class="info-value">{{ node.serialNumber }}</span>
+        </div>
+        <div class="info-item" *ngIf="node.firmwareVersion">
+          <span class="info-label">Firmware</span>
+          <span class="info-value">{{ node.firmwareVersion }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Last Seen</span>
+          <span class="info-value">{{ formatDate(node.lastSeenAt) }}</span>
+        </div>
+      </div>
+
+      <div class="info-section" *ngIf="node.picName || node.picPhone">
+        <h6 class="section-title">
+          <i class="bi bi-person me-2"></i>Contact
+        </h6>
+        <div class="info-item" *ngIf="node.picName">
+          <span class="info-label">PIC Name</span>
+          <span class="info-value">{{ node.picName }}</span>
+        </div>
+        <div class="info-item" *ngIf="node.picPhone">
+          <span class="info-label">Phone</span>
+          <span class="info-value">
+            <a [href]="'tel:' + node.picPhone">{{ node.picPhone }}</a>
+          </span>
+        </div>
+      </div>
+
+      <!-- Sensors Section -->
+      <div class="info-section">
+        <h6 class="section-title">
+          <i class="bi bi-speedometer2 me-2"></i>Sensors
+          <span class="badge bg-secondary ms-2" *ngIf="!loadingSensors">{{ sensors.length }}</span>
+        </h6>
+        
+        <!-- Loading state -->
+        <div *ngIf="loadingSensors" class="text-center py-2">
+          <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+          <small class="text-muted">Loading...</small>
+        </div>
+        
+        <!-- No sensors -->
+        <div *ngIf="!loadingSensors && sensors.length === 0" class="text-muted small py-1">
+          No sensors configured
+        </div>
+        
+        <!-- Sensor list -->
+        <div *ngFor="let sensor of sensors" class="sensor-card">
+          <div class="sensor-header">
+            <span class="sensor-label">{{ sensor.code }}</span>
+            <span class="badge" [class.bg-success]="sensor.status === 'active'" 
+                  [class.bg-secondary]="sensor.status !== 'active'">
+              {{ sensor.status }}
+            </span>
+          </div>
+          <div *ngIf="sensor.channels.length === 0" class="text-muted small">
+            No channels
+          </div>
+          <div *ngFor="let ch of sensor.channels" class="channel-row">
+            <span class="channel-metric">{{ ch.metricCode }}</span>
+            <span class="channel-value" [class]="getChannelStatusClass(ch.status)">
+              {{ formatValue(ch.value, ch.unit) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Trends Section -->
+      <div class="info-section" *ngIf="channelCharts.length > 0 || loadingCharts">
+        <h6 class="section-title">
+          <i class="bi bi-graph-up me-2"></i>Trends (24h)
+        </h6>
+        
+        <!-- Loading state -->
+        <div *ngIf="loadingCharts" class="text-center py-2">
+          <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+          <small class="text-muted">Loading charts...</small>
+        </div>
+        
+        <!-- Mini charts -->
+        <div *ngFor="let trend of channelCharts" class="mini-chart-card">
+          <div class="chart-header">
+            <div class="chart-label">{{ trend.label }}</div>
+            <div class="chart-value">{{ trend.latest }} {{ trend.unit }}</div>
+          </div>
+          <apx-chart 
+            [series]="trend.chart.series" 
+            [chart]="trend.chart.options.chart"
+            [stroke]="trend.chart.options.stroke" 
+            [dataLabels]="trend.chart.options.dataLabels"
+            [xaxis]="trend.chart.options.xaxis" 
+            [colors]="trend.chart.options.colors"
+            [fill]="trend.chart.options.fill">
+          </apx-chart>
+        </div>
+      </div>
+
+      <div class="info-section" *ngIf="node.description">
+        <h6 class="section-title">
+          <i class="bi bi-card-text me-2"></i>Description
+        </h6>
+        <p class="description-text">{{ node.description }}</p>
+      </div>
+    </div>
+
+    <!-- Actions Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'actions'">
+      
+      <!-- Update Coordinates -->
+      <div class="action-card">
+        <div class="action-header">
+          <i class="bi bi-geo-alt text-primary"></i>
+          <span>Update Position</span>
+        </div>
+        <p class="action-desc">Move node to a new location on the map</p>
+        
+        <!-- Drag Mode Active -->
+        <div *ngIf="isDragMode" class="drag-mode-active">
+          <div class="alert alert-info py-2 mb-2">
+            <i class="bi bi-hand-index me-1"></i>
+            <strong>Drag mode active</strong><br>
+            <small>Drag the node marker to move it</small>
+          </div>
+          <div *ngIf="savingDragPosition" class="text-center mb-2">
+            <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+            <small>Saving position...</small>
+          </div>
+          <button class="btn btn-sm btn-secondary w-100" (click)="cancelDragMode.emit()" [disabled]="savingDragPosition">
+            <i class="bi bi-x-lg me-1"></i>Cancel Drag
+          </button>
+        </div>
+
+        <!-- Normal Mode - Options -->
+        <div *ngIf="!isDragMode && !isEditingCoords" class="d-flex flex-column gap-2">
+          <button class="btn btn-sm btn-primary w-100" (click)="startDragMode.emit()">
+            <i class="bi bi-hand-index me-1"></i>Drag on Map
+          </button>
+          <button class="btn btn-sm btn-outline-secondary w-100" (click)="startEditCoords()">
+            <i class="bi bi-pencil me-1"></i>Enter Coordinates
+          </button>
+        </div>
+        
+        <!-- Manual Coordinate Edit Form -->
+        <div class="edit-form" *ngIf="isEditingCoords && !isDragMode">
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small">Latitude</label>
+              <input type="number" class="form-control form-control-sm" 
+                     [(ngModel)]="editLat" step="0.00000001" placeholder="-6.1754">
+            </div>
+            <div class="col-6">
+              <label class="form-label small">Longitude</label>
+              <input type="number" class="form-control form-control-sm" 
+                     [(ngModel)]="editLon" step="0.00000001" placeholder="106.8272">
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-secondary flex-fill" (click)="cancelEditCoords()" [disabled]="savingCoords">
+              Cancel
+            </button>
+            <button class="btn btn-sm btn-primary flex-fill" (click)="saveCoords()" 
+                    [disabled]="savingCoords || editLat === null || editLon === null">
+              <span *ngIf="savingCoords" class="spinner-border spinner-border-sm me-1"></span>
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Update Icon -->
+      <div class="action-card">
+        <div class="action-header">
+          <i class="bi bi-image text-success"></i>
+          <span>Update Icon</span>
+        </div>
+        <p class="action-desc">
+          Change the map icon for this node<br>
+          <small class="text-muted">
+            Max: {{ iconSizeRules.maxWidth }}x{{ iconSizeRules.maxHeight }}px, {{ iconSizeRules.maxFileSizeKb }}KB
+          </small>
+        </p>
+        
+        <div *ngIf="!isEditingIcon">
+          <button class="btn btn-sm btn-outline-success w-100" (click)="startEditIcon()">
+            <i class="bi bi-pencil me-1"></i>Change Icon
+          </button>
+        </div>
+        
+        <div class="edit-form" *ngIf="isEditingIcon">
+          <div class="mb-2">
+            <label class="form-label small">Icon URL</label>
+            <input type="text" class="form-control form-control-sm" 
+                   [(ngModel)]="newIconUrl" placeholder="https://example.com/icon.svg">
+            <small class="text-muted">Leave empty for default icon</small>
+          </div>
+          <div class="icon-preview mb-2" *ngIf="newIconUrl">
+            <img [src]="newIconUrl" alt="Preview" class="preview-img"
+                 onerror="this.style.display='none'">
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-secondary flex-fill" (click)="cancelEditIcon()" [disabled]="savingIcon">
+              Cancel
+            </button>
+            <button class="btn btn-sm btn-success flex-fill" (click)="saveIcon()" [disabled]="savingIcon">
+              <span *ngIf="savingIcon" class="spinner-border spinner-border-sm me-1"></span>
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Open Detail -->
+      <div class="action-card">
+        <div class="action-header">
+          <i class="bi bi-box-arrow-up-right text-info"></i>
+          <span>Full Details</span>
+        </div>
+        <p class="action-desc">Open complete node details page</p>
+        <button class="btn btn-sm btn-outline-info w-100" (click)="openNodeDetail()">
+          <i class="bi bi-eye me-1"></i>View Node Details
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
