@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import Map from 'ol/Map';
@@ -24,22 +24,34 @@ import { NodeFeature, DEFAULT_NODE_ICON, ICON_SIZE_RULES } from '../components/n
 import { NodeSensorData } from '../components/sensor-labels/sensor-labels';
 import { AddLayerResult } from '../components/add-layer-drawer/add-layer-drawer';
 import { StyleUpdateEvent, LayerStyle } from '../components/edit-layer-drawer/edit-layer-drawer';
+import { SensorChannelFeature } from '../components/sensor-channel-drawer/sensor-channel-drawer';
 import { AuthService } from '../../../../services/auth.service';
+import { WebGisLayerStateService, SharedLayerState } from '../services/webgis-layer-state.service';
 
 // Core layer definition (static, not from database)
 interface CoreLayerDef {
   id: string;
   name: string;
-  code: 'nodes' | 'sensors' | 'alerts';
+  code: 'nodes' | 'sensors' | 'alerts' | 'sensor-channels';
   visible: boolean;
   style: any;
+}
+
+// Sensor type info for sensor channel layers
+interface SensorTypeInfo {
+  id: string;
+  name: string;
+  code: string;
+  icon: string;
+  unit: string;
+  channelCount: number;
 }
 
 // Layer state for rendering
 interface LayerState {
   id: string;
   name: string;
-  type: 'core' | 'operational' | 'custom';
+  type: 'core' | 'operational' | 'custom' | 'sensor-type';
   code?: string; // For core layers
   visible: boolean;
   olLayer?: VectorLayer<any>;
@@ -47,6 +59,8 @@ interface LayerState {
   style: any;
   // For custom layers from map_layer table
   layerData?: LayerResponseDto;
+  // For sensor type layers
+  sensorType?: SensorTypeInfo;
 }
 
 @Component({
@@ -57,6 +71,10 @@ interface LayerState {
 })
 export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') mapContainer?: ElementRef<HTMLDivElement>;
+
+  // Input for embedded mode (inside project workspace)
+  @Input() projectId?: string;
+  @Input() embeddedMode = false; // When true, layer panel is collapsible/hidden by default
 
   private destroy$ = new Subject<void>();
   private map?: Map;
@@ -70,24 +88,18 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   isDragMode = false;
   savingDragPosition = false;
 
-  // Project ID (from route or default)
-  projectId: string = '1414bdba-000b-4e17-b877-557136f8ef2a';
+  // Internal project ID (resolved from @Input or route)
+  _projectId: string = '1414bdba-000b-4e17-b877-557136f8ef2a';
 
   // Core layer definitions (static)
+  // Note: Sensors are now dynamic sub-layers based on sensor_types
   private coreLayerDefs: CoreLayerDef[] = [
     {
       id: 'core-nodes',
       name: 'Nodes',
       code: 'nodes',
-      visible: true,
+      visible: false, // Not default visible
       style: { fill: '#28a745', stroke: '#ffffff', radius: 10 }
-    },
-    {
-      id: 'core-sensors',
-      name: 'Sensors',
-      code: 'sensors',
-      visible: false,
-      style: { fill: '#0d6efd', stroke: '#ffffff', radius: 7 }
     },
     {
       id: 'core-alerts',
@@ -98,6 +110,9 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     }
   ];
 
+  // Sensor types (loaded dynamically)
+  sensorTypes: SensorTypeInfo[] = [];
+
   // Layer management
   layers: LayerState[] = [];
   loadingLayers = false;
@@ -106,6 +121,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   // Group expansion state
   expandedGroups: Record<string, boolean> = {
     core: true,
+    sensors: true,
     operational: true,
     custom: true
   };
@@ -113,6 +129,9 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   // Selected node for drawer (instead of popup)
   selectedNode: NodeFeature | null = null;
   isDrawerOpen = false;
+
+  // Layer panel state (collapsed in embedded mode by default)
+  layerPanelCollapsed = false;
 
   // Add layer drawer state
   isAddLayerDrawerOpen = false;
@@ -124,6 +143,10 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   editingLayer: LayerResponseDto | null = null;
   editingLayerProperties: string[] = [];
 
+  // Sensor channel drawer state
+  isSensorChannelDrawerOpen = false;
+  selectedSensorChannel: SensorChannelFeature | null = null;
+
   // Selected feature for popup (non-node features)
   selectedFeature: any = null;
   popupPosition: { x: number; y: number } | null = null;
@@ -133,9 +156,43 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   sensorLabelsVisible = false;
   loadingSensorData = false;
 
+  // Get visible sensor type names from layers
+  get visibleSensorTypeNames(): Set<string> {
+    return new Set(
+      this.layers
+        .filter(l => l.type === 'sensor-type' && l.visible && l.sensorType)
+        .map(l => l.sensorType!.name)
+    );
+  }
+
+  // Filter sensor channel data to only include visible sensor types
+  get filteredSensorChannelData(): NodeSensorData[] {
+    const visibleTypes = this.visibleSensorTypeNames;
+    if (visibleTypes.size === 0) return [];
+
+    return this.sensorChannelData
+      .map(node => ({
+        ...node,
+        channels: node.channels.filter(ch => visibleTypes.has(ch.sensorTypeName))
+      }))
+      .filter(node => node.channels.length > 0);
+  }
+
   // Map config
   defaultCenter: [number, number] = [106.8456, -6.2088]; // Jakarta
   defaultZoom = 10;
+  private hasInitialFit = false; // Track if we've auto-centered on data
+
+  // Base layer options
+  baseLayers = [
+    { id: 'dark', name: 'Dark', icon: 'bi-moon-fill', url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
+    { id: 'light', name: 'Light', icon: 'bi-sun-fill', url: 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
+    { id: 'osm', name: 'Street', icon: 'bi-map-fill', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' },
+    { id: 'satellite', name: 'Satellite', icon: 'bi-globe-americas', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
+    { id: 'topo', name: 'Terrain', icon: 'bi-triangle-fill', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}' }
+  ];
+  selectedBaseLayer = 'dark';
+  isBaseLayerPickerOpen = false;
 
   // Store node features for lookup
   private nodeFeatures: globalThis.Map<string, Feature<Geometry>> = new globalThis.Map();
@@ -145,24 +202,71 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     private coreGeoJsonService: WebGisCoreGeoJsonService,
     private nodesService: NodesService,
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private layerStateService: WebGisLayerStateService
   ) {}
 
   ngOnInit(): void {
-    // Get projectId from route param or query param
-    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
-      if (params['projectId']) {
-        this.projectId = params['projectId'];
-      }
-    });
-    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
-      if (params['projectId']) {
-        this.projectId = params['projectId'];
-      }
-    });
+    // Priority: @Input projectId > route param > query param > default
+    if (this.projectId) {
+      this._projectId = this.projectId;
+    } else {
+      // Get projectId from route param or query param
+      this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
+        if (params['projectId']) {
+          this._projectId = params['projectId'];
+        }
+      });
+      this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
+        if (params['projectId']) {
+          this._projectId = params['projectId'];
+        }
+      });
+    }
     
     // Get current owner ID
     this.ownerId = this.authService.getCurrentOwnerId() || '';
+    
+    // Collapse layer panel by default in embedded mode
+    if (this.embeddedMode) {
+      this.layerPanelCollapsed = true;
+      
+      // Subscribe to layer toggle commands from sidebar
+      this.layerStateService.onToggleLayer().pipe(takeUntil(this.destroy$)).subscribe(({ layerId, visible }) => {
+        const layer = this.layers.find(l => l.id === layerId);
+        if (layer && layer.visible !== visible) {
+          this.toggleLayer(layer);
+          this.syncLayersToStateService();
+        }
+      });
+      
+      this.layerStateService.onToggleGroup().pipe(takeUntil(this.destroy$)).subscribe(({ groupId, visible }) => {
+        this.toggleGroupLayersVisibility(groupId, visible);
+        this.syncLayersToStateService();
+      });
+      
+      this.layerStateService.onRefresh().pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.loadLayers();
+      });
+      
+      this.layerStateService.onAddLayer().pipe(takeUntil(this.destroy$)).subscribe((type) => {
+        this.addLayer(type);
+      });
+      
+      this.layerStateService.onEditLayer().pipe(takeUntil(this.destroy$)).subscribe((layerId) => {
+        const layer = this.layers.find(l => l.id === layerId);
+        if (layer) {
+          this.editLayer(layer);
+        }
+      });
+      
+      this.layerStateService.onZoomToLayer().pipe(takeUntil(this.destroy$)).subscribe((layerId) => {
+        const layer = this.layers.find(l => l.id === layerId);
+        if (layer) {
+          this.zoomToLayer(layer);
+        }
+      });
+    }
     
     this.loadLayers();
   }
@@ -177,6 +281,13 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     this.map?.setTarget(undefined);
   }
 
+  toggleLayerPanel(): void {
+    this.layerPanelCollapsed = !this.layerPanelCollapsed;
+    // Trigger map resize after panel toggle
+    setTimeout(() => {
+      this.map?.updateSize();
+    }, 300);
+  }
   // Expose map instance for child components
   getMapInstance(): Map | null {
     return this.map || null;
@@ -203,6 +314,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     this.map = new Map({
       target: this.mapContainer.nativeElement,
       layers: [this.baseLayer, this.highlightLayer],
+      controls: [], // Disable default OL controls (zoom, attribution) - we use custom controls
       view: new View({
         center: fromLonLat(this.defaultCenter),
         zoom: this.defaultZoom
@@ -298,6 +410,30 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
         }
         // Clear sensor selection
         this.selectInteraction?.getFeatures().clear();
+      } else if (layerCode === 'sensor-channels') {
+        // Sensor channel clicked - open sensor channel drawer
+        this.selectedSensorChannel = {
+          id: props.id || feature.getId() as string,
+          nodeId: props.nodeId,
+          nodeCode: props.nodeCode,
+          nodeName: props.nodeName || props.nodeCode,
+          metricCode: props.metricCode,
+          unit: props.unit || '',
+          value: props.value !== undefined ? props.value : null,
+          status: props.status || 'unknown',
+          sensorTypeName: props.sensorTypeName || '',
+          sensorTypeCode: props.sensorTypeCode || '',
+          timestamp: props.timestamp
+        };
+        this.isSensorChannelDrawerOpen = true;
+        
+        // Add highlight effect
+        this.addHighlightToFeature(feature);
+        
+        // Close other popups/drawers
+        this.selectedFeature = null;
+        this.popupPosition = null;
+        this.closeDrawer();
       } else {
         // Non-node/sensor feature - show popup
         const displayProps = { ...props };
@@ -414,6 +550,56 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     this.highlightLayer?.getSource()?.clear();
     this.selectInteraction?.getFeatures().clear();
     this.cancelDragMode(); // Also cancel drag mode when closing drawer
+  }
+
+  // ========== Sensor Channel Drawer Methods ==========
+  
+  closeSensorChannelDrawer(): void {
+    this.isSensorChannelDrawerOpen = false;
+    this.selectedSensorChannel = null;
+    this.highlightLayer?.getSource()?.clear();
+    this.selectInteraction?.getFeatures().clear();
+  }
+
+  onViewNodeFromChannel(nodeId: string): void {
+    // Close sensor channel drawer and open node drawer
+    this.closeSensorChannelDrawer();
+    
+    // Find node feature by ID and select it
+    const nodesLayer = this.layers.find(l => l.code === 'nodes');
+    if (!nodesLayer?.olLayer) {
+      // If nodes layer not loaded, load it first
+      return;
+    }
+    
+    const source = nodesLayer.olLayer.getSource();
+    const nodeFeature = source?.getFeatures().find((f: Feature<Geometry>) => f.getId() === nodeId);
+    
+    if (nodeFeature) {
+      const props = nodeFeature.getProperties();
+      this.selectedNode = {
+        id: nodeFeature.getId() as string,
+        code: props['code'],
+        name: props['name'],
+        address: props['address'],
+        city: props['city'],
+        province: props['province'],
+        description: props['description'],
+        connectivityStatus: props['connectivityStatus'],
+        status: props['status'],
+        lastSeenAt: props['lastSeenAt'],
+        iconUrl: props['iconUrl'],
+        serialNumber: props['serialNumber'],
+        firmwareVersion: props['firmwareVersion'],
+        modelName: props['modelName'],
+        manufacturer: props['manufacturer'],
+        picName: props['picName'],
+        picPhone: props['picPhone'],
+        hasCoordinates: props['hasCoordinates']
+      };
+      this.isDrawerOpen = true;
+      this.addHighlightToFeature(nodeFeature);
+    }
   }
 
   // ========== Drag Mode for Moving Nodes ==========
@@ -540,7 +726,29 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   loadLayers(): void {
     this.loadingLayers = true;
     this.error = null;
+    
+    // Sync loading state to sidebar
+    if (this.embeddedMode) {
+      this.layerStateService.setLoading(true);
+    }
 
+    // First, load sensor types to create dynamic sensor layers
+    this.coreGeoJsonService.coreGeoJsonControllerGetSensorTypes({ projectId: this._projectId })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (sensorTypesResponse: any[]) => {
+          this.sensorTypes = sensorTypesResponse;
+          this.buildLayerList();
+        },
+        error: (err: any) => {
+          console.error('Failed to load sensor types:', err);
+          this.sensorTypes = [];
+          this.buildLayerList();
+        }
+      });
+  }
+
+  private buildLayerList(): void {
     // Initialize core layers from static definitions
     const coreLayers: LayerState[] = this.coreLayerDefs.map(def => ({
       id: def.id,
@@ -552,8 +760,30 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       style: def.style
     }));
 
+    // Create sensor-type layers from loaded sensor types
+    // Using different colors based on index for each type
+    const sensorTypeColors = [
+      '#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#198754',
+      '#20c997', '#0dcaf0', '#6610f2', '#e83e8c', '#ffc107'
+    ];
+    
+    const sensorTypeLayers: LayerState[] = this.sensorTypes.map((st, index) => ({
+      id: `sensor-type-${st.id}`,
+      name: st.name,
+      type: 'sensor-type' as const,
+      code: 'sensor-channels' as const,
+      visible: index === 0, // Only first sensor type visible by default
+      loading: false,
+      style: { 
+        fill: sensorTypeColors[index % sensorTypeColors.length], 
+        stroke: '#ffffff', 
+        radius: 7 
+      },
+      sensorType: st
+    }));
+
     // Load custom/operational layers from map_layer table (excluding core type)
-    const params: any = { projectId: this.projectId };
+    const params: any = { projectId: this._projectId };
 
     this.layersService.layersControllerFindAll(params)
       .pipe(takeUntil(this.destroy$))
@@ -572,35 +802,51 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
               layerData: layer
             }));
 
-          // Combine: core first, then operational, then custom
-          this.layers = [...coreLayers, ...customLayers];
+          // Combine: core first, sensor-types, then operational, then custom
+          this.layers = [...coreLayers, ...sensorTypeLayers, ...customLayers];
           this.loadingLayers = false;
+          
+          // Sync to shared state service (for sidebar in embedded mode)
+          this.syncLayersToStateService();
 
           // Load visible core layers' GeoJSON
           this.layers
             .filter(l => l.type === 'core' && l.visible)
             .forEach(l => this.loadCoreLayerGeoJSON(l));
 
+          // Load visible sensor-type layers' GeoJSON
+          this.layers
+            .filter(l => l.type === 'sensor-type' && l.visible)
+            .forEach(l => this.loadSensorTypeLayerGeoJSON(l));
+
           // Load visible custom layers' GeoJSON
           this.layers
-            .filter(l => l.type !== 'core' && l.visible && l.layerData)
+            .filter(l => (l.type === 'operational' || l.type === 'custom') && l.visible && l.layerData)
             .forEach(l => this.loadCustomLayerGeoJSON(l));
         },
         error: (err: any) => {
-          // Even if custom layers fail, still show core layers
-          this.layers = coreLayers;
+          // Even if custom layers fail, still show core + sensor type layers
+          this.layers = [...coreLayers, ...sensorTypeLayers];
           this.loadingLayers = false;
+          
+          // Sync to shared state service
+          this.syncLayersToStateService();
           
           // Load visible core layers
           this.layers
             .filter(l => l.type === 'core' && l.visible)
             .forEach(l => this.loadCoreLayerGeoJSON(l));
+
+          // Load visible sensor-type layers
+          this.layers
+            .filter(l => l.type === 'sensor-type' && l.visible)
+            .forEach(l => this.loadSensorTypeLayerGeoJSON(l));
         }
       });
   }
 
   // Get layers filtered by type, sorted by displayOrder
-  getLayersByType(type: 'core' | 'operational' | 'custom'): LayerState[] {
+  getLayersByType(type: 'core' | 'operational' | 'custom' | 'sensor-type'): LayerState[] {
     return this.layers
       .filter(l => l.type === type)
       .sort((a, b) => {
@@ -613,6 +859,95 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   // Toggle group expand/collapse
   toggleGroup(group: string): void {
     this.expandedGroups[group] = !this.expandedGroups[group];
+  }
+
+  // Toggle all layers in a group on/off
+  toggleAllInGroup(type: 'core' | 'operational' | 'custom' | 'sensor-type'): void {
+    const layersInGroup = this.getLayersByType(type);
+    const allVisible = this.isGroupAllVisible(type);
+    
+    layersInGroup.forEach(ls => {
+      if (allVisible) {
+        // Hide all
+        ls.visible = false;
+        ls.olLayer?.setVisible(false);
+      } else {
+        // Show all
+        if (!ls.olLayer) {
+          this.toggleLayer(ls); // This will load and show
+        } else {
+          ls.visible = true;
+          ls.olLayer.setVisible(true);
+        }
+      }
+    });
+
+    // Handle sensor labels visibility
+    if (type === 'sensor-type') {
+      this.sensorLabelsVisible = !allVisible && layersInGroup.length > 0;
+    }
+  }
+
+  // Check if all layers in a group are visible
+  isGroupAllVisible(type: 'core' | 'operational' | 'custom' | 'sensor-type'): boolean {
+    const layersInGroup = this.getLayersByType(type);
+    if (layersInGroup.length === 0) return false;
+    return layersInGroup.every(ls => ls.visible);
+  }
+
+  // Get layer color from style
+  getLayerColor(ls: LayerState): string {
+    if (ls.style?.fillColor) return ls.style.fillColor;
+    if (ls.style?.strokeColor) return ls.style.strokeColor;
+    if (ls.style?.fill) return ls.style.fill;
+    if (ls.style?.stroke) return ls.style.stroke;
+    // Default colors by type
+    const defaults: Record<string, string> = {
+      'core': '#6366f1',
+      'operational': '#22d3ee',
+      'custom': '#f59e0b',
+      'sensor-type': '#10b981'
+    };
+    return defaults[ls.type] || '#6366f1';
+  }
+
+  // Get geometry icon based on layer geometry type
+  getGeometryIcon(ls: LayerState): string {
+    const geomType = ls.layerData?.geometryType?.toLowerCase() || '';
+    
+    if (geomType.includes('point') || ls.code === 'nodes') {
+      return 'bi-circle-fill';
+    } else if (geomType.includes('line')) {
+      return 'bi-slash-lg';
+    } else if (geomType.includes('polygon')) {
+      return 'bi-square-fill';
+    }
+    
+    // Guess from layer code
+    if (ls.code === 'alerts') return 'bi-exclamation-circle-fill';
+    
+    return 'bi-layers-fill';
+  }
+
+  // Get feature count for a layer
+  getFeatureCount(ls: LayerState): number {
+    // First try from layerData
+    if (ls.layerData?.featureCount) {
+      return ls.layerData.featureCount;
+    }
+    // Then try from configJson
+    const config = ls.layerData?.configJson as any;
+    if (config?.featureCount) {
+      return config.featureCount;
+    }
+    // Then try from loaded OL layer
+    if (ls.olLayer) {
+      const source = ls.olLayer.getSource();
+      if (source) {
+        return source.getFeatures().length;
+      }
+    }
+    return 0;
   }
 
   // Open add layer drawer
@@ -638,8 +973,10 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   // --- Edit Layer Drawer Methods ---
   
   // Open edit layer drawer
-  editLayer(layerState: LayerState, event: Event): void {
-    event.stopPropagation();
+  editLayer(layerState: LayerState, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     if (!layerState.layerData) return;
     
     this.editingLayer = layerState.layerData;
@@ -741,8 +1078,10 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Zoom to layer extent
-  zoomToLayer(layerState: LayerState, event: Event): void {
-    event.stopPropagation();
+  zoomToLayer(layerState: LayerState, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     if (!layerState.olLayer) return;
     
     const source = (layerState.olLayer as VectorLayer<any>).getSource();
@@ -758,11 +1097,24 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Create OpenLayers style from LayerStyle interface
-  // Returns a style function for data-driven styling
+  // Returns a style function for data-driven styling with zoom visibility
   private createStyleFromLayerStyle(layerStyle: LayerStyle): any {
+    // Get zoom visibility settings
+    const minZoom = layerStyle.minZoom ?? 0;
+    const maxZoom = layerStyle.maxZoom ?? 20;
+    const labelMinZoom = layerStyle.labelMinZoom ?? 12;
+
     // If data-driven styling is enabled, return a function
     if (layerStyle.strokeWidthByField?.enabled || layerStyle.colorByField?.enabled) {
-      return (feature: Feature<Geometry>) => {
+      return (feature: Feature<Geometry>, resolution: number) => {
+        // Get current zoom level (default to 10 if undefined)
+        const zoom = this.map?.getView().getZoom() ?? 10;
+        
+        // Hide layer if outside zoom range
+        if (zoom < minZoom || zoom > maxZoom) {
+          return null;
+        }
+
         const props = feature.getProperties();
         
         // Calculate stroke width
@@ -805,9 +1157,9 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
           width: strokeWidth
         });
         
-        // Build label text from multiple fields
+        // Build label text from multiple fields (only if zoom >= labelMinZoom)
         let labelText = '';
-        if (layerStyle.labelFields && layerStyle.labelFields.length > 0) {
+        if (zoom >= labelMinZoom && layerStyle.labelFields && layerStyle.labelFields.length > 0) {
           labelText = layerStyle.labelFields
             .map(f => props[f] !== undefined ? String(props[f]) : '')
             .filter(v => v !== '')
@@ -833,7 +1185,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       };
     }
     
-    // Static style (no data-driven features)
+    // Static style (no data-driven features) - still needs zoom checking
     const fill = new Fill({
       color: this.hexToRgba(layerStyle.fillColor, layerStyle.fillOpacity)
     });
@@ -846,42 +1198,44 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     // Build label text getter for multiple fields
     const labelFields = layerStyle.labelFields || [];
     
-    if (labelFields.length > 0) {
-      return (feature: Feature<Geometry>) => {
-        const props = feature.getProperties();
-        const labelText = labelFields
+    // Return style function for zoom-aware rendering
+    return (feature: Feature<Geometry>, resolution: number) => {
+      // Get current zoom level (default to 10 if undefined)
+      const zoom = this.map?.getView().getZoom() ?? 10;
+      
+      // Hide layer if outside zoom range
+      if (zoom < minZoom || zoom > maxZoom) {
+        return null;
+      }
+
+      const props = feature.getProperties();
+      
+      // Build label text (only if zoom >= labelMinZoom)
+      let labelText = '';
+      if (zoom >= labelMinZoom && labelFields.length > 0) {
+        labelText = labelFields
           .map(f => props[f] !== undefined ? String(props[f]) : '')
           .filter(v => v !== '')
           .join(' | ');
-        
-        return new Style({
-          fill,
-          stroke,
-          image: new CircleStyle({
-            radius: layerStyle.pointRadius,
-            fill,
-            stroke
-          }),
-          text: labelText ? new Text({
-            text: labelText,
-            font: `${layerStyle.labelSize}px sans-serif`,
-            fill: new Fill({ color: layerStyle.labelColor }),
-            stroke: new Stroke({ color: '#000000', width: 2 }),
-            offsetY: -(layerStyle.pointRadius + 10)
-          }) : undefined
-        });
-      };
-    }
-    
-    return new Style({
-      fill,
-      stroke,
-      image: new CircleStyle({
-        radius: layerStyle.pointRadius,
+      }
+      
+      return new Style({
         fill,
-        stroke
-      })
-    });
+        stroke,
+        image: new CircleStyle({
+          radius: layerStyle.pointRadius,
+          fill,
+          stroke
+        }),
+        text: labelText ? new Text({
+          text: labelText,
+          font: `${layerStyle.labelSize}px sans-serif`,
+          fill: new Fill({ color: layerStyle.labelColor }),
+          stroke: new Stroke({ color: '#000000', width: 2 }),
+          offsetY: -(layerStyle.pointRadius + 10)
+        }) : undefined
+      });
+    };
   }
 
   // Helper to convert hex color to rgba
@@ -899,6 +1253,8 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       if (!layerState.olLayer) {
         if (layerState.type === 'core') {
           this.loadCoreLayerGeoJSON(layerState);
+        } else if (layerState.type === 'sensor-type') {
+          this.loadSensorTypeLayerGeoJSON(layerState);
         } else if (layerState.layerData) {
           this.loadCustomLayerGeoJSON(layerState);
         }
@@ -906,15 +1262,20 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
         layerState.olLayer.setVisible(true);
       }
 
-      // Load sensor channel values when sensors layer is shown
-      if (layerState.code === 'sensors') {
+      // Load sensor channel values when sensor-type layer is shown
+      if (layerState.type === 'sensor-type') {
         this.loadSensorChannelValues();
       }
     } else {
       layerState.olLayer?.setVisible(false);
       
-      // Hide sensor labels when sensors layer is hidden
-      if (layerState.code === 'sensors') {
+      // Check if any sensor-type layer is still visible
+      const anySensorTypeVisible = this.layers
+        .filter(l => l.type === 'sensor-type' && l.id !== layerState.id)
+        .some(l => l.visible);
+      
+      // Hide sensor labels if no sensor-type layers visible
+      if (layerState.type === 'sensor-type' && !anySensorTypeVisible) {
         this.sensorLabelsVisible = false;
       }
     }
@@ -924,7 +1285,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     this.loadingSensorData = true;
     
     this.coreGeoJsonService.coreGeoJsonControllerGetSensorChannelValues({
-      projectId: this.projectId
+      projectId: this._projectId
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (data: any[]) => {
         this.sensorChannelData = data;
@@ -938,6 +1299,44 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // Sync layer state to shared service for sidebar display
+  private syncLayersToStateService(): void {
+    if (!this.embeddedMode) return;
+    
+    const sharedLayers: SharedLayerState[] = this.layers.map(l => ({
+      id: l.id,
+      name: l.name,
+      type: l.type,
+      code: l.code,
+      visible: l.visible,
+      loading: l.loading,
+      style: l.style,
+      sensorType: l.sensorType
+    }));
+    
+    this.layerStateService.setLoading(this.loadingLayers);
+    this.layerStateService.updateLayers(sharedLayers);
+  }
+
+  // Toggle all layers in a group
+  private toggleGroupLayersVisibility(groupId: string, visible: boolean): void {
+    const groupLayerTypes: Record<string, string[]> = {
+      core: ['core'],
+      sensors: ['sensor-type'],
+      operational: ['operational'],
+      custom: ['custom']
+    };
+    
+    const types = groupLayerTypes[groupId] || [];
+    this.layers
+      .filter(l => types.includes(l.type))
+      .forEach(l => {
+        if (l.visible !== visible) {
+          this.toggleLayer(l);
+        }
+      });
+  }
+
   private loadCoreLayerGeoJSON(layerState: LayerState): void {
     if (!layerState.code) return;
     
@@ -947,13 +1346,10 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     let geoJsonObs;
     switch (layerState.code) {
       case 'nodes':
-        geoJsonObs = this.coreGeoJsonService.coreGeoJsonControllerGetNodesGeoJson({ projectId: this.projectId });
-        break;
-      case 'sensors':
-        geoJsonObs = this.coreGeoJsonService.coreGeoJsonControllerGetSensorsGeoJson({ projectId: this.projectId });
+        geoJsonObs = this.coreGeoJsonService.coreGeoJsonControllerGetNodesGeoJson({ projectId: this._projectId });
         break;
       case 'alerts':
-        geoJsonObs = this.coreGeoJsonService.coreGeoJsonControllerGetAlertsGeoJson({ projectId: this.projectId });
+        geoJsonObs = this.coreGeoJsonService.coreGeoJsonControllerGetAlertsGeoJson({ projectId: this._projectId });
         break;
       default:
         layerState.loading = false;
@@ -968,6 +1364,31 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error loading core GeoJSON for', layerState.name, ':', err);
+        layerState.loading = false;
+      }
+    });
+  }
+
+  private loadSensorTypeLayerGeoJSON(layerState: LayerState): void {
+    if (!layerState.sensorType) return;
+    
+    layerState.loading = true;
+    console.log('Loading sensor-type GeoJSON for:', layerState.name, 'typeId:', layerState.sensorType.id);
+
+    this.coreGeoJsonService.coreGeoJsonControllerGetSensorChannelsGeoJson({
+      projectId: this._projectId,
+      sensorTypeId: layerState.sensorType.id
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (geoJson: any) => {
+        console.log('Sensor-type GeoJSON received for', layerState.name, ':', geoJson);
+        this.addLayerToMap(layerState, geoJson);
+        layerState.loading = false;
+        
+        // Also load sensor channel values for labels
+        this.loadSensorChannelValues();
+      },
+      error: (err: any) => {
+        console.error('Error loading sensor-type GeoJSON for', layerState.name, ':', err);
         layerState.loading = false;
       }
     });
@@ -1036,7 +1457,11 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
           labelColor: styleConfig.labelColor || '#ffffff',
           labelSize: styleConfig.labelSize ?? 12,
           strokeWidthByField: styleConfig.strokeWidthByField,
-          colorByField: styleConfig.colorByField
+          colorByField: styleConfig.colorByField,
+          // Zoom visibility settings
+          minZoom: styleConfig.minZoom ?? 0,
+          maxZoom: styleConfig.maxZoom ?? 20,
+          labelMinZoom: styleConfig.labelMinZoom ?? 12
         };
         styleFunc = this.createStyleFromLayerStyle(layerStyle);
       } else {
@@ -1053,12 +1478,12 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     this.map.addLayer(vectorLayer);
     layerState.olLayer = vectorLayer;
 
-    // Fit to layer extent if first layer
-    if (this.layers.filter(l => l.olLayer).length === 1) {
+    // Auto-fit to data on first layer load
+    if (!this.hasInitialFit) {
       const extent = vectorSource.getExtent();
-      console.log('Fitting to extent:', extent);
       if (extent && extent[0] !== Infinity) {
         this.map.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 15 });
+        this.hasInitialFit = true;
       }
     }
   }
@@ -1238,5 +1663,38 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       ]);
       this.map.getView().fit(combined, { padding: [50, 50, 50, 50], maxZoom: 15 });
     }
+  }
+
+  // Base layer picker methods
+  toggleBaseLayerPicker(): void {
+    this.isBaseLayerPickerOpen = !this.isBaseLayerPickerOpen;
+  }
+
+  selectBaseLayer(layerId: string): void {
+    const layer = this.baseLayers.find(l => l.id === layerId);
+    if (!layer || !this.baseLayer) return;
+
+    this.selectedBaseLayer = layerId;
+    this.isBaseLayerPickerOpen = false;
+
+    // Update the XYZ source URL
+    const source = this.baseLayer.getSource();
+    if (source instanceof XYZ) {
+      source.setUrl(layer.url);
+    } else {
+      // Create new XYZ source if needed
+      this.baseLayer.setSource(new XYZ({
+        url: layer.url,
+        attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+      }));
+    }
+  }
+
+  getSelectedBaseLayerName(): string {
+    return this.baseLayers.find(l => l.id === this.selectedBaseLayer)?.name || 'Dark';
+  }
+
+  getSelectedBaseLayerIcon(): string {
+    return this.baseLayers.find(l => l.id === this.selectedBaseLayer)?.icon || 'bi-stack';
   }
 }

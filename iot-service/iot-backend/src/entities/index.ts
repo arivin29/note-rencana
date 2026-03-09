@@ -32,3 +32,15 @@ export { CustomDashboard } from './custom-dashboard.entity';
 export { CustomWidget } from './custom-widget.entity';
 export type { WidgetConfig, WidgetFieldMapping, WidgetSeriesConfig, WidgetAxisConfig, WidgetYAxisConfig, WidgetThreshold, WidgetDisplayConfig, WidgetType } from './custom-widget.entity';
 export { WidgetQueryTemplate } from './widget-query-template.entity';
+
+// WebGIS entities
+export { MapLayer, LayerType, SourceType } from './map-layer.entity';
+export type { LayerStyleConfig, LayerConfigJson, BoundingBox } from './map-layer.entity';
+export { MapLayerFeature } from './map-layer-feature.entity';
+export { MapLayerCategory } from './map-layer-category.entity';
+export type { TemplateField, CategoryDefaultStyle } from './map-layer-category.entity';
+export { SpatialUploadFile, UploadStatus } from './spatial-upload-file.entity';
+export type { ParsedResult, ParsedField, FieldMapping } from './spatial-upload-file.entity';
+
+// Documents
+export { Document, DocumentStatus } from './document.entity';

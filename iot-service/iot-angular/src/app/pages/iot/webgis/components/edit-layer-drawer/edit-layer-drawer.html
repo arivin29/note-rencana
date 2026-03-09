@@ -25,6 +25,23 @@
     <div class="tab-content">
       <form [formGroup]="styleForm">
         
+        <!-- Layer Info -->
+        <div class="info-section">
+          <h6 class="section-title">
+            <i class="bi bi-info-circle me-2"></i>Layer Info
+          </h6>
+          
+          <div class="form-item">
+            <label class="form-label">Nama Layer</label>
+            <input type="text" class="form-control form-control-sm" formControlName="layerName" placeholder="Nama layer...">
+          </div>
+          
+          <div class="form-item">
+            <label class="form-label">Deskripsi</label>
+            <textarea class="form-control form-control-sm" formControlName="layerDescription" rows="2" placeholder="Deskripsi layer..."></textarea>
+          </div>
+        </div>
+
         <!-- Fill Style (for points and polygons) -->
         <div class="info-section" *ngIf="isPointLayer || isPolygonLayer">
           <h6 class="section-title">
@@ -260,6 +277,42 @@
               </div>
             </div>
           </ng-container>
+        </div>
+
+        <!-- Zoom Visibility Controls -->
+        <div class="info-section">
+          <h6 class="section-title">
+            <i class="bi bi-zoom-in me-2"></i>Zoom Visibility
+          </h6>
+          
+          <div class="form-item">
+            <label class="form-label">
+              Min Zoom <span class="value-badge">{{ styleForm.get('minZoom')?.value }}</span>
+              <small class="text-muted ms-1">(sembunyikan saat zoom out)</small>
+            </label>
+            <input type="range" class="form-range" min="0" max="20" step="1" formControlName="minZoom">
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">
+              Max Zoom <span class="value-badge">{{ styleForm.get('maxZoom')?.value }}</span>
+              <small class="text-muted ms-1">(sembunyikan saat zoom in)</small>
+            </label>
+            <input type="range" class="form-range" min="0" max="20" step="1" formControlName="maxZoom">
+          </div>
+
+          <div class="form-item" *ngIf="selectedLabelFields.length > 0">
+            <label class="form-label">
+              Label Min Zoom <span class="value-badge">{{ styleForm.get('labelMinZoom')?.value }}</span>
+              <small class="text-muted ms-1">(label muncul saat zoom &ge; ini)</small>
+            </label>
+            <input type="range" class="form-range" min="0" max="20" step="1" formControlName="labelMinZoom">
+          </div>
+
+          <small class="zoom-hint">
+            <i class="bi bi-info-circle me-1"></i>
+            Layer tampil antara zoom {{ styleForm.get('minZoom')?.value }} - {{ styleForm.get('maxZoom')?.value }}
+          </small>
         </div>
 
       </form>

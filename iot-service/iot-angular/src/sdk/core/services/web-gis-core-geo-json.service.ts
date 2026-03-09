@@ -19,14 +19,19 @@ import { coreGeoJsonControllerGetNodesGeoJson } from '../fn/web-gis-core-geo-jso
 import { CoreGeoJsonControllerGetNodesGeoJson$Params } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-nodes-geo-json';
 import { coreGeoJsonControllerGetNodesWithoutCoordinates } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-nodes-without-coordinates';
 import { CoreGeoJsonControllerGetNodesWithoutCoordinates$Params } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-nodes-without-coordinates';
+import { coreGeoJsonControllerGetSensorChannelsGeoJson } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensor-channels-geo-json';
+import { CoreGeoJsonControllerGetSensorChannelsGeoJson$Params } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensor-channels-geo-json';
 import { coreGeoJsonControllerGetSensorChannelValues } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensor-channel-values';
 import { CoreGeoJsonControllerGetSensorChannelValues$Params } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensor-channel-values';
 import { coreGeoJsonControllerGetSensorsGeoJson } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensors-geo-json';
 import { CoreGeoJsonControllerGetSensorsGeoJson$Params } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensors-geo-json';
+import { coreGeoJsonControllerGetSensorTypes } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensor-types';
+import { CoreGeoJsonControllerGetSensorTypes$Params } from '../fn/web-gis-core-geo-json/core-geo-json-controller-get-sensor-types';
 import { CoreGeoJsonResponseDto } from '../models/core-geo-json-response-dto';
 import { NodeSensorDto } from '../models/node-sensor-dto';
 import { NodeSensorValuesDto } from '../models/node-sensor-values-dto';
 import { NodesWithoutCoordsDto } from '../models/nodes-without-coords-dto';
+import { SensorTypeDto } from '../models/sensor-type-dto';
 
 @Injectable({ providedIn: 'root' })
 export class WebGisCoreGeoJsonService extends BaseService {
@@ -229,6 +234,72 @@ export class WebGisCoreGeoJsonService extends BaseService {
   coreGeoJsonControllerGetNodeSensors(params: CoreGeoJsonControllerGetNodeSensors$Params, context?: HttpContext): Observable<Array<NodeSensorDto>> {
     return this.coreGeoJsonControllerGetNodeSensors$Response(params, context).pipe(
       map((r: StrictHttpResponse<Array<NodeSensorDto>>): Array<NodeSensorDto> => r.body)
+    );
+  }
+
+  /** Path part for operation `coreGeoJsonControllerGetSensorTypes()` */
+  static readonly CoreGeoJsonControllerGetSensorTypesPath = '/api/webgis/core/{projectId}/sensor-types';
+
+  /**
+   * Get available sensor types for a project.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `coreGeoJsonControllerGetSensorTypes()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  coreGeoJsonControllerGetSensorTypes$Response(params: CoreGeoJsonControllerGetSensorTypes$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SensorTypeDto>>> {
+    return coreGeoJsonControllerGetSensorTypes(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get available sensor types for a project.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `coreGeoJsonControllerGetSensorTypes$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  coreGeoJsonControllerGetSensorTypes(params: CoreGeoJsonControllerGetSensorTypes$Params, context?: HttpContext): Observable<Array<SensorTypeDto>> {
+    return this.coreGeoJsonControllerGetSensorTypes$Response(params, context).pipe(
+      map((r: StrictHttpResponse<Array<SensorTypeDto>>): Array<SensorTypeDto> => r.body)
+    );
+  }
+
+  /** Path part for operation `coreGeoJsonControllerGetSensorChannelsGeoJson()` */
+  static readonly CoreGeoJsonControllerGetSensorChannelsGeoJsonPath = '/api/webgis/core/{projectId}/sensor-channels';
+
+  /**
+   * Get sensor channels as GeoJSON for a project.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `coreGeoJsonControllerGetSensorChannelsGeoJson()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  coreGeoJsonControllerGetSensorChannelsGeoJson$Response(params: CoreGeoJsonControllerGetSensorChannelsGeoJson$Params, context?: HttpContext): Observable<StrictHttpResponse<CoreGeoJsonResponseDto>> {
+    return coreGeoJsonControllerGetSensorChannelsGeoJson(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get sensor channels as GeoJSON for a project.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `coreGeoJsonControllerGetSensorChannelsGeoJson$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  coreGeoJsonControllerGetSensorChannelsGeoJson(params: CoreGeoJsonControllerGetSensorChannelsGeoJson$Params, context?: HttpContext): Observable<CoreGeoJsonResponseDto> {
+    return this.coreGeoJsonControllerGetSensorChannelsGeoJson$Response(params, context).pipe(
+      map((r: StrictHttpResponse<CoreGeoJsonResponseDto>): CoreGeoJsonResponseDto => r.body)
     );
   }
 

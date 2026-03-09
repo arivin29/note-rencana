@@ -14,6 +14,7 @@ import { NodeDrawerComponent } from './components/node-drawer/node-drawer';
 import { SensorLabelsComponent } from './components/sensor-labels/sensor-labels';
 import { AddLayerDrawerComponent } from './components/add-layer-drawer/add-layer-drawer';
 import { EditLayerDrawerComponent } from './components/edit-layer-drawer/edit-layer-drawer';
+import { SensorChannelDrawerComponent } from './components/sensor-channel-drawer/sensor-channel-drawer';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,8 @@ import { EditLayerDrawerComponent } from './components/edit-layer-drawer/edit-la
     NodeDrawerComponent,
     SensorLabelsComponent,
     AddLayerDrawerComponent,
-    EditLayerDrawerComponent
+    EditLayerDrawerComponent,
+    SensorChannelDrawerComponent
   ],
   imports: [
     CommonModule,
@@ -34,6 +36,9 @@ import { EditLayerDrawerComponent } from './components/edit-layer-drawer/edit-la
     SharedComponentsModule,
     WebgisRoutingModule,
     NgApexchartsModule
+  ],
+  exports: [
+    WebgisMapPage // Export for embedding in other modules
   ]
 })
 export class WebgisModule {}

@@ -14,6 +14,115 @@
 
 <!-- Overview Content -->
 <div *ngIf="!loading && !error && project">
+    
+    <!-- System Health Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <card class="shadow-sm system-health-card">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                    <i class="fa fa-heartbeat text-theme me-2"></i>
+                    System Health
+                    <span class="badge bg-success-subtle text-success ms-2" *ngIf="systemHealth.onlineDevices === systemHealth.totalDevices">
+                        All Systems Operational
+                    </span>
+                    <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="systemHealth.onlineDevices < systemHealth.totalDevices && systemHealth.onlineDevices > 0">
+                        {{ systemHealth.offlineDevices + systemHealth.warningDevices }} Issues Detected
+                    </span>
+                    <span class="badge bg-danger-subtle text-danger ms-2" *ngIf="systemHealth.onlineDevices === 0 && systemHealth.totalDevices > 0">
+                        System Offline
+                    </span>
+                </card-header>
+                <card-body>
+                    <div class="row g-4">
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-success-subtle text-success">
+                                    <i class="fa fa-check-circle"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-success">{{ systemHealth.onlineDevices }}</div>
+                                    <div class="text-muted small">Online Devices</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-danger-subtle text-danger">
+                                    <i class="fa fa-times-circle"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-danger">{{ systemHealth.offlineDevices }}</div>
+                                    <div class="text-muted small">Offline Devices</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-info-subtle text-info">
+                                    <i class="fa fa-clock"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-info">{{ systemHealth.avgUptime }}%</div>
+                                    <div class="text-muted small">Avg Uptime (24h)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-warning-subtle text-warning">
+                                    <i class="fa fa-bolt"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-warning">{{ systemHealth.avgLatency }}ms</div>
+                                    <div class="text-muted small">Avg Latency</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards with Sparklines -->
+    <div class="row g-3 mb-4" *ngIf="keyMetrics.length > 0 || loadingTrends">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-2">
+                <h6 class="text-uppercase text-muted mb-0">
+                    <i class="fa fa-chart-line me-2"></i>Key Metrics (24h)
+                </h6>
+                <span class="badge bg-body text-muted border ms-2" *ngIf="!loadingTrends">Live data</span>
+                <div class="spinner-border spinner-border-sm text-theme ms-2" *ngIf="loadingTrends"></div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6" *ngFor="let metric of keyMetrics">
+            <card class="shadow-sm metric-card h-100">
+                <card-body>
+                    <div class="d-flex align-items-start justify-content-between mb-2">
+                        <div>
+                            <div class="text-uppercase text-muted small">{{ metric.label }}</div>
+                            <div class="fs-3 fw-bold">
+                                {{ metric.value }}
+                                <span class="fs-6 text-muted fw-normal">{{ metric.unit }}</span>
+                            </div>
+                        </div>
+                        <div class="trend-badge" 
+                             [class.trend-up]="metric.trend === 'up'" 
+                             [class.trend-down]="metric.trend === 'down'"
+                             [class.trend-stable]="metric.trend === 'stable'">
+                            <i class="fa" 
+                               [class.fa-arrow-up]="metric.trend === 'up'"
+                               [class.fa-arrow-down]="metric.trend === 'down'"
+                               [class.fa-minus]="metric.trend === 'stable'"></i>
+                            <span *ngIf="metric.trend !== 'stable'">{{ metric.trendValue }}</span>
+                        </div>
+                    </div>
+                    <div class="sparkline-chart" echarts [options]="metric.chartOption" style="height: 60px;"></div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
     <!-- Stats Row -->
     <div class="row g-3 mb-4">
         <div class="col-xl-8">
@@ -237,6 +346,145 @@
             </card>
         </div>
 
+        <!-- Recent Alerts Section -->
+        <div class="col-xl-4">
+            <card class="shadow-sm mb-3 h-100">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                    <i class="fa fa-bell text-warning me-2"></i>
+                    Recent Alerts
+                    <span class="badge bg-danger ms-2" *ngIf="alerts.length > 0">{{ alerts.length }}</span>
+                    <a [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }" 
+                       class="ms-auto btn btn-sm btn-outline-warning">
+                        View All
+                    </a>
+                </card-header>
+                <card-body class="p-0">
+                    <!-- Loading State -->
+                    <div *ngIf="loadingAlerts" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-theme" role="status">
+                            <span class="visually-hidden">Loading alerts...</span>
+                        </div>
+                    </div>
 
+                    <!-- No Alerts State -->
+                    <div *ngIf="!loadingAlerts && alerts.length === 0" class="text-center py-4 text-muted">
+                        <i class="fa fa-check-circle fa-2x mb-2 text-success opacity-50"></i>
+                        <div>No active alerts</div>
+                        <div class="small">All systems operating normally</div>
+                    </div>
+
+                    <!-- Alerts List -->
+                    <div *ngIf="!loadingAlerts && alerts.length > 0" class="alert-list">
+                        <div *ngFor="let alert of alerts.slice(0, 5)" class="alert-item p-3 border-bottom">
+                            <div class="d-flex align-items-start">
+                                <span class="badge me-3" [class]="getAlertSeverityClass(alert.severity)">
+                                    {{ alert.severity || 'Info' }}
+                                </span>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">{{ alert.title || alert.alertRule?.name || 'Alert' }}</div>
+                                    <div class="text-muted small">{{ alert.message || alert.description || '-' }}</div>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fa fa-clock me-1"></i>{{ formatAlertTime(alert.triggeredAt || alert.createdAt) }}
+                                        <span *ngIf="alert.node" class="ms-2">
+                                            <i class="fa fa-microchip me-1"></i>{{ alert.node.code || alert.node.name }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Device Status Grid -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <card class="shadow-sm">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                    <i class="fa fa-server text-theme me-2"></i>
+                    Device Status Grid
+                    <span class="badge bg-body text-muted border ms-2">{{ deviceHealthList.length }} devices</span>
+                    <a [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }" 
+                       class="ms-auto btn btn-sm btn-outline-theme">
+                        View All Nodes
+                    </a>
+                </card-header>
+                <card-body class="p-0">
+                    <!-- Loading State -->
+                    <div *ngIf="loadingNodes" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-theme" role="status">
+                            <span class="visually-hidden">Loading devices...</span>
+                        </div>
+                    </div>
+
+                    <!-- No Devices State -->
+                    <div *ngIf="!loadingNodes && deviceHealthList.length === 0" class="text-center py-4 text-muted">
+                        <i class="fa fa-server fa-2x mb-2 opacity-50"></i>
+                        <div>No devices found for this project</div>
+                    </div>
+
+                    <!-- Devices Table -->
+                    <div *ngIf="!loadingNodes && deviceHealthList.length > 0" class="table-responsive">
+                        <table class="table mb-0 align-middle device-table">
+                            <thead class="table-light text-muted">
+                                <tr>
+                                    <th scope="col">Device</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Last Seen</th>
+                                    <th scope="col" class="text-center">Uptime (24h)</th>
+                                    <th scope="col" class="text-end">Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let device of deviceHealthList" class="device-row">
+                                    <td>
+                                        <a [routerLink]="['/iot/nodes', device.nodeId]" class="text-decoration-none">
+                                            <div class="d-flex align-items-center">
+                                                <div class="device-icon me-3" 
+                                                     [class.online]="device.status === 'online'"
+                                                     [class.warning]="device.status === 'warning'"
+                                                     [class.offline]="device.status === 'offline'">
+                                                    <i class="fa fa-microchip"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ device.nodeName || device.nodeCode }}</div>
+                                                    <div class="text-muted small">{{ device.nodeCode }}</div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge" [class]="getStatusBadgeClass(device.status)">
+                                            {{ device.status | titlecase }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted">{{ formatLastSeen(device.lastSeen) }}</td>
+                                    <td class="text-center">
+                                        <div class="uptime-bar">
+                                            <div class="uptime-fill" 
+                                                 [style.width.%]="device.uptimePercent"
+                                                 [class.bg-success]="device.uptimePercent >= 90"
+                                                 [class.bg-warning]="device.uptimePercent >= 70 && device.uptimePercent < 90"
+                                                 [class.bg-danger]="device.uptimePercent < 70">
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted">{{ device.uptimePercent }}%</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span [class.text-success]="device.latencyMs < 100"
+                                              [class.text-warning]="device.latencyMs >= 100 && device.latencyMs < 200"
+                                              [class.text-danger]="device.latencyMs >= 200">
+                                            {{ device.latencyMs }}ms
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </card-body>
+            </card>
+        </div>
     </div>
 </div>

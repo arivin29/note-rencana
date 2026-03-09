@@ -2,11 +2,9 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { WebgisMapPage } from './webgis-map/webgis-map';
-import { LayerUploadPage } from './layer-upload/layer-upload';
 
 const routes: Routes = [
-  { path: '', component: WebgisMapPage },
-  { path: 'upload', component: LayerUploadPage }
+  { path: '', component: WebgisMapPage }
 ];
 
 @NgModule({

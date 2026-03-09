@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
@@ -29,6 +29,8 @@ import { MqttModule } from './modules/mqtt/mqtt.module';
 import { DeviceCommandsModule } from './modules/device-commands/device-commands.module';
 import { IotLogsModule } from './modules/iot-logs/iot-logs.module';
 import { WidgetBuilderModule } from './modules/widget-builder/widget-builder.module';
+import { WebgisModule } from './modules/webgis/webgis.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -47,26 +49,30 @@ import * as entities from './entities';
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
         const dbPort = Number(configService.get<string>('DB_PORT')) || 5432;
         const sslEnabled = configService.get<string>('DB_SSL', 'false') === 'true';
 
-        return {
-          type: 'postgres' as const,
-          ...(databaseUrl
-            ? { url: databaseUrl }
-            : {
-                host: configService.get<string>('DB_HOST', 'localhost'),
-                port: dbPort,
-                username: configService.get<string>('DB_USERNAME', 'postgres'),
-                password: configService.get<string>('DB_PASSWORD', 'postgres'),
-                database: configService.get<string>('DB_NAME', 'iot'),
-              }),
+        const baseConfig: TypeOrmModuleOptions = {
+          type: 'postgres',
           ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
-          entities: Object.values(entities),
+          entities: Object.values(entities) as any[],
           synchronize: false,
         };
+
+        if (databaseUrl) {
+          return { ...baseConfig, url: databaseUrl } as TypeOrmModuleOptions;
+        }
+
+        return {
+          ...baseConfig,
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: dbPort,
+          username: configService.get<string>('DB_USERNAME', 'postgres'),
+          password: configService.get<string>('DB_PASSWORD', 'postgres'),
+          database: configService.get<string>('DB_NAME', 'iot'),
+        } as TypeOrmModuleOptions;
       },
     }),
     AuthModule,
@@ -92,6 +98,8 @@ import * as entities from './entities';
     DeviceCommandsModule,
     IotLogsModule,
     WidgetBuilderModule,
+    WebgisModule,
+    DocumentsModule,
     UsersModule,
     AuditModule,
     NotificationsModule,

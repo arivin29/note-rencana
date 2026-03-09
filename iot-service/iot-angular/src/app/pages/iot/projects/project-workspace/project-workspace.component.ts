@@ -6,6 +6,7 @@ import { AppSettings } from '../../../../service/app-settings.service';
 import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
+import { WebGisLayerStateService, LayerGroup } from '../../webgis/services/webgis-layer-state.service';
 
 export interface AssetTreeNode {
   id: string;
@@ -48,12 +49,17 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     { path: 'overview', icon: 'fa-tachometer-alt', label: 'Overview' },
     { path: 'nodes', icon: 'fa-server', label: 'Nodes' },
     { path: 'monitor', icon: 'fa-chart-line', label: 'Monitor', expanded: false, children: [] },
-    { path: 'map', icon: 'fa-map-marked-alt', label: 'Map' },
+    { path: 'map', icon: 'fa-map-marked-alt', label: 'Map', expanded: false },
     { path: 'analytics', icon: 'fa-chart-pie', label: 'Analytics' },
     { path: 'config', icon: 'fa-cog', label: 'Config' }
   ];
   
+  // Layer state (for map page)
+  layerGroups: LayerGroup[] = [];
+  layersLoading = false;
+  
   private routerSub!: Subscription;
+  private layerSub!: Subscription;
   private previousMinifiedState = false;
   
   constructor(
@@ -62,7 +68,8 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     private appSettings: AppSettings,
     private projectsService: ProjectsService,
     private nodesService: NodesService,
-    private widgetBuilderService: WidgetBuilderService
+    private widgetBuilderService: WidgetBuilderService,
+    public layerStateService: WebGisLayerStateService
   ) {}
   
   ngOnInit() {
@@ -83,11 +90,32 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
       this.updateSelectedAsset();
+      // Auto-expand map nav when on map page
+      const mapNav = this.navItems.find(n => n.path === 'map');
+      if (mapNav && this.isOnMapPage()) {
+        mapNav.expanded = true;
+      }
     });
     
     // Load sidebar collapsed state from localStorage
     const savedState = localStorage.getItem('projectSidebarCollapsed');
     this.sidebarCollapsed = savedState === 'true';
+    
+    // Subscribe to layer state changes
+    this.layerSub = this.layerStateService.getLayerGroups().subscribe(groups => {
+      this.layerGroups = groups;
+    });
+    this.layerStateService.getLoading().subscribe(loading => {
+      this.layersLoading = loading;
+    });
+    
+    // Auto-expand map nav on initial load if on map page
+    setTimeout(() => {
+      const mapNav = this.navItems.find(n => n.path === 'map');
+      if (mapNav && this.isOnMapPage()) {
+        mapNav.expanded = true;
+      }
+    }, 0);
   }
   
   ngOnDestroy() {
@@ -96,6 +124,9 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     
     if (this.routerSub) {
       this.routerSub.unsubscribe();
+    }
+    if (this.layerSub) {
+      this.layerSub.unsubscribe();
     }
   }
   
@@ -360,6 +391,70 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     this.router.navigate(['monitor', dashboardId], { relativeTo: this.route });
   }
   
+  // --- Layer tree methods (for map page) ---
+  isOnMapPage(): boolean {
+    return this.router.url.includes('/map');
+  }
+  
+  toggleLayerGroup(groupId: string): void {
+    this.layerStateService.toggleGroupExpansion(groupId);
+  }
+  
+  toggleLayerVisibility(layerId: string, event: MouseEvent): void {
+    event.stopPropagation();
+    const layer = this.layerGroups
+      .flatMap(g => g.layers)
+      .find(l => l.id === layerId);
+    if (layer) {
+      this.layerStateService.toggleLayer(layerId, !layer.visible);
+    }
+  }
+  
+  toggleGroupVisibility(group: LayerGroup, event: MouseEvent): void {
+    event.stopPropagation();
+    const allVisible = this.isGroupAllVisible(group);
+    this.layerStateService.toggleGroup(group.id, !allVisible);
+  }
+  
+  isGroupAllVisible(group: LayerGroup): boolean {
+    return group.layers.length > 0 && group.layers.every(l => l.visible);
+  }
+  
+  getLayerIcon(layer: any): string {
+    if (layer.type === 'core') {
+      return layer.code === 'nodes' ? 'bi-geo-alt' : 'bi-exclamation-triangle';
+    }
+    if (layer.type === 'sensor-type') {
+      return 'bi-broadcast';
+    }
+    return 'bi-vector-pen';
+  }
+  
+  refreshLayers(): void {
+    this.layerStateService.requestRefresh();
+  }
+  
+  openAddLayerDrawer(event?: Event, type: 'operational' | 'custom' = 'custom'): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.layerStateService.requestAddLayer(type);
+  }
+  
+  zoomToLayer(layerId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.layerStateService.requestZoomToLayer(layerId);
+  }
+  
+  editLayer(layerId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.layerStateService.requestEditLayer(layerId);
+  }
+
   // Context menu handler (for right-click)
   onContextMenu(event: MouseEvent, node: AssetTreeNode) {
     event.preventDefault();

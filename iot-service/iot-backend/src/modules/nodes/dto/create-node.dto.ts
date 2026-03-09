@@ -177,4 +177,10 @@ export class CreateNodeDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  // ========== WebGIS Icon ==========
+  @ApiPropertyOptional({ description: 'Icon URL for WebGIS map display (max 64x64px, 100KB)' })
+  @IsString()
+  @IsOptional()
+  iconUrl?: string;
 }

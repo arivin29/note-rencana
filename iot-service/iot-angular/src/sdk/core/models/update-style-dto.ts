@@ -10,7 +10,22 @@ export interface UpdateStyleDto {
   fillOpacity?: number;
   labelColor?: string;
   labelFields?: Array<string>;
+
+  /**
+   * Minimum zoom level to show labels (0-20)
+   */
+  labelMinZoom?: number;
   labelSize?: number;
+
+  /**
+   * Maximum zoom level to show layer (0-20)
+   */
+  maxZoom?: number;
+
+  /**
+   * Minimum zoom level to show layer (0-20)
+   */
+  minZoom?: number;
   pointRadius?: number;
   pointShape?: string;
   strokeColor?: string;

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { NgxEchartsModule } from 'ngx-echarts';
 
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { ProjectsRoutingModule } from './projects-routing.module';
@@ -15,6 +16,9 @@ import { NodesModule } from '../nodes/nodes.module';
 
 // Import WidgetBuilderModule for dashboard widgets in monitor page
 import { WidgetBuilderModule } from '../widget-builder/widget-builder.module';
+
+// Import WebgisModule for map page integration
+import { WebgisModule } from '../webgis/webgis.module';
 
 // New workspace components
 import { ProjectWorkspaceComponent } from './project-workspace/project-workspace.component';
@@ -52,7 +56,9 @@ import { ConfigPageComponent } from './project-workspace/pages/config-page/confi
     SharedComponentsModule, 
     ProjectsRoutingModule,
     NodesModule,  // Import NodesModule to use nodes-list and nodes-detail components
-    WidgetBuilderModule  // Import WidgetBuilderModule for dashboard widgets
+    WidgetBuilderModule,  // Import WidgetBuilderModule for dashboard widgets
+    WebgisModule,  // Import WebgisModule for map page integration
+    NgxEchartsModule  // Import NgxEchartsModule for sparkline charts in overview
   ]
 })
 export class ProjectsModule {}

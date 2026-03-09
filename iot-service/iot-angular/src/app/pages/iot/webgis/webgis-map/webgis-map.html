@@ -1,12 +1,12 @@
-<div class="webgis-page">
+<div class="webgis-page" [class.embedded-mode]="embeddedMode" [class.panel-collapsed]="layerPanelCollapsed">
   <div class="row g-0 h-100">
-    <!-- Layer Panel -->
-    <div class="col-auto layer-panel-col">
+    <!-- Layer Panel (hidden in embedded mode - shown in workspace sidebar instead) -->
+    <div class="col-auto layer-panel-col" [class.collapsed]="layerPanelCollapsed" *ngIf="!embeddedMode">
       <div class="layer-panel">
         <div class="panel-header">
           <span class="panel-title">Layers</span>
-          <button class="btn btn-sm btn-primary" routerLink="upload">
-            <i class="bi bi-upload me-1"></i>Upload
+          <button class="btn btn-sm btn-icon panel-collapse-btn" (click)="toggleLayerPanel()" title="Collapse">
+            <i class="bi bi-chevron-left"></i>
           </button>
         </div>
 
@@ -29,17 +29,26 @@
           <!-- Core Layers Group -->
           <div class="layer-group">
             <div class="group-header" (click)="toggleGroup('core')">
-              <i class="bi" [ngClass]="expandedGroups['core'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <i class="bi bi-database me-2"></i>
+              <i class="bi chevron-icon" [ngClass]="expandedGroups['core'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-database group-icon"></i>
               <span class="group-title">Core</span>
-              <span class="badge bg-secondary ms-auto">{{ getLayersByType('core').length }}</span>
+              <span class="badge count-badge">{{ getLayersByType('core').length }}</span>
+              <button class="btn btn-xs toggle-all-btn" 
+                      (click)="toggleAllInGroup('core'); $event.stopPropagation()"
+                      [title]="isGroupAllVisible('core') ? 'Hide All' : 'Show All'">
+                <i class="bi" [ngClass]="isGroupAllVisible('core') ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
             </div>
-            <div class="group-content" *ngIf="expandedGroups['core']">
+            <div class="group-content" [class.expanded]="expandedGroups['core']">
               <div class="layer-item" *ngFor="let ls of getLayersByType('core')"
                    [class.active]="ls.visible"
                    (click)="toggleLayer(ls)">
-                <i class="bi" [ngClass]="ls.visible ? 'bi-check-square' : 'bi-square'"></i>
+                <span class="layer-color-dot" [style.background]="getLayerColor(ls)"></span>
+                <i class="bi geometry-icon" [ngClass]="getGeometryIcon(ls)"></i>
                 <span class="layer-name">{{ ls.name }}</span>
+                <span class="feature-badge" *ngIf="getFeatureCount(ls) > 0">
+                  {{ getFeatureCount(ls) }}
+                </span>
                 <span class="layer-badge" *ngIf="ls.loading">
                   <div class="spinner-border spinner-border-sm"></div>
                 </span>
@@ -50,26 +59,68 @@
             </div>
           </div>
 
+          <!-- Sensors Group (dynamic sensor types) -->
+          <div class="layer-group" *ngIf="getLayersByType('sensor-type').length > 0">
+            <div class="group-header" (click)="toggleGroup('sensors')">
+              <i class="bi chevron-icon" [ngClass]="expandedGroups['sensors'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-activity group-icon sensor-icon"></i>
+              <span class="group-title">Sensor Channels</span>
+              <span class="badge count-badge">{{ getLayersByType('sensor-type').length }}</span>
+              <button class="btn btn-xs toggle-all-btn" 
+                      (click)="toggleAllInGroup('sensor-type'); $event.stopPropagation()"
+                      [title]="isGroupAllVisible('sensor-type') ? 'Hide All' : 'Show All'">
+                <i class="bi" [ngClass]="isGroupAllVisible('sensor-type') ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+            </div>
+            <div class="group-content" [class.expanded]="expandedGroups['sensors']">
+              <div class="layer-item" *ngFor="let ls of getLayersByType('sensor-type')"
+                   [class.active]="ls.visible"
+                   (click)="toggleLayer(ls)">
+                <span class="layer-color-dot" [style.background]="ls.style?.fill || '#10b981'"></span>
+                <i class="bi bi-broadcast geometry-icon sensor"></i>
+                <span class="layer-name">{{ ls.name }}</span>
+                <span class="feature-badge" *ngIf="ls.sensorType?.channelCount">
+                  {{ ls.sensorType?.channelCount }}
+                </span>
+                <span class="layer-badge" *ngIf="ls.loading">
+                  <div class="spinner-border spinner-border-sm"></div>
+                </span>
+              </div>
+              <div class="empty-group" *ngIf="getLayersByType('sensor-type').length === 0">
+                No sensor types available
+              </div>
+            </div>
+          </div>
+
           <!-- Operational Layers Group -->
           <div class="layer-group">
             <div class="group-header" (click)="toggleGroup('operational')">
-              <i class="bi" [ngClass]="expandedGroups['operational'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <i class="bi bi-gear me-2"></i>
+              <i class="bi chevron-icon" [ngClass]="expandedGroups['operational'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-gear group-icon operational-icon"></i>
               <span class="group-title">Operational</span>
-              <span class="badge bg-secondary ms-auto">{{ getLayersByType('operational').length }}</span>
-              <button class="btn btn-xs btn-outline-light ms-2" 
+              <span class="badge count-badge">{{ getLayersByType('operational').length }}</span>
+              <button class="btn btn-xs toggle-all-btn" 
+                      (click)="toggleAllInGroup('operational'); $event.stopPropagation()"
+                      [title]="isGroupAllVisible('operational') ? 'Hide All' : 'Show All'"
+                      *ngIf="getLayersByType('operational').length > 0">
+                <i class="bi" [ngClass]="isGroupAllVisible('operational') ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+              <button class="btn btn-xs add-layer-btn" 
                       (click)="addLayer('operational'); $event.stopPropagation()" 
                       title="Add Layer">
                 <i class="bi bi-plus"></i>
               </button>
             </div>
-            <div class="group-content" *ngIf="expandedGroups['operational']">
+            <div class="group-content" [class.expanded]="expandedGroups['operational']">
               <div class="layer-item" *ngFor="let ls of getLayersByType('operational'); let i = index"
                    [class.active]="ls.visible"
                    (click)="toggleLayer(ls)">
-                <span class="layer-index">{{ ls.layerData?.displayOrder ?? i }}</span>
-                <i class="bi" [ngClass]="ls.visible ? 'bi-check-square' : 'bi-square'"></i>
+                <span class="layer-color-dot" [style.background]="getLayerColor(ls)"></span>
+                <i class="bi geometry-icon" [ngClass]="getGeometryIcon(ls)"></i>
                 <span class="layer-name">{{ ls.name }}</span>
+                <span class="feature-badge" *ngIf="getFeatureCount(ls) > 0">
+                  {{ getFeatureCount(ls) }}
+                </span>
                 <span class="layer-badge" *ngIf="ls.loading">
                   <div class="spinner-border spinner-border-sm"></div>
                 </span>
@@ -95,23 +146,32 @@
           <!-- Custom Layers Group -->
           <div class="layer-group">
             <div class="group-header" (click)="toggleGroup('custom')">
-              <i class="bi" [ngClass]="expandedGroups['custom'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <i class="bi bi-layers me-2"></i>
+              <i class="bi chevron-icon" [ngClass]="expandedGroups['custom'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-layers group-icon custom-icon"></i>
               <span class="group-title">Custom</span>
-              <span class="badge bg-secondary ms-auto">{{ getLayersByType('custom').length }}</span>
-              <button class="btn btn-xs btn-outline-light ms-2" 
+              <span class="badge count-badge">{{ getLayersByType('custom').length }}</span>
+              <button class="btn btn-xs toggle-all-btn" 
+                      (click)="toggleAllInGroup('custom'); $event.stopPropagation()"
+                      [title]="isGroupAllVisible('custom') ? 'Hide All' : 'Show All'"
+                      *ngIf="getLayersByType('custom').length > 0">
+                <i class="bi" [ngClass]="isGroupAllVisible('custom') ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+              <button class="btn btn-xs add-layer-btn" 
                       (click)="addLayer('custom'); $event.stopPropagation()" 
                       title="Add Layer">
                 <i class="bi bi-plus"></i>
               </button>
             </div>
-            <div class="group-content" *ngIf="expandedGroups['custom']">
+            <div class="group-content" [class.expanded]="expandedGroups['custom']">
               <div class="layer-item" *ngFor="let ls of getLayersByType('custom'); let i = index"
                    [class.active]="ls.visible"
                    (click)="toggleLayer(ls)">
-                <span class="layer-index">{{ ls.layerData?.displayOrder ?? i }}</span>
-                <i class="bi" [ngClass]="ls.visible ? 'bi-check-square' : 'bi-square'"></i>
+                <span class="layer-color-dot" [style.background]="getLayerColor(ls)"></span>
+                <i class="bi geometry-icon" [ngClass]="getGeometryIcon(ls)"></i>
                 <span class="layer-name">{{ ls.name }}</span>
+                <span class="feature-badge" *ngIf="getFeatureCount(ls) > 0">
+                  {{ getFeatureCount(ls) }}
+                </span>
                 <span class="layer-badge" *ngIf="ls.loading">
                   <div class="spinner-border spinner-border-sm"></div>
                 </span>
@@ -142,16 +202,43 @@
     <div class="col map-col">
       <div #mapContainer class="map-container"></div>
       
-      <!-- Map Controls -->
+      <!-- Layer Panel Toggle (when collapsed, only in standalone mode) -->
+      <button *ngIf="layerPanelCollapsed && !embeddedMode" 
+              class="btn btn-control layer-panel-toggle" 
+              (click)="toggleLayerPanel()" 
+              title="Show Layers">
+        <i class="bi bi-layers"></i>
+      </button>
+      
+      <!-- Map Controls (Top Left) -->
       <div class="map-controls">
-        <button class="btn btn-light btn-sm" (click)="zoomIn()" title="Zoom In">
+        <button class="btn btn-control" (click)="zoomIn()" title="Zoom In">
           <i class="bi bi-plus-lg"></i>
         </button>
-        <button class="btn btn-light btn-sm" (click)="zoomOut()" title="Zoom Out">
+        <button class="btn btn-control" (click)="zoomOut()" title="Zoom Out">
           <i class="bi bi-dash-lg"></i>
         </button>
-        <button class="btn btn-light btn-sm" (click)="fitToAllLayers()" title="Fit All">
+        <div class="control-divider"></div>
+        <button class="btn btn-control" (click)="fitToAllLayers()" title="Fit to All Layers">
           <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+      </div>
+
+      <!-- Base Layer Picker (Bottom Right) -->
+      <div class="base-layer-picker" [class.open]="isBaseLayerPickerOpen">
+        <div class="base-layer-options" *ngIf="isBaseLayerPickerOpen">
+          <button *ngFor="let layer of baseLayers"
+                  class="base-layer-option"
+                  [class.selected]="selectedBaseLayer === layer.id"
+                  (click)="selectBaseLayer(layer.id)">
+            <i class="bi" [ngClass]="layer.icon"></i>
+            <span>{{ layer.name }}</span>
+          </button>
+        </div>
+        <button class="base-layer-toggle" 
+                (click)="toggleBaseLayerPicker()" 
+                title="Change Base Map">
+          <i class="bi" [ngClass]="getSelectedBaseLayerIcon()"></i>
         </button>
       </div>
 
@@ -167,7 +254,7 @@
       <sensor-labels
         [map]="getMapInstance()"
         [visible]="sensorLabelsVisible"
-        [sensorData]="sensorChannelData">
+        [sensorData]="filteredSensorChannelData">
       </sensor-labels>
 
       <!-- Node Drawer (for node features) -->
@@ -187,7 +274,7 @@
       <!-- Add Layer Drawer -->
       <add-layer-drawer
         [isOpen]="isAddLayerDrawerOpen"
-        [projectId]="projectId"
+        [projectId]="_projectId"
         [ownerId]="ownerId"
         [layerType]="addLayerType"
         (close)="closeAddLayerDrawer()"
@@ -204,6 +291,14 @@
         (styleSaved)="onLayerStyleSaved($event)"
         (layerDeleted)="onLayerDeleted($event)">
       </edit-layer-drawer>
+
+      <!-- Sensor Channel Drawer -->
+      <sensor-channel-drawer
+        [isOpen]="isSensorChannelDrawerOpen"
+        [channel]="selectedSensorChannel"
+        (close)="closeSensorChannelDrawer()"
+        (viewNode)="onViewNodeFromChannel($event)">
+      </sensor-channel-drawer>
     </div>
   </div>
 </div>

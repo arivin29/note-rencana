@@ -32,6 +32,10 @@ export interface LayerStyle {
     mappings: { value: string; color: string }[];
     defaultColor: string;
   };
+  // Zoom level visibility
+  minZoom?: number; // min zoom to show layer (hide when zoomed out)
+  maxZoom?: number; // max zoom to show layer (hide when zoomed in)
+  labelMinZoom?: number; // min zoom to show labels
 }
 
 export interface StyleUpdateEvent {
@@ -118,6 +122,10 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
 
   private initForm(): void {
     this.styleForm = this.fb.group({
+      // Layer info (editable)
+      layerName: [''],
+      layerDescription: [''],
+      // Style settings
       fillColor: ['#6366f1'],
       fillOpacity: [0.3],
       strokeColor: ['#6366f1'],
@@ -138,7 +146,11 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
       // Data-driven color
       colorByFieldEnabled: [false],
       colorByField: [''],
-      colorByFieldDefault: ['#6366f1']
+      colorByFieldDefault: ['#6366f1'],
+      // Zoom level visibility
+      minZoom: [0],
+      maxZoom: [20],
+      labelMinZoom: [12]
     });
 
     // Real-time preview on form changes
@@ -149,6 +161,12 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
 
   private loadLayerStyle(): void {
     if (!this.layer) return;
+
+    // Load layer info
+    this.styleForm.patchValue({
+      layerName: this.layer.layerName || '',
+      layerDescription: this.layer.layerDescription || ''
+    }, { emitEvent: false });
 
     // Load available properties from input (from parent's feature extraction), or fallback to config
     if (this.properties && this.properties.length > 0) {
@@ -194,7 +212,11 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
         // Data-driven color
         colorByFieldEnabled: style.colorByField?.enabled ?? false,
         colorByField: style.colorByField?.field || '',
-        colorByFieldDefault: style.colorByField?.defaultColor || '#6366f1'
+        colorByFieldDefault: style.colorByField?.defaultColor || '#6366f1',
+        // Zoom visibility
+        minZoom: style.minZoom ?? 0,
+        maxZoom: style.maxZoom ?? 20,
+        labelMinZoom: style.labelMinZoom ?? 12
       }, { emitEvent: false });
 
       // Load color mappings
@@ -235,7 +257,11 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
         field: formValue.colorByField,
         mappings: this.colorMappings,
         defaultColor: formValue.colorByFieldDefault
-      } : undefined
+      } : undefined,
+      // Zoom visibility
+      minZoom: formValue.minZoom,
+      maxZoom: formValue.maxZoom,
+      labelMinZoom: formValue.labelMinZoom
     };
     
     this.styleUpdated.emit({
@@ -319,7 +345,8 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
     try {
       const formValue = this.styleForm.value;
       
-      const styleDto: UpdateStyleDto = {
+      // Note: Cast to any because SDK needs regeneration to include zoom fields
+      const styleDto: any = {
         fillColor: formValue.fillColor,
         fillOpacity: formValue.fillOpacity,
         strokeColor: formValue.strokeColor,
@@ -329,7 +356,11 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
         pointShape: formValue.pointShape,
         labelFields: this.selectedLabelFields,
         labelColor: formValue.labelColor,
-        labelSize: formValue.labelSize
+        labelSize: formValue.labelSize,
+        // Zoom visibility
+        minZoom: formValue.minZoom,
+        maxZoom: formValue.maxZoom,
+        labelMinZoom: formValue.labelMinZoom
       };
 
       // Add data-driven stroke width if enabled
@@ -353,11 +384,15 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
         };
       }
 
-      // Use SDK method to update style
+      // Use SDK method to update layer (including name, description, and style)
       const updatedLayer = await firstValueFrom(
-        this.layersService.layersControllerUpdateStyle({
+        this.layersService.layersControllerUpdate({
           id: this.layer.idLayer,
-          body: styleDto
+          body: {
+            layerName: formValue.layerName,
+            layerDescription: formValue.layerDescription,
+            styleJson: styleDto
+          }
         })
       );
 
@@ -416,7 +451,11 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
       strokeWidthBase: 2,
       colorByFieldEnabled: false,
       colorByField: '',
-      colorByFieldDefault: '#6366f1'
+      colorByFieldDefault: '#6366f1',
+      // Zoom visibility
+      minZoom: 0,
+      maxZoom: 20,
+      labelMinZoom: 12
     });
   }
 

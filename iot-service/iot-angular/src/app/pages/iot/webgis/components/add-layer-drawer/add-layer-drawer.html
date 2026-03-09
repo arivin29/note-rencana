@@ -51,104 +51,110 @@
     <div class="step-content" *ngIf="currentStep === 'upload'">
       <form [formGroup]="layerForm">
         
-        <!-- Layer Name -->
-        <div class="form-group">
-          <label class="form-label">
-            <i class="bi bi-tag me-1"></i>Nama Layer <span class="text-danger">*</span>
-          </label>
-          <input type="text" 
-                 class="form-control form-control-sm" 
-                 formControlName="layerName"
-                 placeholder="Contoh: Jaringan Pipa Utama"
-                 [class.is-invalid]="layerForm.get('layerName')?.touched && layerForm.get('layerName')?.invalid">
-          <div class="invalid-feedback" *ngIf="layerForm.get('layerName')?.errors?.['required']">
-            Nama layer wajib diisi
+        <!-- Layer Info Section -->
+        <div class="form-section">
+          <!-- Layer Name -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-tag"></i>Nama Layer <span class="text-danger">*</span>
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   formControlName="layerName"
+                   placeholder="Contoh: Jaringan Pipa Utama"
+                   [class.is-invalid]="layerForm.get('layerName')?.touched && layerForm.get('layerName')?.invalid">
+            <div class="invalid-feedback" *ngIf="layerForm.get('layerName')?.errors?.['required']">
+              Nama layer wajib diisi
+            </div>
+            <div class="invalid-feedback" *ngIf="layerForm.get('layerName')?.errors?.['minlength']">
+              Minimal 3 karakter
+            </div>
           </div>
-          <div class="invalid-feedback" *ngIf="layerForm.get('layerName')?.errors?.['minlength']">
-            Minimal 3 karakter
+
+          <!-- Layer Code -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-code"></i>Kode Layer
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   formControlName="layerCode"
+                   placeholder="Auto-generated dari nama">
+            <small class="form-text">Otomatis dibuat dari nama layer</small>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-card-text"></i>Deskripsi
+            </label>
+            <textarea class="form-control" 
+                      formControlName="layerDescription"
+                      rows="2"
+                      placeholder="Deskripsi singkat layer..."></textarea>
           </div>
         </div>
 
-        <!-- Layer Code -->
-        <div class="form-group">
-          <label class="form-label">
-            <i class="bi bi-code me-1"></i>Kode Layer
-          </label>
-          <input type="text" 
-                 class="form-control form-control-sm" 
-                 formControlName="layerCode"
-                 placeholder="Auto-generated dari nama">
-          <small class="form-text">Otomatis dibuat dari nama layer</small>
-        </div>
-
-        <!-- Description -->
-        <div class="form-group">
-          <label class="form-label">
-            <i class="bi bi-card-text me-1"></i>Deskripsi
-          </label>
-          <textarea class="form-control form-control-sm" 
-                    formControlName="layerDescription"
-                    rows="2"
-                    placeholder="Deskripsi singkat layer..."></textarea>
-        </div>
-
-        <!-- Source Type -->
-        <div class="form-group">
-          <label class="form-label">
-            <i class="bi bi-file-earmark me-1"></i>Tipe File <span class="text-danger">*</span>
-          </label>
-          <select class="form-select form-select-sm" 
+        <!-- File Upload Section -->
+        <div class="form-section">
+          <!-- Source Type -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-file-earmark"></i>Tipe File <span class="text-danger">*</span>
+            </label>
+            <select class="form-select" 
                   formControlName="sourceType"
                   (change)="onSourceTypeChange()">
-            <option *ngFor="let opt of sourceTypeOptions" [value]="opt.value">
-              {{ opt.label }} ({{ opt.extensions.join(', ') }})
-            </option>
-          </select>
-        </div>
-
-        <!-- File Upload -->
-        <div class="form-group">
-          <label class="form-label">
-            <i class="bi bi-upload me-1"></i>Upload File <span class="text-danger">*</span>
-          </label>
-          <div class="file-upload-area" 
-               [class.has-file]="selectedFile"
-               [class.has-error]="fileError">
-            <input type="file" 
-                   class="file-input"
-                   [accept]="getAcceptedExtensions()"
-                   (change)="onFileSelected($event)"
-                   #fileInput>
-            
-            <div class="file-placeholder" *ngIf="!selectedFile" (click)="fileInput.click()">
-              <i class="bi bi-cloud-upload upload-icon"></i>
-              <span class="upload-text">Klik atau drag file kesini</span>
-              <span class="upload-hint">Max 50MB</span>
-            </div>
-            
-            <div class="file-selected" *ngIf="selectedFile">
-              <i class="bi bi-file-earmark-check file-icon"></i>
-              <div class="file-info">
-                <span class="file-name">{{ selectedFile.name }}</span>
-                <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
-              </div>
-              <button type="button" class="btn btn-sm btn-outline-danger btn-remove" (click)="selectedFile = null; fileInput.value = ''">
-                <i class="bi bi-x"></i>
-              </button>
-            </div>
+              <option *ngFor="let opt of sourceTypeOptions" [value]="opt.value">
+                {{ opt.label }} ({{ opt.extensions.join(', ') }})
+              </option>
+            </select>
           </div>
-          <div class="error-text" *ngIf="fileError">{{ fileError }}</div>
-        </div>
 
-        <!-- Visible by default -->
-        <div class="form-check">
-          <input type="checkbox" 
-                 class="form-check-input" 
-                 id="isVisibleDefault"
-                 formControlName="isVisibleDefault">
-          <label class="form-check-label" for="isVisibleDefault">
-            Tampilkan layer secara default
-          </label>
+          <!-- File Upload -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-upload"></i>Upload File <span class="text-danger">*</span>
+            </label>
+            <div class="file-upload-area" 
+                 [class.has-file]="selectedFile"
+                 [class.has-error]="fileError">
+              <input type="file" 
+                     class="file-input"
+                     [accept]="getAcceptedExtensions()"
+                     (change)="onFileSelected($event)"
+                     #fileInput>
+              
+              <div class="file-placeholder" *ngIf="!selectedFile" (click)="fileInput.click()">
+                <i class="bi bi-cloud-upload upload-icon"></i>
+                <span class="upload-text">Klik atau drag file kesini</span>
+                <span class="upload-hint">Max 50MB</span>
+              </div>
+              
+              <div class="file-selected" *ngIf="selectedFile">
+                <i class="bi bi-file-earmark-check file-icon"></i>
+                <div class="file-info">
+                  <span class="file-name">{{ selectedFile.name }}</span>
+                  <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove" (click)="selectedFile = null; fileInput.value = ''">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            <div class="error-text" *ngIf="fileError">{{ fileError }}</div>
+          </div>
+
+          <!-- Visible by default -->
+          <div class="form-check">
+            <input type="checkbox" 
+                   class="form-check-input" 
+                   id="isVisibleDefault"
+                   formControlName="isVisibleDefault">
+            <label class="form-check-label" for="isVisibleDefault">
+              Tampilkan layer secara default
+            </label>
+          </div>
         </div>
 
       </form>

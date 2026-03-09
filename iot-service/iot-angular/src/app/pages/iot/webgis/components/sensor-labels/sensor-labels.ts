@@ -84,8 +84,9 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
         overlay = new Overlay({
           element,
           positioning: 'bottom-center',
-          offset: [0, -35], // Position above the node marker
+          offset: [0, -15], // Position above the node marker
           stopEvent: false,
+           
           className: 'sensor-label-overlay'
         });
 

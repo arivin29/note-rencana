@@ -13,7 +13,15 @@ export class FeaturePopupComponent {
 
   get featureProperties(): { key: string; value: any }[] {
     return Object.entries(this.feature)
-      .filter(([key]) => !key.startsWith('_') && key !== 'geometry')
+      .filter(([key, value]) => {
+        // Skip internal/geometry keys
+        if (key.startsWith('_') || key === 'geometry') return false;
+        // Skip null, undefined, empty strings
+        if (value === null || value === undefined || value === '') return false;
+        // Skip offset index (internal use)
+        if (key === 'offsetIndex' || key === 'coordinateSource') return false;
+        return true;
+      })
       .map(([key, value]) => ({ key, value }));
   }
 

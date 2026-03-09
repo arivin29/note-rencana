@@ -16,8 +16,8 @@
     <!-- Navigation Menu -->
     <nav class="sidebar-nav" *ngIf="!sidebarCollapsed">
       <ng-container *ngFor="let item of navItems">
-        <!-- Nav item with children (expandable) -->
-        <ng-container *ngIf="hasNavChildren(item)">
+        <!-- Nav item with children (expandable) - for Monitor dashboards -->
+        <ng-container *ngIf="hasNavChildren(item) && item.path !== 'map'">
           <div class="nav-item-group">
             <a class="nav-item has-children"
                [class.active]="isNavActive(item.path)"
@@ -42,8 +42,93 @@
           </div>
         </ng-container>
         
+        <!-- Map nav item with layers as children -->
+        <ng-container *ngIf="item.path === 'map'">
+          <div class="nav-item-group">
+            <a class="nav-item has-children"
+               [class.active]="isNavActive(item.path)"
+               [class.expanded]="item.expanded"
+               (click)="navigateTo(item.path)">
+              <i class="fa" [ngClass]="item.icon"></i>
+              <span>{{ item.label }}</span>
+              <i class="fa fa-chevron-down expand-icon" 
+                 [class.rotated]="item.expanded"
+                 (click)="toggleNavItem(item, $event)"></i>
+            </a>
+            <!-- Layer groups as children -->
+            <div class="nav-children layer-children" *ngIf="item.expanded && isOnMapPage()">
+              <!-- Loading -->
+              <div class="layer-loading" *ngIf="layersLoading">
+                <div class="spinner-border spinner-border-sm"></div>
+                <span>Loading...</span>
+              </div>
+              
+              <!-- Layer Groups -->
+              <ng-container *ngIf="!layersLoading">
+                <ng-container *ngFor="let group of layerGroups">
+                  <!-- Group Header -->
+                  <div class="layer-group-header" (click)="toggleLayerGroup(group.id); $event.stopPropagation()">
+                    <i class="bi chevron-icon" [ngClass]="group.expanded ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                    <i class="bi" [ngClass]="group.icon"></i>
+                    <span class="group-name">{{ group.name }}</span>
+                    <span class="layer-count">{{ group.layers.length }}</span>
+                    <button class="btn-icon toggle-visibility" 
+                            (click)="toggleGroupVisibility(group, $event)"
+                            [title]="isGroupAllVisible(group) ? 'Hide all' : 'Show all'">
+                      <i class="bi" [ngClass]="isGroupAllVisible(group) ? 'bi-eye' : 'bi-eye-slash'"></i>
+                    </button>
+                    <button class="btn-icon add-to-group" 
+                            *ngIf="group.id === 'operational' || group.id === 'custom'"
+                            (click)="openAddLayerDrawer($event, group.id === 'operational' ? 'operational' : 'custom')"
+                            title="Add layer">
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
+                  
+                  <!-- Layer Items -->
+                  <div class="layer-group-content" *ngIf="group.expanded">
+                    <div class="layer-item" 
+                         *ngFor="let layer of group.layers"
+                         [class.visible]="layer.visible"
+                         [class.loading]="layer.loading"
+                         (click)="toggleLayerVisibility(layer.id, $event)">
+                      <span class="layer-color-dot" [style.backgroundColor]="layer.style?.fill || '#6366f1'"></span>
+                      <i class="bi layer-icon" [ngClass]="getLayerIcon(layer)"></i>
+                      <span class="layer-name">{{ layer.name }}</span>
+                      <span class="feature-count" *ngIf="layer.featureCount">{{ layer.featureCount }}</span>
+                      <!-- Loading spinner -->
+                      <span class="layer-spinner" *ngIf="layer.loading">
+                        <div class="spinner-border spinner-border-sm"></div>
+                      </span>
+                      <!-- Actions for operational/custom -->
+                      <span class="layer-actions" *ngIf="!layer.loading && (layer.type === 'operational' || layer.type === 'custom')">
+                        <button class="btn-action" (click)="zoomToLayer(layer.id, $event)" title="Zoom to Layer">
+                          <i class="bi bi-geo-alt"></i>
+                        </button>
+                        <button class="btn-action" (click)="editLayer(layer.id, $event)" title="Edit Style">
+                          <i class="bi bi-palette"></i>
+                        </button>
+                      </span>
+                      <i class="bi visibility-icon" *ngIf="!layer.loading" [ngClass]="layer.visible ? 'bi-eye' : 'bi-eye-slash'"></i>
+                    </div>
+                    <!-- Empty state for group -->
+                    <div class="group-empty" *ngIf="group.layers.length === 0">
+                      <span>No {{ group.name.toLowerCase() }} layers</span>
+                    </div>
+                  </div>
+                </ng-container>
+                
+                <!-- Empty state -->
+                <div class="layer-empty" *ngIf="layerGroups.length === 0">
+                  <span>No layers</span>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
+        
         <!-- Nav item without children (simple) -->
-        <a *ngIf="!hasNavChildren(item)"
+        <a *ngIf="!hasNavChildren(item) && item.path !== 'map'"
            class="nav-item"
            [class.active]="isNavActive(item.path)"
            (click)="navigateTo(item.path)">

@@ -128,6 +128,7 @@ export { SensorLogStatisticsDto } from './models/sensor-log-statistics-dto';
 export { SensorLogTelemetryTrendDto } from './models/sensor-log-telemetry-trend-dto';
 export { SensorLogTelemetryTrendsResponseDto } from './models/sensor-log-telemetry-trends-response-dto';
 export { SensorResponseDto } from './models/sensor-response-dto';
+export { SensorTypeDto } from './models/sensor-type-dto';
 export { SensorTypeResponseDto } from './models/sensor-type-response-dto';
 export { SlaStatDto } from './models/sla-stat-dto';
 export { StrokeWidthByFieldDto } from './models/stroke-width-by-field-dto';

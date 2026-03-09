@@ -128,6 +128,10 @@ export class Node {
   @Column({ type: 'text', array: true, nullable: true })
   tags: string[];
 
+  // ========== Icon for WebGIS ==========
+  @Column({ type: 'text', nullable: true, name: 'icon_url' })
+  iconUrl: string;
+
   // ========== Timestamps ==========
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;

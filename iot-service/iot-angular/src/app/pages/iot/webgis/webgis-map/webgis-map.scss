@@ -5,12 +5,32 @@
   .row {
     height: 100%;
   }
+  
+  // Embedded mode styling (when used in project workspace)
+  &.embedded-mode {
+    height: 100%;
+  }
+  
+  // Layer panel collapsed state
+  &.panel-collapsed {
+    .layer-panel-col {
+      width: 0;
+      overflow: hidden;
+    }
+  }
 }
 
 .layer-panel-col {
-  width: 280px;
+  width: 240px;
   height: 100%;
-  background: #1e1e2e; // Dark panel background
+  background: #1e1e2e;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+  overflow-x: hidden;
+  
+  &.collapsed {
+    width: 0;
+  }
 }
 
 .layer-panel {
@@ -20,6 +40,7 @@
   background: #1e1e2e;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   color: #e0e0e0;
+  min-width: 240px;
   
   .panel-header {
     padding: 0.75rem 1rem;
@@ -33,6 +54,19 @@
       font-weight: 600;
       font-size: 0.95rem;
       color: #fff;
+    }
+    
+    .panel-collapse-btn {
+      padding: 0.25rem;
+      color: rgba(255, 255, 255, 0.5);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      
+      &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
     }
     
     .btn-outline-primary {
@@ -79,10 +113,12 @@
 }
 
 .layer-group {
+  margin-bottom: 0.25rem;
+  
   .group-header {
     display: flex;
     align-items: center;
-    padding: 0.6rem 1rem;
+    padding: 0.6rem 0.75rem;
     cursor: pointer;
     font-size: 0.75rem;
     font-weight: 600;
@@ -90,28 +126,64 @@
     letter-spacing: 0.5px;
     color: rgba(255, 255, 255, 0.6);
     transition: background 0.15s, color 0.15s;
+    gap: 0.35rem;
     
     &:hover {
       background: rgba(255, 255, 255, 0.05);
       color: rgba(255, 255, 255, 0.9);
     }
     
-    i {
-      margin-right: 0.5rem;
-      font-size: 0.9rem;
+    .chevron-icon {
+      font-size: 0.7rem;
+      transition: transform 0.2s ease;
+      color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .group-icon {
+      font-size: 0.85rem;
+      
+      &.sensor-icon {
+        color: #10b981;
+      }
+      &.operational-icon {
+        color: #22d3ee;
+      }
+      &.custom-icon {
+        color: #f59e0b;
+      }
     }
     
     .group-title {
       flex: 1;
     }
     
-    .badge {
+    .count-badge {
       font-size: 0.65rem;
       font-weight: 500;
       background: rgba(99, 102, 241, 0.2);
       color: #a5b4fc;
       border-radius: 10px;
-      padding: 0.2rem 0.5rem;
+      padding: 0.15rem 0.45rem;
+      min-width: 20px;
+      text-align: center;
+    }
+    
+    .toggle-all-btn,
+    .add-layer-btn {
+      padding: 0.2rem 0.35rem;
+      font-size: 0.7rem;
+      line-height: 1;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.5);
+      border-radius: 4px;
+      transition: all 0.15s;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.9);
+      }
     }
     
     .btn-xs {
@@ -122,57 +194,62 @@
   }
   
   .group-content {
-    padding-left: 0.5rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+    opacity: 0;
+    padding-left: 0.1rem;
+    
+    &.expanded {
+      max-height: 500px;
+      opacity: 1;
+      transition: max-height 0.3s ease-in, opacity 0.2s ease-in;
+    }
   }
   
   .layer-item {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+    gap: 0.35rem;
+    padding: 0.45rem 0.4rem 0.45rem 0.75rem;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: background 0.15s;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
+    border-left: 2px solid transparent;
     
     &:hover {
       background: rgba(255, 255, 255, 0.05);
     }
     
     &.active {
-      color: #818cf8;
+      color: #fff;
+      border-left-color: #818cf8;
+      background: rgba(99, 102, 241, 0.08);
       
-      .bi-check-square {
-        color: #818cf8;
+      .layer-color-dot {
+        box-shadow: 0 0 6px currentColor;
       }
     }
     
-    // Layer index number
-    .layer-index {
-      font-size: 0.7rem;
-      font-weight: 600;
+    // Color dot indicator
+    .layer-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: box-shadow 0.2s;
+    }
+    
+    // Geometry type icon
+    .geometry-icon {
+      font-size: 0.65rem;
       color: rgba(255, 255, 255, 0.4);
-      min-width: 14px;
+      width: 14px;
       text-align: center;
-    }
-    
-    // Layer type indicator
-    .layer-icon {
-      width: 18px;
-      height: 4px;
-      border-radius: 2px;
-      background: #6366f1;
       
-      &.icon-line {
-        height: 3px;
-        background: #22d3ee;
-      }
-      
-      &.icon-point {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #10b981;
+      &.sensor {
+        color: #10b981;
       }
     }
     
@@ -181,6 +258,18 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    
+    // Feature count badge
+    .feature-badge {
+      font-size: 0.65rem;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+      padding: 0.1rem 0.4rem;
+      min-width: 18px;
+      text-align: center;
     }
     
     .layer-badge {
@@ -193,13 +282,14 @@
     
     .layer-actions {
       display: flex;
-      gap: 0.25rem;
+      gap: 0.15rem;
       opacity: 0;
       transition: opacity 0.15s;
       
       .btn-link {
-        padding: 0.15rem 0.35rem;
-        color: rgba(255, 255, 255, 0.5);
+        padding: 0.1rem 0.25rem;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.75rem;
         
         &:hover {
           color: #818cf8;
@@ -213,9 +303,9 @@
   }
   
   .empty-group {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1rem 0.5rem 1.5rem;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.35);
     font-style: italic;
   }
 }
@@ -234,28 +324,178 @@
 .map-controls {
   position: absolute;
   top: 0.75rem;
-  right: 0.75rem;
+  left: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
   z-index: 100;
+  background: rgba(30, 30, 46, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   
-  .btn {
+  .btn-control {
     width: 36px;
     height: 36px;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.12s;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    
+    &:active {
+      background: rgba(99, 102, 241, 0.3);
+    }
+  }
+  
+  .control-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 6px;
+  }
+}
+
+// Layer panel toggle button (shows when panel is collapsed)
+.layer-panel-toggle {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 30, 46, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.15s;
+  
+  &:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: #818cf8;
+    color: #fff;
+  }
+  
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+// Adjust map controls position when panel toggle is visible
+.panel-collapsed .map-controls {
+  top: 4rem;
+}
+
+// Base Layer Picker
+.base-layer-picker {
+  position: absolute;
+  bottom: 1rem;
+  left: 0.75rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  
+  .base-layer-toggle {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     background: rgba(30, 30, 46, 0.9);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.15s;
     
     &:hover {
       background: rgba(50, 50, 70, 0.95);
+      color: #fff;
       border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+  
+  &.open .base-layer-toggle {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #818cf8;
+    color: #a5b4fc;
+  }
+  
+  .base-layer-options {
+    margin-bottom: 0.5rem;
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    min-width: 130px;
+    animation: slideUp 0.15s ease-out;
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+  
+  .base-layer-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.12s;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    
+    &.selected {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      
+      i {
+        color: #818cf8;
+      }
+    }
+    
+    i {
+      font-size: 0.85rem;
+      width: 16px;
+      text-align: center;
     }
   }
 }
@@ -273,27 +513,6 @@
   button {
     background: transparent !important;
     color: rgba(255, 255, 255, 0.7) !important;
-  }
-}
-
-// OL zoom controls styling
-::ng-deep .ol-zoom {
-  top: auto !important;
-  bottom: 2rem !important;
-  right: 0.75rem !important;
-  left: auto !important;
-  
-  .ol-zoom-in,
-  .ol-zoom-out {
-    background: rgba(30, 30, 46, 0.9) !important;
-    color: #fff !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    width: 36px !important;
-    height: 36px !important;
-    
-    &:hover {
-      background: rgba(50, 50, 70, 0.95) !important;
-    }
   }
 }
 
