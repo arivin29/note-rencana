@@ -36,6 +36,7 @@ import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ClickhouseModule } from './modules/clickhouse';
 import { MlModule } from './modules/ml/ml.module';
+import { ReportModule } from './modules/report/report.module';
 import clickhouseConfig from './config/clickhouse.config';
 import * as entities from './entities'; 
 
@@ -105,6 +106,7 @@ import * as entities from './entities';
     NotificationsModule,
     ClickhouseModule,
     MlModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [

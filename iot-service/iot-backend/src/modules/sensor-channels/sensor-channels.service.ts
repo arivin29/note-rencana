@@ -42,6 +42,7 @@ export class SensorChannelsService {
         search?: string;
         idSensor?: string;
         idSensorType?: string;
+        idNode?: string;
     }): Promise<{ data: SensorChannelResponseDto[]; total: number; page: number; limit: number }> {
         const page = Math.max(1, params.page || 1);
         const limit = Math.min(100, Math.max(1, params.limit || 50));
@@ -55,6 +56,11 @@ export class SensorChannelsService {
 
         if (params.idSensorType) {
             where.idSensorType = params.idSensorType;
+        }
+
+        if (params.idNode) {
+            // Filter by node via sensor relation
+            where.sensor = { idNode: params.idNode };
         }
 
         if (params.search) {

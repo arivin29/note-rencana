@@ -38,3 +38,4 @@ export { MlNotificationsService } from './services/ml-notifications.service';
 export { MlAnomaliesService } from './services/ml-anomalies.service';
 export { MlForecastsService } from './services/ml-forecasts.service';
 export { MlDashboardService } from './services/ml-dashboard.service';
+export { ReportsService } from './services/reports.service';

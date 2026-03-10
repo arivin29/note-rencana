@@ -44,3 +44,6 @@ export type { ParsedResult, ParsedField, FieldMapping } from './spatial-upload-f
 
 // Documents
 export { Document, DocumentStatus } from './document.entity';
+
+// Report
+export { ReportTemplate } from './report-template.entity';

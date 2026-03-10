@@ -42,6 +42,7 @@ import { MlNotificationsService } from './services/ml-notifications.service';
 import { MlAnomaliesService } from './services/ml-anomalies.service';
 import { MlForecastsService } from './services/ml-forecasts.service';
 import { MlDashboardService } from './services/ml-dashboard.service';
+import { ReportsService } from './services/reports.service';
 
 /**
  * Module that provides all services and configuration.
@@ -87,6 +88,7 @@ import { MlDashboardService } from './services/ml-dashboard.service';
     MlAnomaliesService,
     MlForecastsService,
     MlDashboardService,
+    ReportsService,
     ApiConfiguration
   ],
 })

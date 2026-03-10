@@ -175,6 +175,12 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/telemetry/telemetry.module').then((m) => m.TelemetryModule)
     },
     {
+        path: 'iot/report',
+        loadChildren: () => import('./pages/iot/report/report.module').then((m) => m.ReportModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Report & Export' }
+    },
+    {
         path: 'iot/ml',
         loadChildren: () => import('./pages/iot/ml-dashboard/ml-dashboard.module').then((m) => m.MlDashboardModule),
         canActivate: [AuthGuard],

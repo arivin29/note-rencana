@@ -15,6 +15,11 @@ export interface SensorChannelsControllerFindAll$Params {
   search?: string;
   idSensor?: string;
   idSensorType?: string;
+
+/**
+ * Filter by node ID
+ */
+  idNode?: string;
 }
 
 export function sensorChannelsControllerFindAll(http: HttpClient, rootUrl: string, params?: SensorChannelsControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -25,6 +30,7 @@ export function sensorChannelsControllerFindAll(http: HttpClient, rootUrl: strin
     rb.query('search', params.search, {});
     rb.query('idSensor', params.idSensor, {});
     rb.query('idSensorType', params.idSensorType, {});
+    rb.query('idNode', params.idNode, {});
   }
 
   return http.request(
