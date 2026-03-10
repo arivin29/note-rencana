@@ -1,0 +1,39 @@
+{
+  "index_patterns": ["anomaly-results-*"],
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "refresh_interval": "10s"
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "detected_at": { "type": "date" },
+        "channel_id": { "type": "keyword" },
+        "node_id": { "type": "keyword" },
+        "node_code": { "type": "keyword" },
+        "project_id": { "type": "keyword" },
+        "metric_code": { "type": "keyword" },
+        "actual_value": { "type": "float" },
+        "expected_value": { "type": "float" },
+        "anomaly_score": { "type": "float" },
+        "anomaly_grade": { "type": "keyword" },
+        "anomaly_type": { "type": "keyword" },
+        "detector_id": { "type": "keyword" },
+        "detector_name": { "type": "keyword" },
+        "deviation_percent": { "type": "float" },
+        "threshold_min": { "type": "float" },
+        "threshold_max": { "type": "float" },
+        "is_acknowledged": { "type": "boolean" },
+        "alert_event_id": { "type": "keyword" },
+        "raw_result": { "type": "object", "enabled": false }
+      }
+    }
+  },
+  "priority": 100,
+  "version": 1
+}

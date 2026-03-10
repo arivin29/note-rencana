@@ -267,10 +267,117 @@
                                 </div>
                             </div>
 
+                            <!-- Stat Card Widget Preview -->
+                            <div *ngSwitchCase="'stat-card'" class="stat-card-preview">
+                                <div *ngIf="previewOptions" class="stat-card-display" 
+                                     [class]="'layout-' + form.display.statCardOptions.layout">
+                                    <!-- Icon (top for centered, inline for others) -->
+                                    <div class="stat-icon-preview" *ngIf="form.display.statCardOptions.icon && form.display.statCardOptions.layout === 'with-icon'">
+                                        <i class="fa {{ form.display.statCardOptions.icon }} fa-2x" 
+                                           [style.color]="form.display.statCardOptions.iconColor"></i>
+                                    </div>
+                                    <div class="stat-content-preview">
+                                        <div class="stat-icon-top" *ngIf="form.display.statCardOptions.icon && form.display.statCardOptions.layout === 'centered'">
+                                            <i class="fa {{ form.display.statCardOptions.icon }} fa-2x" 
+                                               [style.color]="form.display.statCardOptions.iconColor"></i>
+                                        </div>
+                                        <div class="stat-value-row">
+                                            <span class="stat-prefix" *ngIf="form.display.statCardOptions.prefix">{{ form.display.statCardOptions.prefix }}</span>
+                                            <span class="stat-value-preview" 
+                                                  [class]="getStatFontSizeClass()"
+                                                  [style.color]="getStatValueColor(previewOptions.value)">
+                                                {{ previewOptions.value | number:'1.0-' + form.yAxis.decimals }}
+                                            </span>
+                                            <span class="stat-unit" *ngIf="form.yAxis.unit">{{ form.yAxis.unit }}</span>
+                                        </div>
+                                        <div class="stat-suffix-row" *ngIf="form.display.statCardOptions.suffix">
+                                            <span class="stat-suffix text-muted small">{{ form.display.statCardOptions.suffix }}</span>
+                                        </div>
+                                        <div class="stat-trend-preview" *ngIf="form.display.statCardOptions.showTrend && previewOptions.trend">
+                                            <span [class.text-success]="previewOptions.trend === 'up'" 
+                                                  [class.text-danger]="previewOptions.trend === 'down'">
+                                                <i class="fa fa-arrow-{{ previewOptions.trend }}"></i>
+                                                {{ previewOptions.trendPercent }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div *ngIf="!previewOptions" class="no-data">
+                                    <i class="fa fa-chart-bar fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">No data - Run query first</p>
+                                </div>
+                            </div>
+
                             <!-- Data Table type uses table preview by default -->
                             <div *ngSwitchCase="'data-table'" class="no-data">
                                 <i class="fa fa-table fa-3x text-muted mb-3"></i>
                                 <p class="text-muted mb-0">Switch to "Table" tab to see data</p>
+                            </div>
+
+                            <!-- Table Widget - show inline table preview -->
+                            <div *ngSwitchCase="'table'" class="table-preview-inline">
+                                <div *ngIf="queryResult && queryResult.rows.length > 0" class="table-responsive" style="max-height: 350px;">
+                                    <table class="table table-sm mb-0"
+                                           [class.table-striped]="form.display.tableOptions.striped"
+                                           [class.table-hover]="form.display.tableOptions.hover"
+                                           [class.table-bordered]="form.display.tableOptions.bordered"
+                                           [style.font-size.px]="form.display.tableOptions.fontSize">
+                                        <thead class="table-dark sticky-top">
+                                            <tr>
+                                                <ng-container *ngIf="form.display.tableOptions.columns.length > 0; else defaultHeaders">
+                                                    <th *ngFor="let col of form.display.tableOptions.columns"
+                                                        [style.text-align]="col.align"
+                                                        [hidden]="!col.visible">
+                                                        {{ col.displayName || col.field }}
+                                                    </th>
+                                                </ng-container>
+                                                <ng-template #defaultHeaders>
+                                                    <th *ngFor="let col of queryResult.columns">{{ col }}</th>
+                                                </ng-template>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr *ngFor="let row of queryResult.rows | slice:0:20">
+                                                <ng-container *ngIf="form.display.tableOptions.columns.length > 0; else defaultCells">
+                                                    <td *ngFor="let col of form.display.tableOptions.columns"
+                                                        [style.text-align]="col.align"
+                                                        [hidden]="!col.visible">
+                                                        <ng-container [ngSwitch]="col.type">
+                                                            <!-- Number formatting -->
+                                                            <span *ngSwitchCase="'number'">
+                                                                {{ formatNumberCell(row[col.field], col.decimals, col.unit) }}
+                                                            </span>
+                                                            <!-- Date formatting -->
+                                                            <span *ngSwitchCase="'date'">
+                                                                {{ formatDateCell(row[col.field], col.dateFormat) }}
+                                                            </span>
+                                                            <!-- Status badge -->
+                                                            <span *ngSwitchCase="'status'" 
+                                                                  class="badge"
+                                                                  [ngClass]="getStatusBadgeClass(row[col.field])">
+                                                                {{ row[col.field] }}
+                                                            </span>
+                                                            <!-- Default text -->
+                                                            <span *ngSwitchDefault>{{ row[col.field] }}</span>
+                                                        </ng-container>
+                                                    </td>
+                                                </ng-container>
+                                                <ng-template #defaultCells>
+                                                    <td *ngFor="let col of queryResult.columns">
+                                                        {{ formatCellValue(row[col]) }}
+                                                    </td>
+                                                </ng-template>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div *ngIf="queryResult.rows.length > 20" class="text-center text-muted small py-2">
+                                        Showing 20 of {{ queryResult.rows.length }} rows
+                                    </div>
+                                </div>
+                                <div *ngIf="!queryResult || queryResult.rows.length === 0" class="no-data">
+                                    <i class="fa fa-table fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">No data - Run query first</p>
+                                </div>
                             </div>
 
                         </ng-container>
@@ -314,29 +421,28 @@
                 <card-header class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
                         <i class="fa fa-database text-theme"></i>
-                        <span class="fw-bold">Data Source</span>
-                        <!-- Data Source Selector -->
-                        <select class="form-select form-select-sm datasource-select" [(ngModel)]="selectedDataSource"
-                            (ngModelChange)="onDataSourceChange()" style="width: auto; min-width: 140px;">
-                            <option value="postgresql" [disabled]="!dataSources.postgresql.available">
-                                <i class="fa fa-database"></i> PostgreSQL
-                            </option>
-                            <option value="clickhouse" [disabled]="!dataSources.clickhouse.available">
-                                ClickHouse {{ !dataSources.clickhouse.available ? '(unavailable)' : '' }}
-                            </option>
-                        </select>
+                        <span class="fw-bold">Queries</span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <!-- Templates Dropdown -->
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                                 data-bs-toggle="dropdown">
-                                <i class="fa fa-file-code me-1"></i> Templates
+                                <i class="fa fa-file-code me-1"></i> Templates 
+                                <span class="badge bg-secondary ms-1">{{ getSqlTemplates().length }}</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li *ngFor="let tpl of sqlTemplates">
-                                    <a class="dropdown-item" href="javascript:;" (click)="applySqlTemplate(tpl)">
-                                        {{ tpl.name }}
+                            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px;">
+                                <li class="dropdown-header" *ngIf="selectedDataSource === 'postgresql'">
+                                    <i class="fa fa-database me-1"></i> PostgreSQL Templates
+                                </li>
+                                <li class="dropdown-header" *ngIf="selectedDataSource === 'clickhouse'">
+                                    <i class="fa fa-bolt me-1"></i> ClickHouse Templates
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li *ngFor="let tpl of getSqlTemplates()">
+                                    <a class="dropdown-item d-flex flex-column py-2" href="javascript:;" (click)="applySqlTemplate(tpl)">
+                                        <span class="fw-semibold">{{ tpl.name }}</span>
+                                        <small class="text-muted" *ngIf="tpl.description">{{ tpl.description }}</small>
                                     </a>
                                 </li>
                             </ul>
@@ -346,14 +452,67 @@
                             [disabled]="!form.sql || queryLoading">
                             <span *ngIf="queryLoading" class="spinner-border spinner-border-sm me-1"></span>
                             <i *ngIf="!queryLoading" class="fa fa-play me-1"></i>
-                            Run Query
+                            {{ isMultiQuery ? 'Run All' : 'Run Query' }}
                         </button>
                     </div>
                 </card-header>
 
-                <!-- Data Source Info Banner -->
-                <div class="datasource-info px-3 py-2 border-bottom"
+                <!-- Multi-Query Tabs -->
+                <div class="query-tabs px-3 py-2 border-bottom d-flex align-items-center gap-1 bg-dark bg-opacity-25" style="overflow-x: auto;">
+                    <div *ngFor="let q of queries; let i = index"
+                        class="query-tab d-flex align-items-center gap-1 px-2 py-1 rounded-1 cursor-pointer"
+                        [class.active]="i === activeQueryIndex"
+                        [class.bg-theme]="i === activeQueryIndex"
+                        [class.bg-opacity-25]="i === activeQueryIndex"
+                        [class.text-white-50]="i !== activeQueryIndex"
+                        [class.opacity-50]="!q.enabled"
+                        (click)="selectQuery(i)"
+                        style="white-space: nowrap; font-size: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                        <input type="color" [value]="q.color || '#73bf69'"
+                            (input)="q.color = $any($event.target).value"
+                            (click)="$event.stopPropagation()"
+                            style="width: 14px; height: 14px; border: none; padding: 0; cursor: pointer; border-radius: 2px; background: transparent;">
+                        <span class="badge me-1"
+                            [class.bg-success]="q.dataSource === 'clickhouse' && q.enabled"
+                            [class.bg-primary]="q.dataSource === 'postgresql' && q.enabled"
+                            [class.bg-secondary]="!q.enabled"
+                            style="font-size: 9px; padding: 2px 4px;">
+                            {{ q.dataSource === 'clickhouse' ? 'CH' : 'PG' }}
+                        </span>
+                        <span class="fw-semibold">{{ q.name }}</span>
+                        <button *ngIf="queries.length > 1" class="btn btn-link btn-sm p-0 ms-1 text-white-50"
+                            (click)="toggleQueryEnabled(i, $event)" 
+                            [title]="q.enabled ? 'Disable query' : 'Enable query'"
+                            style="font-size: 10px; line-height: 1;">
+                            <i class="fa" [class.fa-eye]="q.enabled" [class.fa-eye-slash]="!q.enabled"></i>
+                        </button>
+                        <button *ngIf="queries.length > 1" class="btn btn-link btn-sm p-0 ms-1 text-danger"
+                            (click)="removeQuery(i); $event.stopPropagation()" title="Remove query"
+                            style="font-size: 10px; line-height: 1;">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" (click)="addQuery()"
+                        title="Add another data source query" style="font-size: 11px;">
+                        <i class="fa fa-plus me-1"></i> Add Query
+                    </button>
+                    <span *ngIf="isMultiQuery" class="ms-auto text-white-50 small">
+                        <i class="fa fa-info-circle me-1"></i> Results merged with _source column
+                    </span>
+                </div>
+
+                <!-- Data Source Selector + Info Banner (per active query) -->
+                <div class="datasource-info px-3 py-2 border-bottom d-flex align-items-center gap-3"
                     [class.bg-info-subtle]="selectedDataSource === 'clickhouse'">
+                    <select class="form-select form-select-sm datasource-select" [(ngModel)]="selectedDataSource"
+                        (ngModelChange)="onDataSourceChange(); syncFormToActiveQuery()" style="width: auto; min-width: 150px;">
+                        <option value="postgresql" [disabled]="!dataSources.postgresql.available">
+                            PostgreSQL
+                        </option>
+                        <option value="clickhouse" [disabled]="!dataSources.clickhouse.available">
+                            ClickHouse {{ !dataSources.clickhouse.available ? '(unavailable)' : '' }}
+                        </option>
+                    </select>
                     <small class="text-muted" *ngIf="selectedDataSource === 'postgresql'">
                         <i class="fa fa-info-circle me-1"></i>
                         PostgreSQL: Best for real-time data, transactions, and complex joins
@@ -362,6 +521,156 @@
                         <i class="fa fa-bolt me-1 text-warning"></i>
                         ClickHouse: Optimized for time-series analytics and aggregations
                     </small>
+                </div>
+
+                <!-- Query Filters: Node, Sensor, Channel -->
+                <div class="query-filters px-3 py-2 border-bottom bg-dark bg-opacity-25">
+                    <div class="row g-2 align-items-end">
+                        <!-- Node Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-server me-1 text-info"></i> Node
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedNodeId" (ngModelChange)="onNodeChange()">
+                                <option value="">All Nodes</option>
+                                <option *ngFor="let node of nodesList" [value]="node.id">
+                                    {{ node.label }} <span *ngIf="node.code">({{ node.code }})</span>
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Sensor Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-microchip me-1 text-success"></i> Sensor
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedSensorId" (ngModelChange)="onSensorChange()">
+                                <option value="">All Sensors</option>
+                                <option *ngFor="let sensor of filteredSensors" [value]="sensor.id">
+                                    {{ sensor.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Channel Filter -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-chart-line me-1 text-warning"></i> Channel
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedChannelId">
+                                <option value="">All Channels</option>
+                                <option *ngFor="let channel of filteredChannels" [value]="channel.id">
+                                    {{ channel.label }} <span *ngIf="channel.unit">({{ channel.unit }})</span>
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Insert Filter Button -->
+                        <div class="col-md-3">
+                            <div class="btn-group w-100">
+                                <button type="button" class="btn btn-sm btn-outline-info dropdown-toggle" 
+                                    data-bs-toggle="dropdown" 
+                                    [disabled]="!selectedNodeId && !selectedSensorId && !selectedChannelId">
+                                    <i class="fa fa-filter me-1"></i> Insert Filter
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li *ngIf="selectedNodeId">
+                                        <a class="dropdown-item" href="javascript:;" (click)="insertFilterPlaceholder('node')">
+                                            <i class="fa fa-server me-2 text-info"></i> Filter by Node
+                                        </a>
+                                    </li>
+                                    <li *ngIf="selectedSensorId">
+                                        <a class="dropdown-item" href="javascript:;" (click)="insertFilterPlaceholder('sensor')">
+                                            <i class="fa fa-microchip me-2 text-success"></i> Filter by Sensor
+                                        </a>
+                                    </li>
+                                    <li *ngIf="selectedChannelId">
+                                        <a class="dropdown-item" href="javascript:;" (click)="insertFilterPlaceholder('channel')">
+                                            <i class="fa fa-chart-line me-2 text-warning"></i> Filter by Channel
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Filter Summary -->
+                    <div class="mt-2" *ngIf="selectedNodeId || selectedSensorId || selectedChannelId">
+                        <small class="text-muted">
+                            <i class="fa fa-filter me-1"></i> Active filters:
+                            <span *ngIf="selectedNodeId" class="badge bg-info me-1">
+                                Node: {{ getSelectedNodeLabel() }}
+                            </span>
+                            <span *ngIf="selectedSensorId" class="badge bg-success me-1">
+                                Sensor: {{ getSelectedSensorLabel() }}
+                            </span>
+                            <span *ngIf="selectedChannelId" class="badge bg-warning text-dark">
+                                Channel: {{ getSelectedChannelLabel() }}
+                            </span>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Query Builder: Group By & Aggregation -->
+                <div class="query-builder px-3 py-2 border-bottom bg-dark bg-opacity-10">
+                    <div class="row g-2 align-items-end">
+                        <!-- Time Grouping -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-clock me-1 text-primary"></i> Group by Time
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedGroupByTime">
+                                <option *ngFor="let opt of groupByTimeOptions" [value]="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Entity Grouping -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-layer-group me-1 text-purple"></i> Group by Entity
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedGroupByEntity">
+                                <option *ngFor="let opt of groupByEntityOptions" [value]="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Aggregation Function -->
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">
+                                <i class="fa fa-calculator me-1 text-success"></i> Aggregation
+                            </label>
+                            <select class="form-select form-select-sm" [(ngModel)]="selectedAggregation">
+                                <option *ngFor="let opt of aggregationOptions" [value]="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <!-- Generate Query Button -->
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-sm btn-theme w-100" 
+                                (click)="generateGroupedQuery()"
+                                [disabled]="!selectedGroupByTime && !selectedGroupByEntity">
+                                <i class="fa fa-magic me-1"></i> Generate Query
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Info -->
+                    <div class="mt-2" *ngIf="selectedGroupByTime || selectedGroupByEntity">
+                        <small class="text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Will generate: 
+                            <code *ngIf="selectedGroupByTime">{{ getSelectedGroupByTimeLabel() }}</code>
+                            <span *ngIf="selectedGroupByTime && selectedGroupByEntity"> + </span>
+                            <code *ngIf="selectedGroupByEntity">{{ getSelectedGroupByEntityLabel() }}</code>
+                            → <code>{{ getSelectedAggregationLabel() }}</code>
+                        </small>
+                    </div>
                 </div>
 
                 <card-body class="p-0">
@@ -421,8 +730,68 @@
                     </card-body>
                 </card>
 
-                <!-- Field Mapping Card -->
-                <card class="mb-3">
+                <!-- Table Options Card (for table widget) - MUST BE EARLY FOR VISIBILITY -->
+                <card class="mb-3" *ngIf="selectedType === 'table'">
+                    <card-header>
+                        <i class="fa fa-table me-2 text-theme"></i>
+                        <span class="fw-bold">Table Options</span>
+                    </card-header>
+                    <card-body>
+                        <!-- Striped Rows -->
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Striped Rows</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" 
+                                    [(ngModel)]="form.display.tableOptions.striped">
+                            </div>
+                        </div>
+                        <!-- Hover Effect -->
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Hover Effect</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" 
+                                    [(ngModel)]="form.display.tableOptions.hover">
+                            </div>
+                        </div>
+                        <!-- Bordered -->
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Show Borders</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" 
+                                    [(ngModel)]="form.display.tableOptions.bordered">
+                            </div>
+                        </div>
+                        <!-- Compact Mode -->
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Compact Mode</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" 
+                                    [(ngModel)]="form.display.tableOptions.compact">
+                            </div>
+                        </div>
+                        <!-- Sortable Columns -->
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Sortable Columns</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" 
+                                    [(ngModel)]="form.display.tableOptions.sortable">
+                            </div>
+                        </div>
+                        <!-- Font Size -->
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <span class="text-white-50">Font Size</span>
+                            <div class="d-flex align-items-center gap-2" style="width: 120px;">
+                                <input type="range" class="form-range flex-grow-1" 
+                                    [(ngModel)]="form.display.tableOptions.fontSize"
+                                    min="10" max="16" step="1">
+                                <span class="badge bg-secondary">{{ form.display.tableOptions.fontSize }}px</span>
+                            </div>
+                        </div>
+                    </card-body>
+                </card>
+
+                <!-- Field Mapping Card (hide for table widget) -->
+                <card class="mb-3" *ngIf="selectedType !== 'table'">
                     <card-header>
                         <i class="fa fa-project-diagram me-2 text-theme"></i>
                         <span class="fw-bold">Field Mapping</span>
@@ -476,7 +845,7 @@
                             <div class="mb-0">
                                 <label class="form-label">Series Field (Group By)</label>
                                 <select class="form-select" [(ngModel)]="form.mapping.seriesField"
-                                    (ngModelChange)="updatePreview()">
+                                    (ngModelChange)="refreshSeriesFromData()">
                                     <option value="">None</option>
                                     <option *ngFor="let col of availableColumns" [value]="col">{{ col }}</option>
                                 </select>
@@ -595,6 +964,198 @@
                                     [class.btn-outline-secondary]="form.display.showPoints !== 'never'"
                                     (click)="form.display.showPoints = 'never'; updatePreview()">Never</button>
                             </div>
+                        </div>
+
+                        <!-- Data Smoothing (for line chart only) -->
+                        <div class="mt-3 pt-3 border-top" *ngIf="selectedType === 'line-chart'">
+                            <div class="option-row d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <span class="text-white">Data Smoothing</span>
+                                    <div class="small text-white-50">Remove sensor outliers/spikes</div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        [(ngModel)]="form.display.smoothing.enabled"
+                                        (ngModelChange)="updatePreview()">
+                                </div>
+                            </div>
+                            
+                            <!-- Smoothing Options (shown when enabled) -->
+                            <div *ngIf="form.display.smoothing.enabled" class="ps-3 border-start border-theme ms-2 mt-2">
+                                <!-- Outlier Threshold -->
+                                <div class="py-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-white-50 small">Outlier Threshold</span>
+                                        <span class="badge bg-theme">{{ form.display.smoothing.threshold }}%</span>
+                                    </div>
+                                    <input type="range" class="form-range"
+                                        [(ngModel)]="form.display.smoothing.threshold"
+                                        (ngModelChange)="updatePreview()" min="10" max="90" step="5">
+                                    <div class="text-muted small">Flag values differing >{{ form.display.smoothing.threshold }}% from median</div>
+                                </div>
+                                
+                                <!-- Min Consecutive -->
+                                <div class="py-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-white-50 small">Min Consecutive</span>
+                                        <span class="badge bg-theme">{{ form.display.smoothing.minConsecutive }}</span>
+                                    </div>
+                                    <input type="range" class="form-range"
+                                        [(ngModel)]="form.display.smoothing.minConsecutive"
+                                        (ngModelChange)="updatePreview()" min="2" max="10" step="1">
+                                    <div class="text-muted small">Keep if {{ form.display.smoothing.minConsecutive }}+ outliers in a row (real drop)</div>
+                                </div>
+                                
+                                <!-- Smooth Method -->
+                                <div class="py-2">
+                                    <span class="text-white-50 small d-block mb-2">Replacement Method</span>
+                                    <div class="btn-group btn-group-sm w-100">
+                                        <button class="btn" [class.btn-theme]="form.display.smoothing.method === 'interpolate'"
+                                            [class.btn-outline-secondary]="form.display.smoothing.method !== 'interpolate'"
+                                            (click)="form.display.smoothing.method = 'interpolate'; updatePreview()"
+                                            title="Linear interpolation between neighbors">
+                                            <i class="fa fa-chart-line me-1"></i>Interpolate
+                                        </button>
+                                        <button class="btn" [class.btn-theme]="form.display.smoothing.method === 'average'"
+                                            [class.btn-outline-secondary]="form.display.smoothing.method !== 'average'"
+                                            (click)="form.display.smoothing.method = 'average'; updatePreview()"
+                                            title="Use average of neighbors">
+                                            <i class="fa fa-calculator me-1"></i>Average
+                                        </button>
+                                        <button class="btn" [class.btn-theme]="form.display.smoothing.method === 'previous'"
+                                            [class.btn-outline-secondary]="form.display.smoothing.method !== 'previous'"
+                                            (click)="form.display.smoothing.method = 'previous'; updatePreview()"
+                                            title="Use previous valid value">
+                                            <i class="fa fa-arrow-left me-1"></i>Previous
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bar Orientation (for bar chart only) -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom"
+                            *ngIf="selectedType === 'bar-chart'">
+                            <span class="text-white-50">Orientation</span>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn" [class.btn-theme]="form.display.barOrientation === 'vertical'"
+                                    [class.btn-outline-secondary]="form.display.barOrientation !== 'vertical'"
+                                    (click)="form.display.barOrientation = 'vertical'; updatePreview()">
+                                    <i class="fa fa-chart-bar fa-rotate-0 me-1"></i>Vertical
+                                </button>
+                                <button class="btn" [class.btn-theme]="form.display.barOrientation === 'horizontal'"
+                                    [class.btn-outline-secondary]="form.display.barOrientation !== 'horizontal'"
+                                    (click)="form.display.barOrientation = 'horizontal'; updatePreview()">
+                                    <i class="fa fa-chart-bar fa-rotate-90 me-1"></i>Horizontal
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Show Data Labels (for bar chart only) -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2"
+                            *ngIf="selectedType === 'bar-chart'">
+                            <span class="text-white-50">Show Values on Bar</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" [(ngModel)]="form.display.showDataLabels"
+                                    (ngModelChange)="updatePreview()">
+                            </div>
+                        </div>
+                    </card-body>
+                </card>
+
+                <!-- Table Column Config Card (for table widget) -->
+                <card class="mb-2" *ngIf="selectedType === 'table' && queryResult && queryResult.rows && queryResult.rows.length > 0">
+                    <card-header class="py-2 cursor-pointer" (click)="toggleSection('tableColumns')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fa fa-columns me-2 text-theme"></i>
+                                <span class="fw-bold">Column Configuration</span>
+                                <span class="badge bg-theme ms-2">{{ form.display.tableOptions.columns.length }}</span>
+                            </div>
+                            <i class="fa" [class.fa-chevron-down]="!expandedSections.tableColumns"
+                                [class.fa-chevron-up]="expandedSections.tableColumns"></i>
+                        </div>
+                    </card-header>
+                    <card-body *ngIf="expandedSections.tableColumns" class="py-2">
+                        <div class="table-column-config">
+                            <div *ngFor="let col of form.display.tableOptions.columns; let i = index" 
+                                 class="column-config-item border rounded p-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="form-check-input" 
+                                            [(ngModel)]="col.visible">
+                                        <strong class="text-white">{{ col.field }}</strong>
+                                    </div>
+                                    <span class="badge" 
+                                        [class.bg-info]="col.type === 'text'"
+                                        [class.bg-primary]="col.type === 'number'"
+                                        [class.bg-warning]="col.type === 'date'"
+                                        [class.bg-success]="col.type === 'status'">
+                                        {{ col.type }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Display Name -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small text-white-50 mb-1">Display Name</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                            [(ngModel)]="col.displayName"
+                                            placeholder="Column header">
+                                    </div>
+                                    <div class="col-3">
+                                        <label class="form-label small text-white-50 mb-1">Align</label>
+                                        <select class="form-select form-select-sm" [(ngModel)]="col.align">
+                                            <option value="left">Left</option>
+                                            <option value="center">Center</option>
+                                            <option value="right">Right</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-3">
+                                        <label class="form-label small text-white-50 mb-1">Type</label>
+                                        <select class="form-select form-select-sm" [(ngModel)]="col.type">
+                                            <option value="text">Text</option>
+                                            <option value="number">Number</option>
+                                            <option value="date">Date</option>
+                                            <option value="status">Status</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Number options -->
+                                <div class="row g-2" *ngIf="col.type === 'number'">
+                                    <div class="col-6">
+                                        <label class="form-label small text-white-50 mb-1">Decimals</label>
+                                        <input type="number" class="form-control form-control-sm" 
+                                            [(ngModel)]="col.decimals" min="0" max="6">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small text-white-50 mb-1">Unit</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                            [(ngModel)]="col.unit" placeholder="e.g. bar, m³/h">
+                                    </div>
+                                </div>
+
+                                <!-- Date options -->
+                                <div class="row g-2" *ngIf="col.type === 'date'">
+                                    <div class="col-12">
+                                        <label class="form-label small text-white-50 mb-1">Date Format</label>
+                                        <select class="form-select form-select-sm" [(ngModel)]="col.dateFormat">
+                                            <option value="DD/MM/YYYY HH:mm">DD/MM/YYYY HH:mm</option>
+                                            <option value="YYYY-MM-DD HH:mm">YYYY-MM-DD HH:mm</option>
+                                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                            <option value="HH:mm:ss">HH:mm:ss</option>
+                                            <option value="HH:mm">HH:mm</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Auto-generate columns button -->
+                            <button class="btn btn-sm btn-outline-theme w-100" 
+                                (click)="autoGenerateTableColumns()">
+                                <i class="fa fa-magic me-1"></i> Auto-detect Columns from Data
+                            </button>
                         </div>
                     </card-body>
                 </card>
@@ -800,9 +1361,204 @@
                     </card-body>
                 </card>
 
+                <!-- Gauge Config Card (for gauge widget type) -->
+                <card class="mb-2" *ngIf="selectedType === 'gauge' || selectedType === 'stat-card'">
+                    <card-header class="py-2 cursor-pointer" (click)="expandedSections.gaugeConfig = !expandedSections.gaugeConfig">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fa fa-tachometer-alt me-2 text-theme"></i>
+                                <span class="fw-bold">Gauge Config</span>
+                            </div>
+                            <i class="fa" [class.fa-chevron-down]="!expandedSections.gaugeConfig"
+                                [class.fa-chevron-up]="expandedSections.gaugeConfig"></i>
+                        </div>
+                    </card-header>
+                    <card-body *ngIf="expandedSections.gaugeConfig !== false" class="py-2">
+                        <!-- Min / Max -->
+                        <div class="option-row py-2 border-bottom">
+                            <div class="text-white-50 mb-1">Min / Max Value</div>
+                            <div class="d-flex gap-2">
+                                <div class="flex-fill">
+                                    <label class="form-label small mb-1">Min</label>
+                                    <input type="number" class="form-control form-control-sm" 
+                                        [(ngModel)]="form.yAxis.min"
+                                        (ngModelChange)="updatePreview()" placeholder="0">
+                                </div>
+                                <div class="flex-fill">
+                                    <label class="form-label small mb-1">Max</label>
+                                    <input type="number" class="form-control form-control-sm" 
+                                        [(ngModel)]="form.yAxis.max"
+                                        (ngModelChange)="updatePreview()" placeholder="100">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Unit -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Unit</span>
+                            <select class="form-select form-select-sm" style="width: 150px;"
+                                [(ngModel)]="form.yAxis.unit" (ngModelChange)="updatePreview()">
+                                <option value="">None</option>
+                                <option *ngFor="let u of unitPresets" [value]="u.value">{{ u.label }}</option>
+                            </select>
+                        </div>
+                        <!-- Decimals -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2">
+                            <span class="text-white-50">Decimals</span>
+                            <select class="form-select form-select-sm" style="width: 100px;"
+                                [(ngModel)]="form.yAxis.decimals" (ngModelChange)="updatePreview()">
+                                <option [ngValue]="0">0</option>
+                                <option [ngValue]="1">1</option>
+                                <option [ngValue]="2">2</option>
+                                <option [ngValue]="3">3</option>
+                                <option [ngValue]="4">4</option>
+                            </select>
+                        </div>
+                    </card-body>
+                </card>
+
+                <!-- Stat Card Config (for stat-card widget type only) -->
+                <card class="mb-2" *ngIf="selectedType === 'stat-card'">
+                    <card-header class="py-2 cursor-pointer" (click)="expandedSections.statCardConfig = !expandedSections.statCardConfig">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fa fa-chart-bar me-2 text-theme"></i>
+                                <span class="fw-bold">Stat Card Options</span>
+                            </div>
+                            <i class="fa" [class.fa-chevron-down]="!expandedSections.statCardConfig"
+                                [class.fa-chevron-up]="expandedSections.statCardConfig"></i>
+                        </div>
+                    </card-header>
+                    <card-body *ngIf="expandedSections.statCardConfig !== false" class="py-2">
+                        <!-- Layout Style -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Layout Style</span>
+                            <select class="form-select form-select-sm" style="width: 150px;"
+                                [(ngModel)]="form.display.statCardOptions.layout" (ngModelChange)="updatePreview()">
+                                <option value="centered">Centered</option>
+                                <option value="left-aligned">Left Aligned</option>
+                                <option value="with-icon">With Icon</option>
+                                <option value="compact">Compact</option>
+                            </select>
+                        </div>
+                        <!-- Icon -->
+                        <div class="option-row py-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-white-50">Icon</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span *ngIf="form.display.statCardOptions.icon" 
+                                          class="fa {{ form.display.statCardOptions.icon }}" 
+                                          [style.color]="form.display.statCardOptions.iconColor"></span>
+                                    <select class="form-select form-select-sm" style="width: 150px;"
+                                        [(ngModel)]="form.display.statCardOptions.icon" (ngModelChange)="updatePreview()">
+                                        <option value="">None</option>
+                                        <option value="fa-thermometer-half">🌡️ Temperature</option>
+                                        <option value="fa-tint">💧 Water/Humidity</option>
+                                        <option value="fa-tachometer-alt">⚡ Pressure/Speed</option>
+                                        <option value="fa-bolt">⚡ Power/Electric</option>
+                                        <option value="fa-battery-three-quarters">🔋 Battery</option>
+                                        <option value="fa-signal">📶 Signal</option>
+                                        <option value="fa-wifi">📡 WiFi</option>
+                                        <option value="fa-microchip">💻 CPU/Device</option>
+                                        <option value="fa-cloud">☁️ Cloud</option>
+                                        <option value="fa-chart-line">📈 Trend</option>
+                                        <option value="fa-users">👥 Users</option>
+                                        <option value="fa-dollar-sign">💰 Money</option>
+                                        <option value="fa-clock">⏰ Time</option>
+                                        <option value="fa-bell">🔔 Alert</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center" *ngIf="form.display.statCardOptions.icon">
+                                <span class="text-white-50 small">Icon Color</span>
+                                <input type="color" class="form-control form-control-color p-0" style="width: 32px; height: 24px;"
+                                    [(ngModel)]="form.display.statCardOptions.iconColor" (ngModelChange)="updatePreview()">
+                            </div>
+                        </div>
+                        <!-- Prefix/Suffix -->
+                        <div class="option-row py-2 border-bottom">
+                            <div class="text-white-50 mb-1">Prefix / Suffix</div>
+                            <div class="d-flex gap-2">
+                                <div class="flex-fill">
+                                    <label class="form-label small mb-1">Prefix</label>
+                                    <input type="text" class="form-control form-control-sm" 
+                                        [(ngModel)]="form.display.statCardOptions.prefix"
+                                        (ngModelChange)="updatePreview()" placeholder="Rp, $, €">
+                                </div>
+                                <div class="flex-fill">
+                                    <label class="form-label small mb-1">Suffix</label>
+                                    <input type="text" class="form-control form-control-sm" 
+                                        [(ngModel)]="form.display.statCardOptions.suffix"
+                                        (ngModelChange)="updatePreview()" placeholder="per jam, /s">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Font Size -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Value Font Size</span>
+                            <select class="form-select form-select-sm" style="width: 120px;"
+                                [(ngModel)]="form.display.statCardOptions.fontSize" (ngModelChange)="updatePreview()">
+                                <option value="small">Small</option>
+                                <option value="medium">Medium</option>
+                                <option value="large">Large</option>
+                                <option value="xlarge">X-Large</option>
+                            </select>
+                        </div>
+                        <!-- Show Trend -->
+                        <div class="option-row py-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-white-50">Show Trend</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        [(ngModel)]="form.display.statCardOptions.showTrend" (ngModelChange)="updatePreview()">
+                                </div>
+                            </div>
+                            <div class="mt-2" *ngIf="form.display.statCardOptions.showTrend">
+                                <label class="form-label small mb-1">Trend Compare Field</label>
+                                <select class="form-select form-select-sm"
+                                    [(ngModel)]="form.display.statCardOptions.trendField" (ngModelChange)="updatePreview()">
+                                    <option value="">Auto (Previous Row)</option>
+                                    <option *ngFor="let col of getNumericColumns()" [value]="col">{{ col }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Show Sparkline -->
+                        <div class="option-row py-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-white-50">Show Sparkline</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        [(ngModel)]="form.display.statCardOptions.showSparkline" (ngModelChange)="updatePreview()">
+                                </div>
+                            </div>
+                            <div class="mt-2" *ngIf="form.display.statCardOptions.showSparkline">
+                                <label class="form-label small mb-1">Sparkline Field</label>
+                                <select class="form-select form-select-sm"
+                                    [(ngModel)]="form.display.statCardOptions.sparklineField" (ngModelChange)="updatePreview()">
+                                    <option value="">Same as Value Field</option>
+                                    <option *ngFor="let col of getNumericColumns()" [value]="col">{{ col }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Threshold Colors -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="text-white-50">Apply Threshold Colors</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                    [(ngModel)]="form.display.statCardOptions.thresholdColors" (ngModelChange)="updatePreview()">
+                            </div>
+                        </div>
+                        <!-- Value Color -->
+                        <div class="option-row d-flex justify-content-between align-items-center py-2">
+                            <span class="text-white-50">Default Value Color</span>
+                            <input type="color" class="form-control form-control-color p-0" style="width: 40px; height: 28px;"
+                                [(ngModel)]="form.display.statCardOptions.valueColor" (ngModelChange)="updatePreview()">
+                        </div>
+                    </card-body>
+                </card>
+
                 <!-- Thresholds Card (collapsible, Grafana style) -->
                 <card class="mb-2"
-                    *ngIf="selectedType === 'line-chart' || selectedType === 'multi-line-chart' || selectedType === 'gauge'">
+                    *ngIf="selectedType === 'line-chart' || selectedType === 'multi-line-chart' || selectedType === 'gauge' || selectedType === 'stat-card'">
                     <card-header class="py-2 cursor-pointer" (click)="toggleSection('thresholds')">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -881,6 +1637,20 @@
                                         [class.btn-outline-secondary]="threshold.lineStyle !== 'dashed'"
                                         (click)="threshold.lineStyle = 'dashed'; updateThreshold(i)">┄</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto Load from Sensor Channel -->
+                        <div class="mt-2 pt-2 border-top">
+                            <button class="btn btn-sm btn-outline-info w-100"
+                                (click)="loadThresholdsFromChannel()"
+                                [disabled]="!selectedChannelId"
+                                title="Load min/max thresholds from sensor channel configuration">
+                                <i class="fa fa-download me-1"></i>
+                                Load from Sensor Channel
+                            </button>
+                            <div *ngIf="!selectedChannelId" class="text-white-50 small mt-1 text-center">
+                                Select a channel in filter above first
                             </div>
                         </div>
 

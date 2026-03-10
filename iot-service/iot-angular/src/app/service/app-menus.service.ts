@@ -23,7 +23,12 @@ export class AppMenuService {
 			{ 'path': '/iot/alerts', 'icon': 'bi bi-bell', 'text': 'Alerts' },
 			{ 'path': '/iot/telemetry', 'icon': 'bi bi-activity', 'text': 'Telemetry Logs' },
 			{ 'path': '/iot/widget-builder', 'icon': 'bi bi-grid-3x3-gap', 'text': 'Widget Builder', 'badge': 'NEW', 'badge_bg': 'bg-success' },
-			{ 'path': '/iot/widgets-showcase', 'icon': 'bi bi-grid-1x2', 'text': 'Widget Showcase' },
+			// { 'path': '/iot/widgets-showcase', 'icon': 'bi bi-grid-1x2', 'text': 'Widget Showcase' },
+			{ 'path': '/iot/ml', 'icon': 'bi bi-robot', 'text': 'ML Dashboard', 'badge': 'AI', 'badge_bg': 'bg-info', 'roles': ['admin', 'tenant'], 'children': [
+				{ 'path': '/iot/ml', 'text': 'Overview' },
+				{ 'path': '/iot/ml/anomalies', 'text': 'Anomalies' },
+				{ 'path': '/iot/ml/forecasts', 'text': 'Forecasts' }
+			]},
 			{ 'path': '/iot/config', 'icon': 'bi bi-sliders', 'text': 'IoT Config', 'roles': ['admin'] },
 			{ 'is_divider': true },
 			{ 'text': 'Help & Support', 'is_header': true },

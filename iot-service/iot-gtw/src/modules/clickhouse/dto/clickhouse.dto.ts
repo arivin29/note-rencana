@@ -26,6 +26,8 @@ export interface SensorTelemetryDto {
   metric_unit: string;
   raw_value: number;
   eng_value: number;
+  min_threshold: number;
+  max_threshold: number;
   signal_quality?: number;
   firmware_version?: string;
   iot_log_id: string;
@@ -53,6 +55,8 @@ export interface SensorChannelLatestDto {
   metric_unit: string;
   raw_value: number;
   eng_value: number;
+  min_threshold: number;
+  max_threshold: number;
   signal_quality?: number;
   last_iot_log_id: string;
 }

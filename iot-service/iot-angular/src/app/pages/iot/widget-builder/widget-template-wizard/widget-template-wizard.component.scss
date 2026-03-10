@@ -1,0 +1,23 @@
+// Widget Template Wizard - Minimal custom styles
+// Most styling comes from existing card component and Bootstrap utilities
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// List group active state override
+.list-group-item.active {
+  background-color: var(--bs-theme);
+  border-color: var(--bs-theme);
+}
+
+// Code preview
+pre code {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+// Border theme for selected cards
+.border-theme {
+  border: 2px solid var(--bs-theme) !important;
+}

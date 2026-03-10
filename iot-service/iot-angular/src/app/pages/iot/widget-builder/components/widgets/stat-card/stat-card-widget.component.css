@@ -1,0 +1,156 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stat-card-widget {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 12px;
+}
+
+/* Value styling */
+.stat-value {
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-value-compact {
+  font-size: 1.5rem;
+}
+
+.stat-unit {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 4px;
+}
+
+.stat-prefix {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-right: 2px;
+}
+
+.stat-suffix {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Trend styling */
+.stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  margin-top: 6px;
+}
+
+.stat-trend.trend-up {
+  color: #73bf69;
+}
+
+.stat-trend.trend-down {
+  color: #f2495c;
+}
+
+.stat-trend-inline {
+  font-size: 0.75rem;
+  margin-left: 8px;
+}
+
+.stat-trend-inline.trend-up {
+  color: #73bf69;
+}
+
+.stat-trend-inline.trend-down {
+  color: #f2495c;
+}
+
+/* Icon styling */
+.stat-icon {
+  font-size: 2.5rem;
+  margin-right: 16px;
+}
+
+.stat-icon-top {
+  margin-bottom: 8px;
+}
+
+.stat-icon-inline {
+  margin-right: 8px;
+}
+
+.stat-icon-small {
+  font-size: 1rem;
+  margin-right: 6px;
+}
+
+/* Layout: Centered */
+.layout-centered .stat-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
+}
+
+.layout-centered .stat-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.layout-centered .stat-suffix-row {
+  margin-top: 4px;
+}
+
+/* Layout: Left Aligned */
+.layout-left-aligned .stat-left-aligned {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  flex: 1;
+}
+
+.layout-left-aligned .stat-value-row {
+  display: flex;
+  align-items: baseline;
+}
+
+/* Layout: With Icon */
+.layout-with-icon .stat-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.layout-with-icon .stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-with-icon .stat-value-row {
+  display: flex;
+  align-items: baseline;
+}
+
+/* Layout: Compact */
+.layout-compact .stat-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+/* Sparkline */
+.stat-sparkline {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}

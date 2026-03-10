@@ -176,9 +176,14 @@ export class SensorChanelDetail implements OnInit {
                         }
                     }
 
+                    // Handle both 'timestamp' and 'ts' fields
+                    const rawTs = dp.timestamp || dp.ts;
+                    const parsedDate = rawTs ? new Date(rawTs) : new Date();
+                    const validDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+
                     return {
                         id: dataPoints.length - index,
-                        timestamp: new Date(dp.timestamp),
+                        timestamp: validDate,
                         value: value,
                         unit: this.sensorUnit,
                         status: status,

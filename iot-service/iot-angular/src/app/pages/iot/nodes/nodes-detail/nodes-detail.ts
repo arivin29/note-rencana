@@ -13,6 +13,15 @@ import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorLogsService } from '../../../../../sdk/core/services/sensor-logs.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
 import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
+import { IoTLogsService } from '../../../../../sdk/core/services/io-t-logs.service';
+
+interface IoTLogItem {
+    id: string;
+    deviceId: string;
+    timestamp: string;
+    payload: any;
+    createdAt: string;
+}
 
 interface SensorChannelRow {
     id: string;
@@ -144,13 +153,20 @@ export class NodesDetailPage implements OnInit {
 
     channelCharts: ChannelChart[] = [];
 
+    // IoT Logs
+    iotLogs: IoTLogItem[] = [];
+    iotLogsLoading = false;
+    selectedLog: IoTLogItem | null = null;
+    logDrawerOpen = false;
+
     constructor(
         private route: ActivatedRoute,
         private router: Router,
         private nodesService: NodesService,
         private sensorLogsService: SensorLogsService,
         private sensorsService: SensorsService,
-        private sensorChannelsService: SensorChannelsService
+        private sensorChannelsService: SensorChannelsService,
+        private iotLogsService: IoTLogsService
     ) {
         this.route.paramMap.subscribe((params) => {
             const paramId = params.get('nodeId');
@@ -253,16 +269,19 @@ export class NodesDetailPage implements OnInit {
                     health: this.mapSensorStatus(sensor.status),
                     protocolChannel: sensor.protocolChannel || '-',
                     samplingRate: sensor.samplingRate || null,
-                    channels: (sensor.channels || []).map((channel: any) => ({
-                        id: channel.idSensorChannel,
-                        metric: channel.metricCode,
-                        unit: channel.unit,
-                        latest: channel.latestValue !== null ? parseFloat(channel.latestValue) : 0,
-                        status: this.mapChannelStatus(channel.status),
-                        trend: 'stable' as const,
-                        sensorTypeId: channel.sensorTypeId || 'unknown',
-                        sensorTypeLabel: channel.sensorTypeLabel || channel.metricCode
-                    }))
+                    channels: (sensor.channels || [])
+                        .map((channel: any) => ({
+                            id: channel.idSensorChannel,
+                            metric: channel.metricCode,
+                            unit: channel.unit,
+                            latest: channel.latestValue !== null ? parseFloat(channel.latestValue) : 0,
+                            status: this.mapChannelStatus(channel.status),
+                            trend: 'stable' as const,
+                            sensorTypeId: channel.sensorTypeId || 'unknown',
+                            sensorTypeLabel: channel.sensorTypeLabel || channel.metricCode
+                        }))
+                        // Sort channels alphabetically by metricCode
+                        .sort((a: any, b: any) => (a.metric || '').localeCompare(b.metric || ''))
                 }));
 
                 // Map telemetry records (from health and stats)
@@ -312,6 +331,11 @@ export class NodesDetailPage implements OnInit {
                 if (this.nodeUuid) {
                     this.loadTelemetryTrends();
                 }
+
+                // Load IoT Logs
+                if (this.nodeId) {
+                    this.loadIoTLogs();
+                }
             },
             error: (err) => {
                 this.error = err.message || 'Failed to load node dashboard';
@@ -359,16 +383,38 @@ export class NodesDetailPage implements OnInit {
             next: (response: any) => {
                 console.log('Telemetry trends:', response);
 
-                // Map telemetry data to charts
-                this.channelCharts = (response.channels || []).slice(0, 4).map((channel: any) => {
+                // Map telemetry data to charts - show ALL channels (no limit)
+                this.channelCharts = (response.channels || []).map((channel: any) => {
                     const dataPoints = channel.dataPoints || [];
-                    const values = dataPoints.map((dp: any) => dp.value);
-                    const timestamps = dataPoints.map((dp: any) => new Date(dp.timestamp).toLocaleTimeString());
+                    
+                    // Calculate decimal places from precision (e.g., 0.01 = 2 decimals, 0.1 = 1 decimal)
+                    const precision = channel.precision || 0.01;
+                    const decimalPlaces = precision < 1 ? Math.abs(Math.floor(Math.log10(precision))) : 0;
+                    
+                    // Format values with proper precision
+                    const values = dataPoints.map((dp: any) => {
+                        const val = parseFloat(dp.value);
+                        return isNaN(val) ? 0 : parseFloat(val.toFixed(decimalPlaces));
+                    });
+                    
+                    // Handle both 'timestamp' and 'ts' fields for timestamps
+                    const timestamps = dataPoints.map((dp: any) => {
+                        const ts = dp.timestamp || dp.ts;
+                        if (!ts) return '';
+                        const date = new Date(ts);
+                        return isNaN(date.getTime()) ? '' : date.toLocaleTimeString();
+                    });
+
+                    // Format latest value with precision
+                    const lastValue = channel.statistics?.lastValue;
+                    const formattedLastValue = lastValue !== null && lastValue !== undefined 
+                        ? parseFloat(lastValue).toFixed(decimalPlaces) 
+                        : '0';
 
                     return {
                         label: channel.sensorTypeLabel || channel.metricCode,
                         metric: channel.metricCode,
-                        latest: `${channel.statistics?.lastValue?.toFixed(2) || 0} ${channel.unit}`,
+                        latest: `${formattedLastValue} ${channel.unit || ''}`.trim(),
                         chart: {
                             series: [{
                                 name: channel.sensorTypeLabel || channel.metricCode,
@@ -391,6 +437,16 @@ export class NodesDetailPage implements OnInit {
                                 xaxis: {
                                     categories: timestamps,
                                     labels: { show: false }
+                                },
+                                yaxis: {
+                                    labels: {
+                                        formatter: (val: number) => val.toFixed(decimalPlaces)
+                                    }
+                                },
+                                tooltip: {
+                                    y: {
+                                        formatter: (val: number) => `${val.toFixed(decimalPlaces)} ${channel.unit || ''}`
+                                    }
                                 },
                                 colors: ['#00acac'],
                                 fill: {
@@ -686,5 +742,122 @@ export class NodesDetailPage implements OnInit {
 
     onMappingUpdateClose(): void {
         this.mappingUpdateVisible = false;
+    }
+
+    // ===== IoT Logs Methods =====
+    
+    /**
+     * Load latest 5 IoT logs for this node
+     */
+    loadIoTLogs(): void {
+        if (!this.nodeId) return;
+        
+        this.iotLogsLoading = true;
+        this.iotLogsService.iotLogsControllerFindAll({
+            deviceId: this.nodeId,
+            page: 1,
+            limit: 5
+        }).subscribe({
+            next: (response: any) => {
+                // Parse if string
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                
+                if (data && data.data && Array.isArray(data.data)) {
+                    this.iotLogs = data.data.map((log: any) => ({
+                        id: log.id || log._id,
+                        deviceId: log.deviceId || log.device_id,
+                        timestamp: log.timestamp,
+                        payload: typeof log.payload === 'string' ? JSON.parse(log.payload) : log.payload,
+                        createdAt: log.createdAt || log.created_at
+                    }));
+                } else {
+                    this.iotLogs = [];
+                }
+                this.iotLogsLoading = false;
+            },
+            error: (err) => {
+                console.error('Error loading IoT logs:', err);
+                this.iotLogs = [];
+                this.iotLogsLoading = false;
+            }
+        });
+    }
+
+    /**
+     * Open log detail drawer
+     */
+    openLogDetail(log: IoTLogItem): void {
+        this.selectedLog = log;
+        this.logDrawerOpen = true;
+    }
+
+    /**
+     * Close log detail drawer
+     */
+    closeLogDrawer(): void {
+        this.logDrawerOpen = false;
+        this.selectedLog = null;
+    }
+
+    /**
+     * Format log timestamp for display
+     */
+    formatLogTimestamp(timestamp: string): string {
+        if (!timestamp) return '-';
+        const date = new Date(timestamp);
+        return date.toLocaleString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    /**
+     * Get relative time (e.g., "2 minutes ago")
+     */
+    getRelativeTime(timestamp: string): string {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+
+        if (diffSec < 60) return `${diffSec} seconds ago`;
+        if (diffMin < 60) return `${diffMin} minutes ago`;
+        if (diffHour < 24) return `${diffHour} hours ago`;
+        return `${diffDay} days ago`;
+    }
+
+    /**
+     * Format JSON payload for display
+     */
+    formatPayload(payload: any): string {
+        if (!payload) return '{}';
+        try {
+            return JSON.stringify(payload, null, 2);
+        } catch {
+            return String(payload);
+        }
+    }
+
+    /**
+     * Copy payload to clipboard
+     */
+    copyPayload(): void {
+        if (!this.selectedLog?.payload) return;
+        
+        const text = this.formatPayload(this.selectedLog.payload);
+        navigator.clipboard.writeText(text).then(() => {
+            // Simple feedback - could use a toast service
+            alert('Payload copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
     }
 }

@@ -174,6 +174,12 @@ const routes: Routes = [
         path: 'iot/telemetry',
         loadChildren: () => import('./pages/iot/telemetry/telemetry.module').then((m) => m.TelemetryModule)
     },
+    {
+        path: 'iot/ml',
+        loadChildren: () => import('./pages/iot/ml-dashboard/ml-dashboard.module').then((m) => m.MlDashboardModule),
+        canActivate: [AuthGuard],
+        data: { title: 'ML Dashboard' }
+    },
     { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
 
     // { path: 'email/inbox', component: EmailInboxPage, data: { title: 'Email Inbox' } },

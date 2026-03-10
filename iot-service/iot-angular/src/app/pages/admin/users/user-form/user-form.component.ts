@@ -141,16 +141,33 @@ export class UserFormComponent implements OnChanges {
       isActive: this.formData.isActive
     };
 
-    // Note: Password update should be handled via separate endpoint /users/:id/password
-
     this.usersService.usersControllerUpdate({ 
       id: this.user.idUser, 
       body: updateDto 
     }).subscribe({
       next: (response) => {
-        this.saving = false;
-        this.save.emit(response);
-        this.close.emit();
+        // If password was provided, also update it via the change-password endpoint
+        if (this.formData.password) {
+          this.usersService.usersControllerChangePassword({
+            id: this.user!.idUser,
+            body: { newPassword: this.formData.password }
+          }).subscribe({
+            next: () => {
+              this.saving = false;
+              this.save.emit(response);
+              this.close.emit();
+            },
+            error: (pwError) => {
+              this.saving = false;
+              this.errorMessage = pwError?.error?.message || 'Profile updated but password change failed.';
+              console.error('Change password error:', pwError);
+            }
+          });
+        } else {
+          this.saving = false;
+          this.save.emit(response);
+          this.close.emit();
+        }
       },
       error: (error) => {
         this.saving = false;

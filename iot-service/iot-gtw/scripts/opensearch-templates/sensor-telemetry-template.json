@@ -1,0 +1,43 @@
+{
+  "index_patterns": ["sensor-telemetry-10min-*"],
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": 2,
+        "number_of_replicas": 0,
+        "refresh_interval": "30s"
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "time_bucket": { "type": "date" },
+        "owner_code": { "type": "keyword" },
+        "project_id": { "type": "keyword" },
+        "project_code": { "type": "keyword" },
+        "node_id": { "type": "keyword" },
+        "node_code": { "type": "keyword" },
+        "sensor_id": { "type": "keyword" },
+        "sensor_label": { 
+          "type": "text", 
+          "fields": { 
+            "keyword": { "type": "keyword" } 
+          } 
+        },
+        "channel_id": { "type": "keyword" },
+        "metric_code": { "type": "keyword" },
+        "metric_unit": { "type": "keyword" },
+        "avg_raw": { "type": "float" },
+        "avg_eng": { "type": "float" },
+        "min_eng": { "type": "float" },
+        "max_eng": { "type": "float" },
+        "sample_count": { "type": "integer" },
+        "min_threshold": { "type": "float" },
+        "max_threshold": { "type": "float" }
+      }
+    }
+  },
+  "priority": 100,
+  "version": 1
+}

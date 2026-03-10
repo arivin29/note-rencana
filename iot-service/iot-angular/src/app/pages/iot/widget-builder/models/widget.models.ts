@@ -52,6 +52,55 @@ export interface WidgetConfig {
   yAxis?: WidgetYAxisConfig;
   thresholds?: WidgetThreshold[];
   display?: WidgetDisplayConfig;
+  
+  // === TEMPLATE MODE SUPPORT ===
+  /**
+   * How this widget was created
+   * - 'template': Created using Template Wizard (no-code)
+   * - 'expert': Created using SQL Editor
+   * - undefined: Legacy widgets
+   */
+  creationMode?: 'template' | 'expert';
+  
+  /**
+   * Template identifier (e.g., 'gauge-speedometer', 'line-chart-area')
+   */
+  templateId?: string;
+  
+  /**
+   * Original template configuration for re-editing
+   */
+  templateConfig?: TemplateConfiguration;
+
+  /**
+   * Widget-level variables for SQL query substitution
+   * e.g., { projectId: "uuid", nodeCode: "HELIO-xxx" }
+   */
+  variables?: Record<string, string>;
+
+  /**
+   * Multi-query definitions for multi-data-source support.
+   * When present, replaces the single sqlQuery + dataSource.
+   * Each query runs independently and results are merged with a _source column.
+   */
+  queries?: WidgetQueryDef[];
+}
+
+/**
+ * Template configuration stored for re-editing template widgets
+ */
+export interface TemplateConfiguration {
+  // Data source selections
+  nodeId?: string;
+  nodeName?: string;
+  sensorId?: string;
+  sensorName?: string;
+  channelId?: string;
+  channelName?: string;
+  channelIds?: string[];  // For multi-channel charts
+  
+  // Template-specific settings
+  settings: Record<string, any>;
 }
 
 // New structured field mapping
@@ -124,6 +173,21 @@ export interface WidgetQuery {
   variables?: QueryVariable[];
 }
 
+/**
+ * Named query definition for multi-data-source support.
+ * Stored in config.queries[] — each query has its own SQL, data source, and alias.
+ * Results are merged with a `_source` column matching the query alias.
+ */
+export interface WidgetQueryDef {
+  id: string;                              // UUID for tracking
+  name: string;                            // Display name (e.g., "Telemetry", "Forecast")
+  alias: string;                           // Short alias for _source column (e.g., "telemetry", "forecast")
+  sql: string;                             // SQL query text
+  dataSource: 'postgresql' | 'clickhouse'; // Data source for this query
+  enabled: boolean;                        // Toggle on/off without deleting
+  color?: string;                          // Optional color hint for series from this query
+}
+
 export interface QueryVariable {
   name: string;
   type: 'time' | 'string' | 'number';
@@ -132,8 +196,8 @@ export interface QueryVariable {
 
 // Widget types - use kebab-case consistently (matches backend)
 export type WidgetType = 
-  | 'line-chart'        // Single line time series
-  | 'multi-line-chart'  // Multiple lines time series
+  | 'line-chart'        // Time Series (unified: single + multi-line)
+  | 'multi-line-chart'  // @deprecated - alias for line-chart, kept for backward compat
   | 'bar-chart'         // Categorical bar chart
   | 'pie-chart'         // Distribution pie/donut
   | 'gauge'             // Single value with ranges
@@ -142,8 +206,7 @@ export type WidgetType =
   | 'heatmap';          // 2D heatmap visualization
 
 export const WIDGET_TYPES: { type: WidgetType; label: string; icon: string; description: string }[] = [
-  { type: 'line-chart', label: 'Line Chart', icon: 'show_chart', description: 'Time series data visualization' },
-  { type: 'multi-line-chart', label: 'Multi-Line Chart', icon: 'multiline_chart', description: 'Compare multiple series over time' },
+  { type: 'line-chart', label: 'Time Series', icon: 'show_chart', description: 'Time based line, area and bar charts (single & multi-line)' },
   { type: 'bar-chart', label: 'Bar Chart', icon: 'bar_chart', description: 'Compare categorical data' },
   { type: 'gauge', label: 'Gauge', icon: 'speed', description: 'Single value with min/max range' },
   { type: 'pie-chart', label: 'Pie Chart', icon: 'pie_chart', description: 'Show proportions of a whole' },

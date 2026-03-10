@@ -1,0 +1,40 @@
+.widget-container {
+//   background: var(--bs-card-bg, #fff);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-header {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.1);
+}
+
+.widget-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bs-body-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.widget-body {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+// Size variants
+.widget-small .widget-body {
+  padding: 1rem;
+}
+
+.widget-large .widget-body {
+  padding: 2rem;
+}

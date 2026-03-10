@@ -1,0 +1,355 @@
+<div class="channels-config-editor">
+  <!-- Header with Toggle & Actions -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-3">
+      <h4 class="mb-0">
+        <i class="fa fa-microchip me-2 text-theme"></i>
+        RS485/Modbus Configuration
+      </h4>
+      <!-- Enable/Disable Toggle -->
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" 
+               id="rs485Toggle"
+               [(ngModel)]="isRS485Enabled"
+               (change)="onRS485ToggleChange()">
+        <label class="form-check-label small" for="rs485Toggle">
+          {{ isRS485Enabled ? 'Enabled' : 'Disabled' }}
+        </label>
+      </div>
+    </div>
+    <div class="d-flex gap-2" *ngIf="isRS485Enabled">
+      <ng-container *ngIf="!isEditing">
+        <button class="btn btn-outline-secondary btn-sm" (click)="exportJson()">
+          <i class="fa fa-download me-1"></i> Export JSON
+        </button>
+        <button class="btn btn-theme btn-sm" (click)="toggleEditMode()">
+          <i class="fa fa-edit me-1"></i> Edit Configuration
+        </button>
+      </ng-container>
+      <ng-container *ngIf="isEditing">
+        <label class="btn btn-outline-secondary btn-sm mb-0">
+          <i class="fa fa-upload me-1"></i> Import JSON
+          <input type="file" accept=".json" (change)="importJson($event)" hidden>
+        </label>
+        <button class="btn btn-outline-danger btn-sm" (click)="cancelEdit()">
+          <i class="fa fa-times me-1"></i> Cancel
+        </button>
+        <button class="btn btn-success btn-sm" (click)="saveConfig()">
+          <i class="fa fa-save me-1"></i> Save Changes
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- RS485 Disabled Message -->
+  <div *ngIf="!isRS485Enabled" class="alert alert-secondary d-flex align-items-center">
+    <i class="fa fa-info-circle fa-2x me-3 opacity-50"></i>
+    <div>
+      <strong>RS485/Modbus not configured</strong>
+      <p class="mb-0 small">This sensor catalog does not use RS485/Modbus communication. Enable the toggle above to configure RS485 settings.</p>
+    </div>
+  </div>
+
+  <!-- RS485 Content (only show when enabled) -->
+  <ng-container *ngIf="isRS485Enabled">
+    <!-- Version Badge -->
+    <div class="mb-3">
+      <span class="badge bg-secondary me-2">Version {{ channelsConfig.version || 1 }}</span>
+      <span class="badge bg-info">{{ channelsConfig.device_type || 'Unknown Device' }}</span>
+      <span class="badge bg-primary ms-2">{{ channelsConfig.registers.length }} Registers</span>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'" href="javascript:;">
+          <i class="fa fa-cog me-1"></i> Communication Settings
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'registers'" (click)="activeTab = 'registers'" href="javascript:;">
+          <i class="fa fa-list-alt me-1"></i> Registers ({{ channelsConfig.registers.length }})
+        </a>
+      </li>
+    </ul>
+
+    <!-- Tab Content: Settings -->
+    <div *ngIf="activeTab === 'settings'" class="tab-content">
+      <!-- Validation Errors Alert -->
+      <div class="alert alert-danger mb-3" *ngIf="validationErrors.length > 0">
+        <h6 class="alert-heading mb-2"><i class="fa fa-exclamation-triangle me-2"></i>Validation Errors</h6>
+        <ul class="mb-0 small ps-3">
+          <li *ngFor="let err of validationErrors">{{ err }}</li>
+        </ul>
+      </div>
+
+      <card class="shadow-sm">
+        <div class="card-body">
+          <div class="row g-3">
+            <!-- Device Type -->
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Device Type <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" 
+                     [class.is-invalid]="isEditing && !channelsConfig.device_type.trim()"
+                     [(ngModel)]="channelsConfig.device_type" 
+                     [disabled]="!isEditing"
+                     placeholder="e.g. ZK1800-VFD-Inverter">
+              <div class="invalid-feedback">Device Type is required</div>
+            </div>
+          
+            <!-- Description -->
+            <div class="col-md-6">
+              <label class="form-label text-muted small">Description <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" 
+                     [class.is-invalid]="isEditing && !channelsConfig.description.trim()"
+                     [(ngModel)]="channelsConfig.description" 
+                     [disabled]="!isEditing"
+                     placeholder="Device description">
+              <div class="invalid-feedback">Description is required</div>
+            </div>
+
+          <!-- Modbus Address -->
+          <div class="col-md-3">
+            <label class="form-label text-muted small">Modbus Address <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" 
+                   [class.is-invalid]="isEditing && (channelsConfig.modbus_address < 1 || channelsConfig.modbus_address > 247)"
+                   [(ngModel)]="channelsConfig.modbus_address" 
+                   [disabled]="!isEditing"
+                   min="1" max="247">
+            <div class="invalid-feedback">Address must be 1-247</div>
+          </div>
+
+          <!-- Baud Rate -->
+          <div class="col-md-3">
+            <label class="form-label text-muted small">Baud Rate <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="channelsConfig.baud_rate" [disabled]="!isEditing">
+              <option *ngFor="let rate of baudRateOptions" [value]="rate">{{ rate }}</option>
+            </select>
+          </div>
+
+          <!-- Data Format -->
+          <div class="col-md-3">
+            <label class="form-label text-muted small">Data Format <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="channelsConfig.data_format" [disabled]="!isEditing">
+              <option *ngFor="let fmt of dataFormatOptions" [value]="fmt">{{ fmt }}</option>
+            </select>
+          </div>
+
+          <!-- Scan Interval -->
+          <div class="col-md-3">
+            <label class="form-label text-muted small">Scan Interval (ms) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" 
+                   [class.is-invalid]="isEditing && channelsConfig.scan_interval_ms < 100"
+                   [(ngModel)]="channelsConfig.scan_interval_ms" 
+                   [disabled]="!isEditing"
+                   min="100" step="100">
+            <div class="invalid-feedback">Min 100ms</div>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-12">
+            <label class="form-label text-muted small">Notes</label>
+            <textarea class="form-control" rows="2"
+                      [(ngModel)]="channelsConfig.notes" 
+                      [disabled]="!isEditing"
+                      placeholder="Important notes about this configuration..."></textarea>
+          </div>
+        </div>
+      </div>
+    </card>
+  </div>
+
+  <!-- Tab Content: Registers -->
+  <div *ngIf="activeTab === 'registers'" class="tab-content">
+    
+    <!-- Register Actions & Filter -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <div class="flex-grow-1">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fa fa-search"></i></span>
+          <input type="text" class="form-control" 
+                 placeholder="Search by label, address, or description..."
+                 [(ngModel)]="searchTerm">
+        </div>
+      </div>
+      <select class="form-select" style="width: auto;" [(ngModel)]="filterCategory">
+        <option value="">All Categories</option>
+        <option *ngFor="let cat of uniqueCategories" [value]="cat">{{ cat }}</option>
+      </select>
+      <button *ngIf="isEditing" class="btn btn-theme" (click)="startAddRegister()">
+        <i class="fa fa-plus me-1"></i> Add Register
+      </button>
+    </div>
+
+    <!-- Add/Edit Register Form -->
+    <card class="shadow-sm mb-3 border-theme" *ngIf="isAddingRegister || editingRegisterIndex !== null">
+      <div class="card-header bg-theme bg-opacity-10">
+        <h5 class="mb-0">
+          <i class="fa fa-edit me-2"></i>
+          {{ isAddingRegister ? 'Add New Register' : 'Edit Register' }}
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <!-- Register Address -->
+          <div class="col-md-3">
+            <label class="form-label">Register Address <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="number" class="form-control" 
+                     [(ngModel)]="currentRegister.reg" 
+                     min="0" required>
+              <span class="input-group-text text-muted">{{ toHex(currentRegister.reg) }}</span>
+            </div>
+          </div>
+
+          <!-- Label -->
+          <div class="col-md-5">
+            <label class="form-label">Label <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" 
+                   [(ngModel)]="currentRegister.label" 
+                   placeholder="e.g. Output Voltage" required>
+          </div>
+
+          <!-- Data Type -->
+          <div class="col-md-2">
+            <label class="form-label">Data Type</label>
+            <select class="form-select" [(ngModel)]="currentRegister.type">
+              <option *ngFor="let t of dataTypeOptions" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+
+          <!-- Words -->
+          <div class="col-md-2">
+            <label class="form-label">Words</label>
+            <input type="number" class="form-control" 
+                   [(ngModel)]="currentRegister.words" 
+                   min="1" max="4">
+          </div>
+
+          <!-- Unit -->
+          <div class="col-md-2">
+            <label class="form-label">Unit</label>
+            <input type="text" class="form-control" 
+                   [(ngModel)]="currentRegister.unit" 
+                   placeholder="V, A, Hz, %">
+          </div>
+
+          <!-- Scale -->
+          <div class="col-md-2">
+            <label class="form-label">Scale</label>
+            <input type="number" class="form-control" 
+                   [(ngModel)]="currentRegister.scale" 
+                   step="0.001">
+          </div>
+
+          <!-- Category -->
+          <div class="col-md-3">
+            <label class="form-label">Category</label>
+            <select class="form-select" [(ngModel)]="currentRegister.category">
+              <option *ngFor="let cat of categoryOptions" [value]="cat">{{ cat }}</option>
+            </select>
+          </div>
+
+          <!-- Swap -->
+          <div class="col-md-2">
+            <label class="form-label">Byte Swap</label>
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" 
+                     [(ngModel)]="currentRegister.swap">
+              <label class="form-check-label">{{ currentRegister.swap ? 'Yes' : 'No' }}</label>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="col-md-12">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-control" 
+                   [(ngModel)]="currentRegister.description" 
+                   placeholder="Detailed description of this register...">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+          <button class="btn btn-success" (click)="saveRegister()">
+            <i class="fa fa-check me-1"></i> {{ isAddingRegister ? 'Add Register' : 'Update Register' }}
+          </button>
+          <button class="btn btn-outline-secondary" (click)="cancelRegisterEdit()">
+            <i class="fa fa-times me-1"></i> Cancel
+          </button>
+        </div>
+      </div>
+    </card>
+
+    <!-- Registers Table -->
+    <card class="shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th style="width: 100px;">Address</th>
+                <th>Label</th>
+                <th style="width: 80px;">Type</th>
+                <th style="width: 60px;">Unit</th>
+                <th style="width: 70px;">Scale</th>
+                <th style="width: 120px;">Category</th>
+                <th *ngIf="isEditing" style="width: 120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reg of filteredRegisters; let i = index" 
+                  [class.table-primary]="editingRegisterIndex === channelsConfig.registers.indexOf(reg)">
+                <td>
+                  <code class="text-theme">{{ reg.reg }}</code>
+                  <small class="text-muted d-block">{{ toHex(reg.reg) }}</small>
+                </td>
+                <td>
+                  <span class="fw-semibold">{{ reg.label }}</span>
+                  <small class="text-muted d-block text-truncate" style="max-width: 300px;">
+                    {{ reg.description }}
+                  </small>
+                </td>
+                <td><code>{{ reg.type }}</code></td>
+                <td>{{ reg.unit || '-' }}</td>
+                <td>{{ reg.scale }}</td>
+                <td>
+                  <span class="badge" 
+                        [class.bg-primary]="reg.category === 'operating_status'"
+                        [class.bg-success]="reg.category === 'analog_input'"
+                        [class.bg-info]="reg.category === 'digital_input'"
+                        [class.bg-warning]="reg.category === 'control'"
+                        [class.bg-secondary]="reg.category === 'config'"
+                        [class.bg-danger]="reg.category === 'fault'"
+                        [class.bg-dark]="reg.category === 'test' || reg.category === 'other'">
+                    {{ reg.category }}
+                  </span>
+                </td>
+                <td *ngIf="isEditing">
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" (click)="startEditRegister(i)" title="Edit">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" (click)="duplicateRegister(i)" title="Duplicate">
+                      <i class="fa fa-copy"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" (click)="deleteRegister(i)" title="Delete">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredRegisters.length === 0">
+                <td [attr.colspan]="isEditing ? 7 : 6" class="text-center text-muted py-4">
+                  <i class="fa fa-inbox fa-2x mb-2 d-block"></i>
+                  {{ searchTerm || filterCategory ? 'No registers match your filter' : 'No registers configured' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </card>
+  </div>
+  </ng-container>
+  <!-- End RS485 Content -->
+</div>

@@ -221,7 +221,7 @@
                                 <tr>
                                     <th>Sensor Type</th>
                                     <th>Metric</th>
-                                    <th>Channel ID</th>
+                                    <!-- <th>Channel ID</th> -->
                                     <th class="text-end">Latest</th>
                                     <th>Status</th>
                                     <th>Trend</th>
@@ -241,7 +241,7 @@
                                         <div>{{ channel.metric }}</div>
                                         <div class="text-muted small text-uppercase">{{ channel.unit }}</div>
                                     </td>
-                                    <td class="text-muted small">{{ channel.id }}</td>
+                                    <!-- <td class="text-muted small">{{ channel.id }}</td> -->
                                     <td class="text-end fw-semibold">{{ channel.latest }} {{ channel.unit }}</td>
                                     <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase
                                             }}</span>
@@ -300,11 +300,12 @@
         <card class="mb-4">
             <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
                 Sensor Channel Trends
-                <span class="ms-auto text-muted small">Demo charts (last 30 min)</span>
+                <span class="ms-auto text-muted small">All channels (last 48h)</span>
             </card-header>
             <card-body>
                 <div class="row g-3">
-                    <div class="col-md-6" *ngFor="let trend of channelCharts">
+                    <!-- 3 charts per row (col-md-4 = 33.33% width) -->
+                    <div class="col-md-4" *ngFor="let trend of channelCharts">
                         <div class="border rounded-3 p-3 h-100">
                             <div class="d-flex align-items-center mb-2">
                                 <div>
@@ -425,9 +426,118 @@
             </card-body>
         </card>
 
+        <!-- IoT Raw Logs Card -->
+        <card class="mb-4">
+            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                <i class="fa fa-file-code me-2 text-theme"></i>
+                Recent IoT Logs
+                <span class="badge bg-theme ms-2" *ngIf="iotLogs.length > 0">{{ iotLogs.length }}</span>
+                <button class="btn btn-sm btn-outline-theme ms-auto" (click)="loadIoTLogs()" [disabled]="iotLogsLoading">
+                    <i class="fa fa-sync me-1" [class.fa-spin]="iotLogsLoading"></i>
+                    Refresh
+                </button>
+            </card-header>
+            <card-body class="p-0">
+                <!-- Loading State -->
+                <div *ngIf="iotLogsLoading" class="p-4 text-center text-muted">
+                    <i class="fa fa-spinner fa-spin fa-2x"></i>
+                    <div class="mt-2">Loading logs...</div>
+                </div>
+
+                <!-- Empty State -->
+                <div *ngIf="!iotLogsLoading && iotLogs.length === 0" class="p-4 text-center text-muted">
+                    <i class="fa fa-inbox fa-2x mb-2"></i>
+                    <div>No IoT logs found for this device</div>
+                </div>
+
+                <!-- Log List -->
+                <div *ngIf="!iotLogsLoading && iotLogs.length > 0">
+                    <div *ngFor="let log of iotLogs; let idx = index" 
+                         class="p-3 border-bottom log-item-hover"
+                         [class.border-top]="idx === 0"
+                         (click)="openLogDetail(log)"
+                         style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fa fa-file-code fa-lg text-theme"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center">
+                                    <span class="fw-semibold">{{ log.deviceId }}</span>
+                                    <span class="badge bg-secondary-subtle text-secondary ms-2 small">
+                                        {{ formatLogTimestamp(log.timestamp) }}
+                                    </span>
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    <i class="fa fa-clock me-1"></i>{{ getRelativeTime(log.timestamp) }}
+                                    <span class="ms-3">
+                                        <i class="fa fa-database me-1"></i>
+                                        {{ log.payload ? (log.payload | json).length : 0 }} bytes
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="ms-2">
+                                <i class="fa fa-chevron-right text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </card-body>
+        </card>
+
         
     </div>
 </div>
+
+<!-- IoT Log Detail Drawer -->
+<div class="offcanvas offcanvas-end" [class.show]="logDrawerOpen" [style.visibility]="logDrawerOpen ? 'visible' : 'hidden'" tabindex="-1">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title">
+            <i class="fa fa-file-code me-2 text-theme"></i>
+            Log Payload Detail
+        </h5>
+        <button type="button" class="btn-close" (click)="closeLogDrawer()"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div *ngIf="selectedLog">
+            <!-- Log Meta Info -->
+            <div class="mb-4">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="text-muted small text-uppercase">Device ID</div>
+                        <div class="fw-semibold">{{ selectedLog.deviceId }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small text-uppercase">Timestamp</div>
+                        <div class="fw-semibold">{{ formatLogTimestamp(selectedLog.timestamp) }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small text-uppercase">Log ID</div>
+                        <div class="text-muted small font-monospace">{{ selectedLog.id }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON Payload -->
+            <div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="text-muted small text-uppercase">Payload (JSON)</div>
+                    <button class="btn btn-sm btn-outline-theme ms-auto" 
+                            (click)="copyPayload()"
+                            title="Copy to clipboard">
+                        <i class="fa fa-copy me-1"></i>
+                        Copy
+                    </button>
+                </div>
+                <pre class="bg-dark text-light p-3 rounded-3 overflow-auto" style="max-height: 60vh; font-size: 0.85rem;"><code>{{ formatPayload(selectedLog.payload) }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backdrop for drawer -->
+<div class="offcanvas-backdrop fade" [class.show]="logDrawerOpen" *ngIf="logDrawerOpen" (click)="closeLogDrawer()"></div>
+
 <app-node-detail-add-sensor-drawer [isOpen]="sensorDrawerState.isOpen" [nodeId]="nodeUuid"
     [sensorId]="sensorDrawerState.sensorId" (close)="handleAddSensorDrawerClose()" (save)="handleAddSensorSave($event)">
 </app-node-detail-add-sensor-drawer>

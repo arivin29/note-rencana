@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status Sistem</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6; 
+      color: #374151; 
+      background: #f3f4f6;
+    }
+    .container { max-width: 600px; margin: 0 auto; background: white; }
+    
+    .header { 
+      padding: 30px 20px; 
+      text-align: center; 
+      color: white;
+    }
+    .header.service_down { 
+      background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); 
+    }
+    .header.service_restored { 
+      background: linear-gradient(135deg, #166534 0%, #22c55e 100%); 
+    }
+    .header.high_load { 
+      background: linear-gradient(135deg, #92400e 0%, #d97706 100%); 
+    }
+    .header.maintenance { 
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); 
+    }
+    .header-icon { font-size: 48px; margin-bottom: 10px; }
+    .header h1 { font-size: 24px; font-weight: 600; margin-bottom: 5px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    
+    .status-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 10px;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+    
+    .content { padding: 30px 20px; }
+    
+    .service-info {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .service-info h3 {
+      color: #111827;
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    .service-info p {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    
+    .message-box {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .message-box p {
+      font-size: 16px;
+      color: #374151;
+    }
+    
+    .details-box {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .details-box h4 {
+      color: #374151;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .details-box pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .timestamp {
+      text-align: center;
+      padding: 15px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .timestamp strong {
+      color: #374151;
+    }
+    
+    .footer { 
+      padding: 20px; 
+      text-align: center; 
+      font-size: 12px; 
+      color: #9ca3af;
+      border-top: 1px solid #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header {{statusType}}">
+      {{#ifEq statusType "service_down"}}
+      <div class="header-icon">🔴</div>
+      <h1>Layanan Tidak Tersedia</h1>
+      <p>Sistem telah mendeteksi masalah pada layanan</p>
+      {{/ifEq}}
+      
+      {{#ifEq statusType "service_restored"}}
+      <div class="header-icon">✅</div>
+      <h1>Layanan Pulih</h1>
+      <p>Layanan telah kembali berjalan normal</p>
+      {{/ifEq}}
+      
+      {{#ifEq statusType "high_load"}}
+      <div class="header-icon">⚠️</div>
+      <h1>Beban Tinggi</h1>
+      <p>Sistem mendeteksi beban yang tinggi</p>
+      {{/ifEq}}
+      
+      {{#ifEq statusType "maintenance"}}
+      <div class="header-icon">🔧</div>
+      <h1>Pemeliharaan</h1>
+      <p>Sedang dilakukan pemeliharaan sistem</p>
+      {{/ifEq}}
+    </div>
+    
+    <div class="content">
+      <div class="service-info">
+        <h3>{{serviceName}}</h3>
+        <p>Komponen Terpengaruh</p>
+      </div>
+      
+      <div class="message-box">
+        <p>{{message}}</p>
+      </div>
+      
+      {{#if details}}
+      <div class="details-box">
+        <h4>Detail Teknis:</h4>
+        <pre>{{details}}</pre>
+      </div>
+      {{/if}}
+      
+      <div class="timestamp">
+        <strong>Waktu Kejadian:</strong> {{formatDate timestamp "datetime"}}
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>Email ini dikirim otomatis oleh sistem IoT PDAM.</p>
+      <p>Untuk informasi lebih lanjut, hubungi tim teknis.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -17,6 +17,7 @@ interface DashboardResponse {
   isDefault: boolean;
   idOwner?: string;
   ownerId?: string;
+  layoutConfig?: Record<string, any>;
   owner?: { name: string };
   widgets?: WidgetResponse[];
   createdAt: string;
@@ -31,6 +32,7 @@ interface WidgetResponse {
   name: string;
   widgetType: string;
   sqlQuery: string;
+  dataSource?: string;
   config: any;
   positionX: number;
   positionY: number;
@@ -52,6 +54,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   dashboard: Dashboard | null = null;
   widgets: GridsterItem[] = [];
   widgetData: Map<string, Widget> = new Map();
+  /** Variables from dashboard layoutConfig.variables for SQL substitution */
+  dashboardVariables: Record<string, string> = {};
   
   // Gridster config
   gridsterOptions: GridsterConfig = {};
@@ -127,18 +131,18 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
       maxCols: 12,
       minRows: 1,
       maxRows: 100,
-      defaultItemCols: 3,
-      defaultItemRows: 3,
+      defaultItemCols: 6,
+      defaultItemRows: 4,
       minItemCols: 2,
       minItemRows: 2,
       maxItemCols: 12,
       maxItemRows: 10,
-      margin: 10,
+      margin: 4,
       outerMargin: true,
-      outerMarginTop: 10,
-      outerMarginRight: 10,
-      outerMarginBottom: 10,
-      outerMarginLeft: 10,
+      outerMarginTop: 4,
+      outerMarginRight: 4,
+      outerMarginBottom: 4,
+      outerMarginLeft: 4,
       scrollSensitivity: 10,
       scrollSpeed: 20,
       itemChangeCallback: this.onItemChange.bind(this),
@@ -166,6 +170,11 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
           createdAt: new Date(data.createdAt),
           updatedAt: new Date(data.updatedAt)
         };
+
+        // Extract dashboard-level variables from layoutConfig
+        if (data.layoutConfig?.['variables']) {
+          this.dashboardVariables = data.layoutConfig['variables'];
+        }
         
         if (data.widgets && data.widgets.length > 0) {
           this.widgets = data.widgets.map((w: WidgetResponse) => {
@@ -190,7 +199,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
               sqlQuery: w.sqlQuery,  // Store SQL query at top level for widget-container
               config: {
                 ...w.config,
-                sqlQuery: w.sqlQuery  // Also store in config as fallback
+                sqlQuery: w.sqlQuery,  // Also store in config as fallback
+                dataSource: w.dataSource || 'postgresql'  // Carry data source into config
               },
               position: {
                 x: w.positionX || 0,
@@ -267,14 +277,24 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   addWidget(): void {
     if (this.dashboard) {
+      // Navigate to new widget mode selector (Template or Expert)
+      this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'widget', 'new']);
+    }
+  }
+
+  // For backward compatibility - direct expert mode
+  addWidgetExpert(): void {
+    if (this.dashboard) {
       this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'add-widget']);
     }
   }
 
   editWidget(widgetId: string): void {
-    if (this.dashboard) {
-      this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'edit-widget', widgetId]);
-    }
+    if (!this.dashboard) return;
+    
+    // Always navigate to Expert Mode for editing (regardless of creation mode)
+    // Expert Mode now loads templateConfig filters (node, sensor, channel) if available
+    this.router.navigate(['/iot/widget-builder', this.dashboard.id, 'edit-widget', widgetId]);
   }
 
   deleteWidget(widgetId: string): void {

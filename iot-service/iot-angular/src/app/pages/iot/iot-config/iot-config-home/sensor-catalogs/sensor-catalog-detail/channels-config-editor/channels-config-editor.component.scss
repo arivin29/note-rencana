@@ -1,0 +1,117 @@
+.channels-config-editor {
+  .nav-tabs {
+    .nav-link {
+      cursor: pointer;
+      color: var(--bs-body-color);
+      
+      &.active {
+        font-weight: 600;
+      }
+      
+      &:hover:not(.active) {
+        background-color: rgba(var(--bs-theme-rgb), 0.1);
+      }
+    }
+  }
+
+  .border-theme {
+    border-color: var(--bs-theme) !important;
+  }
+
+  .table {
+    th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      vertical-align: middle;
+    }
+
+    code {
+      font-size: 0.85em;
+      padding: 2px 6px;
+      background: rgba(var(--bs-theme-rgb), 0.1);
+      border-radius: 4px;
+    }
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .form-control:disabled,
+  .form-select:disabled {
+    background-color: var(--bs-body-bg);
+    opacity: 0.8;
+  }
+
+  .input-group-text {
+    font-size: 0.85rem;
+  }
+
+  // Register row highlight when editing
+  .table-primary {
+    --bs-table-bg: rgba(var(--bs-theme-rgb), 0.15);
+    --bs-table-striped-bg: rgba(var(--bs-theme-rgb), 0.15);
+    --bs-table-hover-bg: rgba(var(--bs-theme-rgb), 0.2);
+  }
+
+  // Card styling
+  card {
+    .card-header {
+      border-bottom: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
+    }
+  }
+
+  // Search input
+  .input-group {
+    .input-group-text {
+      background-color: var(--bs-body-bg);
+      border-right: none;
+    }
+    
+    .form-control {
+      border-left: none;
+      
+      &:focus {
+        border-color: var(--bs-border-color);
+        box-shadow: none;
+      }
+    }
+  }
+
+  // Tab content animation
+  .tab-content {
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // Mobile responsiveness
+  @media (max-width: 768px) {
+    .table-responsive {
+      font-size: 0.85rem;
+    }
+
+    .btn-group-sm .btn {
+      padding: 0.2rem 0.4rem;
+    }
+  }
+}

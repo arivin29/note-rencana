@@ -1,0 +1,23 @@
+// Widget Create - Minimal custom styles
+// Most styling comes from existing card component and Bootstrap utilities
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+card:hover,
+.hover-shadow:hover {
+  border-color: var(--bs-theme) !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.template-category-card {
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+  }
+}

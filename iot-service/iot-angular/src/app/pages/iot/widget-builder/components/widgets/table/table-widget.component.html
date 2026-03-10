@@ -1,0 +1,49 @@
+<div class="table-widget" [class.compact]="tableOptions.compact">
+  <div class="table-responsive console-table">
+    <table [ngClass]="getTableClasses()" 
+           [style.font-size.px]="tableOptions.fontSize">
+      <thead [style.background]="tableOptions.headerBackground">
+        <tr>
+          <th *ngFor="let col of displayColumns"
+              [style.text-align]="col.align"
+              [style.width]="col.width !== 'auto' ? col.width : null"
+              [class.sortable]="tableOptions.sortable"
+              (click)="onHeaderClick(col)">
+            {{ col.displayName }}
+            <i *ngIf="tableOptions.sortable" 
+               class="fa ms-1" 
+               [ngClass]="getSortIcon(col)"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of displayData">
+          <td *ngFor="let col of displayColumns"
+              [style.text-align]="col.align"
+              [ngStyle]="getCellStyle(row[col.field], col)">
+            
+            <!-- Status/Badge Column -->
+            <ng-container *ngIf="col.type === 'status' || col.type === 'badge'; else normalCell">
+              <span *ngIf="getStatusBadge(row[col.field], col) as badge"
+                    class="badge"
+                    [ngClass]="badge.colorClass">
+                {{ badge.label }}
+              </span>
+            </ng-container>
+            
+            <!-- Normal Cell (text, number, date) -->
+            <ng-template #normalCell>
+              {{ formatValue(row[col.field], col) }}
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- No Data State -->
+    <div *ngIf="displayData.length === 0" class="no-data text-center py-4">
+      <i class="fa fa-table fa-2x text-muted mb-2"></i>
+      <p class="text-muted mb-0">No data available</p>
+    </div>
+  </div>
+</div>

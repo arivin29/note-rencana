@@ -13,6 +13,7 @@ import { SensorTypeDrawerComponent } from './iot-config-home/sensor-types/sensor
 import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-catalogs'; 
 import { SensorCatalogDrawerComponent } from './iot-config-home/sensor-catalogs/sensor-catalog-drawer/sensor-catalog-drawer.component';
 import { SensorCatalogDetailPage } from './iot-config-home/sensor-catalogs/sensor-catalog-detail/sensor-catalog-detail';
+import { ChannelsConfigEditorComponent } from './iot-config-home/sensor-catalogs/sensor-catalog-detail/channels-config-editor/channels-config-editor.component';
 
 
 @NgModule({
@@ -25,7 +26,8 @@ import { SensorCatalogDetailPage } from './iot-config-home/sensor-catalogs/senso
         SensorCatalogsPage, 
         SensorCatalogDrawerComponent,
         SensorCatalogDetailPage,
-        NodeModelDetailPage 
+        NodeModelDetailPage,
+        ChannelsConfigEditorComponent
     ],
     imports: [
         CommonModule,

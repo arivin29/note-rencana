@@ -43,6 +43,13 @@
 | 18 | [Library Requirements](./18-LIBRARY-REQUIREMENTS.md) | All dependencies & install commands | ✅ **New** |
 | 19 | [Task Tracking](./19-TASK-TRACKING.md) | Master task list & progress | ✅ **New** |
 
+### 📊 Dashboard Designs
+
+| No | Document | Description | Status |
+|----|----------|-------------|--------|
+| 20 | [DMA Operator Dashboard](./20-DMA-OPERATOR-DASHBOARD.md) | Detail 15 widget untuk 1 DMA (Operator) | ✅ **New** |
+| 21 | [Dashboard Catalog](./21-DASHBOARD-CATALOG.md) | 10 kategori dashboard, semua query & layout | ✅ **New** |
+
 ---
 
 ## 🚀 Quick Start
