@@ -1,184 +1,276 @@
-<div class="telemetry-console">
-    <card class="console-panel filter-panel mb-4">
-        <card-body>
-            <div class="filter-header">
-                <div>
-                    <div class="panel-label">Control Filters</div>
-                    <div class="panel-hint text-muted" *ngIf="isSuperAdmin">
-                        Refine owners, projects, and time slices (Super Admin View)
-                    </div>
-                    <div class="panel-hint text-muted" *ngIf="!isSuperAdmin">
-                        Refine projects and time slices for your data
-                    </div>
-                </div>
-                <div class="filter-chips">
-                    <span class="filter-chip" *ngIf="isSuperAdmin">Owner · {{ getOwnerLabel() }}</span>
-                    <span class="filter-chip">Project · {{ getProjectLabel() }}</span>
-                    <span class="filter-chip">Range · {{ getRangeLabel() }}</span>
+<div class="ops-console">
+    <!-- Welcome Header -->
+    <card class="welcome-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="welcome-content">
+                    <h2 class="welcome-title">
+                        <span class="greeting">{{ greeting }},</span>
+                        <span class="owner-name">{{ ownerName }}</span>
+                    </h2>
+                    <p class="welcome-subtitle">
+                        <span *ngIf="!isSuperAdmin">
+                            Anda memiliki <strong>{{ summaryStats.projects }}</strong> project dengan 
+                            <strong>{{ summaryStats.nodesOnline }}</strong> dari <strong>{{ summaryStats.totalNodes }}</strong> node aktif
+                        </span>
+                        <span *ngIf="isSuperAdmin">
+                            Monitoring <strong>{{ summaryStats.owners }}</strong> owner, 
+                            <strong>{{ summaryStats.projects }}</strong> project, 
+                            <strong>{{ summaryStats.totalNodes }}</strong> node
+                        </span>
+                    </p>
                 </div>
             </div>
-            <div class="row g-3 align-items-end">
-                <!-- Owner Filter (Super Admin Only) -->
-                <div class="col-xl-4 col-md-6" *ngIf="isSuperAdmin">
-                    <div class="filter-control">
-                        <label class="filter-label">Owner</label>
-                        <div class="filter-input">
-                            <i class="bi bi-people"></i>
-                            <select class="form-select form-select-sm console-select" [ngModel]="selectedOwner"
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <div class="today-stats">
+                    <div class="today-label">Data Hari Ini</div>
+                    <div class="today-value">{{ summaryStats.todayDataPoints | number }}</div>
+                    <div class="today-hint">data points diterima</div>
+                </div>
+            </div>
+        </div>
+    </card>
+
+    <!-- Quick Stats KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3" *ngFor="let stat of quickStats">
+            <card class="stat-card h-100" [routerLink]="stat.link">
+                <card-body>
+                    <div class="stat-icon" [ngClass]="stat.iconClass">
+                        <i [class]="stat.icon"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stat.value }}</div>
+                        <div class="stat-label">{{ stat.label }}</div>
+                        <div class="stat-detail" *ngIf="stat.detail">{{ stat.detail }}</div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Perlu Perhatian Section -->
+    <card class="attention-panel mb-4" *ngIf="attentionItems.length > 0">
+        <card-body>
+            <div class="panel-head">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="panel-icon text-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div>
+                        <div class="panel-label">PERLU PERHATIAN</div>
+                        <div class="panel-hint">{{ attentionItems.length }} item memerlukan tindakan</div>
+                    </div>
+                </div>
+                <a routerLink="/iot/alerts" class="btn btn-sm btn-outline-warning">
+                    Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="attention-list">
+                <div class="attention-item" *ngFor="let item of attentionItems" 
+                     [ngClass]="'severity-' + item.severity"
+                     [routerLink]="item.link">
+                    <div class="attention-icon">
+                        <i [class]="item.icon"></i>
+                    </div>
+                    <div class="attention-content">
+                        <div class="attention-title">{{ item.title }}</div>
+                        <div class="attention-meta">
+                            <span class="attention-source">{{ item.source }}</span>
+                            <span class="attention-time">{{ item.time }}</span>
+                        </div>
+                    </div>
+                    <div class="attention-badge">
+                        <span class="badge" [ngClass]="'bg-' + item.severity">{{ item.severity | titlecase }}</span>
+                    </div>
+                </div>
+            </div>
+        </card-body>
+    </card>
+
+    <!-- Empty state jika tidak ada yang perlu perhatian -->
+    <card class="all-good-panel mb-4" *ngIf="attentionItems.length === 0 && !loading">
+        <card-body class="text-center py-4">
+            <div class="all-good-icon">
+                <i class="bi bi-check-circle-fill text-success"></i>
+            </div>
+            <div class="all-good-title">Semua Berjalan Normal</div>
+            <div class="all-good-hint text-muted">Tidak ada masalah yang memerlukan perhatian saat ini</div>
+        </card-body>
+    </card>
+
+    <!-- Main Content Row -->
+    <div class="row g-3">
+        <!-- Project Overview (Left) -->
+        <div class="col-lg-7">
+            <card class="h-100">
+                <card-body>
+                    <div class="panel-head">
+                        <div>
+                            <div class="panel-label">PROJECT OVERVIEW</div>
+                            <div class="panel-hint">Ringkasan status per project</div>
+                        </div>
+                        <a routerLink="/iot/projects" class="btn btn-sm btn-outline-theme">
+                            Kelola Project <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="project-list" *ngIf="projectOverview.length > 0; else noProjects">
+                        <div class="project-item" *ngFor="let project of projectOverview" 
+                             [routerLink]="['/iot/projects', project.id]">
+                            <div class="project-icon">
+                                <i class="bi bi-diagram-3"></i>
+                            </div>
+                            <div class="project-content">
+                                <div class="project-name">{{ project.name }}</div>
+                                <div class="project-stats">
+                                    <span class="project-stat">
+                                        <i class="bi bi-router text-success"></i> 
+                                        {{ project.nodesOnline }} online
+                                    </span>
+                                    <span class="project-stat" *ngIf="project.nodesOffline > 0">
+                                        <i class="bi bi-router text-danger"></i> 
+                                        {{ project.nodesOffline }} offline
+                                    </span>
+                                    <span class="project-stat">
+                                        <i class="bi bi-activity"></i> 
+                                        {{ project.sensorsActive }} sensor
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="project-status">
+                                <span class="health-indicator" [ngClass]="'health-' + project.health"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <ng-template #noProjects>
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <div>Belum ada project</div>
+                            <a routerLink="/iot/projects/add" class="btn btn-sm btn-theme mt-2">
+                                <i class="bi bi-plus me-1"></i> Tambah Project
+                            </a>
+                        </div>
+                    </ng-template>
+                </card-body>
+            </card>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-5">
+            <!-- Activity Timeline -->
+            <card class="mb-3">
+                <card-body>
+                    <div class="panel-head">
+                        <div>
+                            <div class="panel-label">AKTIVITAS TERBARU</div>
+                            <div class="panel-hint">Update sistem terkini</div>
+                        </div>
+                    </div>
+                    <div class="activity-timeline" *ngIf="recentActivities.length > 0; else noActivities">
+                        <div class="activity-item" *ngFor="let activity of recentActivities">
+                            <div class="activity-dot" [ngClass]="'dot-' + activity.type"></div>
+                            <div class="activity-content">
+                                <div class="activity-text">{{ activity.text }}</div>
+                                <div class="activity-time">{{ activity.time }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <ng-template #noActivities>
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-clock-history me-1"></i> Belum ada aktivitas
+                        </div>
+                    </ng-template>
+                </card-body>
+            </card>
+
+            <!-- Node Health Summary -->
+            <card>
+                <card-body>
+                    <div class="panel-head">
+                        <div>
+                            <div class="panel-label">STATUS NODE</div>
+                            <div class="panel-hint">Kesehatan koneksi</div>
+                        </div>
+                        <a routerLink="/iot/nodes" class="btn btn-sm btn-outline-theme">
+                            Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="node-health-grid">
+                        <div class="health-card online">
+                            <div class="health-value">{{ nodeHealthSummary.online }}</div>
+                            <div class="health-label">Online</div>
+                        </div>
+                        <div class="health-card degraded">
+                            <div class="health-value">{{ nodeHealthSummary.degraded }}</div>
+                            <div class="health-label">Degraded</div>
+                        </div>
+                        <div class="health-card offline">
+                            <div class="health-value">{{ nodeHealthSummary.offline }}</div>
+                            <div class="health-label">Offline</div>
+                        </div>
+                    </div>
+                    <div class="health-progress mt-3">
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-success" [style.width.%]="nodeHealthSummary.onlinePercent"></div>
+                            <div class="progress-bar bg-warning" [style.width.%]="nodeHealthSummary.degradedPercent"></div>
+                            <div class="progress-bar bg-danger" [style.width.%]="nodeHealthSummary.offlinePercent"></div>
+                        </div>
+                        <div class="health-percent text-center mt-2">
+                            <span class="text-success">{{ nodeHealthSummary.onlinePercent | number:'1.0-0' }}% aktif</span>
+                        </div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Filter Section (Collapsed by default, mainly for Super Admin) -->
+    <div class="filter-section mt-4" *ngIf="isSuperAdmin">
+        <card class="filter-panel">
+            <card-body>
+                <div class="panel-head cursor-pointer" (click)="filtersExpanded = !filtersExpanded">
+                    <div>
+                        <div class="panel-label">
+                            <i class="bi bi-sliders me-2"></i>FILTER DATA
+                        </div>
+                        <div class="panel-hint">Filter tampilan berdasarkan owner, project, atau periode</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-default">
+                        <i class="bi" [ngClass]="filtersExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                    </button>
+                </div>
+                <div class="filter-body" *ngIf="filtersExpanded">
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4">
+                            <label class="filter-label">Owner</label>
+                            <select class="form-select form-select-sm" [ngModel]="selectedOwner"
                                 (ngModelChange)="setFilter('owner', $event)">
-                                <option *ngFor="let option of ownerFilterOptions" [ngValue]="option.value">{{
-                                    option.label }}</option>
+                                <option *ngFor="let option of ownerFilterOptions" [ngValue]="option.value">
+                                    {{ option.label }}
+                                </option>
                             </select>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Project Filter (All Users) -->
-                <div [ngClass]="isSuperAdmin ? 'col-xl-4 col-md-6' : 'col-xl-6 col-md-6'">
-                    <div class="filter-control">
-                        <label class="filter-label">Project</label>
-                        <div class="filter-input">
-                            <i class="bi bi-diagram-3"></i>
-                            <select class="form-select form-select-sm console-select" [ngModel]="selectedProject"
+                        <div class="col-md-4">
+                            <label class="filter-label">Project</label>
+                            <select class="form-select form-select-sm" [ngModel]="selectedProject"
                                 (ngModelChange)="setFilter('project', $event)">
-                                <option *ngFor="let option of projectFilterOptions" [ngValue]="option.value">{{
-                                    option.label }}</option>
+                                <option *ngFor="let option of projectFilterOptions" [ngValue]="option.value">
+                                    {{ option.label }}
+                                </option>
                             </select>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Time Range Filter (All Users) -->
-                <div [ngClass]="isSuperAdmin ? 'col-xl-4 col-12' : 'col-xl-6 col-12'">
-                    <div class="filter-control">
-                        <label class="filter-label">Time Range</label>
-                        <div class="filter-input">
-                            <i class="bi bi-clock-history"></i>
-                            <select class="form-select form-select-sm console-select" [ngModel]="selectedRange"
+                        <div class="col-md-4">
+                            <label class="filter-label">Periode</label>
+                            <select class="form-select form-select-sm" [ngModel]="selectedRange"
                                 (ngModelChange)="setFilter('range', $event)">
-                                <option *ngFor="let option of timeRangeOptions" [ngValue]="option.value">{{ option.label
-                                    }}</option>
+                                <option *ngFor="let option of timeRangeOptions" [ngValue]="option.value">
+                                    {{ option.label }}
+                                </option>
                             </select>
                         </div>
-                        <div class="filter-hint small text-muted mt-2">
-                            {{ getRangeLabel() }} 
-                            <span *ngIf="isSuperAdmin"> · {{ getOwnerLabel() }}</span>
-                            · {{ getProjectLabel() }}
-                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="filter-footer">
-                <div class="text-muted small">
-                    <span *ngIf="isSuperAdmin">Filters apply to all widgets. Super admin can view all owners.</span>
-                    <span *ngIf="!isSuperAdmin">Filters apply to your projects and data only.</span>
-                </div>
-                <button class="btn btn-outline-theme btn-sm" (click)="resetFilters()">Reset Filters</button>
-            </div>
-        </card-body>
-    </card>
-
-    <!-- KPI Cards Widget -->
-    <dashboard-kpi-cards 
-        [ownerId]="dashboardFilters.ownerId"
-        [projectId]="dashboardFilters.projectId"
-        [timeRange]="dashboardFilters.timeRange">
-    </dashboard-kpi-cards>
-
-    <!-- Offline Nodes Alert Widget -->
-    <card class="mb-3 mt-3">
-        <card-header class="fw-bold d-flex align-items-center">
-            <i class="bi bi-router text-danger me-2"></i>
-            <span>Offline Nodes Summary</span>
-            <span class="badge bg-danger ms-2">{{ offlineSummary.total }}</span>
-            <a href="/iot/alerts" class="btn btn-sm btn-outline-theme ms-auto">
-                View All Alerts <i class="bi bi-arrow-right ms-1"></i>
-            </a>
-        </card-header>
-        <card-body>
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <div class="p-3">
-                        <i class="bi bi-exclamation-triangle text-danger d-block mb-2" style="font-size: 2.5rem;"></i>
-                        <div class="fs-2 fw-bold text-danger">{{ offlineSummary.total }}</div>
-                        <div class="text-muted small">Total Offline Nodes</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-3 border-start border-end">
-                        <i class="bi bi-exclamation-circle text-warning d-block mb-2" style="font-size: 2.5rem;"></i>
-                        <div class="fs-2 fw-bold text-warning">{{ offlineSummary.warning }}</div>
-                        <div class="text-muted small">Warning (> 30 min)</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-3">
-                        <i class="bi bi-x-circle text-danger d-block mb-2" style="font-size: 2.5rem;"></i>
-                        <div class="fs-2 fw-bold text-danger">{{ offlineSummary.critical }}</div>
-                        <div class="text-muted small">Critical (> 1 hour)</div>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center mt-2 pt-3 border-top">
-                <p class="text-muted mb-0">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Auto-detected by cron job every 5 minutes. Alert rules managed in backend.
-                </p>
-            </div>
-        </card-body>
-    </card>
-
- 
-    <!-- Node Health Widget (Full Width) -->
-    <div class="row g-3 mt-1">
-        <div class="col-md-12">
-            <dashboard-node-health 
-                [ownerId]="dashboardFilters.ownerId"
-                [projectId]="dashboardFilters.projectId"
-                [timeRange]="dashboardFilters.timeRange"
-                [limit]="10">
-            </dashboard-node-health>
-        </div>
+            </card-body>
+        </card>
     </div>
-
-    <!-- Activity Log & Release Window Row -->
-    <!-- <div class="row g-3 mt-1">
-        <div class="col-xl-6">
-            <dashboard-activity-log 
-                [ownerId]="dashboardFilters.ownerId"
-                [projectId]="dashboardFilters.projectId"
-                [timeRange]="dashboardFilters.timeRange"
-                [limit]="10">
-            </dashboard-activity-log>
-        </div>
-        <div class="col-xl-6">
-            <dashboard-release-window></dashboard-release-window>
-        </div>
-    </div> -->
-
-    <!-- Telemetry Streams & Delivery/Alerts Row -->
-    <div class="row g-3 mt-1 align-items-stretch">
-        <div class="col-md-8">
-            <dashboard-telemetry-streams 
-                [ownerId]="dashboardFilters.ownerId"
-                [projectId]="dashboardFilters.projectId"
-                [timeRange]="dashboardFilters.timeRange">
-            </dashboard-telemetry-streams>
-        </div>
-        <div class="col-md-4">
-            <dashboard-delivery-health 
-                [ownerId]="dashboardFilters.ownerId"
-                [timeRange]="dashboardFilters.timeRange"
-                class="d-block mb-3">
-            </dashboard-delivery-health>
-    
-            <dashboard-alert-stream 
-                [ownerId]="dashboardFilters.ownerId"
-                [projectId]="dashboardFilters.projectId"
-                [limit]="10">
-            </dashboard-alert-stream>
-        </div>
-    </div>
-
-    
 </div>

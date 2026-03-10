@@ -422,7 +422,7 @@ export class NodesDetailPage implements OnInit, OnChanges {
                     const timestamps = dataPoints.map((dp: any) => {
                         const ts = dp.timestamp || dp.ts;
                         if (!ts) return '';
-                        const date = new Date(ts);
+                        const date = this.parseTimestamp(ts);
                         return isNaN(date.getTime()) ? '' : date.toLocaleTimeString();
                     });
 
@@ -821,11 +821,23 @@ export class NodesDetailPage implements OnInit, OnChanges {
     }
 
     /**
-     * Format log timestamp for display
+     * Parse timestamp string to Date, ensuring UTC is handled correctly.
+     * Timestamps without timezone indicator (Z or +/-offset) are treated as UTC.
+     */
+    private parseTimestamp(timestamp: string): Date {
+        if (!timestamp) return new Date();
+        // If timestamp doesn't have timezone indicator, append 'Z' to treat as UTC
+        const hasTimezone = /Z|[+-]\d{2}:\d{2}$/.test(timestamp);
+        const ts = hasTimezone ? timestamp : timestamp + 'Z';
+        return new Date(ts);
+    }
+
+    /**
+     * Format log timestamp for display (converted to local time)
      */
     formatLogTimestamp(timestamp: string): string {
         if (!timestamp) return '-';
-        const date = new Date(timestamp);
+        const date = this.parseTimestamp(timestamp);
         return date.toLocaleString('id-ID', {
             day: '2-digit',
             month: 'short',
@@ -841,7 +853,7 @@ export class NodesDetailPage implements OnInit, OnChanges {
      */
     getRelativeTime(timestamp: string): string {
         if (!timestamp) return '';
-        const date = new Date(timestamp);
+        const date = this.parseTimestamp(timestamp);
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const diffSec = Math.floor(diffMs / 1000);

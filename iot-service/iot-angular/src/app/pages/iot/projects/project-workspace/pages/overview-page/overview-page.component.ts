@@ -36,7 +36,7 @@ interface ProjectDetail {
 interface KeyMetric {
   label: string;
   metric: string;
-  value: number;
+  value: string;
   unit: string;
   trend: 'up' | 'down' | 'stable';
   trendValue: number;
@@ -48,6 +48,7 @@ interface DeviceHealth {
   nodeId: string;
   nodeName: string;
   nodeCode: string;
+  address: string;
   status: 'online' | 'warning' | 'offline';
   lastSeen: Date | null;
   uptimePercent: number;
@@ -278,6 +279,7 @@ export class OverviewPageComponent implements OnInit {
         nodeId: node.idNode || node.id,
         nodeName: node.name || node.code,
         nodeCode: node.code,
+        address: node.address || '',
         status: status as 'online' | 'warning' | 'offline',
         lastSeen: node.lastSeenAt ? new Date(node.lastSeenAt) : null,
         uptimePercent: Math.round(uptimePercent),
@@ -294,56 +296,85 @@ export class OverviewPageComponent implements OnInit {
 
     this.loadingTrends = true;
 
-    // Load trends from first available node that has data
-    const firstNode = this.nodes[0];
-    const nodeId = firstNode.idNode || firstNode.id;
+    // Load trends from ALL nodes and aggregate by metric type
+    const trendRequests = this.nodes.map(node => 
+      this.sensorLogsService.sensorLogsControllerGetTelemetryTrends({
+        nodeId: node.idNode || node.id,
+        hours: 24
+      })
+    );
 
-    this.sensorLogsService.sensorLogsControllerGetTelemetryTrends({
-      nodeId: nodeId,
-      hours: 24
-    }).subscribe({
-      next: (res: any) => {
-        let response = res;
-        // Parse JSON string if needed
-        if (typeof response === 'string') {
-          try { response = JSON.parse(response); } catch (e) { /* ignore */ }
-        }
-        
-        const channels = response?.channels || [];
-        
-        // Ensure channels is an array
-        if (!Array.isArray(channels)) {
-          console.warn('Channels is not an array:', channels);
-          this.keyMetrics = [];
-          this.loadingTrends = false;
-          return;
-        }
-        
-        // Build key metrics from first 4 channels
-        this.keyMetrics = channels.slice(0, 4).map((channel: any, index: number) => {
-          const dataPoints = channel.dataPoints || [];
-          const values = dataPoints.map((dp: any) => parseFloat(dp.value) || 0);
-          const lastValue = channel.statistics?.lastValue || values[values.length - 1] || 0;
-          const avgValue = channel.statistics?.average || values.reduce((a: number, b: number) => a + b, 0) / values.length || 0;
+    forkJoin(trendRequests).subscribe({
+      next: (responses: any[]) => {
+        // Aggregate channels by metric type across all nodes
+        const metricMap = new Map<string, {
+          label: string;
+          metric: string;
+          unit: string;
+          values: number[];
+          latestValues: number[];
+          nodeCount: number;
+        }>();
+
+        responses.forEach((res: any) => {
+          let response = res;
+          if (typeof response === 'string') {
+            try { response = JSON.parse(response); } catch (e) { /* ignore */ }
+          }
           
-          // Calculate trend
-          const trendValue = lastValue - avgValue;
-          const trend: 'up' | 'down' | 'stable' = Math.abs(trendValue) < 0.5 ? 'stable' : (trendValue > 0 ? 'up' : 'down');
+          const channels = response?.channels || [];
+          if (!Array.isArray(channels)) return;
 
-          const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6'];
-          const color = colors[index % colors.length];
+          channels.forEach((channel: any) => {
+            const metricKey = channel.sensorTypeLabel || channel.metricCode || 'Unknown';
+            const dataPoints = channel.dataPoints || [];
+            const values = dataPoints.map((dp: any) => parseFloat(dp.value) || 0);
+            const lastValue = channel.statistics?.lastValue || values[values.length - 1] || 0;
 
-          return {
-            label: channel.sensorTypeLabel || channel.metricCode || 'Metric',
-            metric: channel.metricCode || 'value',
-            value: parseFloat(lastValue).toFixed(2),
-            unit: channel.unit || '',
-            trend: trend,
-            trendValue: Math.abs(parseFloat(trendValue.toFixed(2))),
-            color: color,
-            chartOption: this.buildSparklineChart(values.slice(-20), color)
-          };
+            if (!metricMap.has(metricKey)) {
+              metricMap.set(metricKey, {
+                label: channel.sensorTypeLabel || channel.metricCode || 'Metric',
+                metric: channel.metricCode || 'value',
+                unit: channel.unit || '',
+                values: [],
+                latestValues: [],
+                nodeCount: 0
+              });
+            }
+
+            const existing = metricMap.get(metricKey)!;
+            existing.values.push(...values);
+            existing.latestValues.push(parseFloat(lastValue) || 0);
+            existing.nodeCount++;
+          });
         });
+
+        // Build key metrics from aggregated data (top 4 metrics)
+        const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1'];
+        let colorIndex = 0;
+
+        this.keyMetrics = Array.from(metricMap.entries())
+          .slice(0, 4)
+          .map(([_, data]) => {
+            const avgLatest = data.latestValues.reduce((a, b) => a + b, 0) / data.latestValues.length || 0;
+            const avgOverall = data.values.reduce((a, b) => a + b, 0) / data.values.length || 0;
+            
+            const trendValue = avgLatest - avgOverall;
+            const trend: 'up' | 'down' | 'stable' = Math.abs(trendValue) < 0.5 ? 'stable' : (trendValue > 0 ? 'up' : 'down');
+
+            const color = colors[colorIndex++ % colors.length];
+
+            return {
+              label: `${data.label} (${data.nodeCount} node${data.nodeCount > 1 ? 's' : ''})`,
+              metric: data.metric,
+              value: avgLatest.toFixed(2),
+              unit: data.unit,
+              trend: trend,
+              trendValue: Math.abs(parseFloat(trendValue.toFixed(2))),
+              color: color,
+              chartOption: this.buildSparklineChart(data.values.slice(-30), color)
+            };
+          });
 
         this.loadingTrends = false;
       },

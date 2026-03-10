@@ -90,6 +90,12 @@
                 <li><button class="dropdown-item" type="button" (click)="exportCsv('1h')" [disabled]="exporting">
                         Per 1 Jam
                     </button></li>
+                <li><button class="dropdown-item" type="button" (click)="exportCsv('1d')" [disabled]="exporting">
+                        Per Hari
+                    </button></li>
+                <li><button class="dropdown-item" type="button" (click)="exportCsv('1M')" [disabled]="exporting">
+                        Per Bulan
+                    </button></li>
             </ul>
         </div>
     </div>

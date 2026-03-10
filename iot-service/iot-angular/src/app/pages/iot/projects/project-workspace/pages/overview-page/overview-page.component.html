@@ -84,45 +84,6 @@
         </div>
     </div>
 
-    <!-- Key Metrics Cards with Sparklines -->
-    <div class="row g-3 mb-4" *ngIf="keyMetrics.length > 0 || loadingTrends">
-        <div class="col-12">
-            <div class="d-flex align-items-center mb-2">
-                <h6 class="text-uppercase text-muted mb-0">
-                    <i class="fa fa-chart-line me-2"></i>Key Metrics (24h)
-                </h6>
-                <span class="badge bg-body text-muted border ms-2" *ngIf="!loadingTrends">Live data</span>
-                <div class="spinner-border spinner-border-sm text-theme ms-2" *ngIf="loadingTrends"></div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6" *ngFor="let metric of keyMetrics">
-            <card class="shadow-sm metric-card h-100">
-                <card-body>
-                    <div class="d-flex align-items-start justify-content-between mb-2">
-                        <div>
-                            <div class="text-uppercase text-muted small">{{ metric.label }}</div>
-                            <div class="fs-3 fw-bold">
-                                {{ metric.value }}
-                                <span class="fs-6 text-muted fw-normal">{{ metric.unit }}</span>
-                            </div>
-                        </div>
-                        <div class="trend-badge" 
-                             [class.trend-up]="metric.trend === 'up'" 
-                             [class.trend-down]="metric.trend === 'down'"
-                             [class.trend-stable]="metric.trend === 'stable'">
-                            <i class="fa" 
-                               [class.fa-arrow-up]="metric.trend === 'up'"
-                               [class.fa-arrow-down]="metric.trend === 'down'"
-                               [class.fa-minus]="metric.trend === 'stable'"></i>
-                            <span *ngIf="metric.trend !== 'stable'">{{ metric.trendValue }}</span>
-                        </div>
-                    </div>
-                    <div class="sparkline-chart" echarts [options]="metric.chartOption" style="height: 60px;"></div>
-                </card-body>
-            </card>
-        </div>
-    </div>
-
     <!-- Stats Row -->
     <div class="row g-3 mb-4">
         <div class="col-xl-8">
@@ -168,10 +129,10 @@
                             <card class="stat-link h-100" [routerLink]="['/iot/nodes']"
                                 [queryParams]="{ projectId: projectId }">
                                 <div class="text-uppercase text-muted small">Devices</div>
-                                <div class="fs-3 fw-bold lh-1 mb-1">{{ project.stats.totalNodes }}</div>
-                                <div class="fw-semibold" [class.text-success]="project.stats.activeNodes > 0"
-                                    [class.text-muted]="!project.stats.activeNodes">
-                                    {{ project.stats.activeNodes }} online
+                                <div class="fs-3 fw-bold lh-1 mb-1">{{ nodes.length }}</div>
+                                <div class="fw-semibold" [class.text-success]="systemHealth.onlineDevices > 0"
+                                    [class.text-muted]="!systemHealth.onlineDevices">
+                                    {{ systemHealth.onlineDevices }} online
                                 </div>
                                 <div class="stat-meta">View nodes scoped to this project</div>
                             </card>
@@ -180,8 +141,8 @@
                             <card class="stat-link h-100" [routerLink]="['/iot/sensors']"
                                 [queryParams]="{ projectId: projectId }">
                                 <div class="text-uppercase text-muted small">Sensors</div>
-                                <div class="fs-3 fw-bold lh-1 mb-1">{{ project.stats.totalSensors }}</div>
-                                <div class="text-muted">{{ offlineNodes }} offline</div>
+                                <div class="fs-3 fw-bold lh-1 mb-1">{{ sensors.length }}</div>
+                                <div class="text-muted">{{ systemHealth.offlineDevices }} offline</div>
                                 <div class="stat-meta">Open sensor explorer</div>
                             </card>
                         </div>
@@ -189,7 +150,7 @@
                             <card class="stat-link h-100" [routerLink]="['/iot/telemetry']"
                                 [queryParams]="{ projectId: projectId }">
                                 <div class="text-uppercase text-muted small">Locations</div>
-                                <div class="fs-3 fw-bold lh-1 mb-1">{{ project.stats.totalLocations }}</div>
+                                <div class="fs-3 fw-bold lh-1 mb-1">{{ mapNodes.length }}</div>
                                 <div class="text-muted">Deployment sites</div>
                                 <div class="stat-meta">Jump to telemetry</div>
                             </card>
@@ -450,7 +411,7 @@
                                                 </div>
                                                 <div>
                                                     <div class="fw-semibold">{{ device.nodeName || device.nodeCode }}</div>
-                                                    <div class="text-muted small">{{ device.nodeCode }}</div>
+                                                    <div class="text-muted small">{{ device.address || device.nodeCode }}</div>
                                                 </div>
                                             </div>
                                         </a>

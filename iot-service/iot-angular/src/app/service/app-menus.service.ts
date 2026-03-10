@@ -114,7 +114,7 @@ export class AppMenuService {
 			{ 'path': '/profile', 'icon': 'bi bi-people', 'text': 'Profile' }, 
 			// { 'path': '/template/calendar', 'icon': 'bi bi-calendar4', 'text': 'Calendar' }, 
 			// { 'path': '/template/settings', 'icon': 'bi bi-gear', 'text': 'Settings' },
-			{ 'path': '/template/helper', 'icon': 'bi bi-gem', 'text': 'Helper' }
+			// { 'path': '/template/helper', 'icon': 'bi bi-gem', 'text': 'Helper' }
 		];
 	}
 
