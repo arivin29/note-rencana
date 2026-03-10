@@ -53,19 +53,8 @@ export class ReportService {
       throw new BadRequestException('No valid sensor channels found');
     }
 
-    // Build and execute ClickHouse query
-    let rawData = await this.executeAggregationQuery(dto);
-
-    // Fill time gaps if requested (processed in NestJS)
-    if (dto.fillGaps && dto.aggregation !== AggregationMode.RAW) {
-      rawData = this.fillTimeGaps(
-        rawData,
-        dto.sensorChannelIds,
-        dto.startDate,
-        dto.endDate,
-        dto.aggregation,
-      );
-    }
+    // Build and execute ClickHouse query (fillGaps handled in ClickHouse)
+    const rawData = await this.executeAggregationQuery(dto);
 
     // Transform data for response
     const columns = this.buildColumns(sensorChannels);
@@ -108,18 +97,8 @@ export class ReportService {
       throw new BadRequestException('No valid sensor channels found');
     }
 
-    let rawData = await this.executeAggregationQuery(dto);
-
-    // Fill time gaps if requested (processed in NestJS)
-    if (dto.fillGaps && dto.aggregation !== AggregationMode.RAW) {
-      rawData = this.fillTimeGaps(
-        rawData,
-        dto.sensorChannelIds,
-        dto.startDate,
-        dto.endDate,
-        dto.aggregation,
-      );
-    }
+    // Build and execute ClickHouse query (fillGaps handled in ClickHouse)
+    const rawData = await this.executeAggregationQuery(dto);
 
     return {
       metadata: {
@@ -143,7 +122,7 @@ export class ReportService {
       throw new BadRequestException('ClickHouse is not available');
     }
 
-    const { sensorChannelIds, startDate, endDate, aggregation } = dto;
+    const { sensorChannelIds, startDate, endDate, aggregation, fillGaps } = dto;
     const channelIdList = sensorChannelIds.map((id) => `'${id}'`).join(',');
 
     // Convert ISO dates to ClickHouse DateTime64 format
@@ -155,7 +134,7 @@ export class ReportService {
     const wibOffset = 'addHours(event_time, 7)';
 
     if (aggregation === AggregationMode.RAW) {
-      // Raw data - no aggregation
+      // Raw data - no aggregation, no fill gaps
       sql = `
         SELECT 
           formatDateTime(${wibOffset}, '%Y-%m-%d %H:%i:%S') as ts,
@@ -169,8 +148,62 @@ export class ReportService {
         ORDER BY event_time ASC, channel_id
         LIMIT 50000
       `;
+    } else if (fillGaps) {
+      // Aggregated data WITH fill gaps - generate complete time series in ClickHouse
+      const intervalFunction = this.getClickHouseIntervalFunction(aggregation);
+      const intervalStep = this.getIntervalStep(aggregation);
+      
+      sql = `
+        WITH 
+          time_slots AS (
+            SELECT 
+              formatDateTime(
+                addHours(
+                  ${intervalFunction}(${startDateCH}) + toIntervalSecond(number * ${intervalStep}),
+                  7
+                ),
+                '%Y-%m-%d %H:%i:%S'
+              ) as ts
+            FROM numbers(
+              toUInt64(
+                (${endDateCH} - ${intervalFunction}(${startDateCH})) / ${intervalStep}
+              ) + 1
+            )
+          ),
+          all_slots AS (
+            SELECT ts, channel_id
+            FROM time_slots
+            CROSS JOIN (SELECT toUUID(arrayJoin([${channelIdList}])) as channel_id) as channels
+          ),
+          agg_data AS (
+            SELECT 
+              formatDateTime(addHours(${intervalFunction}(event_time), 7), '%Y-%m-%d %H:%i:%S') as ts,
+              channel_id,
+              avg(eng_value) as avg_value,
+              min(eng_value) as min_value,
+              max(eng_value) as max_value,
+              count() as point_count
+            FROM iot.sensor_telemetry
+            WHERE 
+              channel_id IN (${channelIdList})
+              AND event_time >= ${startDateCH}
+              AND event_time <= ${endDateCH}
+            GROUP BY ts, channel_id
+          )
+        SELECT 
+          s.ts,
+          s.channel_id as id_sensor_channel,
+          a.avg_value,
+          a.min_value,
+          a.max_value,
+          a.point_count
+        FROM all_slots s
+        LEFT JOIN agg_data a ON s.ts = a.ts AND s.channel_id = a.channel_id
+        ORDER BY s.ts ASC, s.channel_id
+        LIMIT 100000
+      `;
     } else {
-      // Aggregated data
+      // Aggregated data without fill gaps
       const intervalFunction = this.getClickHouseIntervalFunction(aggregation);
       sql = `
         SELECT 
