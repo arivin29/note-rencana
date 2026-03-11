@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center mb-3">
     <div>
-        <ol class="breadcrumb">
+        <ol class="breadcrumb" *ngIf="!embedded">
             <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
             <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
             <li class="breadcrumb-item active">{{ nodeId }}</li>
@@ -8,7 +8,7 @@
         <h1 class="page-header mb-0">Node {{ nodeId }}</h1>
     </div>
     <div class="ms-auto d-flex gap-2">
-        <a [routerLink]="['/iot/nodes', nodeUuid, 'edit']" class="btn btn-outline-theme">
+        <a *ngIf="!embedded" [routerLink]="['/iot/nodes', nodeUuid, 'edit']" class="btn btn-outline-theme">
             <i class="fa fa-pen fa-fw me-1"></i>
             Edit Node
         </a>
@@ -17,7 +17,7 @@
             <i class="fa fa-trash fa-fw me-1"></i>
             Delete Node
         </button>
-        <a routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
+        <a *ngIf="!embedded" routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
     </div>
 </div>
 
@@ -84,83 +84,74 @@
                     'bg-danger-subtle text-danger': nodeMeta.status === 'inactive'
                 }">{{ nodeMeta.status | titlecase }}</span>
             </card-header>
-            <card-body class="text-inverse">
-                <!-- Row 1: Owner & Project -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6">
-                        <div class="text-uppercase text-muted small">Owner</div>
+            <card-body class="text-inverse py-3">
+                <!-- Compact Grid Layout -->
+                <div class="row g-3">
+                    <!-- Col 1: Owner & Project -->
+                    <div class="col-md-4 col-lg-3">
+                        <div class="text-uppercase text-muted small mb-1">Owner</div>
                         <div class="fw-semibold">{{ nodeMeta.owner }}</div>
-                        <div class="text-muted small">Contact: {{ nodeMeta.ownerContact }}</div>
-                        <div class="text-muted small">Industry: {{ nodeMeta.ownerPhone }}</div>
+                        <div class="text-muted small" *ngIf="nodeMeta.ownerContact !== '-'">
+                            <i class="fa fa-user fa-fw me-1"></i>{{ nodeMeta.ownerContact }}
+                        </div>
+                        <div class="text-muted small" *ngIf="nodeMeta.ownerIndustry !== '-'">
+                            <i class="fa fa-industry fa-fw me-1"></i>{{ nodeMeta.ownerIndustry }}
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="text-uppercase text-muted small">Project</div>
+                    <div class="col-md-4 col-lg-3">
+                        <div class="text-uppercase text-muted small mb-1">Project</div>
                         <div class="fw-semibold">{{ nodeMeta.project }}</div>
-                        <div class="text-muted small">Area Type: {{ nodeMeta.projectCode }}</div>
+                        <div class="text-muted small">Area: {{ nodeMeta.projectCode }}</div>
                     </div>
-                </div>
-                
-                <!-- Row 2: Device & Firmware -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-4">
-                        <div class="text-uppercase text-muted small">Device Model</div>
+                    
+                    <!-- Col 2: Device Info -->
+                    <div class="col-md-4 col-lg-3">
+                        <div class="text-uppercase text-muted small mb-1">Device</div>
                         <div class="fw-semibold">{{ nodeMeta.model }}</div>
-                        <div class="text-muted small">Protocol: {{ nodeMeta.protocol }}</div>
+                        <div class="text-muted small">{{ nodeMeta.protocol }} · {{ nodeMeta.telemetryMode }} {{ nodeMeta.telemetryInterval }}</div>
+                        <div class="text-muted small" *ngIf="nodeMeta.firmware !== 'N/A'">FW: {{ nodeMeta.firmware }}</div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-uppercase text-muted small">Firmware</div>
-                        <div class="fw-semibold">{{ nodeMeta.firmware }}</div>
-                        <div class="text-muted small">Telemetry {{ nodeMeta.telemetryMode }} / {{ nodeMeta.telemetryInterval }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-uppercase text-muted small">Environment</div>
+                    
+                    <!-- Col 3: Environment -->
+                    <div class="col-md-4 col-lg-3">
+                        <div class="text-uppercase text-muted small mb-1">Environment</div>
                         <div class="fw-semibold">{{ nodeMeta.installationType || '-' | titlecase }}</div>
-                        <div class="text-muted small">Enclosure: {{ nodeMeta.enclosureRating || '-' }}</div>
-                        <div class="text-muted small">Power: {{ nodeMeta.powerSource || '-' | titlecase }}</div>
+                        <div class="text-muted small">{{ nodeMeta.enclosureRating || '-' }} · {{ nodeMeta.powerSource || '-' | titlecase }}</div>
                     </div>
-                </div>
-
-                <!-- Row 3: Location -->
-                <div class="row g-4 mb-4">
-                    <div class="col-12">
+                    
+                    <!-- Col 4: Location -->
+                    <div class="col-md-4 col-lg-6">
                         <div class="text-uppercase text-muted small mb-1">
                             <i class="fa fa-map-marker-alt me-1 text-theme"></i>Location
                         </div>
-                        <div class="fw-semibold" *ngIf="nodeMeta.address">{{ nodeMeta.address }}</div>
-                        <div class="fw-semibold" *ngIf="!nodeMeta.address">-</div>
-                        <div class="text-muted small">
-                            {{ nodeMeta.city || '-' }}, {{ nodeMeta.province || '-' }} {{ nodeMeta.postalCode || '' }}
-                        </div>
+                        <div class="fw-semibold">{{ nodeMeta.name || nodeMeta.address || '-' }}</div>
                         <div class="text-muted small" *ngIf="nodeMeta.latitude && nodeMeta.longitude">
-                            <i class="fa fa-globe me-1"></i>{{ nodeMeta.latitude }}, {{ nodeMeta.longitude }}
-                            <span *ngIf="nodeMeta.elevationM"> · Elev: {{ nodeMeta.elevationM }}m</span>
+                            <i class="fa fa-globe fa-fw me-1"></i>{{ nodeMeta.latitude }}, {{ nodeMeta.longitude }}
+                            <span *ngIf="nodeMeta.elevationM"> · {{ nodeMeta.elevationM }}m</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Row 4: Maintenance & PIC -->
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="text-uppercase text-muted small">Maintenance</div>
+                    
+                    <!-- Col 5: Maintenance -->
+                    <div class="col-md-4 col-lg-3">
+                        <div class="text-uppercase text-muted small mb-1">Maintenance</div>
                         <div class="text-muted small">Commissioned: {{ nodeMeta.commissionedAt }}</div>
-                        <div class="text-muted small">Last Maintenance: {{ nodeMeta.lastMaintenanceAt }}</div>
+                        <div class="text-muted small">Last: {{ nodeMeta.lastMaintenanceAt }}</div>
                         <div class="text-muted small" [ngClass]="{'text-warning': nodeMeta.nextMaintenanceAt !== '-'}">
-                            Next Maintenance: {{ nodeMeta.nextMaintenanceAt }}
+                            Next: {{ nodeMeta.nextMaintenanceAt }}
                         </div>
                     </div>
-                    <div class="col-md-4" *ngIf="nodeMeta.picName">
-                        <div class="text-uppercase text-muted small">Person In Charge (PIC)</div>
-                        <div class="fw-semibold">{{ nodeMeta.picName }}</div>
+                    
+                    <!-- Col 6: PIC (conditional) -->
+                    <div class="col-md-4 col-lg-3" *ngIf="nodeMeta.picName || nodeMeta.picPhone">
+                        <div class="text-uppercase text-muted small mb-1">PIC / SMS Control</div>
+                        <div class="fw-semibold" *ngIf="nodeMeta.picName">{{ nodeMeta.picName }}</div>
                         <div class="text-muted small" *ngIf="nodeMeta.picPhone">
-                            <i class="fa fa-phone me-1"></i>{{ nodeMeta.picPhone }}
+                            <i class="fa fa-phone fa-fw me-1"></i>{{ nodeMeta.picPhone }}
+                            <span class="badge bg-warning-subtle text-warning ms-1" style="font-size: 0.65rem;">SMS</span>
                         </div>
                         <div class="text-muted small" *ngIf="nodeMeta.picEmail">
-                            <i class="fa fa-envelope me-1"></i>{{ nodeMeta.picEmail }}
+                            <i class="fa fa-envelope fa-fw me-1"></i>{{ nodeMeta.picEmail }}
                         </div>
-                    </div>
-                    <div class="col-md-4" *ngIf="nodeMeta.description">
-                        <div class="text-uppercase text-muted small">Description</div>
-                        <div class="text-muted small">{{ nodeMeta.description }}</div>
                     </div>
                 </div>
             </card-body>

@@ -76,19 +76,41 @@ export class WidgetBuilderService {
   // DASHBOARD CRUD
   // ==========================================
 
-  async findAllDashboards(ownerId: string, isAdmin = false): Promise<CustomDashboard[]> {
-    // Admin can see all dashboards
-    if (isAdmin) {
-      return this.dashboardRepository.find({
-        where: { isActive: true },
-        order: { createdAt: 'DESC' },
-      });
+  async findAllDashboards(ownerId: string, isAdmin = false, projectId?: string): Promise<CustomDashboard[]> {
+    const queryBuilder = this.dashboardRepository
+      .createQueryBuilder('dashboard')
+      .leftJoinAndSelect('dashboard.project', 'project')
+      .where('dashboard.isActive = :isActive', { isActive: true });
+
+    // Admin can see all dashboards, non-admin filtered by owner
+    if (!isAdmin) {
+      queryBuilder.andWhere('dashboard.idOwner = :ownerId', { ownerId });
     }
-    
-    return this.dashboardRepository.find({
-      where: { idOwner: ownerId, isActive: true },
-      order: { createdAt: 'DESC' },
-    });
+
+    // Filter by project if specified
+    if (projectId) {
+      queryBuilder.andWhere('dashboard.idProject = :projectId', { projectId });
+    }
+
+    return queryBuilder.orderBy('dashboard.createdAt', 'DESC').getMany();
+  }
+
+  /**
+   * Find dashboards by project ID (for project detail page)
+   */
+  async findDashboardsByProject(projectId: string, ownerId: string, isAdmin = false): Promise<CustomDashboard[]> {
+    const queryBuilder = this.dashboardRepository
+      .createQueryBuilder('dashboard')
+      .leftJoinAndSelect('dashboard.project', 'project')
+      .where('dashboard.isActive = :isActive', { isActive: true })
+      .andWhere('dashboard.idProject = :projectId', { projectId });
+
+    // Non-admin filtered by owner
+    if (!isAdmin) {
+      queryBuilder.andWhere('dashboard.idOwner = :ownerId', { ownerId });
+    }
+
+    return queryBuilder.orderBy('dashboard.createdAt', 'DESC').getMany();
   }
 
   async findDashboardById(id: string, ownerId: string, isAdmin = false): Promise<CustomDashboard> {

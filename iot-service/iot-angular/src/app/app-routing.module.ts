@@ -175,10 +175,22 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/telemetry/telemetry.module').then((m) => m.TelemetryModule)
     },
     {
+        path: 'iot/report',
+        loadChildren: () => import('./pages/iot/report/report.module').then((m) => m.ReportModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Report & Export' }
+    },
+    {
         path: 'iot/ml',
         loadChildren: () => import('./pages/iot/ml-dashboard/ml-dashboard.module').then((m) => m.MlDashboardModule),
         canActivate: [AuthGuard],
         data: { title: 'ML Dashboard' }
+    },
+    {
+        path: 'iot/webgis',
+        loadChildren: () => import('./pages/iot/webgis/webgis.module').then((m) => m.WebgisModule),
+        canActivate: [AuthGuard],
+        data: { title: 'WebGIS Map' }
     },
     { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
 

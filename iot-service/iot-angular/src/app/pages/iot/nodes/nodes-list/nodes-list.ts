@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { OwnersService } from '../../../../../sdk/core/services/owners.service';
 import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
@@ -14,7 +14,11 @@ import { ProjectResponseDto } from '../../../../../sdk/core/models/project-respo
   styleUrls: ['./nodes-list.scss'],
   standalone: false
 })
-export class NodesListPage implements OnInit {
+export class NodesListPage implements OnInit, OnChanges {
+  // Input properties for embedded mode
+  @Input() projectId: string | null = null;  // Filter by project when provided
+  @Input() embedded = false;  // Hide header/breadcrumb when embedded
+  
   filters = {
     owner: '',
     ownerId: '',
@@ -24,7 +28,7 @@ export class NodesListPage implements OnInit {
   };
   searchTerm = '';
   
-  // Query params filter
+  // Query params filter (for standalone mode)
   projectIdFilter: string | null = null;
 
   pageSizeOptions = [10, 20, 50];
@@ -54,8 +58,31 @@ export class NodesListPage implements OnInit {
     private ownersService: OwnersService,
     private projectsService: ProjectsService,
     private authService: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
+
+  /**
+   * Navigate to node detail - handles embedded vs standalone mode
+   */
+  navigateToNode(nodeId: string) {
+    if (this.embedded && this.projectId) {
+      // In embedded mode, navigate relative to project workspace
+      this.router.navigate(['/iot/projects', this.projectId, 'node', nodeId]);
+    } else {
+      // In standalone mode, navigate to standard node detail
+      this.router.navigate(['/iot/nodes', nodeId]);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    // Handle projectId input changes (for embedded mode)
+    if (changes['projectId'] && this.projectId) {
+      this.projectIdFilter = this.projectId;
+      this.loadStatistics();
+      this.loadNodes();
+    }
+  }
 
   ngOnInit() {
     // Check if user is admin
@@ -64,12 +91,20 @@ export class NodesListPage implements OnInit {
     
     console.log('🔐 User role:', this.currentUserRole, 'Is Admin:', this.isAdmin);
     
-    // Load owners first (for admin)
-    if (this.isAdmin) {
+    // If embedded mode with projectId input, use that directly
+    if (this.embedded && this.projectId) {
+      this.projectIdFilter = this.projectId;
+      this.loadStatistics();
+      this.loadNodes();
+      return; // Skip query params and owner loading for embedded mode
+    }
+    
+    // Load owners first (for admin) - only in standalone mode
+    if (this.isAdmin && !this.embedded) {
       this.loadOwners();
     }
     
-    // Read query params for projectId filter
+    // Read query params for projectId filter (standalone mode)
     this.route.queryParams.subscribe(params => {
       this.projectIdFilter = params['projectId'] || null;
       

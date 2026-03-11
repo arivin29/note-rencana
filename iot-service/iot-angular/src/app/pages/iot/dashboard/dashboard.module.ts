@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 
 // SDK Module
@@ -43,6 +44,7 @@ import { DashboardReleaseWindowComponent } from './widgets/release-window/releas
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     NgApexchartsModule,
     SharedComponentsModule, // For card, card-body, card-header, card-expand-toggler, etc.
     WidgetsModule, // For widget components

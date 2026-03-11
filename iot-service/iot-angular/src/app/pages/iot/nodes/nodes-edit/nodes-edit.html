@@ -231,11 +231,11 @@
       </div>
     </card>
 
-    <!-- Section 6: PIC -->
+    <!-- Section 6: PIC & SMS Commands -->
     <card id="sectionPIC" class="border-0 shadow-sm mb-4">
       <div class="card-header border-0 bg-transparent">
-        <div class="card-title mb-0"><i class="fa fa-user text-theme me-2"></i>Person In Charge (PIC)</div>
-        <div class="text-muted small">Kontak penanggung jawab node.</div>
+        <div class="card-title mb-0"><i class="fa fa-user text-theme me-2"></i>Person In Charge (PIC) & SMS Control</div>
+        <div class="text-muted small">Kontak penanggung jawab node dan nomor untuk SMS commands.</div>
       </div>
       <div class="card-body">
         <div class="row g-3">
@@ -244,13 +244,18 @@
             <input class="form-control" [(ngModel)]="form.picName" placeholder="Budi Santoso">
           </div>
           <div class="col-md-4">
-            <label class="form-label">PIC Phone</label>
-            <input class="form-control" [(ngModel)]="form.picPhone" placeholder="08123456789">
+            <label class="form-label">PIC Phone <i class="fa fa-sms text-warning ms-1" title="Dapat digunakan untuk SMS commands"></i></label>
+            <input class="form-control" [(ngModel)]="form.picPhone" placeholder="+6281234567890">
+            <small class="text-muted"><i class="fa fa-info-circle me-1"></i>Nomor ini digunakan untuk mengirim SMS notifikasi & perintah restart/config ke device.</small>
           </div>
           <div class="col-md-4">
             <label class="form-label">PIC Email</label>
             <input type="email" class="form-control" [(ngModel)]="form.picEmail" placeholder="budi@example.com">
           </div>
+        </div>
+        <div class="alert alert-info mt-3 mb-0 small">
+          <i class="fa fa-sms me-2"></i>
+          <strong>SMS Commands:</strong> Nomor PIC Phone akan digunakan untuk menerima notifikasi anomali dan mengirim perintah SMS ke device (restart, config, status check).
         </div>
       </div>
     </card>

@@ -36,3 +36,17 @@ export { WidgetQueryTemplate } from './widget-query-template.entity';
 // External API entities
 export { TenantApiKey } from '../modules/external-api/entities/tenant-api-key.entity';
 export { TenantApiLog } from '../modules/external-api/entities/tenant-api-log.entity';
+// WebGIS entities
+export { MapLayer, LayerType, SourceType } from './map-layer.entity';
+export type { LayerStyleConfig, LayerConfigJson, BoundingBox } from './map-layer.entity';
+export { MapLayerFeature } from './map-layer-feature.entity';
+export { MapLayerCategory } from './map-layer-category.entity';
+export type { TemplateField, CategoryDefaultStyle } from './map-layer-category.entity';
+export { SpatialUploadFile, UploadStatus } from './spatial-upload-file.entity';
+export type { ParsedResult, ParsedField, FieldMapping } from './spatial-upload-file.entity';
+
+// Documents
+export { Document, DocumentStatus } from './document.entity';
+
+// Report
+export { ReportTemplate } from './report-template.entity';

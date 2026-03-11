@@ -1,0 +1,19 @@
+<div class="feature-popup" [style.left.px]="position.x" [style.top.px]="position.y">
+  <div class="popup-header">
+    <span>Feature Info</span>
+    <button class="btn-close" (click)="onClose()"></button>
+  </div>
+  <div class="popup-content">
+    <table class="table table-sm mb-0">
+      <tbody>
+        <tr *ngFor="let prop of featureProperties">
+          <th>{{ formatKey(prop.key) }}</th>
+          <td>{{ formatValue(prop.value) }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty-props" *ngIf="featureProperties.length === 0">
+      <span>No properties</span>
+    </div>
+  </div>
+</div>

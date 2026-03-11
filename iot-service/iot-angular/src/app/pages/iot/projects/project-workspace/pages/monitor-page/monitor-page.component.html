@@ -1,0 +1,30 @@
+<!-- Monitor Page - Embeds Dashboard View -->
+<div class="monitor-page">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state text-center py-5">
+    <div class="spinner-border text-theme mb-3" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted">Loading dashboard...</p>
+  </div>
+
+  <!-- Empty State - No Dashboard Selected -->
+  <div *ngIf="!loading && !dashboardId" class="empty-state text-center py-5">
+    <div class="icon-wrapper mb-4">
+      <i class="fa fa-chart-line fa-3x text-muted"></i>
+    </div>
+    <h5 class="text-inverse">No Dashboard Configured</h5>
+    <p class="text-muted mb-4">Create a dashboard in Widget Builder and link it to this project</p>
+    <button class="btn btn-theme" (click)="createDashboard()">
+      <i class="fa fa-plus me-2"></i>
+      Create Dashboard
+    </button>
+  </div>
+
+  <!-- Embedded Dashboard View -->
+  <app-dashboard-view 
+    *ngIf="!loading && dashboardId"
+    [dashboardId]="dashboardId"
+    [embeddedMode]="true">
+  </app-dashboard-view>
+</div>

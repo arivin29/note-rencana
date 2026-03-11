@@ -5,6 +5,11 @@
 export interface UnpairedDeviceStatsDto {
 
   /**
+   * Average seen count per device
+   */
+  avgSeenCount: number;
+
+  /**
    * Number of ignored devices
    */
   ignored: number;

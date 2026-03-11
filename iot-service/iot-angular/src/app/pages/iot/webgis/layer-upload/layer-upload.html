@@ -1,0 +1,221 @@
+<div class="upload-page">
+  <div class="page-header">
+    <a routerLink=".." class="btn btn-link">
+      <i class="bi bi-arrow-left"></i> Back to Map
+    </a>
+    <h4>Upload Layer</h4>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="upload-steps">
+    <div class="step" [class.active]="currentStep === 'upload'" [class.completed]="currentStep !== 'upload'">
+      <span class="step-number">1</span>
+      <span class="step-label">Upload File</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" [class.active]="currentStep === 'parsing'" [class.completed]="currentStep === 'mapping' || currentStep === 'completed'">
+      <span class="step-number">2</span>
+      <span class="step-label">Parsing</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" [class.active]="currentStep === 'mapping'" [class.completed]="currentStep === 'completed'">
+      <span class="step-number">3</span>
+      <span class="step-label">Configure</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" [class.active]="currentStep === 'completed'">
+      <span class="step-number">4</span>
+      <span class="step-label">Done</span>
+    </div>
+  </div>
+
+  <!-- Upload Step -->
+  <div class="step-content" *ngIf="currentStep === 'upload'">
+    <div class="card">
+      <div class="card-body">
+        <div 
+          class="upload-zone" 
+          [class.has-file]="selectedFile"
+          (drop)="onFileDrop($event)"
+          (dragover)="onDragOver($event)">
+          
+          <input 
+            type="file" 
+            id="fileInput"
+            [accept]="acceptedTypes"
+            (change)="onFileSelect($event)"
+            hidden>
+          
+          <label for="fileInput" class="upload-label">
+            <i class="bi bi-cloud-upload"></i>
+            <span *ngIf="!selectedFile">
+              Drag & drop file here or <strong>browse</strong>
+            </span>
+            <span *ngIf="selectedFile" class="selected-file">
+              <i class="bi bi-file-earmark"></i>
+              {{ selectedFile.name }}
+              <small>({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)</small>
+            </span>
+          </label>
+        </div>
+        
+        <p class="text-muted text-center mt-2">
+          Supported formats: GeoJSON, CSV, KML, Shapefile (zip)
+        </p>
+
+        <div class="alert alert-danger mt-3" *ngIf="uploadError">
+          <i class="bi bi-exclamation-triangle"></i> {{ uploadError }}
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+          <button 
+            class="btn btn-primary"
+            [disabled]="!selectedFile || uploading"
+            (click)="uploadFile()">
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="uploading"></span>
+            {{ uploading ? 'Uploading...' : 'Upload & Parse' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Parsing Step -->
+  <div class="step-content" *ngIf="currentStep === 'parsing'">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <div class="spinner-border text-primary mb-3"></div>
+        <h5>Parsing file...</h5>
+        <p class="text-muted">Analyzing geometry and extracting fields</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapping Step -->
+  <div class="step-content" *ngIf="currentStep === 'mapping'">
+    <div class="row">
+      <!-- Layer Config -->
+      <div class="col-md-5">
+        <div class="card mb-3">
+          <div class="card-header">
+            <h6 class="mb-0">Layer Configuration</h6>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label">Layer Name *</label>
+              <input type="text" class="form-control" [(ngModel)]="layerName" placeholder="Enter layer name">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Layer Code</label>
+              <input type="text" class="form-control" [(ngModel)]="layerCode" placeholder="Auto-generated if empty">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Category</label>
+              <select class="form-select" [(ngModel)]="selectedCategory">
+                <option value="">-- Select Category --</option>
+                <option *ngFor="let cat of categories" [value]="cat.categoryCode">
+                  {{ cat.categoryName }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parsed Info -->
+        <div class="card" *ngIf="parsedResult">
+          <div class="card-header">
+            <h6 class="mb-0">Parsed Information</h6>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="info-label">Geometry Type</span>
+              <span class="info-value">{{ parsedResult.geometryType }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Feature Count</span>
+              <span class="info-value">{{ parsedResult.featureCount }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">CRS</span>
+              <span class="info-value">{{ parsedResult.detectedCrs }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Field Mappings -->
+      <div class="col-md-7">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Field Mappings</h6>
+            <span class="badge bg-secondary">{{ fieldMappings.length }} fields</span>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Source Field</th>
+                  <th>Target Field</th>
+                  <th width="40"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let mapping of fieldMappings; let i = index">
+                  <td>{{ mapping.sourceField }}</td>
+                  <td>
+                    <input 
+                      type="text" 
+                      class="form-control form-control-sm"
+                      [value]="mapping.targetField"
+                      (input)="updateMapping(i, $any($event.target).value)">
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-link text-danger" (click)="removeMapping(i)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="alert alert-danger mt-3" *ngIf="uploadError">
+          <i class="bi bi-exclamation-triangle"></i> {{ uploadError }}
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button class="btn btn-outline-secondary" (click)="resetUpload()">
+            Cancel
+          </button>
+          <button 
+            class="btn btn-primary"
+            [disabled]="!layerName || submitting"
+            (click)="submitMapping()">
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="submitting"></span>
+            {{ submitting ? 'Creating Layer...' : 'Create Layer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed Step -->
+  <div class="step-content" *ngIf="currentStep === 'completed'">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-check-circle text-success success-icon"></i>
+        <h5>Layer Created Successfully!</h5>
+        <p class="text-muted">Your layer "{{ layerName }}" has been created and is ready to use.</p>
+        <div class="d-flex justify-content-center gap-3 mt-4">
+          <button class="btn btn-outline-primary" (click)="resetUpload()">
+            Upload Another
+          </button>
+          <button class="btn btn-primary" (click)="goToMap()">
+            View on Map
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -29,6 +29,8 @@ import { widgetBuilderControllerGetDashboard } from '../fn/widget-builder/widget
 import { WidgetBuilderControllerGetDashboard$Params } from '../fn/widget-builder/widget-builder-controller-get-dashboard';
 import { widgetBuilderControllerGetDashboards } from '../fn/widget-builder/widget-builder-controller-get-dashboards';
 import { WidgetBuilderControllerGetDashboards$Params } from '../fn/widget-builder/widget-builder-controller-get-dashboards';
+import { widgetBuilderControllerGetDashboardsByProject } from '../fn/widget-builder/widget-builder-controller-get-dashboards-by-project';
+import { WidgetBuilderControllerGetDashboardsByProject$Params } from '../fn/widget-builder/widget-builder-controller-get-dashboards-by-project';
 import { widgetBuilderControllerGetDataSources } from '../fn/widget-builder/widget-builder-controller-get-data-sources';
 import { WidgetBuilderControllerGetDataSources$Params } from '../fn/widget-builder/widget-builder-controller-get-data-sources';
 import { widgetBuilderControllerGetTemplate } from '../fn/widget-builder/widget-builder-controller-get-template';
@@ -117,6 +119,39 @@ export class WidgetBuilderService extends BaseService {
   widgetBuilderControllerCreateDashboard(params: WidgetBuilderControllerCreateDashboard$Params, context?: HttpContext): Observable<CustomDashboardResponseDto> {
     return this.widgetBuilderControllerCreateDashboard$Response(params, context).pipe(
       map((r: StrictHttpResponse<CustomDashboardResponseDto>): CustomDashboardResponseDto => r.body)
+    );
+  }
+
+  /** Path part for operation `widgetBuilderControllerGetDashboardsByProject()` */
+  static readonly WidgetBuilderControllerGetDashboardsByProjectPath = '/api/widget-builder/projects/{projectId}/dashboards';
+
+  /**
+   * Get dashboards for a specific project.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `widgetBuilderControllerGetDashboardsByProject()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  widgetBuilderControllerGetDashboardsByProject$Response(params: WidgetBuilderControllerGetDashboardsByProject$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CustomDashboardResponseDto>>> {
+    return widgetBuilderControllerGetDashboardsByProject(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get dashboards for a specific project.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `widgetBuilderControllerGetDashboardsByProject$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  widgetBuilderControllerGetDashboardsByProject(params: WidgetBuilderControllerGetDashboardsByProject$Params, context?: HttpContext): Observable<Array<CustomDashboardResponseDto>> {
+    return this.widgetBuilderControllerGetDashboardsByProject$Response(params, context).pipe(
+      map((r: StrictHttpResponse<Array<CustomDashboardResponseDto>>): Array<CustomDashboardResponseDto> => r.body)
     );
   }
 

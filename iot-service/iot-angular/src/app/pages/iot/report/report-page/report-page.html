@@ -1,0 +1,250 @@
+<!-- Header -->
+<div class="d-flex align-items-center mb-3">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item active">Report & Export</li>
+    </ul>
+    <h1 class="page-header mb-0">Report & Export</h1>
+  </div>
+  <div class="ms-auto">
+    <button type="button" class="btn btn-outline-secondary" (click)="saveAsTemplate()" [disabled]="filterForm.invalid">
+      <i class="fa fa-bookmark fa-fw me-1"></i>
+      Save Template
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Left: Filter Sidebar -->
+  <div class="col-lg-3 col-md-4">
+    <card>
+      <card-body>
+        <h5 class="mb-3">
+          <i class="fa fa-filter me-2"></i>
+          Filter
+        </h5>
+        <form [formGroup]="filterForm">
+          <!-- Project -->
+          <div class="mb-3">
+            <label class="form-label">Project</label>
+            <select class="form-select" formControlName="projectId">
+              <option value="">Semua Project</option>
+              <option *ngFor="let project of projects" [value]="project.idProject">
+                {{ project.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Nodes -->
+          <div class="mb-3">
+            <label class="form-label">Nodes</label>
+            <select class="form-select" formControlName="nodeIds" multiple size="4">
+              <option *ngFor="let node of nodes" [value]="node.idNode">
+                {{ node.address || node.code }}
+              </option>
+            </select>
+            <small class="text-muted">Tahan Ctrl/Cmd untuk multi-select</small>
+          </div>
+
+          <!-- Sensor Channels -->
+          <div class="mb-3">
+            <label class="form-label">Sensor Channels <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="sensorChannelIds" multiple size="5">
+              <option *ngFor="let channel of sensorChannels" [value]="channel.id">
+                {{ channel.label }} {{ channel.unit ? '(' + channel.unit + ')' : '' }}
+              </option>
+            </select>
+            <small class="text-muted">Pilih minimal satu channel</small>
+          </div>
+
+          <!-- Date Range Type -->
+          <div class="mb-3">
+            <label class="form-label">Rentang Waktu</label>
+            <select class="form-select" formControlName="rangeType">
+              <option *ngFor="let range of rangeTypes" [value]="range.value">
+                {{ range.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Custom Date Range -->
+          <div *ngIf="isCustomRange()" class="mb-3">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small">Tanggal Mulai</label>
+                <input type="date" class="form-control" formControlName="startDate" />
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Tanggal Akhir</label>
+                <input type="date" class="form-control" formControlName="endDate" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Aggregation Mode -->
+          <div class="mb-3">
+            <label class="form-label">Agregasi</label>
+            <select class="form-select" formControlName="aggregation">
+              <option *ngFor="let mode of aggregationModes" [value]="mode.value">
+                {{ mode.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Fill Gaps Toggle -->
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="fillGaps" formControlName="fillGaps">
+              <label class="form-check-label" for="fillGaps">
+                Tampilkan Waktu Kosong
+              </label>
+            </div>
+            <small class="text-muted">
+              Jika aktif, waktu tanpa data akan ditampilkan dengan nilai kosong
+            </small>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-grid gap-2 mb-3">
+            <button type="button" class="btn btn-outline-theme" (click)="generatePreview()" [disabled]="loadingPreview || filterForm.invalid">
+              <span *ngIf="loadingPreview" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              <i *ngIf="!loadingPreview" class="fa fa-eye fa-fw me-1"></i>
+              {{ loadingPreview ? 'Memuat Preview...' : 'Preview Data' }}
+            </button>
+            <button type="button" class="btn btn-theme" (click)="exportXlsx()" [disabled]="exporting || filterForm.invalid">
+              <span *ngIf="exporting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+              <i *ngIf="!exporting" class="fa fa-file-excel fa-fw me-1"></i>
+              {{ exporting ? 'Mengexport...' : 'Export XLSX' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Templates Section -->
+        <hr class="my-3" />
+        <h6 class="mb-2">
+          <i class="fa fa-bookmark me-2"></i>
+          Template
+        </h6>
+        <div class="d-flex flex-wrap gap-1">
+          <button *ngFor="let template of templates" 
+                  type="button" 
+                  class="btn btn-sm"
+                  [class.btn-theme]="selectedTemplate?.id === template.id"
+                  [class.btn-outline-secondary]="selectedTemplate?.id !== template.id"
+                  (click)="loadTemplate(template)"
+                  title="{{ template.name }}">
+            {{ template.name }}
+            <i class="fa fa-times ms-1 small" (click)="deleteTemplate(template); $event.stopPropagation()"></i>
+          </button>
+        </div>
+        <small *ngIf="templates.length === 0" class="text-muted">Belum ada template tersimpan</small>
+      </card-body>
+    </card>
+  </div>
+
+  <!-- Right: Content -->
+  <div class="col-lg-9 col-md-8">
+    <!-- Summary -->
+    <card class="mb-3" *ngIf="previewSummary.length > 0">
+      <card-body>
+        <h5 class="mb-3">
+          <i class="fa fa-chart-bar me-2"></i>
+          Statistik Summary
+        </h5>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Sensor</th>
+                <th>Unit</th>
+                <th class="text-end">Min</th>
+                <th class="text-end">Avg</th>
+                <th class="text-end">Max</th>
+                <th class="text-end">Jumlah Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of previewSummary">
+                <td>{{ item.label }}</td>
+                <td>{{ item.unit || '-' }}</td>
+                <td class="text-end">{{ formatNumber(item.min) }}</td>
+                <td class="text-end">{{ formatNumber(item.avg) }}</td>
+                <td class="text-end">{{ formatNumber(item.max) }}</td>
+                <td class="text-end">{{ item.count | number }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </card-body>
+    </card>
+
+    <!-- Data Preview Table -->
+    <card *ngIf="previewRows.length > 0">
+      <card-body>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">
+            <i class="fa fa-table me-2"></i>
+            Preview Data
+          </h5>
+          <span class="badge bg-secondary">{{ previewRows.length }} baris</span>
+        </div>
+
+        <!-- Legend -->
+        <div class="mb-3 p-2 rounded" style="background: var(--bs-body-bg)">
+          <small class="text-muted d-block mb-1"><strong>Keterangan Kolom:</strong></small>
+          <div class="d-flex flex-wrap gap-2">
+            <span *ngFor="let col of getDataColumns(); let i = index" class="badge bg-light text-dark">
+              <strong>{{ getColumnLetter(i) }}</strong>: {{ col.label }} <span *ngIf="col.unit">({{ col.unit }})</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto">
+          <table class="table table-sm table-striped table-hover mb-0">
+            <thead class="sticky-top" style="background: var(--bs-card-bg)">
+              <tr style="background: #1c2935;">
+                <th>Timestamp</th>
+                <th *ngFor="let col of getDataColumns(); let i = index" class="text-end">
+                  {{ getColumnLetter(i) }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of previewRows">
+                <td>{{ formatTimestamp(row.timestamp) }}</td>
+                <td *ngFor="let col of getDataColumns()" class="text-end">
+                  {{ getRowValue(row, col) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </card-body>
+    </card>
+
+    <!-- Chart -->
+    <card class="mt-3" *ngIf="showChart">
+      <card-body>
+        <h5 class="mb-3">
+          <i class="fa fa-chart-line me-2"></i>
+          Preview Chart
+        </h5>
+        <apx-chart #chart [series]="chartOptions.series" [chart]="chartOptions.chart" [xaxis]="chartOptions.xaxis" [yaxis]="chartOptions.yaxis" [tooltip]="chartOptions.tooltip" [stroke]="chartOptions.stroke" [legend]="chartOptions.legend"></apx-chart>
+      </card-body>
+    </card>
+
+    <!-- Empty State -->
+    <card *ngIf="!showChart && previewRows.length === 0">
+      <card-body class="text-center py-5">
+        <i class="fa fa-file-chart-line text-muted" style="font-size: 4rem"></i>
+        <h4 class="mt-3 text-muted">Belum Ada Data Preview</h4>
+        <p class="text-muted">
+          Pilih sensor channels dan klik "Preview" untuk melihat data.
+          <br />
+          Atau klik "Export XLSX" untuk download langsung.
+        </p>
+      </card-body>
+    </card>
+  </div>
+</div>

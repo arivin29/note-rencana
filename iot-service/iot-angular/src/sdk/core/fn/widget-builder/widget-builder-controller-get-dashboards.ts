@@ -11,11 +11,17 @@ import { RequestBuilder } from '../../request-builder';
 import { CustomDashboardResponseDto } from '../../models/custom-dashboard-response-dto';
 
 export interface WidgetBuilderControllerGetDashboards$Params {
+
+/**
+ * Filter by project ID
+ */
+  projectId?: string;
 }
 
 export function widgetBuilderControllerGetDashboards(http: HttpClient, rootUrl: string, params?: WidgetBuilderControllerGetDashboards$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CustomDashboardResponseDto>>> {
   const rb = new RequestBuilder(rootUrl, widgetBuilderControllerGetDashboards.PATH, 'get');
   if (params) {
+    rb.query('projectId', params.projectId, {});
   }
 
   return http.request(

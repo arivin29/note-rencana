@@ -132,6 +132,36 @@
       </div>
     </div>
 
+    <!-- PIC & SMS Control Section -->
+    <div class="summary-section" *ngIf="nodeConfig.mode === 'new' && nodeConfig.newNode && (nodeConfig.newNode.picName || nodeConfig.newNode.picPhone || nodeConfig.newNode.picEmail)">
+      <h4 class="summary-title">
+        <i class="fa fa-user me-2"></i>
+        Person In Charge (PIC)
+        <span class="badge bg-warning-subtle text-warning ms-2"><i class="fa fa-sms me-1"></i>SMS</span>
+      </h4>
+      <div class="summary-content">
+        <div class="summary-row" *ngIf="nodeConfig.newNode.picName">
+          <span class="summary-label">Name:</span>
+          <span class="summary-value">{{ nodeConfig.newNode.picName }}</span>
+        </div>
+        <div class="summary-row" *ngIf="nodeConfig.newNode.picPhone">
+          <span class="summary-label">Phone:</span>
+          <span class="summary-value">
+            {{ nodeConfig.newNode.picPhone }}
+            <i class="fa fa-sms text-warning ms-1" ngbTooltip="Untuk perintah SMS"></i>
+          </span>
+        </div>
+        <div class="summary-row" *ngIf="nodeConfig.newNode.picEmail">
+          <span class="summary-label">Email:</span>
+          <span class="summary-value">{{ nodeConfig.newNode.picEmail }}</span>
+        </div>
+      </div>
+      <div class="alert alert-info py-2 small mt-2 mb-0">
+        <i class="fa fa-info-circle me-1"></i>
+        PIC Phone akan digunakan untuk menerima notifikasi anomali dan perintah SMS (restart, config).
+      </div>
+    </div>
+
     <div class="summary-section">
       <h4 class="summary-title">
         <i class="fa fa-code me-2"></i>

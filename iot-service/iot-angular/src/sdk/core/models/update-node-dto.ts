@@ -65,6 +65,11 @@ export interface UpdateNodeDto {
   firmwareVersion?: string;
 
   /**
+   * Icon URL for WebGIS map display (max 64x64px, 100KB)
+   */
+  iconUrl?: string;
+
+  /**
    * Node Model ID
    */
   idNodeModel?: string;

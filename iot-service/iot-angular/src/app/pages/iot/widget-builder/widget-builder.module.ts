@@ -116,5 +116,18 @@ const routes: Routes = [
     // Shared Components (Card, etc.)
     SharedComponentsModule,
   ],
+  exports: [
+    // Export widget components for reuse in other modules
+    WidgetContainerComponent,
+    LineChartWidgetComponent,
+    BarChartWidgetComponent,
+    GaugeWidgetComponent,
+    PieChartWidgetComponent,
+    StatCardWidgetComponent,
+    TableWidgetComponent,
+    TimeRangePickerComponent,
+    GridsterModule,
+    DashboardViewComponent, // Export for embedding in other modules
+  ],
 })
 export class WidgetBuilderModule {}

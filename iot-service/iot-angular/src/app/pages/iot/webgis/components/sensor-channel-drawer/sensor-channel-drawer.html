@@ -1,0 +1,97 @@
+<div class="sensor-channel-drawer" [class.open]="isOpen && channel">
+  <!-- Header -->
+  <div class="drawer-header">
+    <div class="header-content">
+      <i class="bi bi-activity header-icon"></i>
+      <div class="header-text">
+        <h6 class="channel-name">{{ formatMetricCode(channel?.metricCode || '') }}</h6>
+        <small class="channel-type text-muted">{{ channel?.sensorTypeName }}</small>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-close" (click)="onClose()"></button>
+  </div>
+
+  <!-- Content -->
+  <div class="drawer-content" *ngIf="channel">
+    <!-- Status Badge -->
+    <div class="status-row">
+      <span [class]="getStatusClass(channel.status)">
+        {{ channel.status || 'unknown' }}
+      </span>
+    </div>
+
+    <!-- Key Info -->
+    <div class="info-section">
+      <div class="info-row">
+        <span class="info-label">Metric Code</span>
+        <span class="info-value">{{ channel.metricCode }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Unit</span>
+        <span class="info-value">{{ channel.unit || '-' }}</span>
+      </div>
+      <div class="info-row highlight">
+        <span class="info-label">Value</span>
+        <span class="info-value value-large">{{ formatValue(channel.value, channel.unit) }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="info-value">
+          <span [class]="getStatusClass(channel.status)">{{ channel.status || 'unknown' }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Node Info (collapsed) -->
+    <div class="node-info" *ngIf="channel.nodeCode">
+      <div class="node-label">
+        <i class="bi bi-geo-alt me-1"></i>
+        Node: <strong>{{ channel.nodeCode }}</strong>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" (click)="onViewNode()">
+        <i class="bi bi-box-arrow-up-right me-1"></i>View
+      </button>
+    </div>
+
+    <!-- Trends Section -->
+    <div class="trends-section">
+      <h6 class="section-title">
+        <i class="bi bi-graph-up me-2"></i>Trends (24h)
+      </h6>
+
+      <!-- Loading State -->
+      <div *ngIf="loadingChart" class="chart-loading">
+        <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+        <small class="text-muted">Loading chart...</small>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="chartError && !loadingChart" class="chart-error">
+        <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+        <small>{{ chartError }}</small>
+      </div>
+
+      <!-- No Data -->
+      <div *ngIf="!loadingChart && !chartError && !trendChart" class="chart-empty">
+        <i class="bi bi-bar-chart-line text-muted"></i>
+        <small class="text-muted">No trend data available</small>
+      </div>
+
+      <!-- Chart -->
+      <div *ngIf="!loadingChart && !chartError && trendChart" class="chart-container">
+        <apx-chart
+          [series]="trendChart.series"
+          [chart]="trendChart.chart"
+          [stroke]="trendChart.stroke"
+          [dataLabels]="trendChart.dataLabels"
+          [xaxis]="trendChart.xaxis"
+          [yaxis]="trendChart.yaxis"
+          [fill]="trendChart.fill"
+          [tooltip]="trendChart.tooltip"
+          [grid]="trendChart.grid"
+          [colors]="trendChart.colors">
+        </apx-chart>
+      </div>
+    </div>
+  </div>
+</div>

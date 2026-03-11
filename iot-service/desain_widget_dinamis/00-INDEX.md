@@ -47,8 +47,15 @@
 
 | No | Document | Description | Status |
 |----|----------|-------------|--------|
-| 20 | [DMA Operator Dashboard](./20-DMA-OPERATOR-DASHBOARD.md) | Detail 15 widget untuk 1 DMA (Operator) | ✅ **New** |
-| 21 | [Dashboard Catalog](./21-DASHBOARD-CATALOG.md) | 10 kategori dashboard, semua query & layout | ✅ **New** |
+| 20 | [DMA Operator Dashboard](./20-DMA-OPERATOR-DASHBOARD.md) | Detail 15 widget untuk 1 DMA (Operator) | ✅ Complete |
+| 21 | [Dashboard Catalog](./21-DASHBOARD-CATALOG.md) | 10 kategori dashboard, semua query & layout | ✅ Complete |
+
+### 🗺️ WebGIS System
+
+| No | Document | Description | Status |
+|----|----------|-------------|--------|
+| 23 | [WebGIS Layer System](./23-WEBGIS-LAYER-SYSTEM.md) | Core/Operational/Custom layer architecture, database design, OpenLayers integration | ✅ **New** |
+| 24 | [Spatial Upload Pipeline](./24-SPATIAL-UPLOAD-PIPELINE.md) | File upload wizard, parser, transform, publish workflow | ✅ **New** |
 
 ---
 

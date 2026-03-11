@@ -1,11 +1,21 @@
 <!-- Page Header -->
 <div class="d-flex align-items-center mb-2">
-    <div>
+    <!-- Breadcrumb & Title (hidden in embedded mode) -->
+    <div *ngIf="!embeddedMode">
         <ul class="breadcrumb mb-0" style="font-size: 11px;">
             <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/widget-builder">Widget Builder</a></li>
             <li class="breadcrumb-item"><a href="javascript:;">Dashboards</a></li>
             <li class="breadcrumb-item active">{{ dashboard?.name || 'Dashboard' }}</li>
         </ul>
+        <h1 class="page-header mb-0" style="font-size: 18px;">
+            {{ dashboard?.name || 'Loading...' }}
+            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal" style="font-size: 12px !important;">
+                {{ dashboard?.description }}
+            </small>
+        </h1>
+    </div>
+    <!-- Embedded mode: show dashboard name only -->
+    <div *ngIf="embeddedMode">
         <h1 class="page-header mb-0" style="font-size: 18px;">
             {{ dashboard?.name || 'Loading...' }}
             <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal" style="font-size: 12px !important;">

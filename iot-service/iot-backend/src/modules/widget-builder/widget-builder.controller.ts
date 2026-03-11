@@ -7,11 +7,12 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { WidgetBuilderService } from './widget-builder.service';
 import { ClickhouseService } from '../clickhouse/clickhouse.service';
@@ -45,11 +46,28 @@ export class WidgetBuilderController {
 
   @Get('dashboards')
   @ApiOperation({ summary: 'Get all dashboards for current owner' })
+  @ApiQuery({ name: 'projectId', required: false, description: 'Filter by project ID' })
   @ApiResponse({ status: 200, description: 'List of dashboards', type: [CustomDashboardResponseDto] })
-  async getDashboards(@Request() req): Promise<CustomDashboardResponseDto[]> {
+  async getDashboards(
+    @Request() req,
+    @Query('projectId') projectId?: string
+  ): Promise<CustomDashboardResponseDto[]> {
     const ownerId = req.user.idOwner;
     const isAdmin = req.user.role === 'admin' || req.user.role === 'ADMIN';
-    return this.widgetBuilderService.findAllDashboards(ownerId, isAdmin);
+    return this.widgetBuilderService.findAllDashboards(ownerId, isAdmin, projectId);
+  }
+
+  @Get('projects/:projectId/dashboards')
+  @ApiOperation({ summary: 'Get dashboards for a specific project' })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'List of project dashboards', type: [CustomDashboardResponseDto] })
+  async getDashboardsByProject(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Request() req
+  ): Promise<CustomDashboardResponseDto[]> {
+    const ownerId = req.user.idOwner;
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'ADMIN';
+    return this.widgetBuilderService.findDashboardsByProject(projectId, ownerId, isAdmin);
   }
 
   @Get('dashboards/:id')

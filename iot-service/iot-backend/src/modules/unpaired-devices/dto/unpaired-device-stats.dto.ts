@@ -42,4 +42,10 @@ export class UnpairedDeviceStatsDto {
     example: 12,
   })
   withSuggestions: number;
+
+  @ApiProperty({
+    description: 'Average seen count per device',
+    example: 79,
+  })
+  avgSeenCount: number;
 }

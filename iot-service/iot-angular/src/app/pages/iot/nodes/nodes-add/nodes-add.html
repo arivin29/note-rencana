@@ -157,6 +157,38 @@
             </div>
         </card>
 
+        <!-- Section: PIC & SMS Control -->
+        <card id="sectionPIC" class="border-0 shadow-sm mb-4">
+            <div class="card-header border-0 bg-transparent">
+                <div class="card-title mb-0"><i class="fa fa-user text-theme me-2"></i>Person In Charge (PIC) & SMS Control</div>
+                <div class="text-muted small">Kontak penanggung jawab node dan nomor untuk SMS commands.</div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">PIC Name</label>
+                        <input class="form-control" [(ngModel)]="form.picName"
+                            [ngModelOptions]="{standalone: true}" placeholder="Budi Santoso">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">PIC Phone <i class="fa fa-sms text-warning ms-1" title="Dapat digunakan untuk SMS commands"></i></label>
+                        <input class="form-control" [(ngModel)]="form.picPhone"
+                            [ngModelOptions]="{standalone: true}" placeholder="+6281234567890">
+                        <small class="text-muted"><i class="fa fa-info-circle me-1"></i>Untuk SMS notifikasi & perintah restart/config.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">PIC Email</label>
+                        <input type="email" class="form-control" [(ngModel)]="form.picEmail"
+                            [ngModelOptions]="{standalone: true}" placeholder="budi@example.com">
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0 small">
+                    <i class="fa fa-sms me-2"></i>
+                    <strong>SMS Commands:</strong> Nomor PIC Phone akan digunakan untuk menerima notifikasi anomali dan mengirim perintah SMS ke device (restart, config, status check).
+                </div>
+            </div>
+        </card>
+
       
 
         <card id="sectionPreview" class="border-0 shadow-sm">
@@ -175,6 +207,7 @@
                 <a class="nav-link" href="#sectionOwnership" data-toggle="scroll-to">Ownership &amp; Project</a>
                 <a class="nav-link" href="#sectionIdentity" data-toggle="scroll-to">Identity &amp; Telemetry</a>
                 <a class="nav-link" href="#sectionLocation" data-toggle="scroll-to">Lokasi &amp; Assignment</a>
+                <a class="nav-link" href="#sectionPIC" data-toggle="scroll-to">PIC &amp; SMS</a>
                 <a class="nav-link" href="#sectionSensors" data-toggle="scroll-to">Sensor Stack</a>
                 <a class="nav-link" href="#sectionPreview" data-toggle="scroll-to">Payload Preview</a>
             </nav-scroll>

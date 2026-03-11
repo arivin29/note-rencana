@@ -10,6 +10,11 @@ export interface CreateCustomDashboardDto {
   description?: string;
 
   /**
+   * Associated project ID (optional)
+   */
+  idProject?: string;
+
+  /**
    * Set as default dashboard
    */
   isDefault?: boolean;

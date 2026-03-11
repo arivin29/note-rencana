@@ -1,0 +1,451 @@
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-theme" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="mt-3 text-muted">Loading project details...</div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error && !loading" class="alert alert-danger">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    {{ error }}
+</div>
+
+<!-- Overview Content -->
+<div *ngIf="!loading && !error && project">
+    
+    <!-- System Health Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <card class="shadow-sm system-health-card">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                    <i class="fa fa-heartbeat text-theme me-2"></i>
+                    System Health
+                    <span class="badge bg-success-subtle text-success ms-2" *ngIf="systemHealth.onlineDevices === systemHealth.totalDevices">
+                        All Systems Operational
+                    </span>
+                    <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="systemHealth.onlineDevices < systemHealth.totalDevices && systemHealth.onlineDevices > 0">
+                        {{ systemHealth.offlineDevices + systemHealth.warningDevices }} Issues Detected
+                    </span>
+                    <span class="badge bg-danger-subtle text-danger ms-2" *ngIf="systemHealth.onlineDevices === 0 && systemHealth.totalDevices > 0">
+                        System Offline
+                    </span>
+                </card-header>
+                <card-body>
+                    <div class="row g-4">
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-success-subtle text-success">
+                                    <i class="fa fa-check-circle"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-success">{{ systemHealth.onlineDevices }}</div>
+                                    <div class="text-muted small">Online Devices</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-danger-subtle text-danger">
+                                    <i class="fa fa-times-circle"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-danger">{{ systemHealth.offlineDevices }}</div>
+                                    <div class="text-muted small">Offline Devices</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-info-subtle text-info">
+                                    <i class="fa fa-clock"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-info">{{ systemHealth.avgUptime }}%</div>
+                                    <div class="text-muted small">Avg Uptime (24h)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="health-stat">
+                                <div class="health-stat-icon bg-warning-subtle text-warning">
+                                    <i class="fa fa-bolt"></i>
+                                </div>
+                                <div class="health-stat-content">
+                                    <div class="fs-3 fw-bold text-warning">{{ systemHealth.avgLatency }}ms</div>
+                                    <div class="text-muted small">Avg Latency</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-8">
+            <card class="shadow-sm h-100">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
+                    Project Snapshot
+                    <span class="badge text-uppercase" [class.bg-success-subtle]="project.status === 'active'"
+                        [class.text-success]="project.status === 'active'"
+                        [class.bg-warning-subtle]="project.status === 'maintenance'"
+                        [class.text-warning]="project.status === 'maintenance'"
+                        [class.bg-secondary-subtle]="project.status !== 'active' && project.status !== 'maintenance'"
+                        [class.text-secondary]="project.status !== 'active' && project.status !== 'maintenance'">
+                        {{ project.status || 'Unknown' }}
+                    </span>
+                    <span class="badge bg-body text-muted border">Last sync {{ lastSyncFormatted }}</span>
+                    <span class="badge bg-body text-muted border">
+                        <i class="fa fa-map-marker-alt me-1 text-theme"></i> {{ primaryLocation }}
+                    </span>
+                </card-header>
+                <card-body>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-4">
+                            <div class="text-uppercase text-muted small">Owner</div>
+                            <div class="fw-semibold">{{ project.owner.name || 'Unknown' }}</div>
+                            <div class="text-muted small">
+                                {{ project.owner.industry || 'Unknown Industry' }}
+                                <span *ngIf="project.owner.email"> · {{ project.owner.email }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-uppercase text-muted small">Deployment</div>
+                            <div class="fw-semibold">Live since {{ deploymentDate }}</div>
+                            <div class="text-muted small">{{ project.areaType || 'Unknown Type' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-uppercase text-muted small">Data Window</div>
+                            <div class="fw-semibold">Streaming · MQTT</div>
+                            <div class="text-muted small">Retention 30 days</div>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <card class="stat-link h-100" [routerLink]="['/iot/nodes']"
+                                [queryParams]="{ projectId: projectId }">
+                                <div class="text-uppercase text-muted small">Devices</div>
+                                <div class="fs-3 fw-bold lh-1 mb-1">{{ nodes.length }}</div>
+                                <div class="fw-semibold" [class.text-success]="systemHealth.onlineDevices > 0"
+                                    [class.text-muted]="!systemHealth.onlineDevices">
+                                    {{ systemHealth.onlineDevices }} online
+                                </div>
+                                <div class="stat-meta">View nodes scoped to this project</div>
+                            </card>
+                        </div>
+                        <div class="col-md-3">
+                            <card class="stat-link h-100" [routerLink]="['/iot/sensors']"
+                                [queryParams]="{ projectId: projectId }">
+                                <div class="text-uppercase text-muted small">Sensors</div>
+                                <div class="fs-3 fw-bold lh-1 mb-1">{{ sensors.length }}</div>
+                                <div class="text-muted">{{ systemHealth.offlineDevices }} offline</div>
+                                <div class="stat-meta">Open sensor explorer</div>
+                            </card>
+                        </div>
+                        <div class="col-md-3">
+                            <card class="stat-link h-100" [routerLink]="['/iot/telemetry']"
+                                [queryParams]="{ projectId: projectId }">
+                                <div class="text-uppercase text-muted small">Locations</div>
+                                <div class="fs-3 fw-bold lh-1 mb-1">{{ mapNodes.length }}</div>
+                                <div class="text-muted">Deployment sites</div>
+                                <div class="stat-meta">Jump to telemetry</div>
+                            </card>
+                        </div>
+                        <div class="col-md-3">
+                            <card class="stat-link h-100" [routerLink]="['/iot/alerts']"
+                                [queryParams]="{ projectId: projectId }">
+                                <div class="text-uppercase text-muted small">Alerts</div>
+                                <div class="fs-3 fw-bold lh-1 mb-1 text-danger">{{ alerts.length }}</div>
+                                <div class="text-muted">{{ alerts.length === 0 ? 'No active alerts' : 'Active alerts' }}
+                                </div>
+                                <div class="stat-meta">Review alert queue</div>
+                            </card>
+                        </div>
+                    </div>
+                </card-body>
+                <card-footer class="d-flex flex-wrap gap-2 justify-content-between">
+                    <div class="text-muted small">Deployed {{ deploymentDate }}</div>
+                    <div class="ms-auto">
+                        <a [routerLink]="['../config']" class="btn btn-outline-default me-2">
+                            <i class="fa fa-cog me-1"></i> Settings
+                        </a>
+                        <a [routerLink]="['/iot/projects', projectId, 'edit']" class="btn btn-theme">
+                            <i class="fa fa-edit fa-fw me-1"></i> Edit Project
+                        </a>
+                    </div>
+                </card-footer>
+            </card>
+        </div>
+        <div class="col-xl-4">
+            <card class="shadow-sm h-100">
+                <card-header class="bg-inverse bg-opacity-10 text-uppercase small text-muted">
+                    Operations & Team
+                </card-header>
+                <card-body>
+                    <div class="mb-3">
+                        <div class="text-muted small">Project Owner</div>
+                        <div class="fw-semibold">{{ project.owner.name || 'Not assigned' }}</div>
+                        <div class="text-muted small">
+                            <span *ngIf="project.owner.email">{{ project.owner.email }}</span>
+                            <span *ngIf="project.owner.phone"> · {{ project.owner.phone }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-muted small">Industry</div>
+                        <div class="fw-semibold">{{ project.owner.industry || 'Not specified' }}</div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="text-muted small">Area Type</div>
+                        <div class="fw-semibold">{{ project.areaType || 'Not specified' }}</div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-link-bar mb-3">
+        <div class="text-muted text-uppercase small mb-2">Deep links</div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="quick-link" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
+                <i class="bi bi-bar-chart-line"></i> Sensor Explorer
+            </a>
+            <a class="quick-link" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
+                <i class="bi bi-hdd-network"></i> Nodes / Devices
+            </a>
+            <a class="quick-link" [routerLink]="['/iot/telemetry']"
+                [queryParams]="{ projectId: projectId, range: '24h' }">
+                <i class="bi bi-activity"></i> Telemetry Timeline
+            </a>
+            <a class="quick-link" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
+                <i class="bi bi-exclamation-triangle"></i> Alert Center
+            </a>
+        </div>
+    </div>
+ 
+
+    <!-- Sensor Overview & Map -->
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <card class="shadow-sm mb-3">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
+                    Sensor Overview
+                    <span class="badge bg-body text-muted border">Latest telemetry snapshot</span>
+                    <div class="ms-auto">
+                        <button class="btn btn-sm btn-outline-default" [routerLink]="['/iot/sensors']"
+                            [queryParams]="{ projectId: projectId }">
+                            View All Sensors
+                        </button>
+                    </div>
+                </card-header>
+
+                <!-- Loading State -->
+                <div *ngIf="loadingSensors" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-theme" role="status">
+                        <span class="visually-hidden">Loading sensors...</span>
+                    </div>
+                </div>
+
+                <!-- No Sensors State -->
+                <div *ngIf="!loadingSensors && sensors.length === 0" class="text-center py-4 text-muted">
+                    <i class="fa fa-microchip fa-2x mb-2 opacity-50"></i>
+                    <div>No sensors found for this project</div>
+                </div>
+
+                <!-- Sensors Table -->
+                <card-body class="p-0" *ngIf="!loadingSensors && sensors.length > 0">
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead class="table-light text-muted">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Location</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" class="text-end">Node</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let sensor of sensors.slice(0, 10)">
+                                    <td>
+                                        <div class="fw-semibold">{{ sensor.label }}</div>
+                                        <div class="text-muted small" *ngIf="sensor.sensorCode">{{ sensor.sensorCode }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span *ngIf="sensor.sensorCatalog">
+                                            {{ sensor.sensorCatalog.vendor }} {{ sensor.sensorCatalog.modelName }}
+                                        </span>
+                                        <span *ngIf="!sensor.sensorCatalog" class="text-muted">Unknown Type</span>
+                                    </td>
+                                    <td>
+                                        <span *ngIf="sensor.location">{{ sensor.location }}</span>
+                                        <span *ngIf="!sensor.location" class="text-muted">-</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" [class.bg-success-subtle]="sensor.status === 'active'"
+                                            [class.text-success]="sensor.status === 'active'"
+                                            [class.bg-warning-subtle]="sensor.status === 'maintenance'"
+                                            [class.text-warning]="sensor.status === 'maintenance'"
+                                            [class.bg-secondary-subtle]="sensor.status === 'inactive'"
+                                            [class.text-secondary]="sensor.status === 'inactive'">
+                                            {{ sensor.status || 'Unknown' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span *ngIf="sensor.node" class="text-muted small">{{ sensor.node.code }}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+
+        <!-- Recent Alerts Section -->
+        <div class="col-xl-4">
+            <card class="shadow-sm mb-3 h-100">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                    <i class="fa fa-bell text-warning me-2"></i>
+                    Recent Alerts
+                    <span class="badge bg-danger ms-2" *ngIf="alerts.length > 0">{{ alerts.length }}</span>
+                    <a [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }" 
+                       class="ms-auto btn btn-sm btn-outline-warning">
+                        View All
+                    </a>
+                </card-header>
+                <card-body class="p-0">
+                    <!-- Loading State -->
+                    <div *ngIf="loadingAlerts" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-theme" role="status">
+                            <span class="visually-hidden">Loading alerts...</span>
+                        </div>
+                    </div>
+
+                    <!-- No Alerts State -->
+                    <div *ngIf="!loadingAlerts && alerts.length === 0" class="text-center py-4 text-muted">
+                        <i class="fa fa-check-circle fa-2x mb-2 text-success opacity-50"></i>
+                        <div>No active alerts</div>
+                        <div class="small">All systems operating normally</div>
+                    </div>
+
+                    <!-- Alerts List -->
+                    <div *ngIf="!loadingAlerts && alerts.length > 0" class="alert-list">
+                        <div *ngFor="let alert of alerts.slice(0, 5)" class="alert-item p-3 border-bottom">
+                            <div class="d-flex align-items-start">
+                                <span class="badge me-3" [class]="getAlertSeverityClass(alert.severity)">
+                                    {{ alert.severity || 'Info' }}
+                                </span>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">{{ alert.title || alert.alertRule?.name || 'Alert' }}</div>
+                                    <div class="text-muted small">{{ alert.message || alert.description || '-' }}</div>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fa fa-clock me-1"></i>{{ formatAlertTime(alert.triggeredAt || alert.createdAt) }}
+                                        <span *ngIf="alert.node" class="ms-2">
+                                            <i class="fa fa-microchip me-1"></i>{{ alert.node.code || alert.node.name }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+
+    <!-- Device Status Grid -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <card class="shadow-sm">
+                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
+                    <i class="fa fa-server text-theme me-2"></i>
+                    Device Status Grid
+                    <span class="badge bg-body text-muted border ms-2">{{ deviceHealthList.length }} devices</span>
+                    <a [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }" 
+                       class="ms-auto btn btn-sm btn-outline-theme">
+                        View All Nodes
+                    </a>
+                </card-header>
+                <card-body class="p-0">
+                    <!-- Loading State -->
+                    <div *ngIf="loadingNodes" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-theme" role="status">
+                            <span class="visually-hidden">Loading devices...</span>
+                        </div>
+                    </div>
+
+                    <!-- No Devices State -->
+                    <div *ngIf="!loadingNodes && deviceHealthList.length === 0" class="text-center py-4 text-muted">
+                        <i class="fa fa-server fa-2x mb-2 opacity-50"></i>
+                        <div>No devices found for this project</div>
+                    </div>
+
+                    <!-- Devices Table -->
+                    <div *ngIf="!loadingNodes && deviceHealthList.length > 0" class="table-responsive">
+                        <table class="table mb-0 align-middle device-table">
+                            <thead class="table-light text-muted">
+                                <tr>
+                                    <th scope="col">Device</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Last Seen</th>
+                                    <th scope="col" class="text-center">Uptime (24h)</th>
+                                    <th scope="col" class="text-end">Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let device of deviceHealthList" class="device-row">
+                                    <td>
+                                        <a [routerLink]="['/iot/nodes', device.nodeId]" class="text-decoration-none">
+                                            <div class="d-flex align-items-center">
+                                                <div class="device-icon me-3" 
+                                                     [class.online]="device.status === 'online'"
+                                                     [class.warning]="device.status === 'warning'"
+                                                     [class.offline]="device.status === 'offline'">
+                                                    <i class="fa fa-microchip"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ device.nodeName || device.nodeCode }}</div>
+                                                    <div class="text-muted small">{{ device.address || device.nodeCode }}</div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge" [class]="getStatusBadgeClass(device.status)">
+                                            {{ device.status | titlecase }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted">{{ formatLastSeen(device.lastSeen) }}</td>
+                                    <td class="text-center">
+                                        <div class="uptime-bar">
+                                            <div class="uptime-fill" 
+                                                 [style.width.%]="device.uptimePercent"
+                                                 [class.bg-success]="device.uptimePercent >= 90"
+                                                 [class.bg-warning]="device.uptimePercent >= 70 && device.uptimePercent < 90"
+                                                 [class.bg-danger]="device.uptimePercent < 70">
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted">{{ device.uptimePercent }}%</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span [class.text-success]="device.latencyMs < 100"
+                                              [class.text-warning]="device.latencyMs >= 100 && device.latencyMs < 200"
+                                              [class.text-danger]="device.latencyMs >= 200">
+                                            {{ device.latencyMs }}ms
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </card-body>
+            </card>
+        </div>
+    </div>
+</div>

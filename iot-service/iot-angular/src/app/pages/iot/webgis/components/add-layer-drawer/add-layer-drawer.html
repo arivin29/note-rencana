@@ -1,0 +1,335 @@
+<div class="add-layer-drawer" [class.open]="isOpen">
+  <!-- Header -->
+  <div class="drawer-header">
+    <div class="header-content">
+      <i class="bi bi-layers-fill header-icon"></i>
+      <div class="header-text">
+        <h6 class="drawer-title">Tambah Layer {{ layerType === 'operational' ? 'Operasional' : 'Custom' }}</h6>
+        <small class="drawer-subtitle">Upload data spasial</small>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-close" (click)="onClose()"></button>
+  </div>
+
+  <!-- Wizard Steps Indicator -->
+  <div class="wizard-steps">
+    <div class="step" 
+         [class.active]="isStepActive('upload')"
+         [class.completed]="isStepCompleted('upload')">
+      <div class="step-number">
+        <i class="bi bi-check" *ngIf="isStepCompleted('upload')"></i>
+        <span *ngIf="!isStepCompleted('upload')">1</span>
+      </div>
+      <span class="step-label">Upload</span>
+    </div>
+    <div class="step-connector" [class.active]="isStepCompleted('upload')"></div>
+    <div class="step" 
+         [class.active]="isStepActive('preview')"
+         [class.completed]="isStepCompleted('preview')">
+      <div class="step-number">
+        <i class="bi bi-check" *ngIf="isStepCompleted('preview')"></i>
+        <span *ngIf="!isStepCompleted('preview')">2</span>
+      </div>
+      <span class="step-label">Preview</span>
+    </div>
+    <div class="step-connector" [class.active]="isStepCompleted('preview')"></div>
+    <div class="step" 
+         [class.active]="isStepActive('save')"
+         [class.completed]="savedLayer">
+      <div class="step-number">
+        <i class="bi bi-check" *ngIf="savedLayer"></i>
+        <span *ngIf="!savedLayer">3</span>
+      </div>
+      <span class="step-label">Simpan</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="drawer-content">
+    
+    <!-- STEP 1: Upload -->
+    <div class="step-content" *ngIf="currentStep === 'upload'">
+      <form [formGroup]="layerForm">
+        
+        <!-- Layer Info Section -->
+        <div class="form-section">
+          <!-- Layer Name -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-tag"></i>Nama Layer <span class="text-danger">*</span>
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   formControlName="layerName"
+                   placeholder="Contoh: Jaringan Pipa Utama"
+                   [class.is-invalid]="layerForm.get('layerName')?.touched && layerForm.get('layerName')?.invalid">
+            <div class="invalid-feedback" *ngIf="layerForm.get('layerName')?.errors?.['required']">
+              Nama layer wajib diisi
+            </div>
+            <div class="invalid-feedback" *ngIf="layerForm.get('layerName')?.errors?.['minlength']">
+              Minimal 3 karakter
+            </div>
+          </div>
+
+          <!-- Layer Code -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-code"></i>Kode Layer
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   formControlName="layerCode"
+                   placeholder="Auto-generated dari nama">
+            <small class="form-text">Otomatis dibuat dari nama layer</small>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-card-text"></i>Deskripsi
+            </label>
+            <textarea class="form-control" 
+                      formControlName="layerDescription"
+                      rows="2"
+                      placeholder="Deskripsi singkat layer..."></textarea>
+          </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="form-section">
+          <!-- Source Type -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-file-earmark"></i>Tipe File <span class="text-danger">*</span>
+            </label>
+            <select class="form-select" 
+                  formControlName="sourceType"
+                  (change)="onSourceTypeChange()">
+              <option *ngFor="let opt of sourceTypeOptions" [value]="opt.value">
+                {{ opt.label }} ({{ opt.extensions.join(', ') }})
+              </option>
+            </select>
+          </div>
+
+          <!-- File Upload -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-upload"></i>Upload File <span class="text-danger">*</span>
+            </label>
+            <div class="file-upload-area" 
+                 [class.has-file]="selectedFile"
+                 [class.has-error]="fileError">
+              <input type="file" 
+                     class="file-input"
+                     [accept]="getAcceptedExtensions()"
+                     (change)="onFileSelected($event)"
+                     #fileInput>
+              
+              <div class="file-placeholder" *ngIf="!selectedFile" (click)="fileInput.click()">
+                <i class="bi bi-cloud-upload upload-icon"></i>
+                <span class="upload-text">Klik atau drag file kesini</span>
+                <span class="upload-hint">Max 50MB</span>
+              </div>
+              
+              <div class="file-selected" *ngIf="selectedFile">
+                <i class="bi bi-file-earmark-check file-icon"></i>
+                <div class="file-info">
+                  <span class="file-name">{{ selectedFile.name }}</span>
+                  <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove" (click)="selectedFile = null; fileInput.value = ''">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            <div class="error-text" *ngIf="fileError">{{ fileError }}</div>
+          </div>
+
+          <!-- Visible by default -->
+          <div class="form-check">
+            <input type="checkbox" 
+                   class="form-check-input" 
+                   id="isVisibleDefault"
+                   formControlName="isVisibleDefault">
+            <label class="form-check-label" for="isVisibleDefault">
+              Tampilkan layer secara default
+            </label>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- STEP 2: Preview -->
+    <div class="step-content preview-step" *ngIf="currentStep === 'preview'">
+      
+      <!-- Parsing State -->
+      <div class="parsing-state" *ngIf="isParsing">
+        <div class="spinner-border text-primary"></div>
+        <span>Memproses file...</span>
+      </div>
+
+      <!-- Parse Error -->
+      <div class="alert alert-danger alert-sm" *ngIf="parseError">
+        <i class="bi bi-exclamation-triangle me-1"></i>{{ parseError }}
+      </div>
+
+      <!-- Parsed Info -->
+      <div class="parsed-info" *ngIf="parsedInfo && !parseError">
+        <div class="info-grid">
+          <div class="info-item">
+            <i class="bi bi-geo-alt"></i>
+            <span class="info-label">Features</span>
+            <span class="info-value">{{ parsedInfo.featureCount }}</span>
+          </div>
+          <div class="info-item">
+            <i class="bi bi-vector-pen"></i>
+            <span class="info-label">Tipe</span>
+            <span class="info-value">{{ parsedInfo.geometryType }}</span>
+          </div>
+          <div class="info-item">
+            <i class="bi bi-globe"></i>
+            <span class="info-label">Proyeksi</span>
+            <span class="info-value">{{ parsedInfo.projection }}</span>
+          </div>
+        </div>
+
+        <!-- Errors -->
+        <div class="validation-errors" *ngIf="parsedInfo.errors.length > 0">
+          <div class="validation-item error" *ngFor="let err of parsedInfo.errors">
+            <i class="bi bi-x-circle"></i>{{ err }}
+          </div>
+        </div>
+
+        <!-- Warnings -->
+        <div class="validation-warnings" *ngIf="parsedInfo.warnings.length > 0">
+          <div class="validation-item warning" *ngFor="let warn of parsedInfo.warnings">
+            <i class="bi bi-exclamation-triangle"></i>{{ warn }}
+          </div>
+        </div>
+
+        <!-- Properties List -->
+        <div class="properties-list" *ngIf="parsedInfo.properties.length > 0">
+          <span class="properties-label">Kolom:</span>
+          <span class="property-tag" *ngFor="let prop of parsedInfo.properties.slice(0, 8)">{{ prop }}</span>
+          <span class="property-more" *ngIf="parsedInfo.properties.length > 8">
+            +{{ parsedInfo.properties.length - 8 }} lainnya
+          </span>
+        </div>
+      </div>
+
+      <!-- Preview Map -->
+      <div class="preview-map-container" *ngIf="parsedGeoJson && !parseError">
+        <div class="preview-map-label">
+          <i class="bi bi-map me-1"></i>Preview Map
+        </div>
+        <div #previewMapContainer class="preview-map"></div>
+        <div class="preview-map-overlay" *ngIf="!previewMapReady">
+          <div class="spinner-border spinner-border-sm"></div>
+          <span>Loading map...</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STEP 3: Save / Success -->
+    <div class="step-content save-step" *ngIf="currentStep === 'save'">
+      
+      <!-- Saving State -->
+      <div class="saving-state" *ngIf="isSaving">
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" 
+               [style.width.%]="saveProgress"
+               role="progressbar">
+            {{ saveProgress }}%
+          </div>
+        </div>
+        <small class="progress-text">
+          {{ saveProgress < 50 ? 'Mengupload file...' : 'Membuat layer...' }}
+        </small>
+      </div>
+
+      <!-- Save Error -->
+      <div class="alert alert-danger alert-sm" *ngIf="saveError">
+        <i class="bi bi-exclamation-triangle me-1"></i>{{ saveError }}
+      </div>
+
+      <!-- Success State -->
+      <div class="success-state" *ngIf="savedLayer && !saveError">
+        <div class="success-icon">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h6 class="success-title">Layer Berhasil Dibuat!</h6>
+        <p class="success-message">
+          Layer <strong>{{ savedLayer.layerName }}</strong> berhasil disimpan.
+        </p>
+        
+        <div class="layer-summary">
+          <div class="summary-item">
+            <span class="summary-label">Kode:</span>
+            <span class="summary-value">{{ savedLayer.layerCode }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Tipe:</span>
+            <span class="summary-value">{{ savedLayer.sourceType }}</span>
+          </div>
+          <div class="summary-item" *ngIf="parsedInfo">
+            <span class="summary-label">Features:</span>
+            <span class="summary-value">{{ parsedInfo.featureCount }}</span>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <button class="btn btn-outline-secondary btn-sm" (click)="completeAndClose()">
+            <i class="bi bi-check me-1"></i>Selesai
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="openEditDrawer()">
+            <i class="bi bi-palette me-1"></i>Customize Style
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="drawer-footer">
+    <!-- Step 1: Upload -->
+    <ng-container *ngIf="currentStep === 'upload'">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="onClose()">
+        Batal
+      </button>
+      <button type="button" class="btn btn-sm btn-primary" 
+              (click)="goToStep('preview')" 
+              [disabled]="!canProceedToPreview()">
+        <span>Lanjut</span>
+        <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </ng-container>
+
+    <!-- Step 2: Preview -->
+    <ng-container *ngIf="currentStep === 'preview'">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i>Kembali
+      </button>
+      <button type="button" class="btn btn-sm btn-primary" 
+              (click)="saveLayer()" 
+              [disabled]="!canProceedToSave() || isSaving">
+        <span *ngIf="!isSaving">
+          <i class="bi bi-save me-1"></i>Simpan Layer
+        </span>
+        <span *ngIf="isSaving">
+          <span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...
+        </span>
+      </button>
+    </ng-container>
+
+    <!-- Step 3: Save (footer hidden when success shows actions) -->
+    <ng-container *ngIf="currentStep === 'save' && !savedLayer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i>Kembali
+      </button>
+    </ng-container>
+  </div>
+</div>

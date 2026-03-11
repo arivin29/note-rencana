@@ -1,21 +1,26 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../iot-angular"
-		},
-		{
-			"path": "../iot-backend"
-		},
-		{
-			"path": "../desain_widget_dinamis"
-		}
-	],
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "../iot-angular"
+        },
+        {
+            "path": "../iot-backend"
+        },
+        {
+            "path": "../desain_widget_dinamis"
+        }
+    ],
     "settings": {
         "chat.tools.terminal.autoApprove": {
             "psql": true
-        }
+        },
+        "angular.enable-strict-mode-prompt": false,
+        "typescript.suggest.enabled": false,
+        "typescript.validate.enable": false,
+        "javascript.suggest.enabled": false,
+        "javascript.validate.enable": false
     }
 }

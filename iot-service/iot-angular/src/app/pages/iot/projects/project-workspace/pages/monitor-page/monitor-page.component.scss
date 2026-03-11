@@ -1,0 +1,55 @@
+.monitor-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  // Embedded dashboard takes full space
+  app-dashboard-view {
+    flex: 1;
+    display: block;
+    height: 100%;
+  }
+}
+
+.loading-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+
+  .icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(14, 165, 233, 0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 32px;
+      color: #0ea5e9;
+    }
+  }
+
+  h5 {
+    margin-top: 0;
+  }
+
+  p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 400px;
+  }
+}

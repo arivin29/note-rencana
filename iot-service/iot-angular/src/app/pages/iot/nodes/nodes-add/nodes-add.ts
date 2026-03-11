@@ -76,7 +76,11 @@ export class NodesAddPage implements OnInit {
     latitude: '',
     longitude: '',
     elevation: undefined as number | undefined,
-    address: ''
+    address: '',
+    // PIC fields
+    picName: '',
+    picPhone: '',
+    picEmail: ''
   };
 
   sensors: SensorDraft[] = [];
@@ -157,6 +161,11 @@ export class NodesAddPage implements OnInit {
           longitude: this.form.longitude,
           elevation: this.form.elevation,
           address: this.form.address
+        },
+        pic: {
+          name: this.form.picName,
+          phone: this.form.picPhone,
+          email: this.form.picEmail
         }
       },
       sensors: this.sensors.map((sensor) => ({

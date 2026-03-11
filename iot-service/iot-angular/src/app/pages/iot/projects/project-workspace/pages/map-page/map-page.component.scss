@@ -1,0 +1,16 @@
+.map-page {
+    height: calc(100vh - 100px);
+
+    &.embedded-webgis {
+        webgis-map {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+
+    &.status-offline {
+        background: #ef4444;
+    }
+}

@@ -514,12 +514,16 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         });
     }
 
-    exportCsv(mode: 'raw' | '5m' | '1h') {
+    exportCsv(mode: 'raw' | '5m' | '1h' | '1d' | '1M') {
         if (this.exporting) {
             return;
         }
         this.exporting = true;
-        const params = this.buildQueryParams(Math.max(this.pageSize, 2000), 1);
+        
+        // Determine limit and date range based on export mode
+        const limit = (mode === '1d' || mode === '1M') ? 50000 : Math.max(this.pageSize, 5000);
+        const params = this.buildExportQueryParams(mode, limit);
+        
         this.sensorLogsService.sensorLogsControllerFindAll$Response(params).subscribe({
             next: (httpResponse) => {
                 let response: any = httpResponse.body;
@@ -530,9 +534,29 @@ export class TelemetryListPage implements OnInit, OnDestroy {
                 let exportRows: any[] = rows;
                 let suffix = 'raw';
 
-                if (mode === '5m' || mode === '1h') {
-                    const interval = mode === '5m' ? 5 : 60;
-                    suffix = mode === '5m' ? '5min' : '1hour';
+                if (mode !== 'raw') {
+                    let interval: number;
+                    switch (mode) {
+                        case '5m':
+                            interval = 5;
+                            suffix = '5min';
+                            break;
+                        case '1h':
+                            interval = 60;
+                            suffix = '1hour';
+                            break;
+                        case '1d':
+                            interval = 1440; // 24 hours in minutes
+                            suffix = 'daily';
+                            break;
+                        case '1M':
+                            interval = 43200; // 30 days in minutes
+                            suffix = 'monthly';
+                            break;
+                        default:
+                            interval = 5;
+                            suffix = '5min';
+                    }
                     exportRows = this.aggregateTelemetry(rows, interval);
                 }
 
@@ -553,6 +577,60 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         const { startDate, endDate } = this.getAggregationRange();
         const params: any = {
             page,
+            limit,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+        };
+
+        // Add filters from URL query params
+        if (this.ownerIdFilter) {
+            params.idOwner = this.ownerIdFilter;
+        }
+        if (this.projectIdFilter) {
+            params.idProject = this.projectIdFilter;
+        }
+        if (this.nodeIdFilter) {
+            params.idNode = this.nodeIdFilter;
+        }
+        if (this.sensorIdFilter) {
+            params.idSensor = this.sensorIdFilter;
+        }
+        if (this.sensorChannelIdFilter) {
+            params.idSensorChannel = this.sensorChannelIdFilter;
+        }
+
+        return params;
+    }
+
+    private buildExportQueryParams(mode: 'raw' | '5m' | '1h' | '1d' | '1M', limit: number) {
+        const endDate = new Date();
+        let startDate: Date;
+
+        // Determine date range based on export mode
+        switch (mode) {
+            case 'raw':
+            case '5m':
+                // Last 24 hours for raw/5min export
+                startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+                break;
+            case '1h':
+                // Last 7 days for hourly export
+                startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case '1d':
+                // Last 30 days for daily export
+                startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+                break;
+            case '1M':
+                // Last 12 months for monthly export
+                startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+                break;
+            default:
+                startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+        }
+
+        const params: any = {
+            page: 1,
             limit,
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString()

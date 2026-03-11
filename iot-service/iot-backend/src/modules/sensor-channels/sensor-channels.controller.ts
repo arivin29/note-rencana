@@ -24,6 +24,7 @@ export class SensorChannelsController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'idSensor', required: false, type: String })
   @ApiQuery({ name: 'idSensorType', required: false, type: String })
+  @ApiQuery({ name: 'idNode', required: false, type: String, description: 'Filter by node ID' })
   @ApiResponse({ status: 200 })
   findAll(
     @Query('page') page?: string,
@@ -31,6 +32,7 @@ export class SensorChannelsController {
     @Query('search') search?: string,
     @Query('idSensor') idSensor?: string,
     @Query('idSensorType') idSensorType?: string,
+    @Query('idNode') idNode?: string,
   ) {
     return this.sensorChannelsService.findAll({
       page: page ? parseInt(page, 10) : undefined,
@@ -38,6 +40,7 @@ export class SensorChannelsController {
       search,
       idSensor,
       idSensorType,
+      idNode,
     });
   }
 

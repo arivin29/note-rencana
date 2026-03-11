@@ -61,6 +61,12 @@ export class HeaderComponent implements OnInit {
 		this.authService.isAuthenticated$.subscribe(isAuth => {
 			this.isAuthenticated = isAuth;
 		});
+		
+		// Restore sidebar minified state from localStorage
+		const savedMinified = localStorage.getItem('appSidebarMinified');
+		if (savedMinified === 'true') {
+			this.appSettings.appSidebarMinified = true;
+		}
 	}
 	
 	/**
@@ -92,10 +98,11 @@ export class HeaderComponent implements OnInit {
 		event.preventDefault();
 		
 		if (!this.appSettings.appSidebarNone) {
-			var elm = document.getElementById('app');
-			if (elm) {
-				elm.classList.toggle('app-sidebar-collapsed');
-			}
+			// Toggle minified mode (icons only)
+			this.appSettings.appSidebarMinified = !this.appSettings.appSidebarMinified;
+			
+			// Persist to localStorage
+			localStorage.setItem('appSidebarMinified', String(this.appSettings.appSidebarMinified));
 		}
 	}
 	
