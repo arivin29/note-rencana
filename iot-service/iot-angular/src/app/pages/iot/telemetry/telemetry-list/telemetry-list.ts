@@ -1,11 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { SensorLogsService } from '../../../../../sdk/core/services/sensor-logs.service';
 import { OwnersService } from '../../../../../sdk/core/services/owners.service';
 import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
 import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
+import { environment } from '../../../../../environments/environment';
 
 type TelemetryQuality = 'good' | 'warning' | 'critical';
 type TelemetryTrend = 'up' | 'down' | 'flat';
@@ -114,6 +116,7 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         private sensorLogsService: SensorLogsService,
         private route: ActivatedRoute,
         private router: Router,
+        private http: HttpClient,
         private ownersService: OwnersService,
         private projectsService: ProjectsService,
         private nodesService: NodesService,
@@ -514,55 +517,43 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         });
     }
 
-    exportCsv(mode: 'raw' | '5m' | '1h' | '1d' | '1M') {
+    exportCsv() {
         if (this.exporting) {
             return;
         }
         this.exporting = true;
         
-        // Determine limit and date range based on export mode
-        const limit = (mode === '1d' || mode === '1M') ? 50000 : Math.max(this.pageSize, 5000);
-        const params = this.buildExportQueryParams(mode, limit);
+        // Use currently selected aggregation
+        const aggregation = this.selectedAggregation;
         
-        this.sensorLogsService.sensorLogsControllerFindAll$Response(params).subscribe({
-            next: (httpResponse) => {
-                let response: any = httpResponse.body;
-                if (typeof response === 'string') {
-                    response = JSON.parse(response);
-                }
-                const rows = (response.data || []).map((log: any) => this.mapLogToRow(log));
-                let exportRows: any[] = rows;
-                let suffix = 'raw';
-
-                if (mode !== 'raw') {
-                    let interval: number;
-                    switch (mode) {
-                        case '5m':
-                            interval = 5;
-                            suffix = '5min';
-                            break;
-                        case '1h':
-                            interval = 60;
-                            suffix = '1hour';
-                            break;
-                        case '1d':
-                            interval = 1440; // 24 hours in minutes
-                            suffix = 'daily';
-                            break;
-                        case '1M':
-                            interval = 43200; // 30 days in minutes
-                            suffix = 'monthly';
-                            break;
-                        default:
-                            interval = 5;
-                            suffix = '5min';
-                    }
-                    exportRows = this.aggregateTelemetry(rows, interval);
-                }
-
-                const csv = this.convertToCsv(exportRows);
-                const filename = `telemetry-${suffix}-${new Date().toISOString()}.csv`;
-                this.triggerCsvDownload(csv, filename);
+        // Build query params for export API
+        const params = new URLSearchParams();
+        params.set('aggregation', aggregation);
+        
+        // Add filters from URL query params
+        if (this.ownerIdFilter) {
+            params.set('idOwner', this.ownerIdFilter);
+        }
+        if (this.projectIdFilter) {
+            params.set('idProject', this.projectIdFilter);
+        }
+        if (this.nodeIdFilter) {
+            params.set('idNode', this.nodeIdFilter);
+        }
+        if (this.sensorIdFilter) {
+            params.set('idSensor', this.sensorIdFilter);
+        }
+        if (this.sensorChannelIdFilter) {
+            params.set('idSensorChannel', this.sensorChannelIdFilter);
+        }
+        
+        // Call backend export endpoint
+        const url = `${environment.apiUrl}/api/sensor-logs/export?${params.toString()}`;
+        
+        this.http.get(url, { responseType: 'blob' }).subscribe({
+            next: (blob) => {
+                const filename = `telemetry-${aggregation}-${new Date().toISOString().split('T')[0]}.csv`;
+                this.downloadBlob(blob, filename);
                 this.exporting = false;
             },
             error: (err) => {
@@ -571,6 +562,20 @@ export class TelemetryListPage implements OnInit, OnDestroy {
                 this.exporting = false;
             }
         });
+    }
+
+    /**
+     * Download blob as file
+     */
+    private downloadBlob(blob: Blob, filename: string) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
     }
 
     private buildQueryParams(limit: number, page: number) {
@@ -602,15 +607,15 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         return params;
     }
 
-    private buildExportQueryParams(mode: 'raw' | '5m' | '1h' | '1d' | '1M', limit: number) {
+    private buildExportQueryParams(mode: '5m' | '15m' | '1h' | '1d' | '1M', limit: number) {
         const endDate = new Date();
         let startDate: Date;
 
         // Determine date range based on export mode
         switch (mode) {
-            case 'raw':
             case '5m':
-                // Last 24 hours for raw/5min export
+            case '15m':
+                // Last 24 hours for 5min/15min export
                 startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
                 break;
             case '1h':

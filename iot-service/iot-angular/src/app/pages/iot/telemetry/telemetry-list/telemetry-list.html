@@ -73,31 +73,11 @@
             <i class="fa fa-bell fa-fw me-1"></i>
             Configure Alerts
         </button>
-        <div class="btn-group btn-group-sm">
-            <button class="btn btn-theme dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                [disabled]="exporting || loading">
-                <i class="fa fa-file-export fa-fw me-1"></i>
-                <span *ngIf="!exporting">Export CSV</span>
-                <span *ngIf="exporting">Exporting...</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><button class="dropdown-item" type="button" (click)="exportCsv('raw')" [disabled]="exporting">
-                        Keseluruhan
-                    </button></li>
-                <li><button class="dropdown-item" type="button" (click)="exportCsv('5m')" [disabled]="exporting">
-                        Per 5 Menit
-                    </button></li>
-                <li><button class="dropdown-item" type="button" (click)="exportCsv('1h')" [disabled]="exporting">
-                        Per 1 Jam
-                    </button></li>
-                <li><button class="dropdown-item" type="button" (click)="exportCsv('1d')" [disabled]="exporting">
-                        Per Hari
-                    </button></li>
-                <li><button class="dropdown-item" type="button" (click)="exportCsv('1M')" [disabled]="exporting">
-                        Per Bulan
-                    </button></li>
-            </ul>
-        </div>
+        <button class="btn btn-theme btn-sm" (click)="exportCsv()" [disabled]="exporting || loading">
+            <i class="fa fa-fw me-1" [class.fa-file-export]="!exporting" [class.fa-spinner]="exporting" [class.fa-spin]="exporting"></i>
+            <span *ngIf="!exporting">Export CSV</span>
+            <span *ngIf="exporting">Exporting...</span>
+        </button>
     </div>
 </div>
 

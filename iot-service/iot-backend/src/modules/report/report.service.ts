@@ -837,11 +837,15 @@ export class ReportService {
 
     const reportRequest: ReportPreviewRequestDto = {
       sensorChannelIds: template.config.sensorChannelIds,
+      metricCodes: template.config.metricCodes,
       projectId: template.config.projectId,
       nodeIds: template.config.nodeIds,
       startDate,
       endDate,
       aggregation: template.config.aggregation as AggregationMode,
+      fillGaps: template.config.fillGaps,
+      skipZero: template.config.skipZero,
+      useThresholdFilter: template.config.useThresholdFilter,
     };
 
     return this.generatePreview(reportRequest, ownerId);
@@ -875,11 +879,15 @@ export class ReportService {
 
     const reportRequest: ReportRequestDto = {
       sensorChannelIds: template.config.sensorChannelIds,
+      metricCodes: template.config.metricCodes,
       projectId: template.config.projectId,
       nodeIds: template.config.nodeIds,
       startDate,
       endDate,
       aggregation: template.config.aggregation as AggregationMode,
+      fillGaps: template.config.fillGaps,
+      skipZero: template.config.skipZero,
+      useThresholdFilter: template.config.useThresholdFilter,
     };
 
     return this.generateReportData(reportRequest, ownerId);

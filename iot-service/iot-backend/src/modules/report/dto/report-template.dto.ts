@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -24,10 +25,17 @@ export class TemplateConfigDto {
   @IsUUID('4', { each: true })
   nodeIds?: string[];
 
-  @ApiProperty({ description: 'Sensor Channel IDs', type: [String] })
+  @ApiPropertyOptional({ description: 'Sensor Channel IDs (optional if metricCodes provided)', type: [String] })
+  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  sensorChannelIds: string[];
+  sensorChannelIds?: string[];
+
+  @ApiPropertyOptional({ description: 'Metric codes to filter sensor channels', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  metricCodes?: string[];
 
   @ApiProperty({ description: 'Range type', enum: RangeType })
   @IsEnum(RangeType)
@@ -36,6 +44,21 @@ export class TemplateConfigDto {
   @ApiProperty({ description: 'Aggregation mode', enum: AggregationMode })
   @IsEnum(AggregationMode)
   aggregation: AggregationMode;
+
+  @ApiPropertyOptional({ description: 'Fill gaps with empty rows', default: false })
+  @IsOptional()
+  @IsBoolean()
+  fillGaps?: boolean;
+
+  @ApiPropertyOptional({ description: 'Skip zero values in aggregation', default: true })
+  @IsOptional()
+  @IsBoolean()
+  skipZero?: boolean;
+
+  @ApiPropertyOptional({ description: 'Use threshold filter to exclude outliers', default: false })
+  @IsOptional()
+  @IsBoolean()
+  useThresholdFilter?: boolean;
 }
 
 export class CreateReportTemplateDto {

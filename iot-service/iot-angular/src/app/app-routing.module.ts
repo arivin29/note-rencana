@@ -192,6 +192,12 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: { title: 'WebGIS Map' }
     },
+    {
+        path: 'iot/search',
+        loadChildren: () => import('./pages/iot/search/search.module').then((m) => m.SearchModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Global Search' }
+    },
     { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
 
     // { path: 'email/inbox', component: EmailInboxPage, data: { title: 'Email Inbox' } },
