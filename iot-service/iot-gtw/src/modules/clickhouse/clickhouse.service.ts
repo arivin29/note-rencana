@@ -451,4 +451,35 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
       buffers: this.getBufferStats(),
     };
   }
+
+  /**
+   * Execute a query and return results
+   * Used for data forwarding to read from ClickHouse
+   */
+  async query<T = any>(sql: string, params?: Record<string, any>): Promise<T[]> {
+    if (!this.isConnected) {
+      throw new Error('ClickHouse not connected');
+    }
+
+    try {
+      const result = await this.client.query({
+        query: sql,
+        query_params: params,
+        format: 'JSONEachRow',
+      });
+
+      const data = await result.json<T>();
+      return data as T[];
+    } catch (error) {
+      this.logger.error(`Query failed: ${error.message}`);
+      
+      // Handle connection-related errors
+      if (this.isConnectionError(error)) {
+        this.isConnected = false;
+        this.scheduleReconnect();
+      }
+      
+      throw error;
+    }
+  }
 }
