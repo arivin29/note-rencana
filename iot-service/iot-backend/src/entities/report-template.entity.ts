@@ -31,9 +31,13 @@ export class ReportTemplate {
   config: {
     projectId?: string;
     nodeIds?: string[];
-    sensorChannelIds: string[];
+    sensorChannelIds?: string[];
+    metricCodes?: string[];
     rangeType: string;
     aggregation: string;
+    fillGaps?: boolean;
+    skipZero?: boolean;
+    useThresholdFilter?: boolean;
   };
 
   @Column({ type: 'boolean', default: true, name: 'is_active' })

@@ -178,3 +178,57 @@ export class GetTelemetryTrendsQueryDto {
   @Max(60)
   intervalMinutes?: number = 10;
 }
+
+export enum AggregationMode {
+  FIVE_MINUTES = '5m',
+  FIFTEEN_MINUTES = '15m',
+  ONE_HOUR = '1h',
+  ONE_DAY = '1d',
+  ONE_MONTH = '1M',
+}
+
+export class ExportSensorLogsQueryDto {
+  @ApiPropertyOptional({ 
+    description: 'Aggregation mode', 
+    enum: AggregationMode, 
+    default: AggregationMode.ONE_HOUR 
+  })
+  @IsOptional()
+  @IsEnum(AggregationMode)
+  aggregation?: AggregationMode = AggregationMode.ONE_HOUR;
+
+  @ApiPropertyOptional({ description: 'Filter by sensor channel ID' })
+  @IsOptional()
+  @IsUUID()
+  idSensorChannel?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by sensor ID' })
+  @IsOptional()
+  @IsUUID()
+  idSensor?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by node ID' })
+  @IsOptional()
+  @IsUUID()
+  idNode?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by project ID' })
+  @IsOptional()
+  @IsUUID()
+  idProject?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by owner ID' })
+  @IsOptional()
+  @IsUUID()
+  idOwner?: string;
+
+  @ApiPropertyOptional({ description: 'Start timestamp (ISO string)', example: '2025-11-12T00:00:00Z' })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'End timestamp (ISO string)', example: '2025-11-12T23:59:59Z' })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+}

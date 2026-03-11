@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, Renderer2, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, Renderer2, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppSettings } from '../../service/app-settings.service';
 import { AuthService } from '../../services/auth.service';
@@ -23,6 +23,7 @@ interface NotificationData {
 export class HeaderComponent implements OnInit {
 	currentUser: User | null = null;
 	isAuthenticated: boolean = false;
+	searchQuery: string = '';
 	
 	notificationData : NotificationData[] = [{
 		icon: 'bi bi-bag text-theme',
@@ -127,5 +128,61 @@ export class HeaderComponent implements OnInit {
 		if (elm) {
 			elm.classList.toggle(className);
 		}
+	}
+
+	/**
+	 * Handle keyboard shortcut Cmd+K / Ctrl+K to open search
+	 */
+	@HostListener('document:keydown', ['$event'])
+	handleKeyboardShortcut(event: KeyboardEvent) {
+		// Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+		if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+			event.preventDefault();
+			this.openSearch();
+		}
+	}
+
+	/**
+	 * Open search overlay in header
+	 */
+	openSearch() {
+		const elm = document.getElementById('app');
+		if (elm) {
+			elm.classList.add('app-header-menu-search-toggled');
+			// Focus the search input after a brief delay
+			setTimeout(() => {
+				const searchInput = document.querySelector('.menu-search input') as HTMLInputElement;
+				if (searchInput) {
+					searchInput.focus();
+				}
+			}, 100);
+		}
+	}
+
+	/**
+	 * Navigate to search page with query
+	 */
+	handleSearchSubmit(event: Event) {
+		event.preventDefault();
+		if (this.searchQuery.trim().length >= 2) {
+			// Close the search overlay
+			const elm = document.getElementById('app');
+			if (elm) {
+				elm.classList.remove('app-header-menu-search-toggled');
+			}
+			// Navigate to search page
+			this.router.navigate(['/iot/search'], { 
+				queryParams: { q: this.searchQuery.trim() } 
+			});
+			// Clear the search input
+			this.searchQuery = '';
+		}
+	}
+
+	/**
+	 * Navigate to search page directly (click on search icon in header)
+	 */
+	goToSearchPage() {
+		this.router.navigate(['/iot/search']);
 	}
 }

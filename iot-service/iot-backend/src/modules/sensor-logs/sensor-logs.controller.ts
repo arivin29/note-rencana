@@ -8,14 +8,18 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Res,
+  Header,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
+import type { Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiProduces } from '@nestjs/swagger';
 import { SensorLogsService } from './sensor-logs.service';
 import {
   CreateSensorLogDto,
   BulkCreateSensorLogsDto,
   GetSensorLogsQueryDto,
   GetTelemetryTrendsQueryDto,
+  ExportSensorLogsQueryDto,
 } from './dto/create-sensor-log.dto';
 import {
   SensorLogResponseDto,
@@ -132,6 +136,31 @@ export class SensorLogsController {
   })
   async getStatistics(@Query('ownerId') ownerId?: string): Promise<SensorLogStatisticsDto> {
     return this.sensorLogsService.getStatistics(ownerId);
+  }
+
+  /**
+   * Export sensor logs as CSV
+   */
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export sensor logs as CSV',
+    description: 'Export aggregated telemetry data as CSV file. Supports filtering by channel, sensor, node, project, owner, and time range. Aggregation modes: 5m, 15m, 1h, 1d, 1M.',
+  })
+  @ApiProduces('text/csv')
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'CSV file downloaded successfully',
+  })
+  @Header('Content-Type', 'text/csv')
+  async exportCsv(
+    @Query() query: ExportSensorLogsQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const csv = await this.sensorLogsService.exportCsv(query);
+    const filename = `telemetry-${query.aggregation || '1h'}-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
   }
 
   /**

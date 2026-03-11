@@ -7,6 +7,8 @@ import {
   BulkCreateSensorLogsDto,
   GetSensorLogsQueryDto,
   GetTelemetryTrendsQueryDto,
+  ExportSensorLogsQueryDto,
+  AggregationMode,
 } from './dto/create-sensor-log.dto';
 import {
   SensorLogResponseDto,
@@ -464,5 +466,237 @@ export class SensorLogsService {
     }
     
     return enriched;
+  }
+
+  /**
+   * Export sensor logs as CSV
+   */
+  async exportCsv(query: ExportSensorLogsQueryDto): Promise<string> {
+    const aggregation = query.aggregation || AggregationMode.ONE_HOUR;
+    
+    // Determine date range based on aggregation mode
+    const endDate = query.endDate ? new Date(query.endDate) : new Date();
+    let startDate: Date;
+    
+    if (query.startDate) {
+      startDate = new Date(query.startDate);
+    } else {
+      switch (aggregation) {
+        case AggregationMode.FIVE_MINUTES:
+        case AggregationMode.FIFTEEN_MINUTES:
+          startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000); // 24 hours
+          break;
+        case AggregationMode.ONE_HOUR:
+          startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days
+          break;
+        case AggregationMode.ONE_DAY:
+          startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days
+          break;
+        case AggregationMode.ONE_MONTH:
+          startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year
+          break;
+        default:
+          startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000); // default 7 days
+      }
+    }
+
+    // Build query with relations
+    const queryBuilder = this.sensorLogRepository
+      .createQueryBuilder('log')
+      .leftJoinAndSelect('log.sensorChannel', 'channel')
+      .leftJoinAndSelect('channel.sensor', 'sensor')
+      .leftJoinAndSelect('sensor.sensorCatalog', 'sensorCatalog')
+      .leftJoinAndSelect('sensor.node', 'node')
+      .leftJoinAndSelect('node.project', 'project')
+      .leftJoinAndSelect('project.owner', 'owner')
+      .where('log.ts BETWEEN :startDate AND :endDate', { startDate, endDate });
+
+    // Apply filters
+    if (query.idSensorChannel) {
+      queryBuilder.andWhere('log.idSensorChannel = :idSensorChannel', { idSensorChannel: query.idSensorChannel });
+    }
+    if (query.idSensor) {
+      queryBuilder.andWhere('log.idSensor = :idSensor', { idSensor: query.idSensor });
+    }
+    if (query.idNode) {
+      queryBuilder.andWhere('log.idNode = :idNode', { idNode: query.idNode });
+    }
+    if (query.idProject) {
+      queryBuilder.andWhere('log.idProject = :idProject', { idProject: query.idProject });
+    }
+    if (query.idOwner) {
+      queryBuilder.andWhere('log.idOwner = :idOwner', { idOwner: query.idOwner });
+    }
+
+    queryBuilder.orderBy('log.ts', 'ASC');
+    
+    // Limit results to prevent memory issues
+    const limit = aggregation === AggregationMode.ONE_DAY || aggregation === AggregationMode.ONE_MONTH 
+      ? 100000 
+      : 50000;
+    queryBuilder.take(limit);
+
+    const logs = await queryBuilder.getMany();
+
+    // Get interval in minutes for aggregation
+    let intervalMinutes: number;
+    switch (aggregation) {
+      case AggregationMode.FIVE_MINUTES:
+        intervalMinutes = 5;
+        break;
+      case AggregationMode.FIFTEEN_MINUTES:
+        intervalMinutes = 15;
+        break;
+      case AggregationMode.ONE_HOUR:
+        intervalMinutes = 60;
+        break;
+      case AggregationMode.ONE_DAY:
+        intervalMinutes = 1440;
+        break;
+      case AggregationMode.ONE_MONTH:
+        intervalMinutes = 43200;
+        break;
+      default:
+        intervalMinutes = 60;
+    }
+
+    // Aggregate data
+    const aggregatedData = this.aggregateLogsForExport(logs, intervalMinutes);
+
+    // Convert to CSV
+    return this.convertToCSV(aggregatedData, aggregation);
+  }
+
+  /**
+   * Aggregate logs for export by time window
+   */
+  private aggregateLogsForExport(logs: SensorLog[], intervalMinutes: number): any[] {
+    if (logs.length === 0) return [];
+
+    const grouped = new Map<string, {
+      windowStart: Date;
+      channel: string;
+      sensor: string;
+      sensorType: string;
+      node: string;
+      project: string;
+      owner: string;
+      unit: string;
+      values: number[];
+    }>();
+
+    for (const log of logs) {
+      const ts = new Date(log.ts);
+      const windowStart = new Date(
+        Math.floor(ts.getTime() / (intervalMinutes * 60 * 1000)) * intervalMinutes * 60 * 1000
+      );
+      
+      const channelLabel = log.sensorChannel?.metricCode || 'Unknown';
+      const sensorLabel = log.sensorChannel?.sensor?.label || 'Unknown';
+      const sensorType = log.sensorChannel?.sensor?.sensorCatalog?.modelName || 'Unknown';
+      const nodeCode = log.sensorChannel?.sensor?.node?.code || 'Unknown';
+      const projectName = log.sensorChannel?.sensor?.node?.project?.name || 'Unknown';
+      const ownerName = log.sensorChannel?.sensor?.node?.project?.owner?.name || 'Unknown';
+      const unit = log.sensorChannel?.unit || '';
+      
+      const key = `${windowStart.toISOString()}_${log.idSensorChannel}`;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          windowStart,
+          channel: channelLabel,
+          sensor: sensorLabel,
+          sensorType,
+          node: nodeCode,
+          project: projectName,
+          owner: ownerName,
+          unit,
+          values: [],
+        });
+      }
+      
+      if (log.valueEngineered !== null && log.valueEngineered !== undefined) {
+        grouped.get(key)!.values.push(log.valueEngineered);
+      }
+    }
+
+    // Calculate aggregates
+    const result: any[] = [];
+    for (const [_, data] of grouped) {
+      if (data.values.length === 0) continue;
+      
+      const min = Math.min(...data.values);
+      const max = Math.max(...data.values);
+      const avg = data.values.reduce((a, b) => a + b, 0) / data.values.length;
+      const latest = data.values[data.values.length - 1];
+      
+      result.push({
+        timestamp: data.windowStart.toISOString(),
+        channel: data.channel,
+        sensor: data.sensor,
+        sensorType: data.sensorType,
+        node: data.node,
+        project: data.project,
+        owner: data.owner,
+        unit: data.unit,
+        min: min.toFixed(2),
+        avg: avg.toFixed(2),
+        max: max.toFixed(2),
+        latest: latest.toFixed(2),
+        points: data.values.length,
+      });
+    }
+
+    // Sort by timestamp and channel
+    result.sort((a, b) => {
+      const timeCompare = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      if (timeCompare !== 0) return timeCompare;
+      return a.channel.localeCompare(b.channel);
+    });
+
+    return result;
+  }
+
+  /**
+   * Convert aggregated data to CSV string
+   */
+  private convertToCSV(data: any[], aggregation: string): string {
+    if (data.length === 0) {
+      return 'No data available for the selected filters and time range';
+    }
+
+    const headers = [
+      'Timestamp',
+      'Channel',
+      'Sensor',
+      'Sensor Type',
+      'Node',
+      'Project',
+      'Owner',
+      'Unit',
+      'Min',
+      'Avg',
+      'Max',
+      'Latest',
+      'Points',
+    ];
+
+    const rows = data.map(row => [
+      row.timestamp,
+      row.channel,
+      row.sensor,
+      row.sensorType,
+      row.node,
+      row.project,
+      row.owner,
+      row.unit,
+      row.min,
+      row.avg,
+      row.max,
+      row.latest,
+      row.points,
+    ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
+
+    return [headers.join(','), ...rows].join('\n');
   }
 }
