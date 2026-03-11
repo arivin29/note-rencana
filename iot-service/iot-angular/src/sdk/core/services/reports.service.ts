@@ -21,6 +21,8 @@ import { reportControllerExportXlsx } from '../fn/reports/report-controller-expo
 import { ReportControllerExportXlsx$Params } from '../fn/reports/report-controller-export-xlsx';
 import { reportControllerGeneratePreview } from '../fn/reports/report-controller-generate-preview';
 import { ReportControllerGeneratePreview$Params } from '../fn/reports/report-controller-generate-preview';
+import { reportControllerGetSensorTypes } from '../fn/reports/report-controller-get-sensor-types';
+import { ReportControllerGetSensorTypes$Params } from '../fn/reports/report-controller-get-sensor-types';
 import { reportControllerGetTemplate } from '../fn/reports/report-controller-get-template';
 import { ReportControllerGetTemplate$Params } from '../fn/reports/report-controller-get-template';
 import { reportControllerGetTemplates } from '../fn/reports/report-controller-get-templates';
@@ -30,6 +32,7 @@ import { ReportControllerPreviewFromTemplate$Params } from '../fn/reports/report
 import { reportControllerUpdateTemplate } from '../fn/reports/report-controller-update-template';
 import { ReportControllerUpdateTemplate$Params } from '../fn/reports/report-controller-update-template';
 import { ReportPreviewResponseDto } from '../models/report-preview-response-dto';
+import { SensorTypeDto } from '../models/sensor-type-dto';
 
 
 /**
@@ -104,6 +107,39 @@ export class ReportsService extends BaseService {
   reportControllerExportXlsx(params: ReportControllerExportXlsx$Params, context?: HttpContext): Observable<any> {
     return this.reportControllerExportXlsx$Response(params, context).pipe(
       map((r: StrictHttpResponse<any>): any => r.body)
+    );
+  }
+
+  /** Path part for operation `reportControllerGetSensorTypes()` */
+  static readonly ReportControllerGetSensorTypesPath = '/api/reports/sensor-types';
+
+  /**
+   * Get sensor types grouped by metric code for selected nodes.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reportControllerGetSensorTypes()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reportControllerGetSensorTypes$Response(params: ReportControllerGetSensorTypes$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<SensorTypeDto>>> {
+    return reportControllerGetSensorTypes(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Get sensor types grouped by metric code for selected nodes.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reportControllerGetSensorTypes$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reportControllerGetSensorTypes(params: ReportControllerGetSensorTypes$Params, context?: HttpContext): Observable<Array<SensorTypeDto>> {
+    return this.reportControllerGetSensorTypes$Response(params, context).pipe(
+      map((r: StrictHttpResponse<Array<SensorTypeDto>>): Array<SensorTypeDto> => r.body)
     );
   }
 

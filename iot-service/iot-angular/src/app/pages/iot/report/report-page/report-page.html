@@ -47,15 +47,15 @@
             <small class="text-muted">Tahan Ctrl/Cmd untuk multi-select</small>
           </div>
 
-          <!-- Sensor Channels -->
+          <!-- Sensor Types -->
           <div class="mb-3">
-            <label class="form-label">Sensor Channels <span class="text-danger">*</span></label>
-            <select class="form-select" formControlName="sensorChannelIds" multiple size="5">
-              <option *ngFor="let channel of sensorChannels" [value]="channel.id">
-                {{ channel.label }} {{ channel.unit ? '(' + channel.unit + ')' : '' }}
+            <label class="form-label">Sensor Types <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="metricCodes" multiple size="5">
+              <option *ngFor="let sensorType of sensorTypes" [value]="sensorType.metricCode">
+                {{ sensorType.label }} {{ sensorType.unit ? '(' + sensorType.unit + ')' : '' }} [{{ sensorType.channelCount }} ch]
               </option>
             </select>
-            <small class="text-muted">Pilih minimal satu channel</small>
+            <small class="text-muted">Pilih minimal satu sensor type</small>
           </div>
 
           <!-- Date Range Type -->
@@ -66,6 +66,7 @@
                 {{ range.label }}
               </option>
             </select>
+            <small class="text-muted">Rentang dihitung dari jam 00:00 sampai 23:59</small>
           </div>
 
           <!-- Custom Date Range -->
@@ -102,6 +103,32 @@
             </div>
             <small class="text-muted">
               Jika aktif, waktu tanpa data akan ditampilkan dengan nilai kosong
+            </small>
+          </div>
+
+          <!-- Skip Zero Toggle -->
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="skipZero" formControlName="skipZero">
+              <label class="form-check-label" for="skipZero">
+                Abaikan Nilai 0
+              </label>
+            </div>
+            <small class="text-muted">
+              Nilai 0 tidak diikutkan dalam perhitungan rata-rata
+            </small>
+          </div>
+
+          <!-- Threshold Filter Toggle -->
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="useThresholdFilter" formControlName="useThresholdFilter">
+              <label class="form-check-label" for="useThresholdFilter">
+                Filter Outlier
+              </label>
+            </div>
+            <small class="text-muted">
+              Gunakan threshold sensor ±20% untuk filter data tidak valid
             </small>
           </div>
 

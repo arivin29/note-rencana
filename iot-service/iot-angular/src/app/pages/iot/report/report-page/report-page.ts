@@ -30,6 +30,14 @@ interface SensorChannel {
   label: string;
   unit?: string;
 }
+
+interface SensorType {
+  metricCode: string;
+  label: string;
+  unit?: string;
+  channelCount: number;
+}
+
 interface ReportColumn {
   field: string;
   key?: string;
@@ -64,10 +72,13 @@ interface ReportTemplate {
   config: {
     projectId?: string;
     nodeIds?: string[];
-    sensorChannelIds: string[];
+    sensorChannelIds?: string[];  // Legacy support
+    metricCodes?: string[];       // New format
     rangeType: string;
     aggregation: string;
     fillGaps?: boolean;
+    skipZero?: boolean;
+    useThresholdFilter?: boolean;
   };
 }
 
@@ -98,6 +109,7 @@ export class ReportPage implements OnInit {
   projects: any[] = [];
   nodes: any[] = [];
   sensorChannels: SensorChannel[] = [];
+  sensorTypes: SensorType[] = [];
   templates: ReportTemplate[] = [];
 
   // Preview data
@@ -168,16 +180,26 @@ export class ReportPage implements OnInit {
   initForm(): void {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    // Use local date format (not UTC)
+    const formatDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
     this.filterForm = this.fb.group({
       projectId: [''],
       nodeIds: [[]],
-      sensorChannelIds: [[], Validators.required],
+      metricCodes: [[], Validators.required],
       rangeType: ['1d'],
-      startDate: [yesterday.toISOString().split('T')[0]],
-      endDate: [now.toISOString().split('T')[0]],
+      startDate: [formatDate(yesterday)],
+      endDate: [formatDate(now)],
       aggregation: ['1h', Validators.required],
       fillGaps: [false], // Default: abaikan waktu kosong
+      skipZero: [true], // Default: abaikan nilai 0 (sensor error)
+      useThresholdFilter: [false], // Default: tidak pakai filter threshold
     });
 
     // Listen for project changes
@@ -269,6 +291,34 @@ export class ReportPage implements OnInit {
     });
   }
 
+  loadSensorTypes(nodeIds: string[]): void {
+    if (!nodeIds || nodeIds.length === 0) {
+      this.sensorTypes = [];
+      return;
+    }
+    this.loading = true;
+    
+    // Temporary: Direct HTTP call until SDK is regenerated
+    // After regenerate: this.reportsService.reportControllerGetSensorTypes({ body: { nodeIds } })
+    this.http.post<SensorType[]>(`${environment.apiUrl}/api/reports/sensor-types`, { nodeIds }).subscribe({
+      next: (response: any) => {
+        const types = Array.isArray(response) ? response : [];
+        this.sensorTypes = types.map((t: SensorType) => ({
+          metricCode: t.metricCode,
+          label: t.label,
+          unit: t.unit,
+          channelCount: t.channelCount,
+        }));
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to load sensor types', err);
+        this.sensorTypes = [];
+        this.loading = false;
+      },
+    });
+  }
+
   loadTemplates(): void {
     this.reportsService.reportControllerGetTemplates().subscribe({
       next: (response: any) => {
@@ -287,16 +337,16 @@ export class ReportPage implements OnInit {
     } else {
       this.nodes = [];
     }
-    this.filterForm.patchValue({ nodeIds: [], sensorChannelIds: [] });
+    this.filterForm.patchValue({ nodeIds: [], metricCodes: [] });
   }
 
   onNodesChange(nodeIds: string[]): void {
     if (nodeIds?.length > 0) {
-      this.loadSensorChannels(nodeIds);
+      this.loadSensorTypes(nodeIds);
     } else {
-      this.sensorChannels = [];
+      this.sensorTypes = [];
     }
-    this.filterForm.patchValue({ sensorChannelIds: [] });
+    this.filterForm.patchValue({ metricCodes: [] });
   }
 
   updateDateRangeFromType(rangeType: string): void {
@@ -317,9 +367,10 @@ export class ReportPage implements OnInit {
         return; // Custom - don't update
     }
 
+    // Use local date format (YYYY-MM-DD) instead of UTC
     this.filterForm.patchValue({
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: now.toISOString().split('T')[0],
+      startDate: this.formatLocalDate(startDate),
+      endDate: this.formatLocalDate(now),
     });
   }
 
@@ -329,7 +380,7 @@ export class ReportPage implements OnInit {
 
   async generatePreview(): Promise<void> {
     if (this.filterForm.invalid) {
-      alert('Error: Silakan pilih minimal satu sensor channel');
+      alert('Error: Silakan pilih minimal satu sensor type');
       return;
     }
 
@@ -338,18 +389,33 @@ export class ReportPage implements OnInit {
 
     try {
       const formValue = this.filterForm.value;
+      
+      // Debug: log the actual date values
+      console.log('[generatePreview] Form values:', {
+        startDate: formValue.startDate,
+        endDate: formValue.endDate,
+        rangeType: formValue.rangeType,
+        nodeIds: formValue.nodeIds,
+        metricCodes: formValue.metricCodes,
+      });
+      
       const request = {
         projectId: formValue.projectId || undefined,
         nodeIds: formValue.nodeIds?.length > 0 ? formValue.nodeIds : undefined,
-        sensorChannelIds: formValue.sensorChannelIds,
+        metricCodes: formValue.metricCodes,
         startDate: `${formValue.startDate}T00:00:00Z`,
         endDate: `${formValue.endDate}T23:59:59Z`,
         aggregation: formValue.aggregation,
         fillGaps: formValue.fillGaps || false,
+        skipZero: formValue.skipZero !== false, // Default true
+        useThresholdFilter: formValue.useThresholdFilter || false,
         previewLimit: formValue.fillGaps ? 10000 : 1000,
       };
+      
+      console.log('[generatePreview] Request to backend:', request);
 
-      this.reportsService.reportControllerGeneratePreview({ body: request }).subscribe({
+      // Cast to any until SDK is regenerated with new metricCodes field
+      this.reportsService.reportControllerGeneratePreview({ body: request as any }).subscribe({
         next: (response: any) => {
           this.previewColumns = response.columns || [];
           this.previewRows = response.rows || [];
@@ -431,6 +497,20 @@ export class ReportPage implements OnInit {
       sheet.getCell(`B${currentRow}`).value = this.aggregationModes.find(m => m.value === formValue.aggregation)?.label || formValue.aggregation;
       currentRow += 2;
 
+      // === LEGEND SECTION ===
+      sheet.getCell(`A${currentRow}`).value = 'KETERANGAN KOLOM:';
+      sheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+      currentRow++;
+
+      sensorCols.forEach((col, idx) => {
+        const letter = String.fromCharCode(65 + idx); // A, B, C...
+        sheet.getCell(`A${currentRow}`).value = `${letter}:`;
+        sheet.getCell(`A${currentRow}`).font = { bold: true };
+        sheet.getCell(`B${currentRow}`).value = `${col.label}${col.unit ? ' (' + col.unit + ')' : ''}`;
+        currentRow++;
+      });
+      currentRow++;
+
       // === SUMMARY SECTION ===
       sheet.getCell(`A${currentRow}`).value = 'STATISTIK SUMMARY:';
       sheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
@@ -461,7 +541,7 @@ export class ReportPage implements OnInit {
       }
       currentRow++;
 
-      // === DATA SECTION ===
+      // === DATA SECTION (at the bottom) ===
       sheet.getCell(`A${currentRow}`).value = 'DATA TELEMETRY:';
       sheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
       currentRow++;
@@ -489,20 +569,6 @@ export class ReportPage implements OnInit {
         });
         currentRow++;
       }
-      currentRow++;
-
-      // === LEGEND SECTION (at the end) ===
-      sheet.getCell(`A${currentRow}`).value = 'KETERANGAN KOLOM:';
-      sheet.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
-      currentRow++;
-
-      sensorCols.forEach((col, idx) => {
-        const letter = String.fromCharCode(65 + idx); // A, B, C...
-        sheet.getCell(`A${currentRow}`).value = `${letter}:`;
-        sheet.getCell(`A${currentRow}`).font = { bold: true };
-        sheet.getCell(`B${currentRow}`).value = `${col.label}${col.unit ? ' (' + col.unit + ')' : ''}`;
-        currentRow++;
-      });
 
       // Auto-width columns
       sheet.columns.forEach((col, i) => {
@@ -534,10 +600,12 @@ export class ReportPage implements OnInit {
         config: {
           projectId: formValue.projectId || undefined,
           nodeIds: formValue.nodeIds?.length > 0 ? formValue.nodeIds : undefined,
-          sensorChannelIds: formValue.sensorChannelIds,
+          metricCodes: formValue.metricCodes,
           rangeType: formValue.rangeType,
           aggregation: formValue.aggregation,
           fillGaps: formValue.fillGaps || false,
+          skipZero: formValue.skipZero !== false,
+          useThresholdFilter: formValue.useThresholdFilter || false,
         },
       };
 
@@ -558,22 +626,26 @@ export class ReportPage implements OnInit {
 
   loadTemplate(template: ReportTemplate): void {
     this.selectedTemplate = template;
-    this.filterForm.patchValue({
-      projectId: template.config.projectId || '',
-      nodeIds: template.config.nodeIds || [],
-      sensorChannelIds: template.config.sensorChannelIds,
-      rangeType: template.config.rangeType,
-      aggregation: template.config.aggregation,
-      fillGaps: template.config.fillGaps || false,
-    });
-
-    // Load dependent data
+    
+    // Load dependent data first
     if (template.config.projectId) {
       this.loadNodes(template.config.projectId);
     }
     if (template.config.nodeIds?.length) {
-      this.loadSensorChannels(template.config.nodeIds);
+      this.loadSensorTypes(template.config.nodeIds);
     }
+    
+    // Patch form values - support both old (sensorChannelIds) and new (metricCodes) format
+    this.filterForm.patchValue({
+      projectId: template.config.projectId || '',
+      nodeIds: template.config.nodeIds || [],
+      metricCodes: (template.config as any).metricCodes || [],
+      rangeType: template.config.rangeType,
+      aggregation: template.config.aggregation,
+      fillGaps: template.config.fillGaps || false,
+      skipZero: (template.config as any).skipZero !== false,
+      useThresholdFilter: (template.config as any).useThresholdFilter || false,
+    });
   }
 
   async deleteTemplate(template: ReportTemplate): Promise<void> {
@@ -672,6 +744,16 @@ export class ReportPage implements OnInit {
 
   getChannelLabel(channel: SensorChannel): string {
     return channel.label + (channel.unit ? ` (${channel.unit})` : '');
+  }
+
+  /**
+   * Format date to local YYYY-MM-DD string (not UTC)
+   */
+  private formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   formatTimestamp(ts: string): string {

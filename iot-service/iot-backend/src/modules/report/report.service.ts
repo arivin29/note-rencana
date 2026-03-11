@@ -17,6 +17,7 @@ import {
   ChartDataDto,
   SensorSummaryDto,
   ReportMetadataDto,
+  SensorTypeDto,
 } from './dto/report-response.dto';
 import {
   CreateReportTemplateDto,
@@ -44,17 +45,24 @@ export class ReportService {
     dto: ReportPreviewRequestDto,
     ownerId: string,
   ): Promise<ReportPreviewResponseDto> {
+    // Expand metricCodes to sensorChannelIds if metricCodes provided
+    const resolvedDto = await this.resolveChannelIds(dto);
+    
+    this.logger.log(`[generatePreview] Resolved channelIds: ${JSON.stringify(resolvedDto.sensorChannelIds)}`);
+    this.logger.log(`[generatePreview] Date range: ${dto.startDate} to ${dto.endDate}`);
+    
     // Jika fillGaps aktif, tidak perlu limit karena user butuh semua data
     const previewLimit = dto.fillGaps ? undefined : (dto.previewLimit || 1000);
 
     // Get sensor channel metadata
-    const sensorChannels = await this.getSensorChannelMetadata(dto.sensorChannelIds);
+    const sensorChannels = await this.getSensorChannelMetadata(resolvedDto.sensorChannelIds!);
     if (sensorChannels.length === 0) {
       throw new BadRequestException('No valid sensor channels found');
     }
 
     // Build and execute ClickHouse query (fillGaps handled in ClickHouse)
-    const rawData = await this.executeAggregationQuery(dto);
+    // Pass sensorChannels for threshold filtering
+    const rawData = await this.executeAggregationQuery(resolvedDto, sensorChannels);
 
     // Transform data for response
     const columns = this.buildColumns(sensorChannels);
@@ -92,13 +100,17 @@ export class ReportService {
     rows: ReportRowDto[];
     summary: SensorSummaryDto[];
   }> {
-    const sensorChannels = await this.getSensorChannelMetadata(dto.sensorChannelIds);
+    // Expand metricCodes to sensorChannelIds if metricCodes provided
+    const resolvedDto = await this.resolveChannelIds(dto);
+    
+    const sensorChannels = await this.getSensorChannelMetadata(resolvedDto.sensorChannelIds!);
     if (sensorChannels.length === 0) {
       throw new BadRequestException('No valid sensor channels found');
     }
 
     // Build and execute ClickHouse query (fillGaps handled in ClickHouse)
-    const rawData = await this.executeAggregationQuery(dto);
+    // Pass sensorChannels for threshold filtering
+    const rawData = await this.executeAggregationQuery(resolvedDto, sensorChannels);
 
     return {
       metadata: {
@@ -115,19 +127,170 @@ export class ReportService {
   }
 
   /**
+   * Resolve metricCodes to sensorChannelIds if metricCodes is provided
+   * Returns a new DTO with sensorChannelIds populated
+   */
+  private async resolveChannelIds<T extends ReportRequestDto>(dto: T): Promise<T> {
+    // If sensorChannelIds already provided, use them
+    if (dto.sensorChannelIds && dto.sensorChannelIds.length > 0) {
+      return dto;
+    }
+
+    // If metricCodes provided with nodeIds, expand to channel IDs
+    if (dto.metricCodes && dto.metricCodes.length > 0 && dto.nodeIds && dto.nodeIds.length > 0) {
+      const channelIds = await this.expandMetricCodesToChannelIds(dto.nodeIds, dto.metricCodes);
+      if (channelIds.length === 0) {
+        throw new BadRequestException('No sensor channels found for the specified metric codes and nodes');
+      }
+      return { ...dto, sensorChannelIds: channelIds };
+    }
+
+    throw new BadRequestException('Either sensorChannelIds or metricCodes with nodeIds must be provided');
+  }
+
+  /**
+   * Get sensor types grouped by metricCode for selected nodes
+   * Returns unique combinations of metricCode + unit with channel count
+   */
+  async getSensorTypes(nodeIds: string[], ownerId: string): Promise<SensorTypeDto[]> {
+    // Query sensor channels for the given nodes
+    const channels = await this.sensorChannelRepository
+      .createQueryBuilder('sc')
+      .innerJoin('sc.sensor', 's')
+      .innerJoin('s.node', 'n')
+      .where('n.idNode IN (:...nodeIds)', { nodeIds })
+      .select(['sc.metricCode', 'sc.unit'])
+      .getRawMany();
+
+    // Group by metricCode + unit
+    const groupedMap = new Map<string, { metricCode: string; unit: string | null; count: number }>();
+    
+    for (const channel of channels) {
+      const metricCode = channel.sc_metric_code || 'unknown';
+      const unit = channel.sc_unit || null;
+      const key = `${metricCode}::${unit || ''}`;
+      
+      if (groupedMap.has(key)) {
+        groupedMap.get(key)!.count++;
+      } else {
+        groupedMap.set(key, { metricCode, unit, count: 1 });
+      }
+    }
+
+    // Convert to array and sort by metricCode
+    const result: SensorTypeDto[] = Array.from(groupedMap.values())
+      .map(({ metricCode, unit, count }) => ({
+        metricCode,
+        label: this.formatMetricLabel(metricCode),
+        unit: unit || undefined,
+        channelCount: count,
+      }))
+      .sort((a, b) => a.metricCode.localeCompare(b.metricCode));
+
+    return result;
+  }
+
+  /**
+   * Format metric code to human-readable label
+   */
+  private formatMetricLabel(metricCode: string): string {
+    // Convert snake_case or camelCase to Title Case
+    return metricCode
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  /**
+   * Expand metric codes to actual sensor channel IDs based on nodeIds
+   */
+  async expandMetricCodesToChannelIds(
+    nodeIds: string[],
+    metricCodes: string[],
+  ): Promise<string[]> {
+    const channels = await this.sensorChannelRepository
+      .createQueryBuilder('sc')
+      .innerJoin('sc.sensor', 's')
+      .innerJoin('s.node', 'n')
+      .where('n.idNode IN (:...nodeIds)', { nodeIds })
+      .andWhere('sc.metricCode IN (:...metricCodes)', { metricCodes })
+      .select(['sc.idSensorChannel'])
+      .getRawMany();
+
+    return channels.map((c) => c.sc_id_sensor_channel);
+  }
+
+  /**
    * Execute ClickHouse aggregation query
    */
-  private async executeAggregationQuery(dto: ReportRequestDto): Promise<any[]> {
+  private async executeAggregationQuery(
+    dto: ReportRequestDto,
+    sensorChannels?: SensorChannel[],
+  ): Promise<any[]> {
     if (!this.clickhouseService.isAvailable()) {
       throw new BadRequestException('ClickHouse is not available');
     }
 
-    const { sensorChannelIds, startDate, endDate, aggregation, fillGaps } = dto;
-    const channelIdList = sensorChannelIds.map((id) => `'${id}'`).join(',');
+    const { sensorChannelIds, startDate, endDate, aggregation, fillGaps, skipZero, useThresholdFilter } = dto;
+    // sensorChannelIds is guaranteed to be defined after resolveChannelIds()
+    // Wrap in toUUID() for proper comparison with UUID column
+    const channelIdListForIn = sensorChannelIds!.map((id) => `toUUID('${id}')`).join(',');
+    const channelIdListForArray = sensorChannelIds!.map((id) => `'${id}'`).join(',');
 
     // Convert ISO dates to ClickHouse DateTime64 format
     const startDateCH = `parseDateTimeBestEffort('${startDate}')`;
     const endDateCH = `parseDateTimeBestEffort('${endDate}')`;
+
+    // Build additional filter conditions
+    let additionalFilters = '';
+    
+    // Skip zero filter (default true if not specified)
+    if (skipZero !== false) {
+      additionalFilters += '\n          AND eng_value != 0';
+    }
+
+    // Threshold filter with 20% buffer
+    if (useThresholdFilter && sensorChannels && sensorChannels.length > 0) {
+      const thresholdConditions = sensorChannels
+        .filter(ch => ch.minThreshold != null || ch.maxThreshold != null)
+        .map(ch => {
+          const conditions: string[] = [];
+          if (ch.minThreshold != null) {
+            // 20% below min threshold
+            const minBuffer = Number(ch.minThreshold) * 0.8;
+            conditions.push(`eng_value >= ${minBuffer}`);
+          }
+          if (ch.maxThreshold != null) {
+            // 20% above max threshold
+            const maxBuffer = Number(ch.maxThreshold) * 1.2;
+            conditions.push(`eng_value <= ${maxBuffer}`);
+          }
+          if (conditions.length > 0) {
+            return `(channel_id = toUUID('${ch.idSensorChannel}') AND ${conditions.join(' AND ')})`;
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (thresholdConditions.length > 0) {
+        // For channels with thresholds, apply the filter; for others, allow all
+        const channelsWithThreshold = sensorChannels
+          .filter(ch => ch.minThreshold != null || ch.maxThreshold != null)
+          .map(ch => `toUUID('${ch.idSensorChannel}')`);
+        const channelsWithoutThreshold = sensorChannels
+          .filter(ch => ch.minThreshold == null && ch.maxThreshold == null)
+          .map(ch => `toUUID('${ch.idSensorChannel}')`);
+
+        if (channelsWithoutThreshold.length > 0) {
+          additionalFilters += `\n          AND (
+            (${thresholdConditions.join('\n            OR ')})
+            OR channel_id IN (${channelsWithoutThreshold.join(',')})
+          )`;
+        } else {
+          additionalFilters += `\n          AND (${thresholdConditions.join('\n            OR ')})`;
+        }
+      }
+    }
 
     let sql: string;
     // Add 7 hours for WIB (UTC+7)
@@ -142,9 +305,9 @@ export class ReportService {
           eng_value as value
         FROM iot.sensor_telemetry
         WHERE 
-          channel_id IN (${channelIdList})
+          channel_id IN (${channelIdListForIn})
           AND event_time >= ${startDateCH}
-          AND event_time <= ${endDateCH}
+          AND event_time <= ${endDateCH}${additionalFilters}
         ORDER BY event_time ASC, channel_id
         LIMIT 50000
       `;
@@ -173,7 +336,7 @@ export class ReportService {
           all_slots AS (
             SELECT ts, channel_id
             FROM time_slots
-            CROSS JOIN (SELECT toUUID(arrayJoin([${channelIdList}])) as channel_id) as channels
+            CROSS JOIN (SELECT toUUID(arrayJoin([${channelIdListForArray}])) as channel_id) as channels
           ),
           agg_data AS (
             SELECT 
@@ -185,9 +348,9 @@ export class ReportService {
               count() as point_count
             FROM iot.sensor_telemetry
             WHERE 
-              channel_id IN (${channelIdList})
+              channel_id IN (${channelIdListForIn})
               AND event_time >= ${startDateCH}
-              AND event_time <= ${endDateCH}
+              AND event_time <= ${endDateCH}${additionalFilters}
             GROUP BY ts, channel_id
           )
         SELECT 
@@ -215,17 +378,20 @@ export class ReportService {
           count() as point_count
         FROM iot.sensor_telemetry
         WHERE 
-          channel_id IN (${channelIdList})
+          channel_id IN (${channelIdListForIn})
           AND event_time >= ${startDateCH}
-          AND event_time <= ${endDateCH}
-        GROUP BY ts, id_sensor_channel
-        ORDER BY ts ASC, id_sensor_channel
+          AND event_time <= ${endDateCH}${additionalFilters}
+        GROUP BY ts, channel_id
+        ORDER BY ts ASC, channel_id
         LIMIT 50000
       `;
     }
 
     this.logger.debug(`Executing ClickHouse query: ${sql}`);
+    this.logger.log(`[executeAggregationQuery] Channel IDs: ${channelIdListForIn}`);
+    this.logger.log(`[executeAggregationQuery] Date range: ${startDate} to ${endDate}`);
     const result = await this.clickhouseService.executeQuery(sql);
+    this.logger.log(`[executeAggregationQuery] Result rows count: ${result.rows?.length || 0}`);
     return result.rows;
   }
 
@@ -408,20 +574,39 @@ export class ReportService {
 
   /**
    * Build column definitions
+   * Format: Node - Sensor - Channel
+   * Sorted by: Node → Sensor → Channel (hierarchy)
    */
   private buildColumns(sensorChannels: SensorChannel[]): ReportColumnDto[] {
     const columns: ReportColumnDto[] = [
       { key: 'timestamp', label: 'Timestamp' },
     ];
 
-    for (const channel of sensorChannels) {
+    // Sort channels by hierarchy: Node → Sensor → Channel
+    const sortedChannels = [...sensorChannels].sort((a, b) => {
+      const nodeA = a.sensor?.node?.address || a.sensor?.node?.code || 'Unknown';
+      const nodeB = b.sensor?.node?.address || b.sensor?.node?.code || 'Unknown';
+      if (nodeA !== nodeB) return nodeA.localeCompare(nodeB);
+
+      const sensorA = a.sensor?.label || 'Unknown';
+      const sensorB = b.sensor?.label || 'Unknown';
+      if (sensorA !== sensorB) return sensorA.localeCompare(sensorB);
+
+      const channelA = a.metricCode || 'Unknown';
+      const channelB = b.metricCode || 'Unknown';
+      return channelA.localeCompare(channelB);
+    });
+
+    for (const channel of sortedChannels) {
       const sensorName = channel.sensor?.label || 'Unknown Sensor';
-      // Use address first, fallback to code, then 'Unknown Node'
       const node = channel.sensor?.node;
       const nodeName = node?.address || node?.code || 'Unknown Node';
+      const channelName = channel.metricCode || 'Unknown';
+      
+      // Format: Node - Sensor - Channel
       columns.push({
         key: channel.idSensorChannel,
-        label: `${channel.metricCode} (${sensorName}) - ${nodeName}`,
+        label: `${nodeName} - ${sensorName} - ${channelName}`,
         unit: channel.unit || undefined,
       });
     }
