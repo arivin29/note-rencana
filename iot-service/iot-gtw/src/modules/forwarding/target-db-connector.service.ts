@@ -55,46 +55,74 @@ export class TargetDbConnectorService {
   private async connectPostgres(config: OwnerForwardingDatabase): Promise<TargetDbConnection> {
     const poolKey = `${config.host}:${config.port}:${config.databaseName}:${config.username}`;
     
+    const poolConfig: PoolConfig = {
+      host: config.host,
+      port: config.port,
+      database: config.databaseName,
+      user: config.username,
+      password: config.passwordCipher, // TODO: Decrypt in production
+      
+      // Connection settings
+      connectionTimeoutMillis: config.connectionTimeoutMs || 10000,
+      statement_timeout: config.queryTimeoutMs || 30000,
+      query_timeout: config.queryTimeoutMs || 30000,
+      
+      // Pool settings
+      max: 5, // Max connections per pool
+      min: 0, // Don't keep idle connections (Neon may close them)
+      idleTimeoutMillis: 10000, // Close idle connections quickly
+      allowExitOnIdle: true,
+      
+      // Keep-alive to prevent Neon from closing connection
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+      
+      // SSL for Neon and other cloud providers
+      ssl: {
+        rejectUnauthorized: false, // Allow self-signed certs
+      },
+    };
+
     let pool = this.poolCache.get(poolKey);
 
     if (!pool) {
       this.logger.log(`Creating new pool for: ${config.host}:${config.port}/${config.databaseName}`);
 
-      const poolConfig: PoolConfig = {
-        host: config.host,
-        port: config.port,
-        database: config.databaseName,
-        user: config.username,
-        password: config.passwordCipher, // TODO: Decrypt in production
-        
-        // Connection settings
-        connectionTimeoutMillis: config.connectionTimeoutMs || 10000,
-        statement_timeout: config.queryTimeoutMs || 30000,
-        query_timeout: config.queryTimeoutMs || 30000,
-        
-        // Pool settings
-        max: 5, // Max connections per pool
-        min: 1,
-        idleTimeoutMillis: 30000,
-        
-        // SSL for Neon and other cloud providers
-        ssl: {
-          rejectUnauthorized: false, // Allow self-signed certs
-        },
-      };
-
       pool = new Pool(poolConfig);
 
-      // Handle pool errors
+      // Handle pool errors - remove from cache to force reconnect
       pool.on('error', (err) => {
         this.logger.error(`Pool error for ${poolKey}: ${err.message}`);
+        this.poolCache.delete(poolKey);
       });
 
       this.poolCache.set(poolKey, pool);
     }
 
-    // Get client from pool
-    const client = await pool.connect();
+    // Get client from pool with retry
+    let client: PoolClient;
+    try {
+      client = await pool.connect();
+    } catch (error) {
+      // Connection failed, remove pool from cache and retry once
+      this.logger.warn(`Initial connection failed, retrying: ${error.message}`);
+      this.poolCache.delete(poolKey);
+      
+      // Create fresh pool
+      pool = new Pool(poolConfig);
+      pool.on('error', (err) => {
+        this.logger.error(`Pool error for ${poolKey}: ${err.message}`);
+        this.poolCache.delete(poolKey);
+      });
+      this.poolCache.set(poolKey, pool);
+      
+      client = await pool.connect();
+    }
+
+    // Handle client errors to prevent process crash
+    client.on('error', (err) => {
+      this.logger.error(`Client connection error: ${err.message}`);
+    });
 
     // Test connection
     await client.query('SELECT 1');
@@ -105,10 +133,24 @@ export class TargetDbConnectorService {
       pool,
       client,
       query: async (sql: string, params?: any[]) => {
-        return client.query(sql, params);
+        try {
+          return await client.query(sql, params);
+        } catch (error) {
+          // Check if connection was lost
+          if (error.message.includes('Connection terminated') || 
+              error.message.includes('connection') ||
+              error.code === 'ECONNRESET') {
+            this.logger.warn('Connection lost, query failed');
+          }
+          throw error;
+        }
       },
       release: () => {
-        client.release();
+        try {
+          client.release();
+        } catch (e) {
+          // Ignore release errors on dead connections
+        }
       },
     };
   }
