@@ -121,3 +121,19 @@ export class ReportApiResponseDto<T> {
   @ApiPropertyOptional({ description: 'Error message if failed' })
   message?: string;
 }
+/**
+ * Sensor Type DTO for grouped sensor channels
+ */
+export class SensorTypeDto {
+  @ApiProperty({ description: 'Metric code (unique identifier)', example: 'pressure' })
+  metricCode: string;
+
+  @ApiProperty({ description: 'Display label', example: 'Pressure' })
+  label: string;
+
+  @ApiPropertyOptional({ description: 'Unit of measurement', example: 'bar' })
+  unit?: string;
+
+  @ApiProperty({ description: 'Number of channels with this metric', example: 3 })
+  channelCount: number;
+}

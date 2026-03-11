@@ -20,6 +20,11 @@ export interface ReportRequestDto {
   fillGaps?: boolean;
 
   /**
+   * Metric codes to include (alternative to sensorChannelIds). Combined with nodeIds to get channels.
+   */
+  metricCodes?: Array<string>;
+
+  /**
    * Node IDs to filter by (multi-select)
    */
   nodeIds?: Array<string>;
@@ -37,7 +42,7 @@ export interface ReportRequestDto {
   /**
    * Sensor Channel IDs to include in report (multi-select)
    */
-  sensorChannelIds: Array<string>;
+  sensorChannelIds?: Array<string>;
 
   /**
    * Start date for report data

@@ -75,6 +75,7 @@ export { ForwardingStats } from './models/forwarding-stats';
 export { ForwardingWebhookResponseDto } from './models/forwarding-webhook-response-dto';
 export { GenerateFromTemplateDto } from './models/generate-from-template-dto';
 export { GeoJsonResponseDto } from './models/geo-json-response-dto';
+export { GetSensorTypesDto } from './models/get-sensor-types-dto';
 export { IndustryStatDto } from './models/industry-stat-dto';
 export { IngestionStats } from './models/ingestion-stats';
 export { IotLogStatsDto } from './models/iot-log-stats-dto';

@@ -52,15 +52,25 @@ export class ReportRequestDto {
   @IsUUID('4', { each: true })
   nodeIds?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Sensor Channel IDs to include in report (multi-select)',
     example: ['123e4567-e89b-12d3-a456-426614174003'],
     type: [String],
   })
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1, { message: 'At least one sensor channel is required' })
   @IsUUID('4', { each: true })
-  sensorChannelIds: string[];
+  sensorChannelIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Metric codes to include (alternative to sensorChannelIds). Combined with nodeIds to get channels.',
+    example: ['pressure', 'temperature'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  metricCodes?: string[];
 
   @ApiProperty({
     description: 'Start date for report data',
@@ -91,6 +101,22 @@ export class ReportRequestDto {
   @IsOptional()
   @IsBoolean()
   fillGaps?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Skip zero values in aggregation (default: true). Useful to exclude sensor error readings.',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  skipZero?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Use threshold filter from sensor_channel (min/max threshold with 20% buffer). Default: false',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  useThresholdFilter?: boolean;
 }
 
 export class ReportPreviewRequestDto extends ReportRequestDto {
@@ -100,4 +126,19 @@ export class ReportPreviewRequestDto extends ReportRequestDto {
   })
   @IsOptional()
   previewLimit?: number;
+}
+
+/**
+ * DTO for getting sensor types by nodes
+ */
+export class GetSensorTypesDto {
+  @ApiProperty({
+    description: 'Node IDs to get sensor types for',
+    example: ['123e4567-e89b-12d3-a456-426614174002'],
+    type: [String],
+  })
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one node ID is required' })
+  @IsUUID('4', { each: true })
+  nodeIds: string[];
 }

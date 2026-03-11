@@ -25,13 +25,14 @@ import { ReportExportService } from './report-export.service';
 import {
   ReportRequestDto,
   ReportPreviewRequestDto,
+  GetSensorTypesDto,
 } from './dto/report-request.dto';
 import {
   CreateReportTemplateDto,
   UpdateReportTemplateDto,
   GenerateFromTemplateDto,
 } from './dto/report-template.dto';
-import { ReportPreviewResponseDto } from './dto/report-response.dto';
+import { ReportPreviewResponseDto, SensorTypeDto } from './dto/report-response.dto';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
@@ -87,6 +88,22 @@ export class ReportController {
       rows,
       summary,
     );
+  }
+
+  /**
+   * Get available sensor types by nodes
+   * Groups sensor channels by metricCode + unit
+   */
+  @Post('sensor-types')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get sensor types grouped by metric code for selected nodes' })
+  @ApiResponse({ status: 200, type: [SensorTypeDto] })
+  async getSensorTypes(
+    @Body() dto: GetSensorTypesDto,
+    @Request() req: any,
+  ): Promise<SensorTypeDto[]> {
+    const ownerId = req.user?.owner?.id || req.user?.ownerId;
+    return this.reportService.getSensorTypes(dto.nodeIds, ownerId);
   }
 
   /**
