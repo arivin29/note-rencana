@@ -14,6 +14,8 @@ import {
     NodeProfile,
     NodeUnpairedDevice,
     Owner,
+    OwnerForwardingDatabase,
+    OwnerForwardingLog,
     Project,
     Sensor,
     SensorCatalog,
@@ -28,6 +30,7 @@ import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
 import { TeltonikaModule } from './modules/teltonika/teltonika.module';
 import { ClickhouseModule } from './modules/clickhouse/clickhouse.module';
 import { MlModule } from './modules/ml/ml.module';
+import { ForwardingModule } from './modules/forwarding/forwarding.module';
 
 @Module({
     imports: [
@@ -57,6 +60,8 @@ import { MlModule } from './modules/ml/ml.module';
                     NodeProfile,
                     NodeUnpairedDevice,
                     Owner,
+                    OwnerForwardingDatabase,
+                    OwnerForwardingLog,
                     Project,
                     Sensor,
                     SensorCatalog,
@@ -78,6 +83,7 @@ import { MlModule } from './modules/ml/ml.module';
         SchedulerAppModule, // Auto-process telemetry every 30 seconds
         TeltonikaModule, // Teltonika FM125 TCP Gateway
         MlModule, // ML/AI Anomaly Detection & Forecasting
+        ForwardingModule, // Data forwarding to client databases
     ],
 })
 export class AppModule { }
