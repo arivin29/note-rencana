@@ -26,8 +26,8 @@ export class ForecastsService {
       .leftJoinAndSelect('forecast.sensorChannel', 'channel')
       .leftJoin('channel.sensor', 'sensor')
       .leftJoin('sensor.node', 'node')
-      .addSelect(['sensor.idSensor', 'sensor.sensorKey', 'sensor.sensorName'])
-      .addSelect(['node.idNode', 'node.nodeName', 'node.deviceId'])
+      .addSelect(['sensor.idSensor', 'sensor.sensorCode', 'sensor.label'])
+      .addSelect(['node.idNode', 'node.name', 'node.code'])
       .where('forecast.idSensorChannel = :idSensorChannel', { idSensorChannel })
       .andWhere('forecast.isCurrent = :isCurrent', { isCurrent: true })
       .orderBy('forecast.generatedAt', 'DESC')
@@ -58,9 +58,9 @@ export class ForecastsService {
       .leftJoinAndSelect('forecast.sensorChannel', 'channel')
       .leftJoin('channel.sensor', 'sensor')
       .leftJoin('sensor.node', 'node')
-      .leftJoin('node.owner', 'owner')
-      .addSelect(['sensor.idSensor', 'sensor.sensorKey', 'sensor.sensorName'])
-      .addSelect(['node.idNode', 'node.nodeName', 'node.deviceId'])
+      .leftJoin('node.project', 'project')
+      .addSelect(['sensor.idSensor', 'sensor.sensorCode', 'sensor.label'])
+      .addSelect(['node.idNode', 'node.name', 'node.code'])
       .orderBy('forecast.generatedAt', 'DESC');
 
     // Apply filters
@@ -71,15 +71,15 @@ export class ForecastsService {
     }
 
     if (query.ownerId) {
-      qb.andWhere('owner.idOwner = :ownerId', { ownerId: query.ownerId });
+      qb.andWhere('project.idProject = :ownerId', { ownerId: query.ownerId });
     }
 
     if (query.deviceId) {
-      qb.andWhere('node.deviceId = :deviceId', { deviceId: query.deviceId });
+      qb.andWhere('node.code = :deviceId', { deviceId: query.deviceId });
     }
 
     if (query.sensorKey) {
-      qb.andWhere('sensor.sensorKey = :sensorKey', { sensorKey: query.sensorKey });
+      qb.andWhere('sensor.sensorCode = :sensorKey', { sensorKey: query.sensorKey });
     }
 
     const [data, total] = await qb.skip(skip).take(limit).getManyAndCount();
@@ -101,8 +101,8 @@ export class ForecastsService {
       .leftJoinAndSelect('forecast.sensorChannel', 'channel')
       .leftJoin('channel.sensor', 'sensor')
       .leftJoin('sensor.node', 'node')
-      .addSelect(['sensor.idSensor', 'sensor.sensorKey', 'sensor.sensorName'])
-      .addSelect(['node.idNode', 'node.nodeName', 'node.deviceId'])
+      .addSelect(['sensor.idSensor', 'sensor.sensorCode', 'sensor.label'])
+      .addSelect(['node.idNode', 'node.name', 'node.code'])
       .where('forecast.idForecastResult = :id', { id })
       .getOne();
 
@@ -146,8 +146,8 @@ export class ForecastsService {
     Array<{
       idSensorChannel: string;
       channelName: string;
-      sensorKey: string;
-      deviceId: string;
+      sensorCode: string;
+      nodeCode: string;
       lastForecastAt: Date;
     }>
   > {
@@ -156,19 +156,19 @@ export class ForecastsService {
       .leftJoin('forecast.sensorChannel', 'channel')
       .leftJoin('channel.sensor', 'sensor')
       .leftJoin('sensor.node', 'node')
-      .leftJoin('node.owner', 'owner')
+      .leftJoin('node.project', 'project')
       .select('forecast.idSensorChannel', 'idSensorChannel')
       .addSelect('channel.metricCode', 'channelName')
-      .addSelect('sensor.sensorKey', 'sensorKey')
-      .addSelect('node.deviceId', 'deviceId')
+      .addSelect('sensor.sensorCode', 'sensorCode')
+      .addSelect('node.code', 'nodeCode')
       .addSelect('MAX(forecast.generatedAt)', 'lastForecastAt')
       .groupBy('forecast.idSensorChannel')
       .addGroupBy('channel.metricCode')
-      .addGroupBy('sensor.sensorKey')
-      .addGroupBy('node.deviceId');
+      .addGroupBy('sensor.sensorCode')
+      .addGroupBy('node.code');
 
     if (ownerId) {
-      qb.andWhere('owner.idOwner = :ownerId', { ownerId });
+      qb.andWhere('project.idProject = :ownerId', { ownerId });
     }
 
     return qb.getRawMany();
@@ -201,16 +201,16 @@ export class ForecastsService {
       if (sensor) {
         response.sensor = {
           idSensor: sensor.idSensor,
-          sensorKey: sensor.sensorKey,
-          sensorName: sensor.sensorName,
+          sensorKey: sensor.sensorCode,
+          sensorName: sensor.label,
         };
 
         const node = sensor.node;
         if (node) {
           response.node = {
             idNode: node.idNode,
-            nodeName: node.nodeName,
-            deviceId: node.deviceId,
+            nodeName: node.name,
+            deviceId: node.code,
           };
         }
       }

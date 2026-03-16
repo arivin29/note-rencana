@@ -50,7 +50,17 @@ export interface ReportPreviewRequestDto {
   sensorChannelIds?: Array<string>;
 
   /**
+   * Skip zero values in aggregation (default: true). Useful to exclude sensor error readings.
+   */
+  skipZero?: boolean;
+
+  /**
    * Start date for report data
    */
   startDate: string;
+
+  /**
+   * Use threshold filter from sensor_channel (min/max threshold with 20% buffer). Default: false
+   */
+  useThresholdFilter?: boolean;
 }

@@ -95,7 +95,7 @@ Selesai jika:
 - [x] buat `useRuntimeStore`
 - [x] buat `useUiStore`
 - [x] render diagram payload ke canvas
-- [ ] implement zoom, pan, fit view
+- [x] implement zoom, pan, fit view
 
 Catatan implementasi 2026-03-16:
 
@@ -103,6 +103,9 @@ Catatan implementasi 2026-03-16:
 - shell fullscreen, route view/edit, dan canvas foundation sudah ada
 - runtime polling hook dasar sudah ada
 - build frontend awal sudah lulus
+- viewport sekarang sudah punya control zoom/pan bawaan React Flow dan action `Fit View` dari tool rail
+- root app dan alias route `demo` sekarang sudah resolve ke diagram valid pertama milik tenant, bukan hardcoded UUID palsu
+- jika tenant belum punya diagram, launcher sekarang bisa membuat diagram draft pertama langsung dari frontend
 
 Selesai jika:
 
@@ -112,16 +115,16 @@ Selesai jika:
 
 ## 6. Checklist editor foundation
 
-- [ ] implement toggle mode view/edit
+- [x] implement toggle mode view/edit
 - [x] implement node selection
 - [x] implement edge selection
 - [x] implement add node
 - [x] implement connect edge
 - [x] implement move node
 - [x] implement delete node/edge
-- [ ] implement dirty state
+- [x] implement dirty state
 - [x] implement save button
-- [ ] implement discard confirm
+- [x] implement discard confirm
 - [x] integrasikan full save/load
 
 Catatan implementasi 2026-03-16:
@@ -129,6 +132,9 @@ Catatan implementasi 2026-03-16:
 - route view/edit sekarang sudah punya toggle via top bar
 - editor foundation sudah mendukung selection, add node, connect edge, delete selection, drag node, dan save penuh ke backend
 - dirty state dasar sudah berjalan untuk perubahan topology
+- add node sekarang otomatis menseleksi node baru agar inspector langsung relevan
+- reset dan pindah mode dari editor sekarang sudah dilindungi confirm saat ada perubahan lokal
+- shortcut dasar editor sudah ada: `Ctrl/Cmd+S`, `Shift+F`, `Delete/Backspace`, `Escape`
 
 Selesai jika:
 
@@ -141,9 +147,9 @@ Selesai jika:
 - [x] implement `ScadaRuntimeService`
 - [x] implement latest telemetry batch query
 - [x] implement `GET /api/scada/diagrams/:diagramId/runtime`
-- [ ] buat polling loop frontend
-- [ ] map runtime response ke binding runtime state
-- [ ] tampilkan latest value ke node
+- [x] buat polling loop frontend
+- [x] map runtime response ke binding runtime state
+- [x] tampilkan latest value ke node
 - [x] tampilkan status dasar:
   - `ok`
   - `off`
@@ -157,6 +163,7 @@ Catatan implementasi 2026-03-16:
 - status backend saat ini sudah mengembalikan `ok`, `warn`, `alert`, `off`, `stale`, `offline`, `unknown`
 - backend runtime sudah memanfaatkan `value_engineered`, quality flag, dan threshold channel
 - payload runtime backend juga sudah mengembalikan `rawValue`, `connectivityState`, `freshnessState`, dan `summary`
+- runtime frontend sekarang sudah polling per `diagramId`, memetakan binding runtime ke node, dan menampilkan live value/status di canvas
 
 Selesai jika:
 
@@ -166,18 +173,25 @@ Selesai jika:
 
 ## 8. Checklist widget visual
 
-- [ ] buat shared node frame
-- [ ] implement `pump`
-- [ ] implement `valve`
-- [ ] implement `flowmeter`
-- [ ] implement `pressure`
-- [ ] implement `reservoir`
-- [ ] implement `junction`
-- [ ] implement `intake`
-- [ ] implement `wtp`
-- [ ] implement `PipeEdge`
-- [ ] implement warna `raw` dan `treated`
-- [ ] implement animasi flow sederhana
+- [x] buat shared node frame
+- [x] implement `pump`
+- [x] implement `valve`
+- [x] implement `flowmeter`
+- [x] implement `pressure`
+- [x] implement `reservoir`
+- [x] implement `junction`
+- [x] implement `intake`
+- [x] implement `wtp`
+- [x] implement `PipeEdge`
+- [x] implement warna `raw` dan `treated`
+- [x] implement animasi flow sederhana
+
+Catatan implementasi 2026-03-16:
+
+- canvas sekarang memakai shared SCADA node frame dengan badge runtime, live value, dan glyph per type
+- type visual baseline yang sudah dibedakan: `intake`, `pump`, `valve`, `flowmeter`, `pressure`, `reservoir`, `wtp`, `junction`
+- custom `PipeEdge` sudah aktif dan membedakan warna pipa `raw` vs `treated`
+- edge sekarang juga bisa menampilkan arah flow dan animasi dasar saat `animated = true`
 
 Selesai jika:
 
@@ -188,11 +202,19 @@ Selesai jika:
 ## 9. Checklist property panel
 
 - [x] buat inspector context-sensitive
-- [ ] implement form property node dasar
-- [ ] implement form property edge
-- [ ] implement binding editor
-- [ ] implement threshold form dasar
-- [ ] implement diagram settings panel
+- [x] implement form property node dasar
+- [x] implement form property edge
+- [x] implement binding editor
+- [x] implement threshold form dasar
+- [x] implement diagram settings panel
+
+Catatan implementasi 2026-03-16:
+
+- panel kanan sekarang sudah bisa edit nama/deskripsi diagram
+- panel node sudah bisa edit label, type, size
+- panel edge sudah bisa edit label, pipe type, dan flow direction
+- binding editor dasar sudah memakai lookup `GET /api/scada/binding-options`
+- binding editor sekarang juga bisa edit display label, unit override, priority, primary flag, dan membaca threshold baseline channel
 
 Selesai jika:
 
@@ -208,6 +230,16 @@ Selesai jika:
 - [ ] validasi auth/session flow lintas frontend
 - [ ] validasi access by project berjalan
 
+Catatan implementasi 2026-03-16:
+
+- integrasi Angular tetap belum dikerjakan
+- tetapi `iot-scada` sekarang sudah punya auth gate sementara:
+  - login langsung ke endpoint existing `POST /api/auth/login`
+  - fallback bearer token manual
+  - fallback auto token via `VITE_SCADA_DEV_BEARER` di `.env.local`
+  - validasi session via `GET /api/auth/me`
+  - inject `Authorization: Bearer <token>` ke request SCADA frontend
+
 Selesai jika:
 
 - user bisa membuka SCADA dari Angular project detail
@@ -217,11 +249,20 @@ Selesai jika:
 ## 11. Checklist hardening
 
 - [x] implement duplicate diagram
-- [ ] rapikan error state load/save/runtime
-- [ ] rapikan empty state
-- [ ] cek rerender/runtime performance dasar
-- [ ] cek UX saat network gagal
-- [ ] cek UX saat diagram kosong
+- [x] rapikan error state load/save/runtime
+- [x] rapikan empty state
+- [x] cek rerender/runtime performance dasar
+- [x] cek UX saat network gagal
+- [x] cek UX saat diagram kosong
+
+Catatan implementasi 2026-03-16:
+
+- stage sekarang sudah punya floating banner untuk load/save/runtime issue
+- loading state dan empty diagram state dasar sudah ditampilkan sebagai overlay di canvas stage
+- jika load diagram gagal sebelum snapshot awal didapat, stage sekarang menampilkan full-state error
+- load diagram gagal sekarang punya tombol retry eksplisit
+- runtime poll error sekarang tidak menimpa diagram load state dan ditandai sebagai `runtime degraded`
+- registry custom node/edge sekarang tidak dibuat ulang tiap render untuk mengurangi churn render yang tidak perlu
 
 Selesai jika:
 
@@ -256,21 +297,21 @@ Pastikan ini tidak ikut masuk diam-diam ke MVP:
 ### Milestone 2
 
 - [x] runtime endpoint selesai
-- [ ] polling frontend selesai
-- [ ] node live value tampil
+- [x] polling frontend selesai
+- [x] node live value tampil
 - [x] status dasar tampil
 
 ### Milestone 3
 
-- [ ] widget visual dasar selesai
-- [ ] property panel usable
-- [ ] edit/view UX usable
+- [x] widget visual dasar selesai
+- [x] property panel usable
+- [x] edit/view UX usable
 
 ### Milestone 4
 
 - [ ] Angular integration selesai
 - [ ] duplicate selesai
-- [ ] error handling dasar rapi
+- [x] error handling dasar rapi
 - [ ] siap demo internal
 
 ---
@@ -299,7 +340,7 @@ Jika ini mulai terjadi, berarti implementasi mulai keluar jalur:
 - `npm run build` di `iot-backend` lulus
 - suite test backend SCADA terisolasi lulus
 - global test suite backend existing masih banyak yang gagal karena spec lama di module lain belum sehat
-- frontend React SCADA dan Angular integration belum dikerjakan di thread ini
+- frontend React SCADA foundation, editor dasar, runtime polling, dan visual baseline sudah dikerjakan di thread ini
 - [ ] route final sudah diterima
 - [ ] API shape final sudah diterima
 - [ ] status runtime baseline sudah diterima

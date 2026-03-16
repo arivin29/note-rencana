@@ -1,210 +1,236 @@
-<div class="container-fluid py-3">
-  <!-- Page Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-1">
-          <li class="breadcrumb-item"><a routerLink="/iot/ml">ML Dashboard</a></li>
-          <li class="breadcrumb-item active">Anomali</li>
-        </ol>
-      </nav>
-      <h1 class="h3 mb-0">Daftar Anomali</h1>
-    </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-success btn-sm" 
-              [disabled]="selectedAnomalies.size === 0"
-              (click)="acknowledgeSelected()">
-        <i class="bi bi-check-all me-1"></i>
-        Acknowledge ({{ selectedAnomalies.size }})
-      </button>
-      <button class="btn btn-outline-secondary btn-sm" (click)="loadAnomalies()">
-        <i class="bi bi-arrow-clockwise"></i>
-      </button>
-    </div>
-  </div>
+<div class="ops-console">
+    <!-- Page Header -->
+    <card class="welcome-header mb-4">
+        <card-body>
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item"><a routerLink="/iot/ml">ML Dashboard</a></li>
+                            <li class="breadcrumb-item active">Anomali</li>
+                        </ol>
+                    </nav>
+                    <h2 class="welcome-title mb-0">Daftar Anomali</h2>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <div class="d-flex gap-2 justify-content-lg-end">
+                        <button class="btn btn-success btn-sm" 
+                                [disabled]="selectedAnomalies.size === 0"
+                                (click)="acknowledgeSelected()">
+                            <i class="bi bi-check-all me-1"></i>
+                            Acknowledge ({{ selectedAnomalies.size }})
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" (click)="loadAnomalies()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </card-body>
+    </card>
 
-  <!-- Filters Row -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-      <div class="row g-3 align-items-end">
-        <!-- Search -->
-        <div class="col-md-4">
-          <label class="form-label small text-muted">Cari</label>
-          <div class="input-group">
-            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-            <input type="text" class="form-control" 
-                   placeholder="Cari sensor..."
-                   [value]="searchTerm"
-                   (input)="onSearch($event)">
-          </div>
-        </div>
-        
-        <!-- Grade Filter -->
-        <div class="col-md-2">
-          <label class="form-label small text-muted">Grade</label>
-          <select class="form-select" [value]="selectedGrade" (change)="onGradeFilter($any($event.target).value)">
-            <option value="">Semua Grade</option>
-            <option value="critical">Kritis</option>
-            <option value="severe">Parah</option>
-            <option value="moderate">Sedang</option>
-            <option value="mild">Ringan</option>
-          </select>
-        </div>
-        
-        <!-- Acknowledged Filter -->
-        <div class="col-md-2">
-          <label class="form-label small text-muted">Status</label>
-          <select class="form-select" [value]="selectedAcknowledged" (change)="onAcknowledgedFilter($any($event.target).value)">
-            <option value="">Semua Status</option>
-            <option value="false">Belum Diproses</option>
-            <option value="true">Sudah Diproses</option>
-          </select>
-        </div>
-        
-        <!-- Date Range (placeholder) -->
-        <div class="col-md-3">
-          <label class="form-label small text-muted">Periode</label>
-          <select class="form-select">
-            <option value="24h">24 Jam Terakhir</option>
-            <option value="7d">7 Hari Terakhir</option>
-            <option value="30d">30 Hari Terakhir</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-        
-        <!-- Clear Filters -->
-        <div class="col-md-1">
-          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()" title="Reset Filter">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Filters Row -->
+    <card class="mb-4">
+        <card-body>
+            <div class="row g-3 align-items-end">
+                <!-- Search -->
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Cari</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" 
+                               placeholder="Cari sensor..."
+                               [value]="searchTerm"
+                               (input)="onSearch($event)">
+                    </div>
+                </div>
+                
+                <!-- Grade Filter -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Grade</label>
+                    <select class="form-select" [value]="selectedGrade" (change)="onGradeFilter($any($event.target).value)">
+                        <option value="">Semua Grade</option>
+                        <option value="critical">Kritis</option>
+                        <option value="severe">Parah</option>
+                        <option value="moderate">Sedang</option>
+                        <option value="mild">Ringan</option>
+                    </select>
+                </div>
+                
+                <!-- Acknowledged Filter -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Status</label>
+                    <select class="form-select" (change)="onAcknowledgedFilter($any($event.target).value)">
+                        <option value="">Semua Status</option>
+                        <option value="false">Belum Diproses</option>
+                        <option value="true">Sudah Diproses</option>
+                    </select>
+                </div>
+                
+                <!-- Date Range -->
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Periode</label>
+                    <select class="form-select">
+                        <option value="24h">24 Jam Terakhir</option>
+                        <option value="7d">7 Hari Terakhir</option>
+                        <option value="30d">30 Hari Terakhir</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                
+                <!-- Clear Filters -->
+                <div class="col-md-1">
+                    <button class="btn btn-outline-secondary w-100" (click)="clearFilters()" title="Reset Filter">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </card-body>
+    </card>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
     </div>
-  </div>
 
-  <!-- Anomalies Table -->
-  <div *ngIf="!isLoading" class="card border-0 shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th style="width: 40px;">
-              <input type="checkbox" class="form-check-input" 
-                     [(ngModel)]="selectAll" 
-                     (change)="toggleSelectAll()">
-            </th>
-            <th class="sortable" (click)="sortBy('detectedAt')">
-              Waktu <i [class]="'bi ' + getSortIcon('detectedAt')"></i>
-            </th>
-            <th>Sensor</th>
-            <th class="sortable text-end" (click)="sortBy('actualValue')">
-              Nilai Aktual <i [class]="'bi ' + getSortIcon('actualValue')"></i>
-            </th>
-            <th class="text-end">Nilai Expected</th>
-            <th class="sortable text-center" (click)="sortBy('anomalyScore')">
-              Score <i [class]="'bi ' + getSortIcon('anomalyScore')"></i>
-            </th>
-            <th class="sortable text-center" (click)="sortBy('anomalyGrade')">
-              Grade <i [class]="'bi ' + getSortIcon('anomalyGrade')"></i>
-            </th>
-            <th class="text-center">Status</th>
-            <th class="text-end">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let anomaly of anomalies" 
-              [class.table-success]="anomaly.isAcknowledged"
-              [class.selected]="isSelected(anomaly.idAnomalyResult)">
-            <td>
-              <input type="checkbox" class="form-check-input"
-                     [checked]="isSelected(anomaly.idAnomalyResult)"
-                     (change)="toggleSelect(anomaly.idAnomalyResult)">
-            </td>
-            <td class="text-nowrap">
-              <span class="fw-medium">{{ formatDate(anomaly.detectedAt) }}</span>
-            </td>
-            <td>
-              <div class="fw-medium">{{ anomaly.sensorInfo?.metricCode || 'Unknown' }}</div>
-              <small class="text-muted">{{ anomaly.idSensorChannel | slice:0:8 }}...</small>
-            </td>
-            <td class="text-end">
-              <span class="fw-bold text-danger">{{ formatNumber(anomaly.actualValue) }}</span>
-              <small class="text-muted ms-1">{{ anomaly.sensorInfo?.unit || '' }}</small>
-            </td>
-            <td class="text-end">
-              <span>{{ formatNumber(anomaly.expectedValue) }}</span>
-            </td>
-            <td class="text-center">
-              <span class="badge bg-dark">{{ anomaly.anomalyScore | number:'1.2-2' }}</span>
-            </td>
-            <td class="text-center">
-              <span class="badge" [class]="getGradeBadgeClass(anomaly.anomalyGrade)">
-                {{ getGradeLabel(anomaly.anomalyGrade) }}
-              </span>
-            </td>
-            <td class="text-center">
-              <span *ngIf="anomaly.isAcknowledged" class="badge bg-success">
-                <i class="bi bi-check-lg"></i> Diproses
-              </span>
-              <span *ngIf="!anomaly.isAcknowledged" class="badge bg-secondary">
-                Pending
-              </span>
-            </td>
-            <td class="text-end">
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" title="Detail">
-                  <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-outline-success" 
-                        *ngIf="!anomaly.isAcknowledged"
-                        (click)="acknowledgeOne(anomaly)"
-                        title="Acknowledge">
-                  <i class="bi bi-check-lg"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          
-          <!-- Empty State -->
-          <tr *ngIf="anomalies.length === 0">
-            <td colspan="9" class="text-center py-5">
-              <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-              <p class="text-muted mb-0">Tidak ada anomali ditemukan</p>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Pagination -->
-    <div class="card-footer bg-white d-flex justify-content-between align-items-center" *ngIf="anomalies.length > 0">
-      <div class="text-muted small">
-        Menampilkan {{ (currentPage - 1) * pageSize + 1 }} - {{ getDisplayEnd() }} dari {{ totalItems || anomalies.length }}
-      </div>
-      <nav>
-        <ul class="pagination pagination-sm mb-0">
-          <li class="page-item" [class.disabled]="currentPage === 1">
-            <button class="page-link" (click)="onPageChange(currentPage - 1)">
-              <i class="bi bi-chevron-left"></i>
-            </button>
-          </li>
-          <li class="page-item active">
-            <span class="page-link">{{ currentPage }}</span>
-          </li>
-          <li class="page-item" [class.disabled]="anomalies.length < pageSize">
-            <button class="page-link" (click)="onPageChange(currentPage + 1)">
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  </div>
+    <!-- Anomalies Table -->
+    <card *ngIf="!isLoading">
+        <card-body class="p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" 
+                                       [(ngModel)]="selectAll" 
+                                       (change)="toggleSelectAll()">
+                            </th>
+                            <th class="sortable" (click)="sortBy('detectedAt')">
+                                WAKTU <i [class]="'bi ' + getSortIcon('detectedAt')"></i>
+                            </th>
+                            <th>DEVICE</th>
+                            <th>SENSOR / CHANNEL</th>
+                            <th class="text-center">TIPE</th>
+                            <th class="sortable text-end" (click)="sortBy('actualValue')">
+                                NILAI <i [class]="'bi ' + getSortIcon('actualValue')"></i>
+                            </th>
+                            <th class="sortable text-center" (click)="sortBy('anomalyScore')">
+                                SCORE <i [class]="'bi ' + getSortIcon('anomalyScore')"></i>
+                            </th>
+                            <th class="sortable text-center" (click)="sortBy('anomalyGrade')">
+                                GRADE <i [class]="'bi ' + getSortIcon('anomalyGrade')"></i>
+                            </th>
+                            <th class="text-center">STATUS</th>
+                            <th class="text-end">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let anomaly of anomalies" 
+                            [class.table-success]="anomaly.isAcknowledged"
+                            [class.selected]="isSelected(anomaly.idAnomalyResult)">
+                            <td>
+                                <input type="checkbox" class="form-check-input"
+                                       [checked]="isSelected(anomaly.idAnomalyResult)"
+                                       (change)="toggleSelect(anomaly.idAnomalyResult)">
+                            </td>
+                            <td class="text-nowrap">
+                                <span class="fw-medium">{{ formatDate(anomaly.detectedAt) }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-primary">{{ anomaly.node?.deviceId || 'Unknown Device' }}</div>
+                                <small class="text-muted">{{ anomaly.node?.nodeName || '-' }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-medium">{{ anomaly.sensor?.sensorName || anomaly.sensor?.sensorKey || 'Unknown' }}</div>
+                                <small class="text-muted">
+                                    <i class="bi bi-broadcast me-1"></i>{{ anomaly.sensorChannel?.channelName || '-' }}
+                                    <span class="ms-2 badge bg-light text-dark">{{ anomaly.detectorName || '-' }}</span>
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" [ngClass]="{
+                                    'bg-danger': anomaly.anomalyType === 'spike',
+                                    'bg-info': anomaly.anomalyType === 'dip',
+                                    'bg-warning': anomaly.anomalyType === 'drift',
+                                    'bg-secondary': !anomaly.anomalyType
+                                }">
+                                    {{ anomaly.anomalyType || '-' }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div>
+                                    <span class="fw-bold text-danger">{{ formatNumber(anomaly.actualValue) }}</span>
+                                    <small class="text-muted ms-1">{{ anomaly.sensorChannel?.unitMeasure || '' }}</small>
+                                </div>
+                                <small class="text-muted">exp: {{ formatNumber(anomaly.expectedValue) }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-dark">{{ anomaly.anomalyScore | number:'1.2-2' }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" [class]="getGradeBadgeClass(anomaly.anomalyGrade)">
+                                    {{ getGradeLabel(anomaly.anomalyGrade) }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span *ngIf="anomaly.isAcknowledged" class="badge bg-success">
+                                    <i class="bi bi-check-lg"></i> Diproses
+                                </span>
+                                <span *ngIf="!anomaly.isAcknowledged" class="badge bg-secondary">
+                                    Pending
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" title="Detail">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success" 
+                                            *ngIf="!anomaly.isAcknowledged"
+                                            (click)="acknowledgeOne(anomaly)"
+                                            title="Acknowledge">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Empty State -->
+                        <tr *ngIf="anomalies.length === 0">
+                            <td colspan="10" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                                <p class="text-muted mb-0">Tidak ada anomali ditemukan</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </card-body>
+        
+        <!-- Pagination -->
+        <card-body class="d-flex justify-content-between align-items-center border-top" *ngIf="anomalies.length > 0">
+            <div class="text-muted small">
+                Menampilkan {{ (currentPage - 1) * pageSize + 1 }} - {{ getDisplayEnd() }} dari {{ totalItems }}
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" [class.disabled]="currentPage === 1">
+                        <button class="page-link" (click)="onPageChange(currentPage - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link">{{ currentPage }}</span>
+                    </li>
+                    <li class="page-item" [class.disabled]="anomalies.length < pageSize">
+                        <button class="page-link" (click)="onPageChange(currentPage + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </card-body>
+    </card>
 </div>

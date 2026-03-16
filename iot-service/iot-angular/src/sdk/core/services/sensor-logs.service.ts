@@ -19,6 +19,8 @@ import { sensorLogsControllerCreate } from '../fn/sensor-logs/sensor-logs-contro
 import { SensorLogsControllerCreate$Params } from '../fn/sensor-logs/sensor-logs-controller-create';
 import { sensorLogsControllerDeleteOldLogs } from '../fn/sensor-logs/sensor-logs-controller-delete-old-logs';
 import { SensorLogsControllerDeleteOldLogs$Params } from '../fn/sensor-logs/sensor-logs-controller-delete-old-logs';
+import { sensorLogsControllerExportCsv } from '../fn/sensor-logs/sensor-logs-controller-export-csv';
+import { SensorLogsControllerExportCsv$Params } from '../fn/sensor-logs/sensor-logs-controller-export-csv';
 import { sensorLogsControllerFindAll } from '../fn/sensor-logs/sensor-logs-controller-find-all';
 import { SensorLogsControllerFindAll$Params } from '../fn/sensor-logs/sensor-logs-controller-find-all';
 import { sensorLogsControllerFindOne } from '../fn/sensor-logs/sensor-logs-controller-find-one';
@@ -210,6 +212,39 @@ export class SensorLogsService extends BaseService {
   sensorLogsControllerGetStatistics(params?: SensorLogsControllerGetStatistics$Params, context?: HttpContext): Observable<SensorLogStatisticsDto> {
     return this.sensorLogsControllerGetStatistics$Response(params, context).pipe(
       map((r: StrictHttpResponse<SensorLogStatisticsDto>): SensorLogStatisticsDto => r.body)
+    );
+  }
+
+  /** Path part for operation `sensorLogsControllerExportCsv()` */
+  static readonly SensorLogsControllerExportCsvPath = '/api/sensor-logs/export';
+
+  /**
+   * Export sensor logs as CSV.
+   *
+   * Export aggregated telemetry data as CSV file. Supports filtering by channel, sensor, node, project, owner, and time range. Aggregation modes: 5m, 15m, 1h, 1d, 1M.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `sensorLogsControllerExportCsv()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  sensorLogsControllerExportCsv$Response(params?: SensorLogsControllerExportCsv$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return sensorLogsControllerExportCsv(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Export sensor logs as CSV.
+   *
+   * Export aggregated telemetry data as CSV file. Supports filtering by channel, sensor, node, project, owner, and time range. Aggregation modes: 5m, 15m, 1h, 1d, 1M.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `sensorLogsControllerExportCsv$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  sensorLogsControllerExportCsv(params?: SensorLogsControllerExportCsv$Params, context?: HttpContext): Observable<void> {
+    return this.sensorLogsControllerExportCsv$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

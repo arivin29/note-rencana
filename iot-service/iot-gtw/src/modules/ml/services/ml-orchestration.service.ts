@@ -1,10 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { OpenSearchService } from './opensearch.service';
 import { SyncService } from './sync.service';
 import { AnomalyNotifierService } from './anomaly-notifier.service';
 import { DetectorManagerService } from './detector-manager.service';
 import { AnomalyResult, TelemetryPoint } from '../interfaces/telemetry.interface';
+import { SensorChannel } from '../../../entities/existing';
+
+/**
+ * Cached threshold info for sensor channels
+ */
+interface ChannelThresholds {
+  minThreshold: number | null;
+  maxThreshold: number | null;
+  metricCode: string;
+  unit: string | null;
+}
 
 export interface AnomalyDetectionResult {
   deviceId: string;
@@ -38,6 +51,11 @@ interface RcfAnomalyResult {
 export class MlOrchestrationService {
   private readonly logger = new Logger(MlOrchestrationService.name);
 
+  // Cache for channel thresholds (channelId -> thresholds)
+  private channelThresholdsCache: Map<string, ChannelThresholds> = new Map();
+  private cacheLoadedAt: Date | null = null;
+  private readonly cacheMaxAgeMs = 5 * 60 * 1000; // 5 minutes
+
   // Deviation thresholds from config
   private readonly deviationMild: number;
   private readonly deviationModerate: number;
@@ -53,6 +71,8 @@ export class MlOrchestrationService {
     private readonly syncService: SyncService,
     private readonly anomalyNotifier: AnomalyNotifierService,
     private readonly detectorManager: DetectorManagerService,
+    @InjectRepository(SensorChannel)
+    private readonly sensorChannelRepo: Repository<SensorChannel>,
   ) {
     this.deviationMild = this.configService.get<number>('opensearch.deviationMild', 0.20);
     this.deviationModerate = this.configService.get<number>('opensearch.deviationModerate', 0.35);
@@ -61,6 +81,81 @@ export class MlOrchestrationService {
     this.mlSensitivity = this.configService.get<number>('opensearch.mlSensitivity', 0.8);
     this.minGradeAlert = this.configService.get<string>('opensearch.mlMinGradeAlert', 'severe');
     this.useRcf = this.configService.get<boolean>('opensearch.useRcf', true);
+  }
+
+  /**
+   * Load sensor channel thresholds into cache
+   */
+  private async loadChannelThresholds(): Promise<void> {
+    // Skip if cache is still fresh
+    if (this.cacheLoadedAt && Date.now() - this.cacheLoadedAt.getTime() < this.cacheMaxAgeMs) {
+      return;
+    }
+
+    try {
+      const channels = await this.sensorChannelRepo.find({
+        select: ['idSensorChannel', 'minThreshold', 'maxThreshold', 'metricCode', 'unit'],
+      });
+
+      this.channelThresholdsCache.clear();
+      for (const ch of channels) {
+        this.channelThresholdsCache.set(ch.idSensorChannel, {
+          minThreshold: ch.minThreshold,
+          maxThreshold: ch.maxThreshold,
+          metricCode: ch.metricCode,
+          unit: ch.unit,
+        });
+      }
+      this.cacheLoadedAt = new Date();
+      this.logger.debug(`Loaded ${channels.length} channel thresholds into cache`);
+    } catch (error) {
+      this.logger.warn(`Failed to load channel thresholds: ${error.message}`);
+    }
+  }
+
+  /**
+   * Calculate expected value based on channel thresholds
+   * - If actual < minThreshold: expected = minThreshold
+   * - If actual > maxThreshold: expected = maxThreshold
+   * - Otherwise: expected = midpoint of threshold range
+   */
+  private calculateExpectedValue(
+    channelId: string,
+    actualValue: number,
+  ): number {
+    const thresholds = this.channelThresholdsCache.get(channelId);
+    
+    if (!thresholds) {
+      return 0; // No thresholds configured
+    }
+
+    const { minThreshold, maxThreshold } = thresholds;
+
+    // If both thresholds are null, return 0
+    if (minThreshold == null && maxThreshold == null) {
+      return 0;
+    }
+
+    // If only minThreshold exists
+    if (maxThreshold == null && minThreshold != null) {
+      return actualValue < minThreshold ? minThreshold : actualValue;
+    }
+
+    // If only maxThreshold exists
+    if (minThreshold == null && maxThreshold != null) {
+      return actualValue > maxThreshold ? maxThreshold : actualValue;
+    }
+
+    // Both thresholds exist
+    if (actualValue < minThreshold) {
+      return minThreshold; // Expected to be at least minThreshold
+    }
+    if (actualValue > maxThreshold) {
+      return maxThreshold; // Expected to be at most maxThreshold
+    }
+
+    // Value is within range - return midpoint as baseline
+    return (minThreshold + maxThreshold) / 2;
   }
 
   /**
@@ -81,6 +176,9 @@ export class MlOrchestrationService {
     const allAnomalies: AnomalyResult[] = [];
 
     try {
+      // Load channel thresholds for expectedValue calculation
+      await this.loadChannelThresholds();
+
       // Get list of active detectors
       const detectors = await this.detectorManager.listDetectors();
       const runningDetectors = detectors.filter((d) => d.state === 'RUNNING');
@@ -221,6 +319,9 @@ export class MlOrchestrationService {
       const featureData = rcf.feature_data?.[0];
       const actualValue = featureData?.data ?? 0;
 
+      // Calculate expected value based on channel thresholds
+      const expectedValue = this.calculateExpectedValue(channelId, actualValue);
+
       // Convert RCF anomaly_grade (0-1) to severity string
       const severity = this.rcfGradeToSeverity(rcf.anomaly_grade);
 
@@ -238,7 +339,7 @@ export class MlOrchestrationService {
         rcfScore: rcf.anomaly_score,
         anomalyGrade: rcf.anomaly_grade,
         actualValue,
-        baselineValue: 0, // RCF doesn't provide baseline directly
+        baselineValue: expectedValue, // Calculated from min/max thresholds
         deviationPercent: rcf.anomaly_grade * 100,
         severity,
         detectedAt: new Date(),

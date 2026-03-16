@@ -10,6 +10,16 @@ export interface TemplateConfigDto {
   aggregation: 'raw' | '1m' | '10m' | '1h' | '1d';
 
   /**
+   * Fill gaps with empty rows
+   */
+  fillGaps?: boolean;
+
+  /**
+   * Metric codes to filter sensor channels
+   */
+  metricCodes?: Array<string>;
+
+  /**
    * Node IDs
    */
   nodeIds?: Array<string>;
@@ -25,7 +35,17 @@ export interface TemplateConfigDto {
   rangeType: '1d' | '1w' | '1M' | 'custom';
 
   /**
-   * Sensor Channel IDs
+   * Sensor Channel IDs (optional if metricCodes provided)
    */
-  sensorChannelIds: Array<string>;
+  sensorChannelIds?: Array<string>;
+
+  /**
+   * Skip zero values in aggregation
+   */
+  skipZero?: boolean;
+
+  /**
+   * Use threshold filter to exclude outliers
+   */
+  useThresholdFilter?: boolean;
 }

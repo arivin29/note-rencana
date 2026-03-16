@@ -39,3 +39,7 @@ export { MlAnomaliesService } from './services/ml-anomalies.service';
 export { MlForecastsService } from './services/ml-forecasts.service';
 export { MlDashboardService } from './services/ml-dashboard.service';
 export { ReportsService } from './services/reports.service';
+export { SearchService } from './services/search.service';
+export { ScadaDiagramsService } from './services/scada-diagrams.service';
+export { ScadaRuntimeService } from './services/scada-runtime.service';
+export { ScadaBindingOptionsService } from './services/scada-binding-options.service';

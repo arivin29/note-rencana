@@ -13,10 +13,6 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { anomaliesControllerAcknowledge } from '../fn/ml-anomalies/anomalies-controller-acknowledge';
 import { AnomaliesControllerAcknowledge$Params } from '../fn/ml-anomalies/anomalies-controller-acknowledge';
-import { anomaliesControllerCreate } from '../fn/ml-anomalies/anomalies-controller-create';
-import { AnomaliesControllerCreate$Params } from '../fn/ml-anomalies/anomalies-controller-create';
-import { anomaliesControllerCreateBulk } from '../fn/ml-anomalies/anomalies-controller-create-bulk';
-import { AnomaliesControllerCreateBulk$Params } from '../fn/ml-anomalies/anomalies-controller-create-bulk';
 import { anomaliesControllerFindAll } from '../fn/ml-anomalies/anomalies-controller-find-all';
 import { AnomaliesControllerFindAll$Params } from '../fn/ml-anomalies/anomalies-controller-find-all';
 import { anomaliesControllerFindBySensorChannel } from '../fn/ml-anomalies/anomalies-controller-find-by-sensor-channel';
@@ -96,39 +92,6 @@ export class MlAnomaliesService extends BaseService {
    */
   anomaliesControllerFindAll(params?: AnomaliesControllerFindAll$Params, context?: HttpContext): Observable<void> {
     return this.anomaliesControllerFindAll$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
-    );
-  }
-
-  /** Path part for operation `anomaliesControllerCreate()` */
-  static readonly AnomaliesControllerCreatePath = '/api/ml/anomalies';
-
-  /**
-   * Create a single anomaly from ML detection (used by iot-gtw).
-   *
-   *
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `anomaliesControllerCreate()` instead.
-   *
-   * This method sends `application/json` and handles request body of type `application/json`.
-   */
-  anomaliesControllerCreate$Response(params: AnomaliesControllerCreate$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return anomaliesControllerCreate(this.http, this.rootUrl, params, context);
-  }
-
-  /**
-   * Create a single anomaly from ML detection (used by iot-gtw).
-   *
-   *
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `anomaliesControllerCreate$Response()` instead.
-   *
-   * This method sends `application/json` and handles request body of type `application/json`.
-   */
-  anomaliesControllerCreate(params: AnomaliesControllerCreate$Params, context?: HttpContext): Observable<void> {
-    return this.anomaliesControllerCreate$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
@@ -229,39 +192,6 @@ export class MlAnomaliesService extends BaseService {
   anomaliesControllerAcknowledge(params: AnomaliesControllerAcknowledge$Params, context?: HttpContext): Observable<AnomalyResponseDto> {
     return this.anomaliesControllerAcknowledge$Response(params, context).pipe(
       map((r: StrictHttpResponse<AnomalyResponseDto>): AnomalyResponseDto => r.body)
-    );
-  }
-
-  /** Path part for operation `anomaliesControllerCreateBulk()` */
-  static readonly AnomaliesControllerCreateBulkPath = '/api/ml/anomalies/bulk';
-
-  /**
-   * Create multiple anomalies in bulk (used by iot-gtw).
-   *
-   *
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `anomaliesControllerCreateBulk()` instead.
-   *
-   * This method sends `application/json` and handles request body of type `application/json`.
-   */
-  anomaliesControllerCreateBulk$Response(params: AnomaliesControllerCreateBulk$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
-    return anomaliesControllerCreateBulk(this.http, this.rootUrl, params, context);
-  }
-
-  /**
-   * Create multiple anomalies in bulk (used by iot-gtw).
-   *
-   *
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `anomaliesControllerCreateBulk$Response()` instead.
-   *
-   * This method sends `application/json` and handles request body of type `application/json`.
-   */
-  anomaliesControllerCreateBulk(params: AnomaliesControllerCreateBulk$Params, context?: HttpContext): Observable<void> {
-    return this.anomaliesControllerCreateBulk$Response(params, context).pipe(
-      map((r: StrictHttpResponse<void>): void => r.body)
     );
   }
 

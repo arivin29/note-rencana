@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { MlService, ForecastResponse, ForecastQueryParams } from '../ml.service';
+import { MlForecastsService, SensorChannelsService } from 'src/sdk/core/services';
 
 import {
   ApexAxisChartSeries,
@@ -40,7 +40,7 @@ export class ForecastsViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
   isLoading = true;
-  forecasts: ForecastResponse[] = [];
+  forecasts: any[] = [];
   selectedSensorId = '';
   sensors: Array<{ id: string; label: string }> = [];
   
@@ -106,10 +106,13 @@ export class ForecastsViewComponent implements OnInit, OnDestroy {
     }
   };
   
-  constructor(private mlService: MlService) {}
+  constructor(
+    private forecastsService: MlForecastsService,
+    private sensorChannelsService: SensorChannelsService
+  ) {}
   
   ngOnInit(): void {
-    this.loadForecasts();
+    this.loadSensors();
   }
   
   ngOnDestroy(): void {
@@ -117,23 +120,52 @@ export class ForecastsViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
   
-  loadForecasts(): void {
+  loadSensors(): void {
     this.isLoading = true;
-    
-    const params: ForecastQueryParams = {
-      limit: 500
-    };
-    
-    if (this.selectedSensorId) {
-      params.idSensorChannel = this.selectedSensorId;
-    }
-    
-    this.mlService.getForecasts(params)
+    this.sensorChannelsService.sensorChannelsControllerFindAll$Response({ limit: 500 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
+        next: (response: any) => {
+          const data = response.body?.data || response.body || [];
+          this.sensors = data.map((ch: any) => ({
+            id: ch.idSensorChannel,
+            label: `${ch.metricCode || ch.idSensorChannel} (${ch.sensor?.label || 'N/A'})`
+          }));
+          
+          // Auto-select first sensor if none selected
+          if (this.sensors.length > 0 && !this.selectedSensorId) {
+            this.selectedSensorId = this.sensors[0].id;
+            this.loadForecasts();
+          } else {
+            this.isLoading = false;
+          }
+        },
+        error: (err) => {
+          console.error('Failed to load sensors:', err);
+          this.isLoading = false;
+        }
+      });
+  }
+  
+  loadForecasts(): void {
+    if (!this.selectedSensorId) {
+      this.isLoading = false;
+      return;
+    }
+    
+    this.isLoading = true;
+    
+    const params: any = {
+      limit: 500,
+      idSensorChannel: this.selectedSensorId
+    };
+    
+    this.forecastsService.forecastsControllerFindAll$Response(params)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          const data = response.body?.data || response.body || [];
           this.forecasts = data;
-          this.extractSensors(data);
           this.updateChart(data);
           this.isLoading = false;
         },
@@ -144,35 +176,13 @@ export class ForecastsViewComponent implements OnInit, OnDestroy {
       });
   }
   
-  extractSensors(data: ForecastResponse[]): void {
-    const sensorMap = new Map<string, string>();
-    data.forEach(f => {
-      if (!sensorMap.has(f.idSensorChannel)) {
-        sensorMap.set(f.idSensorChannel, f.sensorInfo?.metricCode || f.idSensorChannel);
-      }
-    });
-    
-    this.sensors = Array.from(sensorMap.entries()).map(([id, label]) => ({ id, label }));
-    
-    // Auto-select first sensor if none selected
-    if (!this.selectedSensorId && this.sensors.length > 0) {
-      this.selectedSensorId = this.sensors[0].id;
-      this.filterBySensor();
-    }
-  }
-  
-  filterBySensor(): void {
-    const filtered = this.forecasts.filter(f => f.idSensorChannel === this.selectedSensorId);
-    this.updateChart(filtered);
-  }
-  
   onSensorChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.selectedSensorId = select.value;
-    this.filterBySensor();
+    this.loadForecasts();
   }
   
-  updateChart(data: ForecastResponse[]): void {
+  updateChart(data: any[]): void {
     if (data.length === 0) {
       this.chartOptions.series = [];
       return;
@@ -200,8 +210,8 @@ export class ForecastsViewComponent implements OnInit, OnDestroy {
     }));
     
     // Get sensor info
-    const sensorInfo = sorted[0]?.sensorInfo;
-    const unit = sensorInfo?.unit || '';
+    const sensorChannel = sorted[0]?.sensorChannel;
+    const unit = sensorChannel?.unitMeasure || '';
     
     this.chartOptions = {
       ...this.chartOptions,
@@ -247,6 +257,6 @@ export class ForecastsViewComponent implements OnInit, OnDestroy {
   }
   
   refreshData(): void {
-    this.loadForecasts();
+    this.loadSensors();
   }
 }
