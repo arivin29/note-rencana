@@ -38,6 +38,7 @@ import { ClickhouseModule } from './modules/clickhouse';
 import { MlModule } from './modules/ml/ml.module';
 import { ReportModule } from './modules/report/report.module';
 import { SearchModule } from './modules/search/search.module';
+import { ScadaModule } from './modules/scada/scada.module';
 import clickhouseConfig from './config/clickhouse.config';
 import * as entities from './entities'; 
 
@@ -109,6 +110,7 @@ import * as entities from './entities';
     MlModule,
     ReportModule,
     SearchModule,
+    ScadaModule,
   ],
   controllers: [AppController],
   providers: [

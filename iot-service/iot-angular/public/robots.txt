@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://devetek-helios.web.app/sitemap.xml
+
+# Devetek Helios - IoT Platform
+# https://devetek-helios.web.app

@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+// Entities
+import { AnomalyResult, SensorChannel } from '../../entities/existing';
 
 // Services
 import { OpenSearchService } from './services/opensearch.service';
@@ -28,6 +32,7 @@ import opensearchConfig from '../../config/opensearch.config';
   imports: [
     ConfigModule.forFeature(opensearchConfig),
     ScheduleModule.forRoot(),
+    TypeOrmModule.forFeature([AnomalyResult, SensorChannel]),
   ],
   controllers: [
     DetectorController,

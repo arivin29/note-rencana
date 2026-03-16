@@ -11,6 +11,12 @@
         },
         {
             "path": "../desain_widget_dinamis"
+        },
+        {
+            "path": "../iot-scada"
+        },
+        {
+            "path": "../../../iot-device-esp32-v1/marketing"
         }
     ],
     "settings": {

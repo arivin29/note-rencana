@@ -1,43 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AnomalyResult } from '../interfaces/telemetry.interface';
-
-interface CreateAnomalyPayload {
-  // Either idSensorChannel OR (deviceId + sensorKey) must be provided
-  idSensorChannel?: string;
-  deviceId?: string;
-  sensorKey?: string;
-  metricCode?: string;
-  detectedAt: string;
-  actualValue: number;
-  expectedValue?: number;
-  anomalyScore: number;
-  anomalyGrade: string;
-  anomalyType: string;
-  detectorId?: string;
-  detectorName?: string;
-  opensearchResult?: Record<string, any>;
-  note?: string;
-}
-
-interface NotificationResult {
-  success: boolean;
-  idAnomalyResult?: string;
-  message?: string;
-  error?: string;
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AnomalyResult as AnomalyResultInterface } from '../interfaces/telemetry.interface';
+import { AnomalyResult } from '../../../entities/existing/anomaly-result.entity';
 
 @Injectable()
 export class AnomalyNotifierService {
   private readonly logger = new Logger(AnomalyNotifierService.name);
-  private readonly backendUrl: string;
-  private readonly backendApiKey: string;
   private readonly enabled: boolean;
   private readonly minGradeAlert: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.backendUrl = this.configService.get<string>('opensearch.backendUrl', 'http://localhost:3000');
-    this.backendApiKey = this.configService.get<string>('opensearch.backendApiKey', '');
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(AnomalyResult)
+    private readonly anomalyRepository: Repository<AnomalyResult>,
+  ) {
     this.enabled = this.configService.get<boolean>('opensearch.notificationEnabled', true);
     this.minGradeAlert = this.configService.get<string>('opensearch.mlMinGradeAlert', 'severe');
   }
@@ -59,84 +37,54 @@ export class AnomalyNotifierService {
   }
 
   /**
-   * Map internal severity string to grade string for backend
+   * Determine anomaly type based on deviation direction
    */
-  private mapSeverityToGrade(severity: string): string {
-    return severity; // Already using same naming convention
-  }
+  private determineAnomalyType(anomaly: AnomalyResultInterface): string {
+    const diff = anomaly.actualValue - anomaly.baselineValue;
+    const percentDiff = anomaly.deviationPercent;
 
-  /**
-   * Send a single anomaly to the backend
-   */
-  async notifyAnomaly(anomaly: AnomalyResult): Promise<NotificationResult> {
-    if (!this.enabled) {
-      this.logger.debug('Notifications disabled, skipping');
-      return { success: false, message: 'Notifications disabled' };
-    }
-
-    if (!this.meetsMinSeverity(anomaly.severity)) {
-      this.logger.debug(`Anomaly grade ${anomaly.severity} below threshold ${this.minGradeAlert}`);
-      return { success: false, message: 'Below severity threshold' };
-    }
-
-    const payload: CreateAnomalyPayload = {
-      deviceId: anomaly.deviceId,
-      sensorKey: anomaly.sensorKey,
-      detectedAt: anomaly.detectedAt.toISOString(),
-      actualValue: anomaly.actualValue,
-      expectedValue: anomaly.baselineValue,
-      anomalyScore: anomaly.rcfScore,
-      anomalyGrade: this.mapSeverityToGrade(anomaly.severity),
-      anomalyType: this.determineAnomalyType(anomaly),
-      note: `Deviation: ${anomaly.deviationPercent.toFixed(1)}%`,
-    };
-
-    try {
-      const url = `${this.backendUrl}/api/ml/anomalies`;
-      this.logger.debug(`Sending anomaly to backend: ${url}`);
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (this.backendApiKey) {
-        headers['X-API-Key'] = this.backendApiKey;
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      this.logger.log(
-        `Anomaly reported to backend: ${anomaly.deviceId}/${anomaly.sensorKey} (${anomaly.severity}) -> ${result.idAnomalyResult}`,
-      );
-
-      return {
-        success: true,
-        idAnomalyResult: result.idAnomalyResult,
-        message: result.message,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to notify backend: ${error.message}`);
-      return {
-        success: false,
-        error: error.message,
-      };
+    if (percentDiff > 50) {
+      return diff > 0 ? 'spike' : 'drop';
+    } else if (percentDiff > 20) {
+      return diff > 0 ? 'high' : 'low';
+    } else {
+      return 'drift';
     }
   }
 
   /**
-   * Send multiple anomalies in bulk
+   * Check for duplicate anomaly within time window
    */
-  async notifyAnomaliesBulk(anomalies: AnomalyResult[]): Promise<{
+  private async checkDuplicate(
+    idSensorChannel: string,
+    detectedAt: Date,
+    anomalyType: string,
+    windowMinutes: number = 10,
+  ): Promise<boolean> {
+    const existing = await this.anomalyRepository.findOne({
+      where: {
+        idSensorChannel,
+        anomalyType,
+      },
+    });
+
+    if (existing) {
+      const existingTime = new Date(existing.detectedAt).getTime();
+      const targetTime = detectedAt.getTime();
+      const diffMinutes = Math.abs(existingTime - targetTime) / (60 * 1000);
+      
+      if (diffMinutes <= windowMinutes) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Save anomalies directly to PostgreSQL (no HTTP call needed)
+   */
+  async notifyAnomaliesBulk(anomalies: AnomalyResultInterface[]): Promise<{
     total: number;
     sent: number;
     skipped: number;
@@ -158,61 +106,66 @@ export class AnomalyNotifierService {
     }
 
     // Filter anomalies meeting severity threshold
-    const toNotify = anomalies.filter((a) => this.meetsMinSeverity(a.severity));
-    result.skipped = anomalies.length - toNotify.length;
+    const toSave = anomalies.filter((a) => this.meetsMinSeverity(a.severity));
+    result.skipped = anomalies.length - toSave.length;
 
-    if (toNotify.length === 0) {
+    if (toSave.length === 0) {
       this.logger.debug('No anomalies meet severity threshold');
       return result;
     }
 
-    // Send bulk if available, otherwise send individually
-    const payloads: CreateAnomalyPayload[] = toNotify.map((anomaly) => ({
-      // Use idSensorChannel if available (from RCF detection)
-      idSensorChannel: anomaly.idSensorChannel,
-      // Fallback to deviceId/sensorKey (from Z-score detection)
-      deviceId: anomaly.deviceId,
-      sensorKey: anomaly.sensorKey,
-      detectedAt: anomaly.detectedAt.toISOString(),
-      actualValue: anomaly.actualValue,
-      expectedValue: anomaly.baselineValue,
-      anomalyScore: anomaly.rcfScore,
-      anomalyGrade: this.mapSeverityToGrade(anomaly.severity),
-      anomalyType: this.determineAnomalyType(anomaly),
-      detectorId: anomaly.detectorId,
-      detectorName: anomaly.detectorName,
-      note: `RCF Grade: ${anomaly.anomalyGrade?.toFixed(2) || 0}, Deviation: ${anomaly.deviationPercent.toFixed(1)}%`,
-    }));
+    const entities: Partial<AnomalyResult>[] = [];
+
+    for (const anomaly of toSave) {
+      // Must have idSensorChannel for RCF detection
+      if (!anomaly.idSensorChannel) {
+        this.logger.warn(`Skipping anomaly: No idSensorChannel provided`);
+        result.skipped++;
+        continue;
+      }
+
+      const anomalyType = this.determineAnomalyType(anomaly);
+
+      // Check for duplicate
+      const isDuplicate = await this.checkDuplicate(
+        anomaly.idSensorChannel,
+        anomaly.detectedAt,
+        anomalyType,
+        10,
+      );
+
+      if (isDuplicate) {
+        this.logger.debug(`Skipping duplicate anomaly for channel ${anomaly.idSensorChannel}`);
+        result.skipped++;
+        continue;
+      }
+
+      entities.push({
+        idSensorChannel: anomaly.idSensorChannel,
+        detectedAt: anomaly.detectedAt,
+        actualValue: anomaly.actualValue,
+        expectedValue: anomaly.baselineValue,
+        anomalyScore: anomaly.rcfScore,
+        anomalyGrade: anomaly.severity,
+        anomalyType,
+        detectorId: anomaly.detectorId,
+        detectorName: anomaly.detectorName,
+        note: `RCF Grade: ${anomaly.anomalyGrade?.toFixed(2) || 0}, Deviation: ${anomaly.deviationPercent.toFixed(1)}%`,
+        isAcknowledged: false,
+      });
+    }
+
+    if (entities.length === 0) {
+      return result;
+    }
 
     try {
-      const url = `${this.backendUrl}/api/ml/anomalies/bulk`;
-      this.logger.debug(`Sending ${payloads.length} anomalies to backend: ${url}`);
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (this.backendApiKey) {
-        headers['X-API-Key'] = this.backendApiKey;
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ anomalies: payloads }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const responseData = await response.json();
-      result.sent = responseData.created || payloads.length;
-      this.logger.log(`Bulk anomaly report: ${result.sent} sent, ${result.skipped} skipped`);
+      const saved = await this.anomalyRepository.save(entities);
+      result.sent = saved.length;
+      this.logger.log(`Direct PostgreSQL insert: ${result.sent} anomalies saved, ${result.skipped} skipped`);
     } catch (error) {
-      this.logger.error(`Bulk notification failed: ${error.message}`);
-      result.failed = toNotify.length;
+      this.logger.error(`Failed to save anomalies to PostgreSQL: ${error.message}`);
+      result.failed = entities.length;
       result.errors.push(error.message);
     }
 
@@ -220,26 +173,10 @@ export class AnomalyNotifierService {
   }
 
   /**
-   * Determine anomaly type based on deviation direction
-   */
-  private determineAnomalyType(anomaly: AnomalyResult): string {
-    const diff = anomaly.actualValue - anomaly.baselineValue;
-    const percentDiff = anomaly.deviationPercent;
-
-    if (percentDiff > 50) {
-      return diff > 0 ? 'spike' : 'drop';
-    } else if (percentDiff > 20) {
-      return diff > 0 ? 'high' : 'low';
-    } else {
-      return 'drift';
-    }
-  }
-
-  /**
    * Check if notification service is ready
    */
   isReady(): boolean {
-    return this.enabled && !!this.backendUrl;
+    return this.enabled;
   }
 
   /**
@@ -247,13 +184,13 @@ export class AnomalyNotifierService {
    */
   getStatus(): {
     enabled: boolean;
-    backendUrl: string;
     minGradeAlert: string;
+    mode: string;
   } {
     return {
       enabled: this.enabled,
-      backendUrl: this.backendUrl,
       minGradeAlert: this.minGradeAlert,
+      mode: 'direct-postgresql',
     };
   }
 }

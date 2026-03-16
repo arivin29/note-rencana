@@ -1,89 +1,1378 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEVETEK HELIOS — Platform IoT untuk Infrastruktur Kritis</title>
+  <meta name="description" content="Platform monitoring IoT end-to-end untuk industri air, energi, dan infrastruktur kritis. Monitor, analisa, dan kendalikan dari satu dashboard.">
+  <meta name="keywords" content="IoT, platform, monitoring, PDAM, sensor, dashboard, WebGIS, alert, Indonesia">
+  <meta name="author" content="PT. COMON CIPTA INOVASI">
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.6.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.6.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+  <!-- Open Graph -->
+  <meta property="og:title" content="DEVETEK HELIOS — Platform IoT untuk Infrastruktur Kritis">
+  <meta property="og:description" content="Platform monitoring IoT end-to-end untuk industri air, energi, dan infrastruktur kritis.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://devetek-helios.web.app">
+  <meta property="og:image" content="img/screenshots/cover.jpg">
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      } 
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+  <!-- Favicon placeholder -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%23249d79'/><text x='50' y='68' text-anchor='middle' font-size='60' font-weight='800' fill='white' font-family='system-ui'>D</text></svg>">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    /* ============================================================
+       INDEX PAGE ENHANCEMENTS (ix- prefix)
+       ============================================================ */
+
+    /* --- Hero Enhancement --- */
+    .ix-hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 0 80px;
+      overflow: hidden;
+    }
+    .ix-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(10,14,23,0.95), rgba(10,14,23,0.8)),
+        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(36,157,121,0.03) 50px, rgba(36,157,121,0.03) 51px),
+        repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(36,157,121,0.03) 50px, rgba(36,157,121,0.03) 51px);
+      z-index: 0;
+    }
+    .ix-hero::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(36,157,121,0.12) 0%, transparent 60%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .ix-hero .container {
+      position: relative;
+      z-index: 1;
+    }
+    .ix-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px 6px 8px;
+      background: rgba(36,157,121,0.1);
+      border: 1px solid rgba(36,157,121,0.2);
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--color-primary-light);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-lg);
+    }
+    .ix-hero-badge::before {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--color-primary);
+      border-radius: 50%;
+      animation: ixPulse 2s ease-in-out infinite;
+    }
+    @keyframes ixPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    .ix-hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: var(--space-lg);
+    }
+    .ix-hero-title span {
+      background: linear-gradient(135deg, var(--color-primary-light), var(--color-accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .ix-hero-sub {
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+      max-width: 600px;
+      margin-bottom: var(--space-xl);
+      line-height: 1.7;
+    }
+    .ix-hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      margin-bottom: var(--space-2xl);
+    }
+    .ix-hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xl);
+      padding-top: var(--space-xl);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .ix-hero-stat {
+      text-align: left;
+    }
+    .ix-hero-stat-num {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--color-primary-light);
+    }
+    .ix-hero-stat-label {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+
+    /* --- Icon Circle Component --- */
+    .ix-icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: var(--space-md);
+    }
+    .ix-icon svg { width: 26px; height: 26px; }
+    .ix-icon--primary { background: rgba(36,157,121,0.12); }
+    .ix-icon--primary svg { color: #2ec499; }
+    .ix-icon--accent { background: rgba(2,113,255,0.12); }
+    .ix-icon--accent svg { color: #60a5fa; }
+    .ix-icon--purple { background: rgba(138,92,246,0.12); }
+    .ix-icon--purple svg { color: #a78bfa; }
+    .ix-icon--warning { background: rgba(255,183,77,0.12); }
+    .ix-icon--warning svg { color: #ffb74d; }
+    .ix-icon--danger { background: rgba(255,107,107,0.12); }
+    .ix-icon--danger svg { color: #ff6b6b; }
+    .ix-icon--sm {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      margin-bottom: var(--space-sm);
+    }
+    .ix-icon--sm svg { width: 20px; height: 20px; }
+
+    /* --- Pillar Cards Enhanced --- */
+    .ix-pillar {
+      padding: var(--space-xl);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xl);
+      transition: all 0.3s ease;
+    }
+    .ix-pillar:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.04);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+    }
+    .ix-pillar h3 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+    .ix-pillar p {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+    }
+
+    /* --- Feature Card Enhanced --- */
+    .ix-feature {
+      display: block;
+      padding: var(--space-xl);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xl);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .ix-feature:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(36,157,121,0.2);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+    }
+    .ix-feature h3 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+    .ix-feature p {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: var(--space-md);
+    }
+    .ix-feature-link {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-primary-light);
+    }
+
+    /* --- Solution Card --- */
+    .ix-solution {
+      display: block;
+      padding: var(--space-xl);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xl);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .ix-solution:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.04);
+    }
+    .ix-solution--active {
+      border-color: var(--color-primary);
+    }
+    .ix-solution--disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .ix-solution h3 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+    .ix-solution p {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: var(--space-md);
+    }
+    .ix-solution-link {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-primary-light);
+    }
+    .ix-solution--disabled .ix-solution-link {
+      color: var(--color-text-muted);
+    }
+
+    /* --- Steps (Cara Kerja) --- */
+    .ix-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-lg);
+    }
+    .ix-step {
+      position: relative;
+      padding: var(--space-xl);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xl);
+      text-align: center;
+    }
+    .ix-step::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -18px;
+      width: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(36,157,121,0.4), rgba(2,113,255,0.4));
+    }
+    .ix-step:last-child::after { display: none; }
+    .ix-step-num {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px; height: 24px;
+      background: var(--color-primary);
+      border-radius: 50%;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ix-step h4 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin: var(--space-sm) 0;
+    }
+    .ix-step p {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+    }
+
+    /* --- Protocol Cards (Integrasi) --- */
+    .ix-protocol {
+      padding: var(--space-xl);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xl);
+      text-align: center;
+    }
+    .ix-protocol h3 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+    .ix-protocol p {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: var(--space-md);
+    }
+
+    /* --- Architecture Topology (matching pdam.html) --- */
+    .arch-topology {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0; max-width: 900px; margin: 0 auto;
+    }
+    /* Layer containers */
+    .arch-layer {
+      width: 100%;
+      border-radius: var(--radius-xl);
+      padding: 28px 32px 24px;
+      position: relative;
+    }
+    .arch-layer-label { margin-bottom: 16px; text-align: center; }
+    .arch-layer-tag {
+      display: inline-block;
+      padding: 4px 16px; border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .arch-tag-field  { background: rgba(2,113,255,0.15); color: #60a5fa; }
+    .arch-tag-cloud  { background: rgba(138,92,246,0.2); color: #b794f6; }
+    .arch-tag-output { background: rgba(255,107,107,0.15); color: #ff8a8a; }
+    .arch-layer-field  { background: rgba(2,113,255,0.04); border: 1px solid rgba(2,113,255,0.12); }
+    .arch-layer-cloud  { background: rgba(138,92,246,0.06); border: 1px solid rgba(138,92,246,0.15); }
+    .arch-layer-output { background: rgba(255,107,107,0.04); border: 1px solid rgba(255,107,107,0.12); }
+    .arch-layer-content {
+      display: flex; align-items: stretch; justify-content: center;
+      gap: 16px; flex-wrap: wrap;
+    }
+    /* Field device boxes */
+    .arch-device {
+      text-align: center; padding: 16px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      min-width: 110px; flex: 1;
+      transition: all 0.3s ease;
+    }
+    .arch-device:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(2,113,255,0.3);
+      transform: translateY(-2px);
+    }
+    .arch-device-icon {
+      width: 36px; height: 36px; margin: 0 auto 8px;
+      border-radius: 10px;
+      background: rgba(2,113,255,0.1);
+      border: 1px solid rgba(2,113,255,0.18);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arch-device-icon svg { width: 18px; height: 18px; color: #60a5fa; }
+    .arch-device-name { font-size: 0.8rem; font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
+    .arch-device-desc { font-size: 0.68rem; color: var(--color-text-muted); }
+    /* Connectors with animated dot */
+    .arch-connector {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 0; position: relative;
+    }
+    .arch-connector-line {
+      width: 2px; height: 36px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0.2), rgba(255,255,255,0.08));
+      position: relative; overflow: visible;
+    }
+    .arch-connector-line::before {
+      content: ''; position: absolute;
+      width: 8px; height: 8px; border-radius: 50%;
+      left: 50%; transform: translateX(-50%);
+      background: #60a5fa;
+      box-shadow: 0 0 6px rgba(96,165,250,0.6), 0 0 12px rgba(96,165,250,0.3);
+      animation: archDotFlow 1.8s ease-in-out infinite;
+    }
+    .arch-connector-line::after {
+      content: ''; position: absolute;
+      bottom: -4px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid rgba(255,255,255,0.2);
+    }
+    .arch-connector-line--purple::before {
+      background: #b794f6;
+      box-shadow: 0 0 6px rgba(138,92,246,0.6), 0 0 12px rgba(138,92,246,0.3);
+    }
+    .arch-connector-line--purple {
+      background: linear-gradient(to bottom, rgba(138,92,246,0.1), rgba(138,92,246,0.3), rgba(138,92,246,0.1));
+    }
+    .arch-connector-line--purple::after {
+      border-top-color: rgba(138,92,246,0.3);
+    }
+    @keyframes archDotFlow {
+      0%   { top: -8px; opacity: 0; }
+      20%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { top: calc(100% + 8px); opacity: 0; }
+    }
+    .arch-connector-labels {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin-top: 10px;
+    }
+    .arch-protocol {
+      padding: 3px 12px; border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 0.65rem; font-weight: 500;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--color-text-muted);
+    }
+    .arch-protocol--accent {
+      background: rgba(2,113,255,0.1);
+      border-color: rgba(2,113,255,0.2);
+      color: #60a5fa;
+    }
+    .arch-protocol--warn {
+      background: rgba(255,230,77,0.12);
+      border-color: rgba(255,230,77,0.25);
+      color: #FFE66D;
+    }
+    /* Cloud pipeline steps */
+    .arch-pipeline {
+      display: flex; align-items: flex-start; justify-content: center;
+      gap: 8px; flex-wrap: wrap;
+    }
+    .arch-step {
+      text-align: center; padding: 16px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(138,92,246,0.15);
+      border-radius: var(--radius-md);
+      min-width: 100px; flex: 1; position: relative;
+      transition: all 0.3s ease;
+    }
+    .arch-step:hover {
+      background: rgba(138,92,246,0.08);
+      border-color: rgba(138,92,246,0.3);
+      transform: translateY(-2px);
+    }
+    .arch-step-num {
+      position: absolute; top: -8px; right: -8px;
+      width: 22px; height: 22px;
+      background: linear-gradient(135deg, #8A5CF6, #6C5CE7);
+      border-radius: 50%; color: white;
+      font-size: 0.65rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arch-step-icon {
+      width: 32px; height: 32px; margin: 0 auto 6px;
+      border-radius: 8px;
+      background: rgba(138,92,246,0.1);
+      border: 1px solid rgba(138,92,246,0.15);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arch-step-icon svg { width: 16px; height: 16px; color: #b794f6; }
+    .arch-step-name { font-size: 0.78rem; font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
+    .arch-step-desc { font-size: 0.68rem; color: var(--color-text-muted); }
+    .arch-arrow {
+      color: rgba(138,92,246,0.4); padding-top: 20px;
+      display: flex; align-items: center; position: relative;
+    }
+    .arch-arrow svg { width: 18px; height: 18px; color: rgba(138,92,246,0.5); }
+    .arch-arrow::before {
+      content: ''; position: absolute;
+      top: 50%; left: -5px; transform: translateY(-50%);
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #8A5CF6;
+      box-shadow: 0 0 6px rgba(138,92,246,0.6), 0 0 12px rgba(138,92,246,0.3);
+      animation: archDotH 1.5s ease-in-out infinite;
+    }
+    @keyframes archDotH {
+      0%   { left: -5px; opacity: 0; }
+      20%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { left: calc(100% + 5px); opacity: 0; }
+    }
+    .arch-pipeline .arch-arrow:nth-child(2)::before { animation-delay: 0s; }
+    .arch-pipeline .arch-arrow:nth-child(4)::before { animation-delay: 0.3s; }
+    .arch-pipeline .arch-arrow:nth-child(6)::before { animation-delay: 0.6s; }
+    .arch-pipeline .arch-arrow:nth-child(8)::before { animation-delay: 0.9s; }
+    .arch-cloud-partner {
+      text-align: center; margin-top: 16px;
+      font-size: 0.78rem; color: var(--color-text-muted);
+      padding: 6px 16px; border-radius: var(--radius-full);
+      background: rgba(138,92,246,0.08);
+      display: inline-block;
+    }
+    .arch-cloud-partner strong { color: #b794f6; }
+    .arch-layer-cloud .arch-layer-content { flex-direction: column; align-items: center; }
+    /* Output boxes */
+    .arch-output {
+      text-align: center; padding: 16px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,107,107,0.12);
+      border-radius: var(--radius-md);
+      min-width: 100px; flex: 1;
+      transition: all 0.3s ease;
+    }
+    .arch-output:hover {
+      background: rgba(255,107,107,0.06);
+      border-color: rgba(255,107,107,0.25);
+      transform: translateY(-2px);
+    }
+    .arch-output-icon {
+      width: 36px; height: 36px; margin: 0 auto 8px;
+      border-radius: 10px;
+      background: rgba(255,107,107,0.1);
+      border: 1px solid rgba(255,107,107,0.18);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arch-output-icon svg { width: 18px; height: 18px; color: #ff8a8a; }
+    .arch-output-name { font-size: 0.78rem; font-weight: 600; color: var(--color-text); line-height: 1.3; }
+
+    /* --- CTA Section --- */
+    .ix-cta {
+      position: relative;
+      padding: 80px 0;
+      text-align: center;
+      overflow: hidden;
+    }
+    .ix-cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(36,157,121,0.08), rgba(2,113,255,0.08));
+    }
+    .ix-cta .container { position: relative; z-index: 1; }
+    .ix-cta h2 {
+      font-family: var(--font-heading);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      color: var(--color-text);
+      margin-bottom: var(--space-md);
+    }
+    .ix-cta p {
+      font-size: 1rem;
+      color: var(--color-text-muted);
+      max-width: 560px;
+      margin: 0 auto var(--space-xl);
+    }
+
+    /* --- Animation helper --- */
+    .ix-anim {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .ix-anim.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 768px) {
+      .ix-steps {
+        grid-template-columns: 1fr;
+        gap: var(--space-xl);
+      }
+      .ix-step::after { display: none; }
+      .ix-hero-stats { gap: var(--space-lg); }
+      /* Architecture Topology responsive */
+      .arch-topology { padding: 0 4px; }
+      .arch-layer { padding: 20px 16px; }
+      .arch-layer-content { gap: 10px; }
+      .arch-device { min-width: 80px; padding: 12px 10px; }
+      .arch-device-icon { width: 30px; height: 30px; }
+      .arch-device-icon svg { width: 14px; height: 14px; }
+      .arch-device-name { font-size: 0.72rem; }
+      .arch-device-desc { font-size: 0.62rem; }
+      .arch-connector-labels { gap: 5px; }
+      .arch-protocol { font-size: 0.58rem; padding: 2px 8px; }
+      .arch-pipeline { gap: 6px; }
+      .arch-step { min-width: 85px; padding: 12px 8px; }
+      .arch-step-icon { width: 28px; height: 28px; }
+      .arch-step-icon svg { width: 14px; height: 14px; }
+      .arch-step-name { font-size: 0.7rem; }
+      .arch-step-desc { font-size: 0.6rem; }
+      .arch-step-num { width: 18px; height: 18px; font-size: 0.58rem; top: -6px; right: -6px; }
+      .arch-arrow { padding-top: 14px; }
+      .arch-arrow svg { width: 14px; height: 14px; }
+      .arch-arrow::before { width: 6px; height: 6px; }
+      .arch-output { min-width: 85px; padding: 12px 10px; }
+      .arch-output-icon { width: 30px; height: 30px; }
+      .arch-output-icon svg { width: 14px; height: 14px; }
+      .arch-output-name { font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVBAR
+       ============================================================ -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar__brand">
+        <span class="navbar__logo">D</span>
+        DEVETEK HELIOS
+      </a>
+
+      <ul class="navbar__links">
+        <li><a href="features.html">Fitur</a></li>
+        <li><a href="#solusi">Solusi</a></li>
+        <li><a href="#integrasi">Integrasi</a></li>
+        <li><a href="screenshots.html">Galeri</a></li>
+        <li><a href="contact.html">Kontak</a></li>
+      </ul>
+
+      <div class="navbar__actions">
+        <a href="contact.html" class="btn btn--ghost" style="font-size:0.8rem; padding:8px 18px;">Coba Demo</a>
+        <a href="contact.html" class="btn btn--primary" style="font-size:0.8rem; padding:8px 18px;">Minta Demo →</a>
+        <button class="navbar__hamburger" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+  </nav>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+  <!-- Mobile Menu -->
+  <div class="navbar__mobile">
+    <a href="index.html">Beranda</a>
+    <a href="features.html">Fitur</a>
+    <a href="#solusi">Solusi</a>
+    <a href="#integrasi">Integrasi</a>
+    <a href="screenshots.html">Galeri</a>
+    <a href="contact.html">Kontak</a>
+    <a href="contact.html" class="btn btn--ghost">Coba Demo</a>
+    <a href="contact.html" class="btn btn--primary">Minta Demo →</a>
+  </div>
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
-        }
-      });
-    </script>
-  </body>
+  <!-- ============================================================
+       HERO SECTION
+       ============================================================ -->
+  <section class="ix-hero" id="hero">
+    <div class="container">
+      <div class="hero__content ix-anim" data-delay="0">
+        <span class="ix-hero-badge">PLATFORM IOT</span>
+        <h1 class="ix-hero-title">Monitor. Analisa.<br><span>Kendalikan.</span></h1>
+        <p class="ix-hero-sub">
+          Platform monitoring IoT end-to-end untuk infrastruktur kritis. 
+          Koneksikan device apapun — ESP32, Arduino, PLC, Raspberry Pi, atau 
+          perangkat lain — via HTTP, TCP, atau MQTT. Tidak terkunci vendor tertentu.
+        </p>
+        <div class="ix-hero-actions">
+          <a href="contact.html" class="btn btn--primary btn--lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:6px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>Minta Demo
+          </a>
+          <a href="contact.html#demo" class="btn btn--ghost btn--lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:6px;"><polygon points="6 3 20 12 6 21 6 3"/></svg>Coba Demo
+          </a>
+          <a href="https://devetek-helios.web.app/iot/document" class="btn btn--text btn--lg" target="_blank">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:6px;"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>Dokumentasi
+          </a>
+        </div>
+        <div class="ix-hero-stats">
+          <div class="ix-hero-stat ix-anim" data-delay="1">
+            <div class="ix-hero-stat-num">30+</div>
+            <div class="ix-hero-stat-label">Fitur</div>
+          </div>
+          <div class="ix-hero-stat ix-anim" data-delay="2">
+            <div class="ix-hero-stat-num">6+</div>
+            <div class="ix-hero-stat-label">Tipe Widget</div>
+          </div>
+          <div class="ix-hero-stat ix-anim" data-delay="3">
+            <div class="ix-hero-stat-num">34</div>
+            <div class="ix-hero-stat-label">Entitas</div>
+          </div>
+          <div class="ix-hero-stat ix-anim" data-delay="4">
+            <div class="ix-hero-stat-num">3</div>
+            <div class="ix-hero-stat-label">Arsitektur Layanan</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero__visual ix-anim" data-delay="2">
+        <img src="img/hero/dashboard.jpg" alt="Devetek Helios Dashboard" class="hero__mockup" loading="eager">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       DIPERCAYA OLEH
+       ============================================================ -->
+  <section class="trusted ix-anim" data-delay="0">
+    <div class="container">
+      <p class="trusted__label">Dipercaya oleh organisasi terkemuka</p>
+      <div class="trusted__logos">
+        <span class="trusted__placeholder">PT Bakti Air Indonesia</span>
+        <span class="trusted__placeholder">PDAM</span>
+        <span class="trusted__placeholder">Klien Industri</span>
+        <span class="trusted__placeholder">Logo Anda di sini</span>
+        <span class="trusted__placeholder">Logo Anda di sini</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       IKHTISAR PLATFORM — TIGA PILAR
+       ============================================================ -->
+  <section class="section pillars" id="pilar">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill">TIGA PILAR</span>
+        <h2>Platform Monitoring yang Terintegrasi</h2>
+        <p>Dari data mentah sensor hingga keputusan operasional — semua dalam satu ekosistem.</p>
+      </div>
+      <div class="grid grid--3">
+        <div class="ix-pillar ix-anim" data-delay="1">
+          <div class="ix-icon ix-icon--primary"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M7.5 4.2c-.3-.5-.9-.6-1.4-.4C3.3 5.3 1.5 8.4 1.5 12s1.8 6.7 4.6 8.2c.5.2 1.1.1 1.4-.4"/><path d="M16.5 4.2c.3-.5.9-.6 1.4-.4 2.8 1.5 4.6 4.6 4.6 8.2s-1.8 6.7-4.6 8.2c-.5.2-1.1.1-1.4-.4"/><path d="M8.9 7.1c-.2-.4-.7-.5-1.1-.3a7 7 0 0 0 0 10.4c.4.2.9.1 1.1-.3"/><path d="M15.1 7.1c.2-.4.7-.5 1.1-.3a7 7 0 0 1 0 10.4c-.4.2-.9.1-1.1-.3"/></svg></div>
+          <h3>Pantau Segalanya</h3>
+          <p>Data real-time dari sensor, node & gateway dalam satu dashboard. Tidak ada area gelap dalam operasi Anda.</p>
+        </div>
+        <div class="ix-pillar ix-anim" data-delay="2">
+          <div class="ix-icon ix-icon--purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></div>
+          <h3>Analisa Secara Cerdas</h3>
+          <p>Deteksi anomali berbasis ML & prediksi untuk wawasan prediktif. Tahu sebelum masalah terjadi.</p>
+        </div>
+        <div class="ix-pillar ix-anim" data-delay="3">
+          <div class="ix-icon ix-icon--warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></div>
+          <h3>Bertindak Seketika</h3>
+          <p>Alert otomatis, perintah device, dan pembuatan laporan untuk respons cepat. Kendalikan dari mana saja.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FITUR UNGGULAN
+       ============================================================ -->
+  <section class="section section--alt features-grid" id="fitur">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill badge-pill--accent">FITUR PLATFORM</span>
+        <h2>Fitur Unggulan</h2>
+        <p>Toolkit lengkap untuk monitoring, analisis, dan pengendalian infrastruktur IoT Anda.</p>
+      </div>
+      <div class="grid grid--3">
+        <a href="features.html#dashboard" class="ix-feature ix-anim" data-delay="1">
+          <div class="ix-icon ix-icon--sm ix-icon--primary"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
+          <h3>Dashboard & Widget Builder</h3>
+          <p>Bangun dashboard sesuai kebutuhan operasi. 6+ tipe widget, SQL editor, dual data source (PostgreSQL + ClickHouse).</p>
+          <span class="ix-feature-link">Selengkapnya</span>
+        </a>
+        <a href="features.html#webgis" class="ix-feature ix-anim" data-delay="2">
+          <div class="ix-icon ix-icon--sm ix-icon--accent"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg></div>
+          <h3>WebGIS & Pemetaan Spasial</h3>
+          <p>Aset Anda di peta, secara real-time. Upload SHP, GeoJSON, KML. DMA boundary & live sensor data di peta.</p>
+          <span class="ix-feature-link">Selengkapnya</span>
+        </a>
+        <a href="features.html#alerts" class="ix-feature ix-anim" data-delay="3">
+          <div class="ix-icon ix-icon--sm ix-icon--danger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+          <h3>Smart Alert & Monitoring</h3>
+          <p>Configurable threshold rules, severity levels, real-time detection, dan device command trigger otomatis.</p>
+          <span class="ix-feature-link">Selengkapnya</span>
+        </a>
+        <a href="features.html#reports" class="ix-feature ix-anim" data-delay="4">
+          <div class="ix-icon ix-icon--sm ix-icon--primary"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <h3>Laporan & Ekspor</h3>
+          <p>Filter hierarkis, multi-sheet XLSX export, chart preview, dan template laporan reusable.</p>
+          <span class="ix-feature-link">Selengkapnya</span>
+        </a>
+        <a href="features.html#ml" class="ix-feature ix-anim" data-delay="5">
+          <div class="ix-icon ix-icon--sm ix-icon--purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></div>
+          <h3>ML & AI Analitik</h3>
+          <p>Anomaly detection, forecasting, ML dashboard, notifikasi otomatis, daily summary. AI untuk operasi prediktif.</p>
+          <span class="ix-feature-link">Selengkapnya</span>
+        </a>
+        <a href="features.html#devices" class="ix-feature ix-anim" data-delay="6">
+          <div class="ix-icon ix-icon--sm ix-icon--accent"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg></div>
+          <h3>Manajemen Device & Sensor</h3>
+          <p>Full CRUD nodes, auto-discovery, pairing workspace, relay control, multi-protocol (MQTT + TCP Teltonika).</p>
+          <span class="ix-feature-link">Selengkapnya</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PREVIEW SCREENSHOT
+       ============================================================ -->
+  <section class="section" id="preview">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill">TAMPILAN PLATFORM</span>
+        <h2>Lihat Helios Beraksi</h2>
+        <p>Screenshot langsung dari platform — dashboard, peta, laporan, dan lainnya.</p>
+      </div>
+      <div class="grid grid--4 ix-anim" data-delay="1">
+        <div class="gallery-item" data-full="img/screenshots/mockup-1.jpg" data-caption="IoT Overview Dashboard">
+          <img src="img/screenshots/mockup-1-thumb.jpg" alt="IoT Overview Dashboard" loading="lazy">
+          <div class="gallery-item__caption">IoT Overview Dashboard</div>
+        </div>
+        <div class="gallery-item" data-full="img/screenshots/mockup-4.jpg" data-caption="WebGIS Map View">
+          <img src="img/screenshots/mockup-4-thumb.jpg" alt="WebGIS Map View" loading="lazy">
+          <div class="gallery-item__caption">WebGIS Map View</div>
+        </div>
+        <div class="gallery-item" data-full="img/screenshots/mockup-3.jpg" data-caption="Widget Builder">
+          <img src="img/screenshots/mockup-3-thumb.jpg" alt="Widget Builder" loading="lazy">
+          <div class="gallery-item__caption">Widget Builder</div>
+        </div>
+        <div class="gallery-item" data-full="img/screenshots/mockup-7.jpg" data-caption="Report Preview & Export">
+          <img src="img/screenshots/mockup-7-thumb.jpg" alt="Report Preview & Export" loading="lazy">
+          <div class="gallery-item__caption">Report Preview & Export</div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:var(--space-xl);" class="ix-anim" data-delay="2">
+        <a href="screenshots.html" class="btn btn--ghost">Lihat Semua Screenshot →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SOLUSI INDUSTRI
+       ============================================================ -->
+  <section class="section section--alt" id="solusi">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill badge-pill--warning">SOLUSI INDUSTRI</span>
+        <h2>Dibangun untuk Industri Kritis</h2>
+        <p>Devetek Helios beradaptasi dengan kebutuhan monitoring dan kontrol unik setiap industri.</p>
+      </div>
+      <div class="grid grid--4">
+        <a href="solutions/pdam.html" class="ix-solution ix-solution--active ix-anim" data-delay="1">
+          <div class="ix-icon ix-icon--sm ix-icon--accent"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></div>
+          <h3>PDAM / Utilitas Air</h3>
+          <p>Monitoring DMA, deteksi kebocoran, tekanan & debit real-time, webhook sync ke server PDAM, visualisasi jaringan pipa.</p>
+          <span class="ix-solution-link">Jelajahi Solusi →</span>
+        </a>
+        <div class="ix-solution ix-solution--disabled ix-anim" data-delay="2">
+          <div class="ix-icon ix-icon--sm ix-icon--warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></div>
+          <h3>Energi & Kelistrikan</h3>
+          <p>Monitoring VSD, konsumsi daya, prediktif maintenance, monitoring grid distribusi.</p>
+          <span class="ix-solution-link">Segera Hadir</span>
+        </div>
+        <div class="ix-solution ix-solution--disabled ix-anim" data-delay="3">
+          <div class="ix-icon ix-icon--sm ix-icon--purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg></div>
+          <h3>IoT Industri</h3>
+          <p>Monitoring pabrik, telemetri produksi, kontrol kualitas, prediktif maintenance.</p>
+          <span class="ix-solution-link">Segera Hadir</span>
+        </div>
+        <div class="ix-solution ix-solution--disabled ix-anim" data-delay="4">
+          <div class="ix-icon ix-icon--sm ix-icon--primary"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10V6a4 4 0 0 0-8 0v4"/><path d="m16 8 2-2"/><path d="M14 12V6a4 4 0 0 1 8 0v4"/><path d="M6 8 4 6"/><path d="M6 22v-5a9 9 0 0 1 18 0v5"/><path d="M6 17H2"/><path d="M22 17h-4"/></svg></div>
+          <h3>Pertanian Cerdas</h3>
+          <p>Kelembaban tanah, stasiun cuaca, kontrol irigasi otomatis, monitoring tanaman.</p>
+          <span class="ix-solution-link">Segera Hadir</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CARA KERJA — 4 STEPS
+       ============================================================ -->
+  <section class="section" id="cara-kerja">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill">CARA KERJA</span>
+        <h2>Dari Sensor ke Insight dalam 4 Langkah</h2>
+      </div>
+      <div class="ix-steps">
+        <div class="ix-step ix-anim" data-delay="1">
+          <div class="ix-step-num">1</div>
+          <div class="ix-icon ix-icon--sm ix-icon--primary"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m7 13 3 3 7-7"/></svg></div>
+          <h4>Hubungkan</h4>
+          <p>Hubungkan device apapun — ESP32, Arduino, PLC, Raspberry Pi — via MQTT, TCP, atau HTTP. Auto-discovery bawaan.</p>
+        </div>
+        <div class="ix-step ix-anim" data-delay="2">
+          <div class="ix-step-num">2</div>
+          <div class="ix-icon ix-icon--sm ix-icon--accent"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></div>
+          <h4>Transform</h4>
+          <p>Data dari device otomatis di-parsing, validasi, dan di-transform ke format database. Zero manual config.</p>
+        </div>
+        <div class="ix-step ix-anim" data-delay="3">
+          <div class="ix-step-num">3</div>
+          <div class="ix-icon ix-icon--sm ix-icon--purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></div>
+          <h4>Analisa</h4>
+          <p>Dashboard, alert rule, ML anomaly & forecast memproses data. Webhook & DB sync ke server Anda.</p>
+        </div>
+        <div class="ix-step ix-anim" data-delay="4">
+          <div class="ix-step-num">4</div>
+          <div class="ix-icon ix-icon--sm ix-icon--warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></div>
+          <h4>Bertindak</h4>
+          <p>Terima notifikasi, kirim command, export laporan, kontrol relay — dari mana saja.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       KONEKTIVITAS TERBUKA — DEVICE AGNOSTIC
+       ============================================================ -->
+  <section class="section section--alt" id="integrasi">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill badge-pill--accent">KONEKTIVITAS TERBUKA</span>
+        <h2>Apapun Device-nya, Helios Siap Terima</h2>
+        <p>Tidak terkunci vendor tertentu. Selama device Anda support HTTP, TCP, atau MQTT — langsung konek ke Helios.</p>
+      </div>
+
+      <!-- Protocol Cards -->
+      <div class="grid grid--3" style="margin-bottom:var(--space-3xl);">
+        <div class="ix-protocol ix-anim" data-delay="1">
+          <div class="ix-icon ix-icon--primary" style="margin:0 auto var(--space-md);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M7.5 4.2c-.3-.5-.9-.6-1.4-.4C3.3 5.3 1.5 8.4 1.5 12s1.8 6.7 4.6 8.2c.5.2 1.1.1 1.4-.4"/><path d="M16.5 4.2c.3-.5.9-.6 1.4-.4 2.8 1.5 4.6 4.6 4.6 8.2s-1.8 6.7-4.6 8.2c-.5.2-1.1.1-1.4-.4"/><path d="M8.9 7.1c-.2-.4-.7-.5-1.1-.3a7 7 0 0 0 0 10.4c.4.2.9.1 1.1-.3"/><path d="M15.1 7.1c.2-.4.7-.5 1.1-.3a7 7 0 0 1 0 10.4c-.4.2-.9.1-1.1-.3"/></svg></div>
+          <h3>MQTT</h3>
+          <p>Protokol IoT standar. Publish/subscribe real-time dengan QoS. Ideal untuk sensor yang mengirim data periodik.</p>
+          <div style="display:flex; gap:var(--space-xs); flex-wrap:wrap; justify-content:center; margin-top:var(--space-md);">
+            <span class="integration-badge">ESP32</span>
+            <span class="integration-badge">Arduino</span>
+            <span class="integration-badge">Raspberry Pi</span>
+          </div>
+        </div>
+        <div class="ix-protocol ix-anim" data-delay="2">
+          <div class="ix-icon ix-icon--accent" style="margin:0 auto var(--space-md);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m7 13 3 3 7-7"/></svg></div>
+          <h3>TCP / IP</h3>
+          <p>Koneksi raw TCP untuk device seperti Teltonika FM, PLC, dan perangkat industrial. Auto-parsing bawaan.</p>
+          <div style="display:flex; gap:var(--space-xs); flex-wrap:wrap; justify-content:center; margin-top:var(--space-md);">
+            <span class="integration-badge">Teltonika FM</span>
+            <span class="integration-badge">PLC</span>
+            <span class="integration-badge">Modbus RTU</span>
+          </div>
+        </div>
+        <div class="ix-protocol ix-anim" data-delay="3">
+          <div class="ix-icon ix-icon--purple" style="margin:0 auto var(--space-md);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          <h3>HTTP / HTTPS</h3>
+          <p>REST API endpoint. Kirim data via HTTP POST dari device manapun yang punya koneksi internet. Webhook-friendly.</p>
+          <div style="display:flex; gap:var(--space-xs); flex-wrap:wrap; justify-content:center; margin-top:var(--space-md);">
+            <span class="integration-badge">REST API</span>
+            <span class="integration-badge">Webhook</span>
+            <span class="integration-badge">Any Device</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Pipeline Architecture -->
+      <div class="section-header ix-anim" data-delay="4" style="margin-top:var(--space-2xl);">
+        <span class="badge-pill">ARSITEKTUR</span>
+        <h2>End-to-End Data Pipeline</h2>
+        <p>Dari sensor di lapangan hingga dashboard Anda — semua otomatis.</p>
+      </div>
+
+      <div class="arch-topology">
+        <!-- LAYER 1: PERANGKAT LAPANGAN -->
+        <div class="arch-layer arch-layer-field ix-anim" data-delay="5">
+          <div class="arch-layer-label">
+            <span class="arch-layer-tag arch-tag-field">PERANGKAT LAPANGAN</span>
+          </div>
+          <div class="arch-layer-content">
+            <div class="arch-device ix-anim" data-delay="6">
+              <div class="arch-device-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+              </div>
+              <div class="arch-device-name">Flow Meter</div>
+              <div class="arch-device-desc">Debit air</div>
+            </div>
+            <div class="arch-device ix-anim" data-delay="7">
+              <div class="arch-device-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+              </div>
+              <div class="arch-device-name">Pressure</div>
+              <div class="arch-device-desc">Tekanan pipa</div>
+            </div>
+            <div class="arch-device ix-anim" data-delay="8">
+              <div class="arch-device-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+              </div>
+              <div class="arch-device-name">Level Sensor</div>
+              <div class="arch-device-desc">Level reservoir</div>
+            </div>
+            <div class="arch-device ix-anim" data-delay="9">
+              <div class="arch-device-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div class="arch-device-name">Power Monitor</div>
+              <div class="arch-device-desc">VSD & pompa</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR: Field → Cloud -->
+        <div class="arch-connector ix-anim" data-delay="10">
+          <div class="arch-connector-line"></div>
+          <div class="arch-connector-labels">
+            <span class="arch-protocol arch-protocol--accent ix-anim" data-delay="11">4G LTE</span>
+            <span class="arch-protocol arch-protocol--accent ix-anim" data-delay="11">2G GSM</span>
+            <span class="arch-protocol arch-protocol--warn ix-anim" data-delay="11">LoRa</span>
+            <span class="arch-protocol ix-anim" data-delay="11">MQTT / TCP / HTTPS</span>
+          </div>
+        </div>
+
+        <!-- LAYER 2: DEVETEK-HELIOS CLOUD -->
+        <div class="arch-layer arch-layer-cloud ix-anim" data-delay="12">
+          <div class="arch-layer-label">
+            <span class="arch-layer-tag arch-tag-cloud">DEVETEK-HELIOS CLOUD</span>
+          </div>
+          <div class="arch-layer-content">
+            <div class="arch-pipeline">
+              <div class="arch-step ix-anim" data-delay="13">
+                <div class="arch-step-num">1</div>
+                <div class="arch-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a7.31 7.31 0 0 0 10 10Z"/><path d="m9 15 3-3"/><path d="M17 13a6 6 0 0 0-6-6"/><path d="M21 13A10 10 0 0 0 11 3"/></svg>
+                </div>
+                <div class="arch-step-name">Gateway</div>
+                <div class="arch-step-desc">Terima data</div>
+              </div>
+              <div class="arch-arrow ix-anim" data-delay="13">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="arch-step ix-anim" data-delay="14">
+                <div class="arch-step-num">2</div>
+                <div class="arch-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                </div>
+                <div class="arch-step-name">Transform</div>
+                <div class="arch-step-desc">Parse & validasi</div>
+              </div>
+              <div class="arch-arrow ix-anim" data-delay="14">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="arch-step ix-anim" data-delay="15">
+                <div class="arch-step-num">3</div>
+                <div class="arch-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+                </div>
+                <div class="arch-step-name">Storage</div>
+                <div class="arch-step-desc">PG + ClickHouse</div>
+              </div>
+              <div class="arch-arrow ix-anim" data-delay="15">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="arch-step ix-anim" data-delay="16">
+                <div class="arch-step-num">4</div>
+                <div class="arch-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
+                </div>
+                <div class="arch-step-name">AI Analisa</div>
+                <div class="arch-step-desc">Anomali & prediksi</div>
+              </div>
+              <div class="arch-arrow ix-anim" data-delay="16">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="arch-step ix-anim" data-delay="17">
+                <div class="arch-step-num">5</div>
+                <div class="arch-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                </div>
+                <div class="arch-step-name">Alert & Notif</div>
+                <div class="arch-step-desc">In-app / Email</div>
+              </div>
+            </div>
+            <span class="arch-cloud-partner ix-anim" data-delay="18">Didukung oleh <strong>PT Bakti Air Indonesia</strong></span>
+          </div>
+        </div>
+
+        <!-- CONNECTOR: Cloud → Output -->
+        <div class="arch-connector ix-anim" data-delay="19">
+          <div class="arch-connector-line arch-connector-line--purple"></div>
+          <div class="arch-connector-labels">
+            <span class="arch-protocol ix-anim" data-delay="20">Webhook</span>
+            <span class="arch-protocol ix-anim" data-delay="20">PostgreSQL Sync</span>
+            <span class="arch-protocol ix-anim" data-delay="20">MySQL Sync</span>
+            <span class="arch-protocol ix-anim" data-delay="20">REST API</span>
+          </div>
+        </div>
+
+        <!-- LAYER 3: OUTPUT & MONITORING -->
+        <div class="arch-layer arch-layer-output ix-anim" data-delay="21">
+          <div class="arch-layer-label">
+            <span class="arch-layer-tag arch-tag-output">OUTPUT & MONITORING</span>
+          </div>
+          <div class="arch-layer-content">
+            <div class="arch-output ix-anim" data-delay="22">
+              <div class="arch-output-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              </div>
+              <div class="arch-output-name">Dashboard<br>Custom</div>
+            </div>
+            <div class="arch-output ix-anim" data-delay="23">
+              <div class="arch-output-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+              </div>
+              <div class="arch-output-name">WebGIS<br>DMA</div>
+            </div>
+            <div class="arch-output ix-anim" data-delay="24">
+              <div class="arch-output-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg>
+              </div>
+              <div class="arch-output-name">Laporan<br>& XLSX</div>
+            </div>
+            <div class="arch-output ix-anim" data-delay="25">
+              <div class="arch-output-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+              </div>
+              <div class="arch-output-name">Server<br>Pengguna</div>
+            </div>
+            <div class="arch-output ix-anim" data-delay="26">
+              <div class="arch-output-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+              </div>
+              <div class="arch-output-name">ML Early<br>Warning</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integration Badges -->
+      <div style="margin-top:var(--space-3xl);">
+        <div class="section-header ix-anim" data-delay="6">
+          <span class="badge-pill">KOMPATIBILITAS</span>
+          <h2>Device & Tools yang Didukung</h2>
+        </div>
+        <div class="integrations-bar ix-anim" data-delay="7">
+          <span class="integration-badge">ESP32</span>
+          <span class="integration-badge">Arduino</span>
+          <span class="integration-badge">Raspberry Pi</span>
+          <span class="integration-badge">PLC</span>
+          <span class="integration-badge">Teltonika FM</span>
+          <span class="integration-badge">MQTT</span>
+          <span class="integration-badge">TCP/IP</span>
+          <span class="integration-badge">HTTP/HTTPS</span>
+          <span class="integration-badge">Webhook</span>
+          <span class="integration-badge">REST API</span>
+          <span class="integration-badge">PostgreSQL</span>
+          <span class="integration-badge">MySQL</span>
+          <span class="integration-badge">ClickHouse</span>
+          <span class="integration-badge">Firebase</span>
+          <span class="integration-badge">Modbus RTU</span>
+          <span class="integration-badge">4G / 2G Cellular</span>
+          <span class="integration-badge">LoRa</span>
+          <span class="integration-badge">RS485</span>
+          <span class="integration-badge">Analog 4-20mA</span>
+          <span class="integration-badge">SHP / GeoJSON</span>
+          <span class="integration-badge">XLSX Export</span>
+          <span class="integration-badge">OpenLayers</span>
+          <span class="integration-badge">ECharts</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ANGKA PERFORMA
+       ============================================================ -->
+  <section class="section" id="performa">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill">PERFORMA</span>
+        <h2>Angka yang Berbicara</h2>
+      </div>
+      <div class="stats-row ix-anim" data-delay="1">
+        <div class="stat-card">
+          <div class="stat-card__number"><span data-count="500" data-prefix="< " data-suffix="ms">< 500ms</span></div>
+          <div class="stat-card__label">Rata-rata Respons API</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__number"><span data-count="10" data-suffix="K+">10K+</span></div>
+          <div class="stat-card__label">Data Point / Detik</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__number"><span data-count="99.9" data-suffix="%" data-decimals="1">99.9%</span></div>
+          <div class="stat-card__label">Uptime SLA</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__number">24/7</div>
+          <div class="stat-card__label">Monitoring Real-Time</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TESTIMONIAL
+       ============================================================ -->
+  <section class="section section--alt" id="testimoni">
+    <div class="container">
+      <div class="section-header ix-anim" data-delay="0">
+        <span class="badge-pill">TESTIMONI</span>
+        <h2>Apa Kata Mitra Kami</h2>
+      </div>
+      <div class="testimonial-slider ix-anim" data-delay="1">
+        <div class="testimonial active">
+          <p class="testimonial__quote">
+            Devetek Helios membantu kami memantau 200+ node tersebar di 5 DMA dengan real-time dashboard yang intuitif dan alert system yang responsif.
+          </p>
+          <p class="testimonial__author">— <strong>Tim Teknis</strong>, PT Bakti Air Indonesia</p>
+        </div>
+        <div class="testimonial">
+          <p class="testimonial__quote">
+            Integrasi multi-protocol dan fitur auto-discovery sangat memudahkan deployment node baru di lapangan. Setup lebih cepat 60%.
+          </p>
+          <p class="testimonial__author">— <strong>Engineer Lapangan</strong>, Klien Industri</p>
+        </div>
+        <div class="testimonial">
+          <p class="testimonial__quote">
+            Fitur ML anomaly detection dan report otomatis mengubah cara kami bekerja — dari reaktif menjadi prediktif.
+          </p>
+          <p class="testimonial__author">— <strong>Manajer Operasional</strong>, Klien PDAM</p>
+        </div>
+        <div class="testimonial-dots">
+          <span class="testimonial-dot active"></span>
+          <span class="testimonial-dot"></span>
+          <span class="testimonial-dot"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CTA BANNER
+       ============================================================ -->
+  <section class="ix-cta">
+    <div class="container ix-anim" data-delay="0">
+      <h2>Siap Mentransformasi Operasi IoT Anda?</h2>
+      <p>Jadwalkan demo gratis dan lihat bagaimana Devetek Helios dapat mengoptimalkan infrastruktur Anda.</p>
+      <div style="display:flex; gap:var(--space-md); justify-content:center; flex-wrap:wrap;">
+        <a href="contact.html" class="btn btn--primary btn--lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:6px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>Minta Demo
+        </a>
+        <a href="contact.html" class="btn btn--ghost btn--lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:6px;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>Hubungi Tim Kami
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="navbar__brand" style="margin-bottom:var(--space-sm);">
+            <span class="navbar__logo">D</span>
+            DEVETEK HELIOS
+          </a>
+          <p>Platform IoT end-to-end untuk monitoring, analisis, dan pengendalian infrastruktur kritis. Dibangun oleh PT. COMON CIPTA INOVASI.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Produk</h4>
+          <ul>
+            <li><a href="features.html">Fitur</a></li>
+            <li><a href="features.html#dashboard">Dashboard</a></li>
+            <li><a href="features.html#webgis">WebGIS</a></li>
+            <li><a href="features.html#alerts">Alert</a></li>
+            <li><a href="features.html#reports">Laporan</a></li>
+            <li><a href="features.html#ml">ML Analitik</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Solusi</h4>
+          <ul>
+            <li><a href="solutions/pdam.html" style="color:var(--color-primary-light);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>PDAM / Air</a></li>
+            <li><a href="#solusi">Energi</a></li>
+            <li><a href="#solusi">Industri</a></li>
+            <li><a href="#solusi">Pertanian</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Perusahaan</h4>
+          <ul>
+            <li><a href="contact.html">Kontak</a></li>
+            <li><a href="contact.html">Minta Demo</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Sumber Daya</h4>
+          <ul>
+            <li><a href="https://devetek-helios.web.app/iot/document" target="_blank">Dokumentasi</a></li>
+            <li><a href="screenshots.html">Screenshot</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__hardware">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:6px;"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 20.66-1-1.73"/><path d="M11 10.27 7 3.34"/><path d="m20.66 17-1.73-1"/><path d="m3.34 7 1.73 1"/><path d="M14 12h8"/><path d="M2 12h2"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m17 3.34-1 1.73"/><path d="m11 13.73-4 6.93"/></svg><strong>DEVETEK HARDWARE</strong> — Lihat produk hardware IoT kami →
+        <a href="https://devetek-iot.web.app" target="_blank" rel="noopener">devetek-iot.web.app</a>
+      </div>
+
+      <div class="footer__divider"></div>
+
+      <div class="footer__bottom">
+        <span>© 2025 PT. COMON CIPTA INOVASI. Semua hak dilindungi.</span>
+        <span>Devetek Helios v1.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       WHATSAPP FLOATING BUTTON
+       ============================================================ -->
+  <div class="whatsapp-float">
+    <span class="whatsapp-float__tooltip">Chat via WhatsApp</span>
+    <a href="https://wa.me/6285623022290" target="_blank" rel="noopener" class="whatsapp-float__btn" aria-label="WhatsApp">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+  </div>
+
+  <!-- BACK TO TOP -->
+  <button class="back-to-top" aria-label="Kembali ke atas">↑</button>
+
+  <!-- COOKIE CONSENT -->
+  <div class="cookie-banner">
+    <p>Kami menggunakan cookie untuk meningkatkan pengalaman Anda. Dengan melanjutkan, Anda menyetujui <a href="#">kebijakan privasi</a> kami.</p>
+    <div class="cookie-banner__actions">
+      <button class="btn btn--ghost" data-cookie-accept="essential" style="font-size:0.8rem; padding:6px 16px;">Hanya Esensial</button>
+      <button class="btn btn--primary" data-cookie-accept="all" style="font-size:0.8rem; padding:6px 16px;">Terima Semua</button>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox">
+    <button class="lightbox__close" aria-label="Tutup">✕</button>
+    <button class="lightbox__nav lightbox__nav--prev" aria-label="Sebelumnya">‹</button>
+    <button class="lightbox__nav lightbox__nav--next" aria-label="Berikutnya">›</button>
+    <img class="lightbox__img" src="" alt="Screenshot">
+    <p class="lightbox__caption"></p>
+  </div>
+
+  <!-- Stagger Animation for ix-anim elements -->
+  <script>
+    (function() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target;
+            const delay = parseInt(el.dataset.delay || '0', 10) * 80;
+            setTimeout(() => el.classList.add('visible'), delay);
+            observer.unobserve(el);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+      document.querySelectorAll('.ix-anim').forEach(el => observer.observe(el));
+    })();
+  </script>
+
+  <script src="js/main.js"></script>
+</body>
 </html>

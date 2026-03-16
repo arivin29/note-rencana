@@ -26,6 +26,10 @@ export { OwnerForwardingLog } from './owner-forwarding-log.entity';
 export { NodeUnpairedDevice } from './node-unpaired-device.entity';
 export { NodeProfile } from './node-profile.entity';
 export { IotLog } from './iot-log.entity';
+export { ScadaDiagram } from './scada-diagram.entity';
+export { ScadaNode } from './scada-node.entity';
+export { ScadaEdge } from './scada-edge.entity';
+export { ScadaNodeBinding } from './scada-node-binding.entity';
 
 // Widget Builder entities
 export { CustomDashboard } from './custom-dashboard.entity';

@@ -9,6 +9,7 @@ import clickhouseConfig from './config/clickhouse.config';
 import opensearchConfig from './config/opensearch.config';
 import { IotLog } from './entities';
 import {
+    AnomalyResult,
     Node,
     NodeModel,
     NodeProfile,
@@ -54,6 +55,7 @@ import { ForwardingModule } from './modules/forwarding/forwarding.module';
                 password: configService.get('database.password'),
                 database: configService.get('database.database'),
                 entities: [
+                    AnomalyResult,
                     IotLog,
                     Node,
                     NodeModel,
