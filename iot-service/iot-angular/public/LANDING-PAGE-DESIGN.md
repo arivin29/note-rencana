@@ -1,40 +1,93 @@
-# DEVETEK HELIOS — Product Website Design Document
+# DEVETEK HELIOS — Dokumen Desain Website Produk
 
-> **Status:** Draft v2 — Review Complete  
+> **Status:** Draft v3 — Aligned with devetek-iot.web.app  
 > **Target:** `iot-angular/public/` (Static HTML, terpisah dari Angular app)  
 > **Deploy:** Firebase Hosting (`devetek-helios`)  
-> **Reference Sites:** ThingsBoard.io, Ubidots.com, Losant.com, Blynk.io, TagoIO.com, Particle.io
+> **Referensi Utama:** [devetek-iot.web.app](https://devetek-iot.web.app) (existing hardware landing page)  
+> **Referensi Kompetitor:** ThingsBoard.io, Ubidots.com, Losant.com, Blynk.io, TagoIO.com  
+> **Bahasa:** Full Bahasa Indonesia  
+> **Brand:** DEVETEK HELIOS (standalone)  
+> **Approach:** Evolusi dari devetek-iot — DNA sama, Helios lebih modern/premium  
+> **Company:** PT. COMON CIPTA INOVASI (parent), Devetek (brand)  
+> **Partner:** PT Bakti Air Indonesia
 
 ---
 
-## TABLE OF CONTENTS
+## KEPUTUSAN DESAIN
 
-1. [Sitemap & Page Structure](#1-sitemap--page-structure)
-2. [Page Detail — Home (Landing)](#2-home-landing)
-3. [Page Detail — Features](#3-features)
-4. [Page Detail — Features Sub-Pages (6)](#4-features-sub-pages)
-5. [Page Detail — Solutions / Use Cases](#5-solutions--use-cases)
-6. [Page Detail — Solutions Sub-Pages (4)](#6-solutions-sub-pages)
-7. [Page Detail — Screenshots / Gallery](#7-screenshots--gallery)
-8. [Page Detail — Pricing](#8-pricing)
-9. [Page Detail — Documentation (link)](#9-documentation)
-10. [Page Detail — About Us](#10-about-us)
-11. [Page Detail — Contact / Request Demo](#11-contact--request-demo)
-12. [Page Detail — Blog (Opsional Phase 2)](#12-blog)
-13. [**NEW** — Live Demo / Sandbox](#13-live-demo--sandbox)
-14. [**NEW** — Integrations & API](#14-integrations--api)
-15. [**NEW** — Security & Compliance](#15-security--compliance)
-16. [**NEW** — Legal Pages](#16-legal-pages)
-17. [**NEW** — 404 Page](#17-404-page)
-18. [Shared Components](#18-shared-components)
+| Aspek | Keputusan | Alasan |
+|-------|-----------|--------|
+| **Style** | Evolusi dari devetek-iot — base DNA sama, Helios lebih premium | Satu brand family, tapi Helios terasa lebih canggih |
+| **Bahasa** | Full Bahasa Indonesia | Target market sama: PDAM, industri Indonesia |
+| **Struktur** | Full multi-page (22 halaman) | Konten Helios lebih banyak, SEO-friendly |
+| **Brand** | DEVETEK HELIOS standalone | Navbar sendiri, independent dari devetek-iot |
+| **Cross-link** | devetek-iot ↔ devetek-helios saling terhubung | Visitor bisa navigasi antar hardware & platform |
+
+---
+
+## DESIGN DNA — Inherited dari devetek-iot.web.app
+
+### Yang SAMA (inherited):
+| Element | Detail |
+|---------|--------|
+| **Dark theme** | Background gelap navy/hitam |
+| **Badge/Pill labels** | Monospace uppercase: `LAPANGAN`, `NODE HARDWARE`, `DEVETEK-HELIOS CLOUD` |
+| **Card style** | Border subtle, background sedikit lebih terang dari bg, hover glow |
+| **Color accent** | Teal/hijau untuk primary, biru untuk secondary |
+| **Gradient lines** | Garis gradient warna-warni sebagai divider (merah-kuning-hijau-biru) |
+| **Icon style** | Outlined icons, putih/light |
+| **Flow diagrams** | Vertikal flow dengan connecting dots/lines ($\bullet$ → $\bullet$) |
+| **Badge tags** | Pill tags warna-warni di card footer (e.g. `PDAM` `Type B` `Pressure`) |
+| **FAQ accordion** | Expandable questions |
+| **WhatsApp CTA** | Green WA button as primary contact |
+| **Footer style** | Dark, multi-column, logo + links |
+| **Navbar** | Sticky top, clean, CTA button di kanan |
+
+### Yang BERBEDA (evolusi untuk Helios):
+| Element | devetek-iot | HELIOS (evolusi) |
+|---------|------------|------------------|
+| **Hero** | Teks + 4 stat badges | Teks + floating screenshot mockup + particle effect |
+| **Cards** | Flat cards, border | Cards dengan glassmorphism effect (blur, transparency) |
+| **Typography** | Sans-serif standar | Plus Jakarta Sans (heading), Inter (body) — lebih premium |
+| **Animations** | Minimal (fade) | Scroll-triggered fade+slide, count-up, stagger |
+| **Sections** | Dense, informasi padat | Lebih spacious, breathing room antar section |
+| **Shadows** | Flat | Subtle glow shadows (teal glow, blue glow) |
+| **Buttons** | Solid buttons | Solid + ghost buttons + gradient shimmer hover |
+| **Gradient** | Line dividers | Gradient pada CTA background + card borders |
+| **Gallery** | Inline images | Lightbox gallery dengan navigation |
+| **Stats** | Static | Animated count-up on scroll |
+
+---
+
+## DAFTAR ISI
+
+1. [Sitemap & Struktur Halaman](#1-sitemap--page-structure)
+2. [Halaman — Beranda (Landing)](#2-home-landing)
+3. [Halaman — Fitur](#3-fitur-ikhtisar)
+4. [Halaman — Sub-Fitur (6)](#4-halaman-sub-fitur-6-halaman)
+5. [Halaman — Solusi / Studi Kasus](#5-solusi--studi-kasus-ikhtisar)
+6. [Halaman — Sub-Solusi (4)](#6-halaman-sub-solusi-4-halaman)
+7. [Halaman — Galeri Screenshot](#7-galeri-screenshot)
+8. [Halaman — Harga](#8-harga)
+9. [Halaman — Dokumentasi (link)](#9-dokumentasi-link-saja)
+10. [Halaman — Tentang Kami](#10-tentang-kami)
+11. [Halaman — Kontak / Minta Demo](#11-kontak--minta-demo)
+12. [Halaman — Blog (Opsional Fase 2)](#12-blog)
+13. [**BARU** — Demo Langsung / Sandbox](#13-demo-langsung--sandbox--new)
+14. [**BARU** — Integrasi & API](#14-integrasi--api--new)
+15. [**BARU** — Keamanan & Kepatuhan](#15-keamanan--kepatuhan--new)
+16. [**BARU** — Halaman Legal](#16-halaman-legal--new)
+17. [**BARU** — Halaman 404](#17-halaman-404--new)
+18. [Komponen Bersama](#18-komponen-bersama)
 19. [Design Tokens & Style Guide](#19-design-tokens--style-guide)
-20. [Responsive Strategy](#20-responsive-strategy)
-21. [Animation & Interaction](#21-animation--interaction)
-22. [SEO & Meta Strategy](#22-seo--meta-strategy)
-23. [File Structure](#23-file-structure)
-24. [Implementation Phases](#24-implementation-phases)
-25. [Content Checklist](#25-content-checklist)
-26. [**NEW** — Review Gap Analysis](#26-review-gap-analysis)
+20. [Strategi Responsif](#20-strategi-responsif)
+21. [Animasi & Interaksi](#21-animasi--interaksi)
+22. [SEO & Strategi Meta](#22-seo--strategi-meta)
+23. [Struktur File](#23-struktur-file)
+24. [Fase Implementasi](#24-fase-implementasi)
+25. [Checklist Konten](#25-checklist-konten)
+26. [**BARU** — Analisis Gap Review](#26-analisis-gap-review--new)
+27. [**BARU** — Strategi Cross-Link](#strategi-cross-link)
 
 ---
 
@@ -100,133 +153,144 @@ devetek-helios.web.app/
 #### 2.1 NAVBAR (Sticky)
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ [Logo] Devetek Helios    Features ▾  Solutions ▾  Integrations         │
-│                          Pricing  Screenshots  About                   │
-│                                       [Try Demo]  [Request Demo →]     │
+│ [D] DEVETEK HELIOS       Fitur ▾  Solusi ▾  Integrasi                 │
+│                           Harga  Galeri  Tentang                       │
+│                                       [Coba Demo]  [Minta Demo →]     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
-- Dropdown **Features**: 6 sub-items + "All Features" link
-- Dropdown **Solutions**: 4 industry items + "All Solutions" link
-- **2 CTA buttons**: "Try Demo" (ghost/outline) + "Request Demo" (solid primary)
+- Logo: `[D]` monogram + "DEVETEK HELIOS" (mirip gaya `[D] DEVETEK` di devetek-iot)
+- Dropdown **Fitur**: 6 sub-items + "Semua Fitur" link
+- Dropdown **Solusi**: 4 industri items + "Semua Solusi" link
+- **2 CTA buttons**: "Coba Demo" (ghost/outline) + "Minta Demo" (solid primary)
 - Mobile: hamburger → full-screen overlay menu
 - Scroll: transparent → `rgba(10,14,23,0.95)` backdrop-blur
 
 #### 2.2 HERO SECTION
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│                         `PLATFORM IOT`                          │
 │                                                                 │
-│         Your IoT Infrastructure,                                │
-│         Unified & Intelligent.                                  │
+│         Monitor. Analisa. Kendalikan.                           │
 │                                                                 │
 │         Platform monitoring IoT end-to-end untuk                │
 │         industri air, energi, dan infrastruktur kritis.         │
 │                                                                 │
-│         [🚀 Request Demo]  [▶ Try Live Demo]  [📖 Docs]        │
+│         [🚀 Minta Demo]  [▶ Coba Demo]  [📖 Dokumentasi]       │
 │                                                                 │
 │               ╔══════════════════════════╗                      │
 │               ║   Dashboard Screenshot   ║ ← floating, tilted  │
 │               ║   with glow effect       ║   perspective        │
 │               ╚══════════════════════════╝                      │
 │                                                                 │
-│   ▽ Scroll to explore                                          │
+│   ▽ Jelajahi lebih lanjut                                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
+- Badge pill di atas heading: `PLATFORM IOT` (monospace, gaya devetek-iot)
+- Tagline utama: "Monitor. Analisa. Kendalikan." (terinspirasi devetek-iot: "Monitor. Analisa. Kendalikan.")
 - Background: dark gradient + animated mesh/grid pattern (CSS only)
 - Screenshot: `mockup-1.jpg` dengan CSS 3D perspective + box-shadow glow
-- **3 CTA buttons**: Request Demo (primary), Try Live Demo (ghost → link ke sandbox), Docs (text link)
+- **3 CTA buttons**: Minta Demo (primary), Coba Demo (ghost → sandbox), Dokumentasi (text link)
 - Stats bar di bawah hero:
   ```
-  30+ Features  |  6+ Widget Types  |  34 Entities  |  3 Service Architecture
+  30+ Fitur  |  6+ Tipe Widget  |  34 Entitas  |  3 Arsitektur Layanan
   ```
 
-#### 2.3 TRUSTED BY
+#### 2.3 DIPERCAYA OLEH
 ```
-────────── Trusted by leading organizations ──────────
+────────── Dipercaya oleh organisasi terkemuka ──────────
 [Logo 1]   [Logo 2]   [Logo 3]   [Logo 4]   [Logo 5]
 ```
 - Grayscale logos, hover: color
 - Auto-scroll infinite marquee (CSS animation)
-- Placeholder: "Your Logo Here" boxes
+- Placeholder: "Logo Anda di sini" boxes
+- Contoh: PT Bakti Air Indonesia, PDAM [nama], dsb.
 
-#### 2.4 PLATFORM OVERVIEW (3 Columns)
+#### 2.4 IKHTISAR PLATFORM (3 Kolom)
 ```
+          `TIGA PILAR`
+
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │  [Icon: Monitor]  │  │  [Icon: Shield]   │  │  [Icon: Puzzle]   │
 │                   │  │                   │  │                   │
-│  Monitor          │  │  Analyze          │  │  Act              │
-│  Everything       │  │  Intelligently    │  │  Immediately      │
+│  Pantau           │  │  Analisa          │  │  Bertindak        │
+│  Segalanya        │  │  Secara Cerdas    │  │  Seketika         │
 │                   │  │                   │  │                   │
-│  Real-time data   │  │  ML-powered       │  │  Configurable     │
-│  from sensors,    │  │  anomaly          │  │  alerts, auto     │
-│  nodes & gateways │  │  detection &      │  │  commands, and    │
-│  in one unified   │  │  forecasting for  │  │  report generation│
-│  dashboard.       │  │  predictive       │  │  for rapid        │
-│                   │  │  insight.         │  │  response.        │
+│  Data real-time   │  │  Deteksi anomali  │  │  Alert otomatis,  │
+│  dari sensor,     │  │  berbasis ML &    │  │  perintah device, │
+│  node & gateway   │  │  prediksi untuk   │  │  dan pembuatan    │
+│  dalam satu       │  │  wawasan          │  │  laporan untuk    │
+│  dashboard.       │  │  prediktif.       │  │  respons cepat.   │
 └──────────────────┘  └──────────────────┘  └──────────────────┘
 ```
+- Badge pill "TIGA PILAR" di atas (mirip "Dua Pilar" di devetek-iot)
 
-#### 2.5 FEATURE HIGHLIGHTS (6 Cards → link ke /features/*.html)
+#### 2.5 FITUR UNGGULAN (6 Card → link ke /features/*.html)
 ```
+          `FITUR PLATFORM`
+
 ┌─────────┐  ┌─────────┐  ┌─────────┐
 │ 📊      │  │ 🗺️      │  │ ⚠️      │
 │Dashboard│  │ WebGIS  │  │ Smart   │
-│& Widget │  │ Mapping │  │ Alerts  │
+│& Widget │  │ Mapping │  │ Alert   │
 │ Builder │  │         │  │         │
 │         │  │         │  │         │
-│[Learn→] │  │[Learn→] │  │[Learn→] │
+│[Detail→]│  │[Detail→]│  │[Detail→]│
 └─────────┘  └─────────┘  └─────────┘
 ┌─────────┐  ┌─────────┐  ┌─────────┐
 │ 📈      │  │ 🤖      │  │ 🔧      │
-│Report & │  │ ML      │  │ Device  │
-│ Export  │  │Analytics│  │ Mgmt    │
+│Laporan &│  │ ML      │  │Manajemen│
+│ Ekspor  │  │Analitik │  │ Device  │
 │         │  │         │  │         │
-│[Learn→] │  │[Learn→] │  │[Learn→] │
+│[Detail→]│  │[Detail→]│  │[Detail→]│
 └─────────┘  └─────────┘  └─────────┘
 ```
 - Grid 3×2 desktop, 2×3 tablet, 1×6 mobile
 - Hover: card lift + gradient border glow
 - Each card links to respective `/features/*.html`
 
-#### 2.6 SCREENSHOT PREVIEW (Mini Gallery)
+#### 2.6 PREVIEW SCREENSHOT (Galeri Mini)
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  See Helios in Action                                          │
+│          `TAMPILAN PLATFORM`                                   │
+│  Lihat Helios Beraksi                                          │
 │                                                                 │
 │  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐                       │
 │  │mock-1│  │mock-2│  │mock-3│  │mock-4│                       │
 │  └──────┘  └──────┘  └──────┘  └──────┘                       │
 │                                                                 │
-│                  [View All Screenshots →]                       │
+│                  [Lihat Semua Screenshot →]                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 - 4 thumbnails (dari mockup existing), click → lightbox
 - "View All" link ke `/screenshots.html`
 
-#### 2.7 USE CASES PREVIEW
+#### 2.7 PREVIEW SOLUSI INDUSTRI
 ```
-Built for Critical Industries
-Dibangun untuk industri-industri kritis
+          `SOLUSI INDUSTRI`
+
+Dibangun untuk Industri Kritis
 
 ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
 │  💧             │  │  ⚡             │  │  🏭             │  │  🌾             │
-│  Water Utility  │  │  Energy &      │  │  Industrial    │  │  Smart         │
-│  / PDAM         │  │  Power         │  │  IoT           │  │  Agriculture   │
+│  PDAM /         │  │  Energi &      │  │  IoT            │  │  Pertanian     │
+│  Utilitas Air   │  │  Kelistrikan   │  │  Industri       │  │  Cerdas        │
 │                 │  │                │  │                │  │                │
-│  [Explore →]    │  │  [Explore →]   │  │  [Explore →]   │  │  [Explore →]   │
+│  [Jelajahi →]   │  │  [Jelajahi →]  │  │  [Jelajahi →]  │  │  [Jelajahi →]  │
 └────────────────┘  └────────────────┘  └────────────────┘  └────────────────┘
 ```
 
-#### 2.8 HOW IT WORKS ★ NEW
+#### 2.8 CARA KERJA ★ NEW
 ```
-How It Works — From Sensor to Insight in 4 Steps
-Cara Kerja — Dari Sensor ke Insight dalam 4 Langkah
+          `CARA KERJA`
+
+Dari Sensor ke Insight dalam 4 Langkah
 
   ①                    ②                     ③                    ④
-  CONNECT              COLLECT               ANALYZE              ACT
+  HUBUNGKAN            KUMPULKAN             ANALISA              BERTINDAK
   ───────              ───────               ───────              ───────
   Hubungkan sensor     Data masuk secara     Dashboard, alert     Terima notifikasi,
   & node via MQTT      real-time ke          rule, ML anomaly     kirim command,
-  atau TCP. Auto-      ClickHouse &          & forecast           export report,
+  atau TCP. Auto-      ClickHouse &          & forecast           export laporan,
   discovery untuk      PostgreSQL.           memproses data       kontrol relay
   device baru.         Zero data loss.       otomatis.            dari mana saja.
 
@@ -234,15 +298,17 @@ Cara Kerja — Dari Sensor ke Insight dalam 4 Langkah
 
                 ─────→              ─────→              ─────→
 ```
+- Layout mirip "Alur Implementasi" di devetek-iot (flow vertikal → horizontal)
 - **Horizontal stepper** dengan connecting line
 - Icon besar di atas, numbered circle
 - Mobile: vertical stack
 - Each step fade-in on scroll with stagger
 
-#### 2.9 INTEGRATION LOGOS BAR ★ NEW
+#### 2.9 BAR LOGO INTEGRASI ★ NEW
 ```
-Works With Your Existing Infrastructure
-Terintegrasi dengan infrastruktur yang sudah ada
+          `INTEGRASI`
+
+Terintegrasi dengan Infrastruktur yang Sudah Ada
 
 [ESP32]  [Teltonika]  [MQTT]  [PostgreSQL]  [ClickHouse]  [Firebase]
 [REST API]  [Webhooks]  [SHP/GeoJSON]  [XLSX]  [CSV]
@@ -251,20 +317,22 @@ Terintegrasi dengan infrastruktur yang sudah ada
 - Grayscale → color on hover
 - Link ke `/integrations.html`
 
-#### 2.10 PERFORMANCE NUMBERS ★ NEW
+#### 2.10 ANGKA PERFORMA ★ NEW
 ```
-Platform Performance
-Angka yang berbicara
+          `PERFORMA`
+
+Angka yang Berbicara
 
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
 │   < 500ms    │  │   10K+       │  │   99.9%      │  │   24/7       │
-│   Avg API    │  │   Data Points│  │   Uptime     │  │   Real-Time  │
-│   Response   │  │   /second    │  │   SLA        │  │   Monitoring │
+│   Rata-rata  │  │   Data Point │  │   Uptime     │  │   Monitoring │
+│   Respons    │  │   /detik     │  │   SLA        │  │   Real-Time  │
+│   API        │  │              │  │              │  │              │
 └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘
 ```
 - Count-up animation on scroll
-- Builds credibility for technical decision makers
-- Angka bisa disesuaikan after benchmarking
+- Membangun kredibilitas teknis untuk pengambil keputusan
+- Angka bisa disesuaikan setelah benchmarking
 
 #### 2.11 TESTIMONIAL / SOCIAL PROOF
 ```
@@ -282,15 +350,14 @@ Angka yang berbicara
 - Carousel 3 testimonial (placeholder text, bisa diisi nanti)
 - Auto-rotate setiap 5 detik
 
-#### 2.12 CTA BANNER
+#### 2.12 BANNER CTA
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  ▓▓▓▓▓▓▓▓▓▓▓▓ gradient background ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
 │                                                                 │
-│          Ready to Transform Your IoT Operations?                │
-│          Siap mentransformasi operasi IoT Anda?                 │
+│          Siap Mentransformasi Operasi IoT Anda?                 │
 │                                                                 │
-│          [🚀 Request Demo]    [📧 Contact Sales]               │
+│          [🚀 Minta Demo]    [📧 Hubungi Tim Kami]               │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -298,54 +365,61 @@ Angka yang berbicara
 #### 2.13 FOOTER
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  [Logo] Devetek Helios                                         │
-│  IoT Platform for Critical Infrastructure                       │
+│  [D] DEVETEK HELIOS                                            │
+│  Platform IoT untuk Infrastruktur Kritis                        │
 │                                                                 │
-│  PRODUCT          SOLUTIONS         COMPANY        RESOURCES    │
-│  Features         Water Utility     About Us       Documentation│
-│  Dashboard        Energy            Contact        API Reference│
-│  WebGIS           Industrial        Pricing        Blog         │
-│  Alerts           Agriculture       Careers ★      Changelog ★  │
-│  Reports                                                        │
-│  ML Analytics     CONNECT           LEGAL                       │
-│  Widget Builder   Email             Privacy Policy ★            │
-│  Integrations ★   WhatsApp          Terms of Service ★          │
-│                   LinkedIn          Security ★                  │
-│                   GitHub                                        │
+│  PRODUK            SOLUSI            PERUSAHAAN     SUMBER DAYA │
+│  Fitur             PDAM / Air        Tentang Kami   Dokumentasi │
+│  Dashboard         Energi            Kontak         Referensi API│
+│  WebGIS            Industri          Harga          Blog        │
+│  Alert             Pertanian         Karir ★        Changelog ★ │
+│  Laporan                                                        │
+│  ML Analitik       HUBUNGI           LEGAL                      │
+│  Widget Builder    Email             Kebijakan Privasi ★        │
+│  Integrasi ★       WhatsApp          Syarat & Ketentuan ★       │
+│                    LinkedIn          Keamanan ★                  │
+│                    GitHub                                        │
+│                                                                 │
+│  ────── DEVETEK HARDWARE ──────                                 │
+│  Lihat produk hardware IoT kami → devetek-iot.web.app           │
 │                                                                 │
 │  ─────────────────────────────────────────────────────────────  │
-│  © 2026 Devetek. All rights reserved.      [ID 🇮🇩] [EN 🇬🇧]  │
+│  © 2026 PT. COMON CIPTA INOVASI. Semua hak dilindungi.         │
 └─────────────────────────────────────────────────────────────────┘
 ```
-- ★ = new additions vs previous draft
-- 5 columns on desktop, collapsed accordion on mobile
+- ★ = penambahan baru vs draft sebelumnya
+- 5 kolom di desktop, collapsed accordion di mobile
+- **Cross-link ke devetek-iot.web.app** di footer (section "DEVETEK HARDWARE")
+- Copyright: PT. COMON CIPTA INOVASI (bukan Devetek)
 
 ---
 
-## 3. FEATURES (Overview)
+## 3. FITUR (Ikhtisar)
 
 **URL:** `/features.html`  
-**Purpose:** Showcase semua fitur platform secara ringkas, arahkan visitor ke deep-dive page  
+**Tujuan:** Showcase semua fitur platform secara ringkas, arahkan visitor ke deep-dive page  
 
 ### Sections:
 
 #### 3.1 HERO (Compact)
 ```
-Platform Features
-Explore the complete toolkit that makes Devetek Helios 
-the most comprehensive IoT platform.
+          `FITUR PLATFORM`
+
+Fitur Platform
+Jelajahi toolkit lengkap yang menjadikan Devetek Helios
+platform IoT paling komprehensif.
 ```
 - Background: subtle gradient, no screenshot
-- Breadcrumb: `Home > Features`
+- Breadcrumb: `Beranda > Fitur`
 
-#### 3.2 FEATURE GRID (6 Large Cards)
+#### 3.2 GRID FITUR (6 Card Besar)
 Masing-masing card berisi:
 - **Icon** (SVG)
-- **Title** (EN)
-- **Subtitle** (ID)
-- **3-4 bullet points** highlights
+- **Judul**
+- **Deskripsi singkat**
+- **3-4 bullet points** highlight
 - **Screenshot thumbnail** kecil
-- **[Read More →]** link ke sub-page
+- **[Selengkapnya →]** link ke sub-page
 
 ```
 ┌────────────────────────────────────────────┐
@@ -358,13 +432,13 @@ Masing-masing card berisi:
 │  ✓ SQL editor & template wizard           │
 │  ✓ 10 dashboard categories                │
 │                                            │
-│  ┌──────────────┐     [Explore →]         │
+│  ┌──────────────┐     [Selengkapnya →]    │
 │  │  [thumbnail] │                          │
 │  └──────────────┘                          │
 └────────────────────────────────────────────┘
 ```
 
-#### 3.3 COMPARISON TABLE
+#### 3.3 TABEL PERBANDINGAN
 ```
 Feature                    | Helios | Competitor A | Competitor B
 ─────────────────────────────────────────────────────────────────
@@ -379,10 +453,10 @@ Multi-Tenant Architecture  |   ✅   |      ✅      |     ⚠️
 MQTT + TCP (Teltonika)     |   ✅   |      ⚠️      |     ❌
 ClickHouse Time-Series     |   ✅   |      ❌      |     ❌
 ```
-- Competitor names bisa diganti "Platform A / B" atau di-blur
-- Purpose: highlight keunggulan Helios
+- Nama competitor bisa diganti "Platform A / B" atau di-blur
+- Tujuan: highlight keunggulan Helios
 
-#### 3.4 ARCHITECTURE DIAGRAM
+#### 3.4 DIAGRAM ARSITEKTUR
 ```
 ┌─────────┐     MQTT/TCP      ┌─────────────┐
 │ Devices │ ─────────────────→ │  IoT Gateway │
@@ -415,46 +489,45 @@ ClickHouse Time-Series     |   ✅   |      ❌      |     ❌
                               └──────────────┘
 ```
 - Render as SVG illustration atau animated diagram
-- Purpose: show technical capability to technical audience
+- Tujuan: tunjukkan kapabilitas teknis ke audience teknis
 
 #### 3.5 CTA
 ```
-Want to see these features in action?
-[Request a Live Demo →]
+Ingin melihat fitur ini beraksi?
+[Minta Demo Langsung →]
 ```
 
 ---
 
-## 4. FEATURES SUB-PAGES (6 Pages)
+## 4. HALAMAN SUB-FITUR (6 Halaman)
 
 Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ### Template Layout:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Breadcrumb: Home > Features > [Feature Name]                  │
+│  Breadcrumb: Beranda > Fitur > [Nama Fitur]                    │
 │                                                                 │
-│  HERO: Title + Subtitle + Full-width Screenshot                │
+│  HERO: Judul + Subjudul + Screenshot full-width                │
 │                                                                 │
-│  SECTION 1: Overview paragraph (2-3 paragraf)                  │
+│  SECTION 1: Paragraf ikhtisar (2-3 paragraf)                   │
 │                                                                 │
-│  SECTION 2: Key Capabilities (4-6 items, icon+title+desc)      │
+│  SECTION 2: Kapabilitas Utama (4-6 item, icon+judul+deskripsi) │
 │                                                                 │
-│  SECTION 3: Alternating image+text blocks (2-3 blocks)         │
+│  SECTION 3: Alternating gambar+teks (2-3 blok)                 │
 │                                                                 │
-│  SECTION 4: Technical Specs (table/list)                       │
+│  SECTION 4: Spesifikasi Teknis (tabel/list)                    │
 │                                                                 │
-│  SECTION 5: Related Features (3 cards linking to other pages)  │
+│  SECTION 5: Fitur Terkait (3 card link ke halaman lain)        │
 │                                                                 │
-│  CTA: "See it in action → Request Demo"                        │
+│  CTA: "Lihat beraksi → Minta Demo"                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 4.1 `/features/dashboard.html` — Dashboard & Widget Builder
 
 **Hero Image:** Dashboard overview screenshot  
-**Tagline:** *"Build Dashboards That Match Your Operations"*  
-**Subtitle ID:** *Bangun dashboard yang sesuai dengan operasi Anda*
+**Tagline:** *"Bangun Dashboard Sesuai Kebutuhan Operasi Anda"*
 
 **Key Capabilities:**
 | # | Capability | Description |
@@ -480,14 +553,13 @@ Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ---
 
-### 4.2 `/features/webgis.html` — WebGIS & Spatial Mapping
+### 4.2 `/features/webgis.html` — WebGIS & Pemetaan Spasial
 
 **Hero Image:** WebGIS map view screenshot  
-**Tagline:** *"Your Assets on the Map, In Real Time"*  
-**Subtitle ID:** *Aset Anda di peta, secara real-time*
+**Tagline:** *"Aset Anda di Peta, Secara Real-Time"*
 
 **Key Capabilities:**
-| # | Capability | Description |
+| # | Kapabilitas | Deskripsi |
 |---|-----------|-------------|
 | 1 | OpenLayers Map Engine | Interaktif, cepat, support berbagai basemap |
 | 2 | Core IoT Layers | Sensor, Node, Alert, Anomaly, Network Topology — auto-generated |
@@ -503,14 +575,13 @@ Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ---
 
-### 4.3 `/features/alerts.html` — Smart Alerts & Monitoring
+### 4.3 `/features/alerts.html` — Smart Alert & Monitoring
 
 **Hero Image:** Alert center screenshot  
-**Tagline:** *"Know Before It Breaks"*  
-**Subtitle ID:** *Tahu sebelum terjadi masalah*
+**Tagline:** *"Tahu Sebelum Terjadi Masalah"*
 
 **Key Capabilities:**
-| # | Capability | Description |
+| # | Kapabilitas | Deskripsi |
 |---|-----------|-------------|
 | 1 | Configurable Rules | Set threshold min/max per sensor channel |
 | 2 | Severity Levels | Critical, Warning, Info — visual color coding |
@@ -526,14 +597,13 @@ Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ---
 
-### 4.4 `/features/reports.html` — Report & Export
+### 4.4 `/features/reports.html` — Laporan & Ekspor
 
 **Hero Image:** Report preview screenshot  
-**Tagline:** *"From Raw Data to Executive Reports in Minutes"*  
-**Subtitle ID:** *Dari data mentah ke laporan eksekutif dalam hitungan menit*
+**Tagline:** *"Dari Data Mentah ke Laporan Eksekutif dalam Hitungan Menit"*
 
 **Key Capabilities:**
-| # | Capability | Description |
+| # | Kapabilitas | Deskripsi |
 |---|-----------|-------------|
 | 1 | Hierarchical Filter | Owner → Project → Node → Sensor → Channel cascading filter |
 | 2 | Aggregation Modes | Raw, 10 min, 1 hour, 1 day — pilih granularitas data |
@@ -549,14 +619,13 @@ Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ---
 
-### 4.5 `/features/ml-analytics.html` — ML & AI Analytics
+### 4.5 `/features/ml-analytics.html` — ML & AI Analitik
 
 **Hero Image:** ML dashboard screenshot  
-**Tagline:** *"AI-Powered Insights for Predictive Operations"*  
-**Subtitle ID:** *Wawasan berbasis AI untuk operasi prediktif*
+**Tagline:** *"Wawasan Berbasis AI untuk Operasi Prediktif"*
 
 **Key Capabilities:**
-| # | Capability | Description |
+| # | Kapabilitas | Deskripsi |
 |---|-----------|-------------|
 | 1 | Anomaly Detection | Deteksi otomatis pola tidak normal pada data sensor |
 | 2 | Forecasting | Prediksi nilai sensor ke depan berdasarkan historical data |
@@ -572,14 +641,13 @@ Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ---
 
-### 4.6 `/features/device-management.html` — Device & Sensor Management
+### 4.6 `/features/device-management.html` — Manajemen Device & Sensor
 
 **Hero Image:** Node list/detail screenshot  
-**Tagline:** *"Every Device, Every Sensor, Under Control"*  
-**Subtitle ID:** *Setiap device, setiap sensor, dalam kendali*
+**Tagline:** *"Setiap Device, Setiap Sensor, Dalam Kendali"*
 
 **Key Capabilities:**
-| # | Capability | Description |
+| # | Kapabilitas | Deskripsi |
 |---|-----------|-------------|
 | 1 | Node CRUD | Full management: create, edit, delete, 18+ filter parameters |
 | 2 | Sensor Channels | Multi-channel sensor configuration per node |
@@ -597,84 +665,85 @@ Setiap sub-page punya **template yang sama** dengan konten berbeda:
 
 ---
 
-## 5. SOLUTIONS / USE CASES (Overview)
+## 5. SOLUSI / STUDI KASUS (Ikhtisar)
 
 **URL:** `/solutions.html`  
-**Purpose:** Mapping fitur Helios ke kebutuhan industri spesifik
+**Tujuan:** Mapping fitur Helios ke kebutuhan industri spesifik
 
 ### Sections:
 
 #### 5.1 HERO
 ```
-Solutions for Every Industry
-Solusi untuk setiap industri
+          `SOLUSI INDUSTRI`
 
-Devetek Helios adapts to your industry's unique 
-monitoring and control requirements.
+Solusi untuk Setiap Industri
+
+Devetek Helios beradaptasi dengan kebutuhan monitoring 
+dan kontrol unik setiap industri Anda.
 ```
 
-#### 5.2 INDUSTRY GRID (4 Large Cards)
+#### 5.2 GRID INDUSTRI (4 Card Besar)
 ```
 ┌─────────────────────────┐  ┌─────────────────────────┐
-│  💧 Water Utility / PDAM │  │  ⚡ Energy & Power       │
+│  💧 PDAM / Utilitas Air  │  │  ⚡ Energi & Kelistrikan   │
 │                          │  │                          │
-│  DMA monitoring, leak    │  │  VSD monitoring, power   │
-│  detection, pressure &   │  │  consumption, predictive │
-│  flow analysis, pipe     │  │  maintenance, grid       │
-│  network visualization   │  │  monitoring              │
+│  Monitoring DMA, deteksi │  │  Monitoring VSD, konsumsi│
+│  kebocoran, tekanan &    │  │  daya, prediktif         │
+│  debit, visualisasi      │  │  maintenance, monitoring │
+│  jaringan pipa           │  │  grid                    │
 │                          │  │                          │
-│  [Explore Solution →]    │  │  [Explore Solution →]    │
+│  [Jelajahi Solusi →]     │  │  [Jelajahi Solusi →]     │
 └─────────────────────────┘  └─────────────────────────┘
 ┌─────────────────────────┐  ┌─────────────────────────┐
-│  🏭 Industrial IoT       │  │  🌾 Smart Agriculture    │
+│  🏭 IoT Industri          │  │  🌾 Pertanian Cerdas       │
 │                          │  │                          │
-│  Factory monitoring,     │  │  Soil moisture, weather  │
-│  production telemetry,   │  │  station, irrigation     │
-│  quality control,        │  │  control, crop           │
-│  predictive maintenance  │  │  monitoring              │
+│  Monitoring pabrik,      │  │  Kelembaban tanah,       │
+│  telemetri produksi,     │  │  stasiun cuaca, kontrol  │
+│  kontrol kualitas,       │  │  irigasi, monitoring     │
+│  prediktif maintenance   │  │  tanaman                 │
 │                          │  │                          │
-│  [Explore Solution →]    │  │  [Explore Solution →]    │
+│  [Jelajahi Solusi →]     │  │  [Jelajahi Solusi →]     │
 └─────────────────────────┘  └─────────────────────────┘
 ```
 
-#### 5.3 CROSS-INDUSTRY BENEFITS
+#### 5.3 KEUNGGULAN LINTAS INDUSTRI
 ```
-Applicable Across All Industries:
+Berlaku untuk Semua Industri:
 
 [Icon] Multi-Tenant     → Kelola banyak klien/project dalam 1 platform
 [Icon] Real-Time        → Data real-time dari lapangan ke dashboard
 [Icon] Scalable         → Dari 10 node sampai 10.000+ node
-[Icon] Secure           → Role-based access, audit logs, JWT auth
+[Icon] Aman             → Role-based access, audit logs, JWT auth
 [Icon] API-First        → Swagger docs, OpenAPI SDK auto-generation
 [Icon] Cloud-Ready      → Firebase hosting, PM2 production deployment
 ```
 
 ---
 
-## 6. SOLUTIONS SUB-PAGES (4 Pages)
+## 6. HALAMAN SUB-SOLUSI (4 Halaman)
 
 ### Template Layout (sama untuk semua):
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Breadcrumb: Home > Solutions > [Industry]                     │
+│  Breadcrumb: Beranda > Solusi > [Industri]                     │
 │                                                                 │
-│  HERO: Industry title + illustration + tagline                 │
+│  HERO: Judul industri + ilustrasi + tagline                    │
 │                                                                 │
-│  SECTION 1: Industry Challenges (3-4 pain points)              │
+│  SECTION 1: Tantangan Industri (3-4 pain points)               │
 │                                                                 │
-│  SECTION 2: How Helios Solves It (feature mapping)             │
+│  SECTION 2: Bagaimana Helios Menyelesaikannya (mapping fitur)  │
 │                                                                 │
-│  SECTION 3: Example Dashboard Layout (mockup/wireframe)        │
+│  SECTION 3: Contoh Layout Dashboard (mockup/wireframe)         │
 │                                                                 │
-│  SECTION 4: Key Metrics Monitored (table/cards)                │
+│  SECTION 4: Metrik Utama yang Dipantau (tabel/cards)           │
 │                                                                 │
-│  SECTION 5: Testimonial (industry-specific, placeholder)       │
+│  SECTION 5: Testimoni (spesifik industri, placeholder)         │
 │                                                                 │
-│  CTA: "See how Helios works for [Industry] → Request Demo"    │
+│  CTA: "Lihat bagaimana Helios bekerja untuk [Industri] → Minta Demo"  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.1 `/solutions/water-utility.html` — PDAM / Water Utility
+### 6.1 `/solutions/water-utility.html` — PDAM / Utilitas Air
 
 **Challenges:**
 1. Kehilangan air (NRW) tinggi tanpa data real-time
@@ -696,7 +765,7 @@ Applicable Across All Industries:
 
 ---
 
-### 6.2 `/solutions/energy.html` — Energy & Power
+### 6.2 `/solutions/energy.html` — Energi & Kelistrikan
 
 **Challenges:**
 1. Pemantauan konsumsi energi tidak terpusat
@@ -716,7 +785,7 @@ Applicable Across All Industries:
 
 ---
 
-### 6.3 `/solutions/industrial.html` — Industrial IoT
+### 6.3 `/solutions/industrial.html` — IoT Industri
 
 **Challenges:**
 1. Banyak sensor tersebar di area pabrik luas
@@ -736,7 +805,7 @@ Applicable Across All Industries:
 
 ---
 
-### 6.4 `/solutions/smart-agriculture.html` — Smart Agriculture
+### 6.4 `/solutions/smart-agriculture.html` — Pertanian Cerdas
 
 **Challenges:**
 1. Irigasi tidak efisien (over/under watering)
@@ -756,19 +825,20 @@ Applicable Across All Industries:
 
 ---
 
-## 7. SCREENSHOTS / GALLERY
+## 7. GALERI SCREENSHOT
 
 **URL:** `/screenshots.html`  
-**Purpose:** Visual showcase platform, build confidence sebelum demo
+**Tujuan:** Showcase visual platform, bangun kepercayaan sebelum demo
 
 ### Layout:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Screenshots & Gallery                                         │
-│  Lihat Helios beraksi                                          │
+│          `GALERI`                                              │
+│  Screenshot & Galeri                                           │
+│  Lihat Helios Beraksi                                          │
 │                                                                 │
-│  FILTER TABS:                                                  │
-│  [All] [Dashboard] [WebGIS] [Alerts] [Reports] [Devices]     │
+│  TAB FILTER:                                                   │
+│  [Semua] [Dashboard] [WebGIS] [Alert] [Laporan] [Device]      │
 │                                                                 │
 │  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐                       │
 │  │      │  │      │  │      │  │      │                       │
@@ -788,9 +858,9 @@ Applicable Across All Industries:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Features:**
-- Masonry grid layout (4 col desktop, 2 col tablet, 1 col mobile)
-- Tab filtering by category (frontend JS filter, no reload)
+**Fitur:**
+- Masonry grid layout (4 kolom desktop, 2 kolom tablet, 1 kolom mobile)
+- Tab filtering berdasarkan kategori (frontend JS filter, tanpa reload)
 - Click → lightbox with:
   - Full-size image
   - Caption (feature name + brief description)
@@ -817,16 +887,16 @@ Applicable Across All Industries:
 
 ---
 
-## 8. PRICING
+## 8. HARGA
 
 **URL:** `/pricing.html`  
-**Purpose:** Transparansi harga, konversi ke contact/demo
+**Tujuan:** Transparansi harga, konversi ke contact/demo
 
 ### Layout:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Simple, Transparent Pricing                                   │
-│  Harga yang sederhana dan transparan                           │
+│          `PAKET LANGGANAN`                                     │
+│  Harga Sederhana dan Transparan                                │
 │                                                                 │
 │  [Monthly ○]  [Annual ● Save 20%]                              │
 │                                                                 │
@@ -885,7 +955,7 @@ Applicable Across All Industries:
 
 ---
 
-## 9. DOCUMENTATION (Link Only)
+## 9. DOKUMENTASI (Link Saja)
 
 **Tidak buat halaman baru** — langsung link ke:
 - App documentation: `/iot/document` (sudah ada di Angular app)
@@ -898,65 +968,69 @@ https://devetek-helios.web.app/iot/document
 
 ---
 
-## 10. ABOUT US
+## 10. TENTANG KAMI
 
 **URL:** `/about.html`  
-**Purpose:** Build trust, company credibility, team showcase
+**Tujuan:** Bangun kepercayaan, kredibilitas perusahaan, showcase tim
 
 ### Sections:
 
 #### 10.1 HERO
 ```
-About Devetek
-Building the Future of IoT Infrastructure
-Membangun masa depan infrastruktur IoT
+          `TENTANG KAMI`
+
+Tentang Devetek
+Membangun Masa Depan Infrastruktur IoT
 ```
 
-#### 10.2 COMPANY STORY
+#### 10.2 CERITA PERUSAHAAN
 ```
-Devetek was founded with a mission to make IoT infrastructure 
-management accessible, intelligent, and reliable for organizations 
-managing critical infrastructure.
+Devetek didirikan dengan misi menjadikan manajemen infrastruktur IoT 
+mudah diakses, cerdas, dan andal bagi organisasi yang mengelola 
+infrastruktur kritis.
+
+PT. COMON CIPTA INOVASI, melalui brand Devetek, berfokus pada 
+pengembangan solusi IoT end-to-end untuk pasar Indonesia.
 
 [2-3 paragraf tentang visi, misi, dan perjalanan perusahaan]
 ```
 
-#### 10.3 MISSION & VALUES (3-4 Cards)
+#### 10.3 MISI & NILAI (3-4 Card)
 ```
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│ 🎯 Mission    │  │ 🔍 Accuracy  │  │ ⚡ Speed     │  │ 🤝 Trust     │
+│ 🎯 Misi       │  │ 🔍 Akurasi   │  │ ⚡ Kecepatan │  │ 🤝 Kepercayaan│
 │               │  │               │  │               │  │               │
-│ Democratize   │  │ Every data    │  │ Real-time    │  │ Reliable     │
-│ IoT for       │  │ point         │  │ always,      │  │ partners    │
-│ critical      │  │ matters       │  │ everywhere   │  │ for your    │
-│ infrastructure│  │               │  │               │  │ operations  │
+│ Demokratisasi │  │ Setiap data   │  │ Real-time    │  │ Partner      │
+│ IoT untuk     │  │ point         │  │ selalu,      │  │ terpercaya   │
+│ infrastruktur │  │ penting       │  │ di mana saja │  │ untuk        │
+│ kritis        │  │               │  │               │  │ operasi Anda │
 └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘
 ```
 
-#### 10.4 TEAM (Opsional)
+#### 10.4 TIM (Opsional)
 ```
-Meet Our Team
+Tim Kami
 
 ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐
 │ foto │  │ foto │  │ foto │  │ foto │
 │      │  │      │  │      │  │      │
 │ Nama │  │ Nama │  │ Nama │  │ Nama │
-│ Role │  │ Role │  │ Role │  │ Role │
+│ Peran│  │ Peran│  │ Peran│  │ Peran│
 └──────┘  └──────┘  └──────┘  └──────┘
 ```
 - Placeholder foto, bisa diisi nanti
 
-#### 10.5 NUMBERS / MILESTONES
+#### 10.5 ANGKA / MILESTONE
 ```
 ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
 │   30+    │  │   3      │  │   34     │  │  2024    │
-│ Features │  │ Services │  │ Entities │  │ Founded  │
+│  Fitur   │  │ Layanan  │  │ Entitas  │  │ Didirikan│
 └──────────┘  └──────────┘  └──────────┘  └──────────┘
 ```
 
-#### 10.6 TECH STACK BADGES
+#### 10.6 BADGE TECH STACK
 ```
-Built With:
+Dibangun Dengan:
 [Angular] [NestJS] [PostgreSQL] [ClickHouse] [MQTT] [OpenLayers] [ECharts] [Firebase]
 ```
 - Badge-style pills dengan logo/icon
@@ -1032,10 +1106,10 @@ Built With:
 
 ---
 
-## 13. LIVE DEMO / SANDBOX ★ NEW
+## 13. DEMO LANGSUNG / SANDBOX ★ NEW
 
 **URL:** `/demo.html`  
-**Purpose:** Biarkan visitor mencoba platform tanpa perlu sign up / contact sales dulu. Ini **conversion driver terkuat** — semua IoT platform besar punya ini (ThingsBoard Demo, Ubidots Demo, Blynk Demo).
+**Tujuan:** Biarkan visitor mencoba platform tanpa perlu sign up / contact sales dulu. Ini **conversion driver terkuat** — semua IoT platform besar punya ini (ThingsBoard Demo, Ubidots Demo, Blynk Demo).
 
 ### Strategy Options:
 
@@ -1096,17 +1170,18 @@ Built With:
 
 ---
 
-## 14. INTEGRATIONS & API ★ NEW
+## 14. INTEGRASI & API ★ NEW
 
 **URL:** `/integrations.html`  
-**Purpose:** Technical buyers & developers ingin tahu integrasi apa saja yang didukung. Semua platform IoT besar punya halaman ini.
+**Tujuan:** Technical buyers & developers ingin tahu integrasi apa saja yang didukung. Semua platform IoT besar punya halaman ini.
 
 ### Sections:
 
 #### 14.1 HERO
 ```
-Integrations & API
-Connect Helios with your existing infrastructure
+          `INTEGRASI`
+
+Integrasi & API
 Hubungkan Helios dengan infrastruktur yang sudah ada
 ```
 
@@ -1188,17 +1263,18 @@ Deploy:    Firebase Hosting • PM2 • Docker-ready
 
 ---
 
-## 15. SECURITY & COMPLIANCE ★ NEW
+## 15. KEAMANAN & KEPATUHAN ★ NEW
 
 **URL:** `/security.html`  
-**Purpose:** Enterprise clients dan BUMN **pasti tanya soal keamanan**. Tanpa halaman ini, mereka ragu.
+**Tujuan:** Klien enterprise dan BUMN **pasti tanya soal keamanan**. Tanpa halaman ini, mereka ragu.
 
 ### Sections:
 
 #### 15.1 HERO
 ```
-Security & Compliance
-Your data protection is our priority
+          `KEAMANAN`
+
+Keamanan & Kepatuhan
 Perlindungan data Anda adalah prioritas kami
 ```
 
@@ -1254,9 +1330,9 @@ We take all reports seriously and respond within 48 hours.
 
 ---
 
-## 16. LEGAL PAGES ★ NEW
+## 16. HALAMAN LEGAL ★ NEW
 
-### 16.1 Privacy Policy (`/privacy.html`)
+### 16.1 Kebijakan Privasi (`/privacy.html`)
 ```
 Sections:
 1. Information We Collect
@@ -1274,7 +1350,7 @@ Sections:
 - **Wajib** jika pasang Google Analytics
 - Basic template, bisa disempurnakan oleh legal team
 
-### 16.2 Terms of Service (`/terms.html`)
+### 16.2 Syarat & Ketentuan (`/terms.html`)
 ```
 Sections:
 1. Acceptance of Terms
@@ -1292,10 +1368,10 @@ Sections:
 
 ---
 
-## 17. 404 PAGE ★ NEW
+## 17. HALAMAN 404 ★ NEW
 
 **URL:** `/404.html`  
-**Purpose:** Jangan biarkan visitor stuck di halaman error jelek. Ubah 404 jadi conversion opportunity.
+**Tujuan:** Jangan biarkan visitor stuck di halaman error jelek. Ubah 404 jadi conversion opportunity.
 
 ### Layout:
 ```
@@ -1305,19 +1381,18 @@ Sections:
 │                    ║      404       ║                            │
 │                    ╚════════════════╝                            │
 │                                                                 │
-│              Page Not Found                                     │
-│              Halaman tidak ditemukan                             │
+│              Halaman Tidak Ditemukan                            │
 │                                                                 │
-│    The page you're looking for doesn't exist                    │
-│    or has been moved.                                           │
+│    Halaman yang Anda cari tidak ada                             │
+│    atau telah dipindahkan.                                      │
 │                                                                 │
-│    [🏠 Back to Home]    [📧 Contact Us]    [🔍 Search]          │
+│    [🏠 Kembali ke Beranda]  [📧 Hubungi Kami]  [🔍 Cari]        │
 │                                                                 │
-│    Popular Pages:                                               │
-│    • Features overview                                          │
-│    • Request a demo                                             │
-│    • Water utility solution                                     │
-│    • Screenshots gallery                                        │
+│    Halaman Populer:                                             │
+│    • Ikhtisar fitur                                             │
+│    • Minta demo                                                 │
+│    • Solusi utilitas air                                        │
+│    • Galeri screenshot                                          │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -1328,108 +1403,147 @@ Sections:
 
 ---
 
-## 18. SHARED COMPONENTS
+## 18. KOMPONEN BERSAMA
 
-### 18.1 NAVBAR (All Pages)
-- Logo + brand text
-- Menu: Features (dropdown), Solutions (dropdown), Integrations, Pricing, Screenshots, About
-- CTA Buttons: "Try Demo" (ghost) + "Request Demo" (solid)
+### 18.1 NAVBAR (Semua Halaman)
+- Logo: `[D]` monogram + "DEVETEK HELIOS"
+- Menu: Fitur (dropdown), Solusi (dropdown), Integrasi, Harga, Galeri, Tentang
+- Tombol CTA: "Coba Demo" (ghost) + "Minta Demo" (solid)
 - Mobile hamburger menu
-- Active page indicator
-- Transparent → solid on scroll (home only), solid on inner pages
+- Indikator halaman aktif
+- Transparent → solid on scroll (home only), solid di inner pages
 
-### 18.2 FOOTER (All Pages)
-- 4 column layout: Product, Solutions, Company, Connect
+### 18.2 FOOTER (Semua Halaman)
+- Layout 4 kolom: Produk, Solusi, Perusahaan, Hubungi
 - Logo + tagline
-- Copyright
-- Social links: LinkedIn, GitHub, Instagram
-- Language toggle (EN/ID) — Phase 2
+- Copyright: PT. COMON CIPTA INOVASI
+- Link sosial: LinkedIn, GitHub, Instagram
+- Cross-link ke devetek-iot.web.app
 
-### 18.3 CTA BANNER (Reusable)
+### 18.3 BANNER CTA (Reusable)
 - Gradient background
-- Title + subtitle + 2 buttons
-- Used on: Home, Features, Solutions, About
+- Judul + subjudul + 2 tombol
+- Digunakan di: Beranda, Fitur, Solusi, Tentang
 
-### 18.4 BREADCRUMB (Inner Pages Only)
+### 18.4 BREADCRUMB (Halaman Inner Saja)
 ```
-Home > Features > Dashboard & Widget Builder
+Beranda > Fitur > Dashboard & Widget Builder
 ```
 
-### 18.5 BACK-TO-TOP BUTTON
+### 18.5 TOMBOL KEMBALI KE ATAS
 - Fixed bottom-right
-- Appears after scrolling 300px
-- Smooth scroll to top
+- Muncul setelah scroll 300px
+- Smooth scroll ke atas
 
-### 18.6 WHATSAPP FLOATING BUTTON ★ NEW
+### 18.6 TOMBOL MELAYANG WHATSAPP ★ NEW
 ```
                                         ┌──────────────┐
-                                        │ 💬 Chat with │
-                                        │    us        │
+                                        │ 💬 Chat      │
+                                        │    dengan kami│
                                         └──────┬───────┘
                                                │
                                         ┌──────┴───────┐
                                         │  [WA Icon]   │
                                         └──────────────┘
 ```
-- Fixed bottom-right (above back-to-top)
-- Green WhatsApp icon (brand color #25D366)
-- Hover: tooltip "Chat with us"
-- Click: open `wa.me/62xxx` in new tab
-- **Wajib untuk pasar Indonesia** — WhatsApp is #1 communication channel
-- On mobile: larger touch target (56px)
-- Pulse animation on first visit (draw attention)
+- Fixed bottom-right (di atas tombol back-to-top)
+- Icon WhatsApp hijau (brand color #25D366)
+- Hover: tooltip "Chat dengan kami"
+- Click: buka `wa.me/6285623022229` di tab baru
+- **Wajib untuk pasar Indonesia** — WhatsApp = channel komunikasi #1
+- Di mobile: touch target lebih besar (56px)
+- Pulse animation saat pertama kali berkunjung (menarik perhatian)
 
-### 18.7 COOKIE CONSENT BANNER ★ NEW
+### 18.7 BANNER PERSETUJUAN COOKIE ★ NEW
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ 🍪 We use cookies to improve your experience.                  │
-│    Read our [Privacy Policy].                                  │
-│                          [Accept All]  [Necessary Only]        │
+│ 🍪 Kami menggunakan cookie untuk meningkatkan pengalaman Anda.  │
+│    Baca [Kebijakan Privasi] kami.                              │
+│                          [Terima Semua]  [Hanya yang Perlu]    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 - Fixed bottom bar
-- Required if using Google Analytics
-- Stores preference in localStorage
-- Minimal, non-intrusive
+- Wajib jika menggunakan Google Analytics
+- Simpan preferensi di localStorage
+- Minimal, tidak mengganggu
 
 ---
 
 ## 19. DESIGN TOKENS & STYLE GUIDE
 
-### Colors
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--color-bg` | `#0a0e17` | Page background |
-| `--color-bg-alt` | `#060a12` | Alternating section bg |
-| `--color-surface` | `#111827` | Card background |
-| `--color-surface-hover` | `#1a2332` | Card hover |
-| `--color-border` | `#1e293b` | Card/section borders |
-| `--color-primary` | `#249d79` | Primary (teal/theme) |
-| `--color-primary-light` | `#2ec499` | Primary hover |
-| `--color-primary-glow` | `rgba(36,157,121,0.15)` | Glow effects |
-| `--color-accent` | `#0271ff` | Accent (blue) |
-| `--color-accent-light` | `#3d94ff` | Accent hover |
-| `--color-text` | `#f1f5f9` | Heading text |
-| `--color-text-body` | `#cbd5e1` | Body text |
-| `--color-text-muted` | `#64748b` | Muted/secondary text |
-| `--color-danger` | `#e00000` | Error/danger |
-| `--color-warning` | `#ff9f0c` | Warning |
-| `--color-success` | `#249d79` | Success |
-| `--gradient-primary` | `linear-gradient(135deg, #249d79, #0271ff)` | CTA, hero accents |
-| `--gradient-dark` | `linear-gradient(180deg, #0a0e17, #060a12)` | Section backgrounds |
+> **Catatan:** Token warna diambil dari devetek-iot.web.app sebagai base,
+> kemudian di-evolusi untuk kesan lebih premium pada Helios.
+
+### Colors — Inherited dari devetek-iot
+| Token | Value | Sumber | Catatan |
+|-------|-------|--------|---------|
+| `--color-bg` | `#0a0e17` | ✅ devetek-iot | Dark navy, identik |
+| `--color-bg-alt` | `#060a12` | ✅ devetek-iot | Alternating section, lebih gelap |
+| `--color-surface` | `#111827` | ✅ devetek-iot | Card background |
+| `--color-surface-hover` | `#1a2332` | 🔄 evolusi | Sedikit lebih terang untuk hover |
+| `--color-border` | `#1e293b` | ✅ devetek-iot | Border subtle |
+| `--color-primary` | `#249d79` | ✅ devetek-iot | Teal hijau — SAMA persis |
+| `--color-primary-light` | `#2ec499` | 🔄 evolusi | Lighter teal untuk hover |
+| `--color-primary-glow` | `rgba(36,157,121,0.15)` | 🆕 Helios | Glow effect (tdk ada di devetek-iot) |
+| `--color-accent` | `#0271ff` | ✅ devetek-iot | Blue accent — SAMA persis |
+| `--color-accent-light` | `#3d94ff` | 🔄 evolusi | Lighter blue untuk hover |
+| `--color-text` | `#f1f5f9` | ✅ devetek-iot | Heading text, putih keabu-abuan |
+| `--color-text-body` | `#cbd5e1` | ✅ devetek-iot | Body text |
+| `--color-text-muted` | `#64748b` | ✅ devetek-iot | Muted/secondary |
+| `--color-danger` | `#e00000` | ✅ devetek-iot | Error/danger |
+| `--color-warning` | `#ff9f0c` | ✅ devetek-iot | Warning — amber |
+| `--color-success` | `#249d79` | ✅ devetek-iot | Success = primary teal |
+| `--gradient-primary` | `linear-gradient(135deg, #249d79, #0271ff)` | ✅ devetek-iot | Gradient teal→blue di card borders |
+| `--gradient-dark` | `linear-gradient(180deg, #0a0e17, #060a12)` | ✅ devetek-iot | Section backgrounds |
+| `--gradient-rainbow` | `linear-gradient(90deg, #e00, #ff9f0c, #249d79, #0271ff)` | ✅ devetek-iot | Garis horizontal divider warna-warni |
+
+### Colors — BARU untuk Helios (tidak ada di devetek-iot)
+| Token | Value | Catatan |
+|-------|-------|---------|
+| `--color-glass` | `rgba(17,24,39,0.6)` | Glassmorphism card background |
+| `--color-glass-border` | `rgba(255,255,255,0.08)` | Glassmorphism card border |
+| `--color-accent-glow` | `rgba(2,113,255,0.15)` | Blue glow (baru) |
+| `--color-whatsapp` | `#25D366` | WhatsApp brand color |
+| `--gradient-glass` | `linear-gradient(135deg, rgba(36,157,121,0.1), rgba(2,113,255,0.1))` | Background section accent |
 
 ### Typography
-| Element | Font | Size | Weight |
-|---------|------|------|--------|
-| H1 (Hero) | Plus Jakarta Sans | 56px / 3.5rem | 800 |
-| H2 (Section) | Plus Jakarta Sans | 40px / 2.5rem | 700 |
-| H3 (Card Title) | Plus Jakarta Sans | 24px / 1.5rem | 600 |
-| H4 (Sub-heading) | Plus Jakarta Sans | 20px / 1.25rem | 600 |
-| Body | Inter | 16px / 1rem | 400 |
-| Body Small | Inter | 14px / 0.875rem | 400 |
-| Caption | Inter | 12px / 0.75rem | 400 |
-| Button | Inter | 14px / 0.875rem | 600 |
-| Nav Link | Inter | 15px / 0.9375rem | 500 |
+| Element | Font | Size | Weight | Catatan |
+|---------|------|------|--------|---------|
+| H1 (Hero) | Plus Jakarta Sans | 56px / 3.5rem | 800 | Evolusi — devetek-iot pakai sans-serif standar |
+| H2 (Section) | Plus Jakarta Sans | 40px / 2.5rem | 700 | |
+| H3 (Card Title) | Plus Jakarta Sans | 24px / 1.5rem | 600 | |
+| H4 (Sub-heading) | Plus Jakarta Sans | 20px / 1.25rem | 600 | |
+| Body | Inter | 16px / 1rem | 400 | |
+| Body Small | Inter | 14px / 0.875rem | 400 | |
+| Caption | Inter | 12px / 0.75rem | 400 | |
+| Button | Inter | 14px / 0.875rem | 600 | |
+| Nav Link | Inter | 15px / 0.9375rem | 500 | |
+| **Badge/Pill** | **JetBrains Mono** | **11px / 0.69rem** | **600** | **✅ devetek-iot DNA — monospace uppercase** |
+
+### Badge/Pill Component (inherited dari devetek-iot)
+```css
+/* DNA dari devetek-iot.web.app — badge monospace uppercase */
+.badge-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.69rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(36, 157, 121, 0.15);
+  color: #249d79;
+  border: 1px solid rgba(36, 157, 121, 0.3);
+}
+
+/* Variasi warna */
+.badge-pill--accent  { background: rgba(2,113,255,0.15); color: #3d94ff; border-color: rgba(2,113,255,0.3); }
+.badge-pill--warning { background: rgba(255,159,12,0.15); color: #ff9f0c; border-color: rgba(255,159,12,0.3); }
+.badge-pill--neutral { background: rgba(100,116,139,0.15); color: #94a3b8; border-color: rgba(100,116,139,0.3); }
+```
+- Digunakan untuk: section label di atas heading, tag pada card, category marker
+- Contoh devetek-iot: `TOPOLOGI SISTEM`, `LAPANGAN`, `NODE HARDWARE`, `4G LTE`
+- Contoh Helios: `DASHBOARD`, `WEBGIS`, `ALERT SYSTEM`, `ML ANALYTICS`, `PDAM`
 
 ### Spacing
 | Token | Value |
@@ -1471,16 +1585,16 @@ Home > Features > Dashboard & Widget Builder
 
 ---
 
-## 20. RESPONSIVE STRATEGY
+## 20. STRATEGI RESPONSIF
 
-| Breakpoint | Name | Grid | Nav |
+| Breakpoint | Nama | Grid | Nav |
 |------------|------|------|-----|
-| ≥ 1200px | Desktop | 3-4 col | Full horizontal |
-| 992–1199px | Laptop | 3 col | Full horizontal (compact) |
-| 768–991px | Tablet | 2 col | Hamburger menu |
-| < 768px | Mobile | 1 col | Hamburger + fullscreen overlay |
+| ≥ 1200px | Desktop | 3-4 kolom | Full horizontal |
+| 992–1199px | Laptop | 3 kolom | Full horizontal (compact) |
+| 768–991px | Tablet | 2 kolom | Hamburger menu |
+| < 768px | Mobile | 1 kolom | Hamburger + fullscreen overlay |
 
-### Key Responsive Behaviors:
+### Perilaku Responsif Utama:
 - **Cards:** 3 col → 2 col → 1 col
 - **Feature deep-dive:** Alternating L/R → stacked (image on top)
 - **Pricing:** 3 col → horizontal scroll / stacked
@@ -1492,9 +1606,9 @@ Home > Features > Dashboard & Widget Builder
 
 ---
 
-## 21. ANIMATION & INTERACTION
+## 21. ANIMASI & INTERAKSI
 
-### Scroll Animations (IntersectionObserver)
+### Animasi Scroll (IntersectionObserver)
 | Element | Animation | Trigger |
 |---------|-----------|---------|
 | Section headings | fade-in + slide-up (20px) | Enters viewport |
@@ -1503,7 +1617,7 @@ Home > Features > Dashboard & Widget Builder
 | Stats numbers | Count-up from 0 | Enters viewport |
 | Architecture diagram | Draw-in effect | Enters viewport |
 
-### Hover Animations
+### Animasi Hover
 | Element | Effect |
 |---------|--------|
 | Feature cards | translateY(-4px) + box-shadow increase |
@@ -1513,7 +1627,7 @@ Home > Features > Dashboard & Widget Builder
 | Social icons | color → primary |
 | Pricing cards | border-color → gradient |
 
-### Transitions
+### Transisi
 | Property | Duration | Easing |
 |----------|----------|--------|
 | Default | 300ms | ease |
@@ -1522,64 +1636,68 @@ Home > Features > Dashboard & Widget Builder
 | Slide-up | 600ms | cubic-bezier(0.16, 1, 0.3, 1) |
 | Count-up | 2000ms | ease-out |
 
-### Loading
-- No loading screen (static HTML, instant render)
-- Images: lazy loading (`loading="lazy"`)
-- Fonts: `font-display: swap`
+### Pemuatan
+- Tidak ada loading screen (static HTML, render instan)
+- Gambar: lazy loading (`loading="lazy"`)
+- Font: `font-display: swap`
 
 ---
 
-## 22. SEO & META STRATEGY
+## 22. SEO & STRATEGI META
 
-### Per-Page Meta Tags
+### Meta Tags Per Halaman
 ```html
-<!-- Home -->
-<title>Devetek Helios — IoT Platform for Critical Infrastructure</title>
-<meta name="description" content="End-to-end IoT monitoring platform with real-time dashboard, WebGIS mapping, smart alerts, ML analytics, and comprehensive reporting. Built for water utility, energy, and industrial IoT.">
+<!-- Beranda -->
+<title>DEVETEK HELIOS — Platform IoT untuk Infrastruktur Kritis</title>
+<meta name="description" content="Platform monitoring IoT end-to-end dengan dashboard real-time, pemetaan WebGIS, alert cerdas, analitik ML, dan laporan komprehensif. Dibangun untuk utilitas air, energi, dan IoT industri.">
 
-<!-- Features -->
-<title>Features — Devetek Helios IoT Platform</title>
-<meta name="description" content="Explore 30+ features: dynamic dashboards, WebGIS mapping, smart alerts, ML anomaly detection, report export, and device management.">
+<!-- Fitur -->
+<title>Fitur — DEVETEK HELIOS Platform IoT</title>
+<meta name="description" content="Jelajahi 30+ fitur: dashboard dinamis, pemetaan WebGIS, alert cerdas, deteksi anomali ML, ekspor laporan, dan manajemen device.">
 
-<!-- Solutions > Water -->
-<title>Water Utility IoT Solution — Devetek Helios</title>
-<meta name="description" content="IoT monitoring for PDAM: DMA management, leak detection, pressure monitoring, NRW reduction with real-time dashboard and WebGIS.">
+<!-- Solusi > Air -->
+<title>Solusi IoT Utilitas Air — DEVETEK HELIOS</title>
+<meta name="description" content="Monitoring IoT untuk PDAM: manajemen DMA, deteksi kebocoran, monitoring tekanan, pengurangan NRW dengan dashboard real-time dan WebGIS.">
 ```
 
-### Open Graph (All Pages)
+### Open Graph (Semua Halaman)
 ```html
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Devetek Helios">
+<meta property="og:site_name" content="DEVETEK HELIOS">
 <meta property="og:image" content="/img/og-image.jpg"> <!-- 1200x630 -->
-<meta property="og:locale" content="en_US">
-<meta property="og:locale:alternate" content="id_ID">
+<meta property="og:locale" content="id_ID">
 ```
 
-### Schema.org (Home Page)
+### Schema.org (Halaman Beranda)
 ```html
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Devetek Helios",
+  "name": "DEVETEK HELIOS",
   "applicationCategory": "IoT Platform",
   "operatingSystem": "Web",
-  "description": "End-to-end IoT monitoring platform..."
+  "description": "Platform monitoring IoT end-to-end untuk infrastruktur kritis",
+  "provider": {
+    "@type": "Organization",
+    "name": "PT. COMON CIPTA INOVASI",
+    "brand": "Devetek"
+  }
 }
 </script>
 ```
 
-### Technical SEO
+### SEO Teknis
 - Semantic HTML5: `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<footer>`
-- Image alt texts
+- Alt text gambar (Bahasa Indonesia)
 - `robots.txt` — allow all
-- `sitemap.xml` — auto-generated list of all 16 pages
+- `sitemap.xml` — daftar otomatis semua 22 halaman
 - Canonical URLs
 - Performance: < 3s LCP, < 100ms FID
 
 ---
 
-## 23. FILE STRUCTURE
+## 23. STRUKTUR FILE
 
 ```
 public/
@@ -1674,7 +1792,7 @@ public/
 
 ---
 
-## 24. IMPLEMENTATION PHASES
+## 24. FASE IMPLEMENTASI
 
 ### Phase 1 — Core (MVP Landing) ⏱️ ~2-3 hari
 | # | Task | Pages |
@@ -1744,7 +1862,7 @@ public/
 
 ---
 
-## 25. CONTENT CHECKLIST
+## 25. CHECKLIST KONTEN
 
 ### Text Content Needed (sebelum coding):
 | Page | Content | Status |
@@ -1790,7 +1908,7 @@ public/
 
 ---
 
-## 26. REVIEW GAP ANALYSIS ★ NEW
+## 26. ANALISIS GAP REVIEW ★ NEW
 
 ### Apa yang ditambahkan di v2 dan kenapa:
 
@@ -1827,37 +1945,77 @@ public/
 
 ---
 
-## SUMMARY
+## RINGKASAN
 
-| Metric | v1 | v2 (Current) |
-|--------|-----|--------------|
-| Total Pages | 16 | **22** (+6) |
-| Home Sections | 10 | **13** (+3) |
-| Shared Components | 5 | **7** (+2) |
-| CSS Files | 2 | 2 |
-| JS Files | 2 | **3** (+1) |
-| Implementation Phases | 5 | **6** |
-| Estimated Dev Time | ~5-8 hari | **~7-10 hari** |
-| Dependencies | 0 | 0 |
-| External Fonts | 2 | 2 |
+| Metrik | v1 | v2 | v3 (Sekarang) |
+|--------|-----|-----|---------------|
+| Total Halaman | 16 | 22 | **22** |
+| Section Beranda | 10 | 13 | **13** |
+| Komponen Bersama | 5 | 7 | **7** |
+| File CSS | 2 | 2 | 2 |
+| File JS | 2 | 3 | **3** |
+| Fase Implementasi | 5 | 6 | **6** |
+| Estimasi Waktu Dev | ~5-8 hari | ~7-10 hari | **~7-10 hari** |
+| Dependencies | 0 | 0 | 0 |
+| Font Eksternal | 2 | 2 | **3** (+JetBrains Mono) |
+| Bahasa | EN/ID mix | EN/ID mix | **Full Bahasa Indonesia** |
+| Brand Style | Custom | Custom | **Evolusi devetek-iot** |
 
-### New Pages Summary:
-| Page | Type | Phase |
-|------|------|-------|
-| `/demo.html` | Live Demo / Sandbox | Phase 4 |
-| `/integrations.html` | Integrations & API | Phase 3 |
-| `/security.html` | Security & Compliance | Phase 3 |
-| `/privacy.html` | Privacy Policy | Phase 4 |
-| `/terms.html` | Terms of Service | Phase 4 |
-| `/404.html` | Not Found | Phase 1 |
+### Perubahan v3 vs v2:
+| Aspek | v2 | v3 |
+|-------|-----|-----|
+| **Bahasa** | Campuran EN/ID | Full Bahasa Indonesia |
+| **Brand** | "Devetek Helios" | "DEVETEK HELIOS" standalone, logo `[D]` |
+| **Style DNA** | Custom dark theme | Evolusi dari devetek-iot.web.app |
+| **Badge/Pill** | Tidak ada | Monospace uppercase badges (dari devetek-iot) |
+| **Glassmorphism** | Tidak ada | Card glassmorphism effect |
+| **Font** | 2 (Plus Jakarta + Inter) | 3 (+JetBrains Mono untuk badges) |
+| **Cross-link** | Tidak ada | Footer link ke devetek-iot.web.app |
+| **Contact info** | Placeholder | koko@devetek.com, +62 856-2302-229 |
+| **Company** | "Devetek" | PT. COMON CIPTA INOVASI |
 
-### New Shared Components:
-| Component | Purpose |
-|-----------|---------|
-| WhatsApp Floating Button | Indonesian market standard, instant contact |
-| Cookie Consent Banner | Legal compliance, analytics prerequisite |
+### Halaman Baru (dari v2):
+| Halaman | Tipe | Fase |
+|---------|------|------|
+| `/demo.html` | Demo Langsung / Sandbox | Fase 4 |
+| `/integrations.html` | Integrasi & API | Fase 3 |
+| `/security.html` | Keamanan & Kepatuhan | Fase 3 |
+| `/privacy.html` | Kebijakan Privasi | Fase 4 |
+| `/terms.html` | Syarat & Ketentuan | Fase 4 |
+| `/404.html` | Halaman Tidak Ditemukan | Fase 1 |
+
+### Komponen Bersama Baru (dari v2):
+| Komponen | Tujuan |
+|----------|--------|
+| Tombol Melayang WhatsApp | Standar pasar Indonesia, kontak instan |
+| Banner Persetujuan Cookie | Kepatuhan hukum, prasyarat analytics |
 
 ---
 
-> **Status:** Draft v2 — Review Complete  
-> **Next Step:** Final approval dari kamu, lalu mulai coding Phase 1.
+## STRATEGI CROSS-LINK
+
+### devetek-iot.web.app → devetek-helios.web.app
+| Lokasi di devetek-iot | Link Target | Teks |
+|----------------------|-------------|------|
+| Section "HELIOS Cloud" | devetek-helios.web.app | "Jelajahi HELIOS Platform →" |
+| Navbar | devetek-helios.web.app | "HELIOS Cloud" |
+| Footer | devetek-helios.web.app | "Platform HELIOS" |
+| Subscription section | devetek-helios.web.app/pricing.html | "Lihat Paket Langganan →" |
+
+### devetek-helios.web.app → devetek-iot.web.app
+| Lokasi di Helios | Link Target | Teks |
+|------------------|-------------|------|
+| Footer → "DEVETEK HARDWARE" | devetek-iot.web.app | "Lihat produk hardware IoT kami →" |
+| Integrasi page → Hardware | devetek-iot.web.app/#produk | "Lihat spesifikasi hardware →" |
+| Solusi pages → Hardware | devetek-iot.web.app | "Perangkat yang didukung →" |
+
+### Shared Branding:
+- Logo `[D]` sama di kedua site
+- Color palette compatible (same teal/navy base)
+- Footer structure mirip
+- WhatsApp number sama: +62 856-2302-229
+
+---
+
+> **Status:** Draft v3 — Aligned with devetek-iot.web.app, Full Bahasa Indonesia  
+> **Langkah Selanjutnya:** Final approval dari kamu, lalu mulai coding Fase 1.

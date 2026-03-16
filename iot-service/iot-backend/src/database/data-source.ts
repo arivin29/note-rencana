@@ -17,8 +17,16 @@ const dataSourceOptions: DataSourceOptions = {
   ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
   logging: false,
   synchronize: false,
-  entities: [__dirname + '/../entities/**/*.entity.{ts,js}'],
-  migrations: [__dirname + '/migrations/*.{ts,js}'],
+  entities: [
+    __dirname + '/../entities/**/*.entity.{ts,js}',
+    __dirname + '/../auth/entities/**/*.entity.{ts,js}',
+    __dirname + '/../audit/entities/**/*.entity.{ts,js}',
+    __dirname + '/../notifications/entities/**/*.entity.{ts,js}',
+  ],
+  migrations: [
+    __dirname + '/migrations/*.{ts,js}',
+    __dirname + '/../migrations/*.{ts,js}',
+  ],
 };
 
 const AppDataSource = new DataSource(dataSourceOptions);

@@ -15,8 +15,6 @@ import {
   AcknowledgeAnomalyDto,
   AnomalyResponseDto,
   AnomalySummaryDto,
-  CreateAnomalyDto,
-  CreateBulkAnomaliesDto,
 } from '../dto/anomaly.dto';
 
 @ApiTags('ML - Anomalies')
@@ -80,32 +78,6 @@ export class AnomaliesController {
     return this.anomaliesService.acknowledge(id, dto);
   }
 
-  @Post()
-  @Public()
-  @ApiOperation({ summary: 'Create a single anomaly from ML detection (used by iot-gtw)' })
-  @ApiResponse({ status: 201, description: 'Anomaly created successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
-  async create(@Body() dto: CreateAnomalyDto) {
-    const anomaly = await this.anomaliesService.create(dto);
-    return {
-      success: true,
-      idAnomalyResult: anomaly.idAnomalyResult,
-      anomalyGrade: anomaly.anomalyGrade,
-      message: 'Anomaly created successfully',
-    };
-  }
-
-  @Post('bulk')
-  @Public()
-  @ApiOperation({ summary: 'Create multiple anomalies in bulk (used by iot-gtw)' })
-  @ApiResponse({ status: 201, description: 'Anomalies created successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
-  async createBulk(@Body() dto: CreateBulkAnomaliesDto) {
-    const result = await this.anomaliesService.createBulk(dto);
-    return {
-      success: true,
-      created: result.created,
-      message: `${result.created} anomalies created successfully`,
-    };
-  }
+  // NOTE: POST create endpoints removed - iot-gtw now inserts directly to PostgreSQL
+  // See: iot-gtw/src/modules/ml/services/anomaly-notifier.service.ts
 }

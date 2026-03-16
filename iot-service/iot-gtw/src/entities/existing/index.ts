@@ -1,3 +1,4 @@
+export * from './anomaly-result.entity';
 export * from './node.entity';
 export * from './node-model.entity';
 export * from './node-profile.entity';

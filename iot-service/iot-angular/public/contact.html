@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hubungi Kami — DEVETEK HELIOS</title>
+  <meta name="description" content="Hubungi tim Devetek Helios untuk jadwalkan demo, konsultasi, atau pertanyaan seputar platform IoT.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%23249d79'/><text x='50' y='68' text-anchor='middle' font-size='60' font-weight='800' fill='white' font-family='system-ui'>D</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar__brand">
+        <span class="navbar__logo">D</span>
+        DEVETEK HELIOS
+      </a>
+      <ul class="navbar__links">
+        <li><a href="features.html">Fitur</a></li>
+        <li><a href="index.html#solusi">Solusi</a></li>
+        <li><a href="index.html#integrasi">Integrasi</a></li>
+        <li><a href="screenshots.html">Galeri</a></li>
+        <li><a href="contact.html">Kontak</a></li>
+      </ul>
+      <div class="navbar__actions">
+        <a href="contact.html" class="btn btn--ghost" style="font-size:0.8rem; padding:8px 18px;">Coba Demo</a>
+        <a href="contact.html" class="btn btn--primary" style="font-size:0.8rem; padding:8px 18px;">Minta Demo →</a>
+        <button class="navbar__hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+  <div class="navbar__mobile">
+    <a href="index.html">Beranda</a>
+    <a href="features.html">Fitur</a>
+    <a href="index.html#solusi">Solusi</a>
+    <a href="index.html#integrasi">Integrasi</a>
+    <a href="screenshots.html">Galeri</a>
+    <a href="contact.html">Kontak</a>
+    <a href="contact.html" class="btn btn--primary">Minta Demo →</a>
+  </div>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb fade-in">
+        <a href="index.html">Beranda</a> <span>›</span> <strong>Kontak</strong>
+      </nav>
+      <span class="badge-pill">HUBUNGI KAMI</span>
+      <h1 class="fade-in">Hubungi Kami</h1>
+      <p class="fade-in">Jadwalkan demo personal atau kirim pertanyaan — tim kami siap membantu.</p>
+    </div>
+  </section>
+
+  <!-- CONTACT SECTION -->
+  <section class="section" id="contact">
+    <div class="container">
+      <div class="contact-grid">
+        <!-- Left: Info -->
+        <div class="contact-info fade-in">
+          <div>
+            <h3 style="margin-bottom:var(--space-md);">Minta Demo</h3>
+            <p style="color:var(--color-text-muted); line-height:1.7;">
+              Jadwalkan demo personal dan kami akan tunjukkan bagaimana Devetek Helios dapat mengoptimalkan operasi IoT Anda. Demo berlangsung ~30 menit via online meeting.
+            </p>
+          </div>
+
+          <div class="contact-info__item">
+            <div class="contact-info__icon">📧</div>
+            <div class="contact-info__text">
+              <h4>Email</h4>
+              <p><a href="mailto:koko@devetek.com">koko@devetek.com</a></p>
+            </div>
+          </div>
+
+          <div class="contact-info__item">
+            <div class="contact-info__icon">💬</div>
+            <div class="contact-info__text">
+              <h4>WhatsApp</h4>
+              <p><a href="https://wa.me/6285623022290" target="_blank" rel="noopener">+62 856-2302-2290</a></p>
+            </div>
+          </div>
+
+          <div class="contact-info__item">
+            <div class="contact-info__icon">📍</div>
+            <div class="contact-info__text">
+              <h4>Lokasi</h4>
+              <p>Jakarta, Indonesia</p>
+            </div>
+          </div>
+
+          <div class="contact-info__item">
+            <div class="contact-info__icon">🕐</div>
+            <div class="contact-info__text">
+              <h4>Waktu Respons</h4>
+              <p>Dalam 24 jam kerja</p>
+            </div>
+          </div>
+
+          <div style="margin-top:var(--space-md);">
+            <a href="https://wa.me/6285623022290?text=Halo%20Devetek%2C%20saya%20tertarik%20dengan%20platform%20Helios%20dan%20ingin%20jadwalkan%20demo." target="_blank" class="btn btn--whatsapp btn--lg">💬 Chat via WhatsApp</a>
+          </div>
+        </div>
+
+        <!-- Right: Form -->
+        <div class="fade-in">
+          <div class="card" style="padding:var(--space-2xl);">
+            <h3 style="margin-bottom:var(--space-lg);">Kirim Pesan</h3>
+            <form class="form" id="contactForm" action="https://formspree.io/f/placeholder" method="POST">
+              <div class="form__row">
+                <div class="form__group">
+                  <label for="name">Nama</label>
+                  <input type="text" id="name" name="name" class="form__input" placeholder="Nama lengkap" required>
+                </div>
+                <div class="form__group">
+                  <label for="email">Email</label>
+                  <input type="email" id="email" name="email" class="form__input" placeholder="email@perusahaan.com" required>
+                </div>
+              </div>
+              <div class="form__row">
+                <div class="form__group">
+                  <label for="company">Perusahaan</label>
+                  <input type="text" id="company" name="company" class="form__input" placeholder="Nama perusahaan">
+                </div>
+                <div class="form__group">
+                  <label for="phone">Telepon</label>
+                  <input type="tel" id="phone" name="phone" class="form__input" placeholder="+62 xxx-xxxx-xxxx">
+                </div>
+              </div>
+              <div class="form__group">
+                <label for="industry">Industri</label>
+                <select id="industry" name="industry" class="form__select">
+                  <option value="">Pilih industri...</option>
+                  <option value="water">PDAM / Utilitas Air</option>
+                  <option value="energy">Energi & Kelistrikan</option>
+                  <option value="industrial">IoT Industri</option>
+                  <option value="agriculture">Pertanian Cerdas</option>
+                  <option value="other">Lainnya</option>
+                </select>
+              </div>
+              <div class="form__group">
+                <label for="nodes">Estimasi Jumlah Node</label>
+                <select id="nodes" name="nodes" class="form__select">
+                  <option value="">Pilih rentang...</option>
+                  <option value="1-50">1 – 50 node</option>
+                  <option value="50-500">50 – 500 node</option>
+                  <option value="500+">500+ node</option>
+                </select>
+              </div>
+              <div class="form__group">
+                <label for="message">Pesan</label>
+                <textarea id="message" name="message" class="form__textarea" rows="4" placeholder="Ceritakan kebutuhan monitoring Anda..."></textarea>
+              </div>
+              <button type="submit" class="btn btn--primary btn--lg" style="width:100%; justify-content:center;">📧 Kirim Pesan</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section--alt" id="faq">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="badge-pill">FAQ</span>
+        <h2>Pertanyaan yang Sering Diajukan</h2>
+      </div>
+      <div class="faq-list fade-in">
+        <div class="faq-item">
+          <button class="faq-question">Berapa lama proses demo?</button>
+          <div class="faq-answer">
+            <p>Demo berlangsung sekitar 30-45 menit via online meeting (Google Meet / Zoom). Kami akan menyesuaikan konten demo dengan kebutuhan industri Anda.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Apakah demo gratis?</button>
+          <div class="faq-answer">
+            <p>Ya, demo sepenuhnya gratis tanpa komitmen. Kami ingin memastikan Helios cocok dengan kebutuhan Anda sebelum Anda memutuskan.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Apakah bisa demo on-site?</button>
+          <div class="faq-answer">
+            <p>Untuk area Jabodetabek, kami bisa mengatur demo on-site. Untuk lokasi lain, kami menyediakan demo online yang sama komprehensifnya.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Dokumen apa yang perlu disiapkan?</button>
+          <div class="faq-answer">
+            <p>Tidak perlu dokumen khusus. Namun, akan sangat membantu jika Anda sudah tahu estimasi jumlah node/sensor, tipe data yang ingin dipantau, dan tantangan utama operasi Anda.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Berapa lama waktu implementasi?</button>
+          <div class="faq-answer">
+            <p>Tergantung skala. Untuk 50 node standar, implementasi bisa selesai dalam 2-4 minggu. Untuk deployment besar (500+ node), estimasi 1-3 bulan termasuk konfigurasi custom.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question">Apakah ada free trial?</button>
+          <div class="faq-answer">
+            <p>Kami menyediakan sandbox environment untuk evaluasi. Hubungi tim kami untuk mendapatkan akses trial terbatas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-banner">
+    <div class="container fade-in">
+      <h2>Masih Punya Pertanyaan?</h2>
+      <p>Tim kami siap membantu — via email, WhatsApp, atau jadwalkan meeting langsung.</p>
+      <div style="display:flex; gap:var(--space-md); justify-content:center; flex-wrap:wrap;">
+        <a href="https://wa.me/6285623022290" target="_blank" class="btn btn--primary btn--lg">💬 WhatsApp Sekarang</a>
+        <a href="mailto:koko@devetek.com" class="btn btn--ghost btn--lg">📧 Email Kami</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="navbar__brand" style="margin-bottom:var(--space-sm);">
+            <span class="navbar__logo">D</span>
+            DEVETEK HELIOS
+          </a>
+          <p>Platform IoT end-to-end untuk monitoring, analisis, dan pengendalian infrastruktur kritis.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Produk</h4>
+          <ul>
+            <li><a href="features.html">Fitur</a></li>
+            <li><a href="features.html#dashboard">Dashboard</a></li>
+            <li><a href="features.html#webgis">WebGIS</a></li>
+            <li><a href="features.html#alerts">Alert</a></li>
+            <li><a href="features.html#ml">ML Analitik</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Solusi</h4>
+          <ul>
+            <li><a href="solutions/pdam.html" style="color:var(--color-primary-light);">💧 PDAM / Air</a></li>
+            <li><a href="index.html#solusi">Energi</a></li>
+            <li><a href="index.html#solusi">Industri</a></li>
+            <li><a href="index.html#solusi">Pertanian</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Perusahaan</h4>
+          <ul>
+            <li><a href="contact.html">Kontak</a></li>
+            <li><a href="contact.html">Minta Demo</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Sumber Daya</h4>
+          <ul>
+            <li><a href="https://devetek-helios.web.app/iot/document" target="_blank">Dokumentasi</a></li>
+            <li><a href="screenshots.html">Screenshot</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__hardware">
+        ⚙️ <strong>DEVETEK HARDWARE</strong> — Lihat produk hardware IoT kami →
+        <a href="https://devetek-iot.web.app" target="_blank" rel="noopener">devetek-iot.web.app</a>
+      </div>
+      <div class="footer__divider"></div>
+      <div class="footer__bottom">
+        <span>© 2025 PT. COMON CIPTA INOVASI. Semua hak dilindungi.</span>
+        <span>Devetek Helios v1.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="whatsapp-float">
+    <span class="whatsapp-float__tooltip">Chat via WhatsApp</span>
+    <a href="https://wa.me/6285623022290" target="_blank" rel="noopener" class="whatsapp-float__btn" aria-label="WhatsApp">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+  </div>
+  <button class="back-to-top" aria-label="Kembali ke atas">↑</button>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
