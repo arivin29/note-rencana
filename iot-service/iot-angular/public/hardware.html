@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEVETEK IoT Node — Hardware untuk Monitoring Infrastruktur</title>
+  <meta name="description" content="Hardware IoT Node untuk monitoring infrastruktur kritis. Tiga varian: Type A (Universal), Type B (Pipeline), Type C (Custom). Solar powered, 4G/2G, RS485 Modbus.">
+  <meta name="keywords" content="IoT, hardware, node, PDAM, sensor, monitoring, RS485, solar powered, Indonesia">
+  <meta name="author" content="PT. COMON CIPTA INOVASI">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%23249d79'/><text x='50' y='68' text-anchor='middle' font-size='60' font-weight='800' fill='white' font-family='system-ui'>D</text></svg>">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    /* ============================================================
+       HARDWARE PAGE STYLES (hw- prefix)
+       ============================================================ */
+
+    /* --- Hero --- */
+    .hw-hero {
+      position: relative;
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      padding: 140px 0 80px;
+      overflow: hidden;
+    }
+    .hw-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(10,14,23,0.95), rgba(10,14,23,0.85)),
+        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(191,163,90,0.03) 50px, rgba(191,163,90,0.03) 51px),
+        repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(191,163,90,0.03) 50px, rgba(191,163,90,0.03) 51px);
+      z-index: 0;
+    }
+    .hw-hero::after {
+      content: '';
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(191,163,90,0.1) 0%, transparent 60%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .hw-hero .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+    .hw-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px 6px 8px;
+      background: rgba(191,163,90,0.1);
+      border: 1px solid rgba(191,163,90,0.2);
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--color-accent-light);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-lg);
+    }
+    .hw-hero-badge::before {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      animation: hwPulse 2s ease-in-out infinite;
+    }
+    @keyframes hwPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    .hw-hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: var(--space-md);
+      color: var(--color-text);
+    }
+    .hw-hero-title span {
+      background: linear-gradient(135deg, var(--color-accent-light), var(--color-primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hw-hero-sub {
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+      max-width: 700px;
+      margin: 0 auto var(--space-xl);
+      line-height: 1.7;
+    }
+    .hw-hero-stats {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: var(--space-xl);
+      padding-top: var(--space-lg);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .hw-hero-stat {
+      text-align: center;
+    }
+    .hw-hero-stat-num {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--color-accent-light);
+    }
+    .hw-hero-stat-label {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* --- Node Cards --- */
+    .hw-nodes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-xl);
+    }
+    .hw-node {
+      background: var(--color-surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .hw-node::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .hw-node--a::before { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+    .hw-node--b::before { background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); }
+    .hw-node--c::before { background: linear-gradient(90deg, var(--color-accent), #d4a94a); }
+    .hw-node:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .hw-node-type {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-md);
+    }
+    .hw-node--a .hw-node-type { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .hw-node--b .hw-node-type { background: rgba(36,157,121,0.15); color: var(--color-primary-light); }
+    .hw-node--c .hw-node-type { background: rgba(191,163,90,0.15); color: var(--color-accent-light); }
+    .hw-node-title {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+    .hw-node-desc {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: var(--space-lg);
+    }
+    .hw-node-specs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: var(--space-lg);
+    }
+    .hw-spec {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--color-text-body);
+    }
+    .hw-spec svg {
+      width: 16px; height: 16px;
+      color: var(--color-primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .hw-node-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .hw-tag {
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+    }
+
+    /* ── Topology / Architecture Diagram ─────── */
+    .topology {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0; margin-bottom: 48px;
+    }
+
+    /* Layer containers */
+    .topo-layer {
+      width: 100%; max-width: 960px;
+      border-radius: var(--radius-xl);
+      padding: 28px 32px 24px;
+      position: relative;
+    }
+
+    .topo-layer-label { margin-bottom: 16px; text-align: center; }
+
+    .topo-layer-tag {
+      display: inline-block;
+      padding: 4px 16px; border-radius: 100px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+
+    .topo-tag-field { background: rgba(0,102,255,0.15); color: #4d9aff; }
+    .topo-tag-node { background: rgba(0,212,170,0.15); color: var(--color-primary); }
+    .topo-tag-cloud { background: rgba(138,92,246,0.2); color: #b794f6; }
+    .topo-tag-output { background: rgba(255,107,107,0.15); color: #ff8a8a; }
+
+    .topo-layer-field { background: rgba(0,102,255,0.04); border: 1px solid rgba(0,102,255,0.12); }
+    .topo-layer-node { background: rgba(0,212,170,0.04); border: 1px solid rgba(0,212,170,0.12); }
+    .topo-layer-cloud { background: rgba(138,92,246,0.06); border: 1px solid rgba(138,92,246,0.15); }
+    .topo-layer-output { background: rgba(255,107,107,0.04); border: 1px solid rgba(255,107,107,0.12); }
+
+    .topo-layer-content {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    /* Field devices (sensor blocks) */
+    .topo-device {
+      text-align: center; padding: 14px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      min-width: 100px; transition: all 0.3s ease;
+    }
+
+    .topo-device:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(0,102,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .topo-device-icon { margin-bottom: 6px; display: flex; justify-content: center; }
+    .topo-device-icon .lucide-topo { width: 24px; height: 24px; stroke-width: 1.5; color: var(--color-primary); }
+    .topo-device-name { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); line-height: 1.3; }
+
+    /* Connectors between layers */
+    .topo-connector {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 0; position: relative;
+    }
+
+    .topo-connector-line {
+      width: 2px; height: 36px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.25), rgba(255,255,255,0.1));
+      position: relative;
+    }
+
+    .topo-connector-line::before {
+      content: ''; position: absolute;
+      bottom: -4px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid rgba(255,255,255,0.25);
+    }
+
+    .topo-connector-line-accent {
+      background: linear-gradient(to bottom, rgba(0,212,170,0.15), rgba(0,212,170,0.4), rgba(0,212,170,0.15));
+      box-shadow: 0 0 12px rgba(0,212,170,0.15);
+    }
+
+    .topo-connector-line-accent::before {
+      border-top-color: rgba(0,212,170,0.4);
+    }
+
+    .topo-connector-labels {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin-top: 8px;
+    }
+
+    .topo-protocol {
+      padding: 2px 10px; border-radius: 100px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; font-weight: 500;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--color-text-muted);
+    }
+
+    .topo-protocol-accent {
+      background: rgba(0,212,170,0.1);
+      border-color: rgba(0,212,170,0.2);
+      color: var(--color-primary);
+    }
+
+    .topo-protocol-warn {
+      background: rgba(255,230,77,0.12);
+      border-color: rgba(255,230,77,0.25);
+      color: #FFE66D;
+    }
+
+    /* Node hardware boxes */
+    .topo-nodes-row { gap: 16px; }
+
+    .topo-node-box {
+      flex: 1; min-width: 200px; max-width: 280px;
+      padding: 20px; border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center; position: relative;
+      transition: all 0.3s ease; overflow: hidden;
+    }
+
+    .topo-node-box::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+
+    .topo-node-a::before { background: linear-gradient(90deg, var(--color-primary), #6C5CE7); }
+    .topo-node-b::before { background: linear-gradient(90deg, #0066FF, #6C5CE7); }
+    .topo-node-c::before { background: linear-gradient(90deg, #FF6B6B, #FFE66D); }
+
+    .topo-node-box:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+
+    .topo-node-type {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--color-text-muted); margin-bottom: 4px;
+    }
+
+    .topo-node-name { font-size: 1rem; font-weight: 700; color: var(--color-text); margin-bottom: 4px; }
+    .topo-node-detail { font-size: 0.78rem; color: var(--color-text-muted); margin-bottom: 10px; }
+
+    .topo-node-power {
+      display: flex; gap: 10px; justify-content: center;
+      font-size: 0.72rem; color: var(--color-text-muted);
+    }
+
+    .topo-node-power span {
+      background: rgba(255,255,255,0.06);
+      padding: 3px 8px; border-radius: 100px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .topo-node-power .lucide-xs { width: 12px; height: 12px; stroke-width: 2; color: var(--color-primary); }
+
+    /* Cloud pipeline steps */
+    .topo-cloud-pipeline {
+      display: flex; align-items: flex-start; justify-content: center;
+      gap: 8px; flex-wrap: wrap;
+    }
+
+    .topo-cloud-step {
+      text-align: center; padding: 16px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(138,92,246,0.15);
+      border-radius: var(--radius-md);
+      min-width: 100px; position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .topo-cloud-step:hover {
+      background: rgba(138,92,246,0.08);
+      border-color: rgba(138,92,246,0.3);
+      transform: translateY(-2px);
+    }
+
+    .topo-cloud-step-num {
+      position: absolute; top: -8px; right: -8px;
+      width: 22px; height: 22px;
+      background: linear-gradient(135deg, #8A5CF6, #6C5CE7);
+      border-radius: 50%; color: white;
+      font-size: 0.65rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .topo-cloud-step-icon { margin-bottom: 6px; display: flex; justify-content: center; }
+    .topo-cloud-step-icon .lucide-cloud { width: 24px; height: 24px; stroke-width: 1.5; color: #b794f6; }
+    .topo-cloud-step-name { font-size: 0.78rem; font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
+    .topo-cloud-step-desc { font-size: 0.68rem; color: var(--color-text-muted); }
+
+    .topo-cloud-arrow { color: rgba(138,92,246,0.4); padding-top: 20px; display: flex; align-items: center; }
+    .topo-cloud-arrow .lucide-arrow { width: 18px; height: 18px; stroke-width: 2; color: rgba(138,92,246,0.5); }
+
+    .topo-cloud-partner {
+      text-align: center; margin-top: 16px;
+      font-size: 0.78rem; color: var(--color-text-muted);
+      padding: 6px 16px; border-radius: 100px;
+      background: rgba(138,92,246,0.08);
+      display: inline-block;
+    }
+
+    .topo-cloud-partner strong { color: #b794f6; }
+
+    .topo-layer-cloud .topo-layer-content {
+      flex-direction: column;
+    }
+
+    /* Output boxes */
+    .topo-output-box {
+      text-align: center; padding: 16px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,107,107,0.12);
+      border-radius: var(--radius-md);
+      min-width: 100px; transition: all 0.3s ease;
+    }
+
+    .topo-output-box:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,107,107,0.3);
+      transform: translateY(-2px);
+    }
+
+    .topo-output-icon { margin-bottom: 6px; display: flex; justify-content: center; }
+    .topo-output-icon .lucide-output { width: 24px; height: 24px; stroke-width: 1.5; color: #FF6B6B; }
+    .topo-output-name { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); line-height: 1.3; }
+
+    /* Legend */
+    .topo-legend {
+      display: flex; gap: 24px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 32px;
+    }
+
+    .topo-legend-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: var(--color-text-muted);
+    }
+
+    .topo-legend-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    /* Metrics row */
+    .topo-metrics {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      max-width: 800px; margin: 0 auto;
+    }
+
+    .topo-metric {
+      text-align: center; padding: 20px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+    }
+
+    .topo-metric-value {
+      font-size: 1.1rem; font-weight: 700; color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .topo-metric-label { font-size: 0.75rem; color: var(--color-text-muted); }
+
+    /* Topology animation */
+    .topo-animate {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .topo-animate.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- Gallery --- */
+    .hw-gallery {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--space-lg);
+    }
+    .hw-gallery-main {
+      position: relative;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      min-height: 400px;
+    }
+    .hw-gallery-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hw-gallery-main-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--space-lg);
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+    .hw-gallery-main-overlay h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .hw-gallery-main-overlay p {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+    .hw-gallery-side {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .hw-gallery-card {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      flex: 1;
+      min-height: 180px;
+    }
+    .hw-gallery-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .img-fallback {
+      background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-card) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+    }
+    .hw-gallery-card-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--space-md);
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+    .hw-gallery-card-overlay span {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* --- FAQ --- */
+    .hw-faq-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-lg);
+    }
+    .hw-faq-item {
+      background: var(--color-surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+    .hw-faq-q {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: var(--space-md);
+    }
+    .hw-faq-icon {
+      width: 32px; height: 32px;
+      background: rgba(36,157,121,0.1);
+      border: 1px solid rgba(36,157,121,0.2);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .hw-faq-icon svg {
+      width: 16px; height: 16px;
+      color: var(--color-primary-light);
+    }
+    .hw-faq-q h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+    .hw-faq-a {
+      font-size: 0.88rem;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      padding-left: 44px;
+    }
+    .hw-faq-a strong {
+      color: var(--color-text);
+    }
+
+    /* --- Timeline --- */
+    .hw-timeline {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-md);
+      position: relative;
+      padding: var(--space-xl) 0;
+    }
+    .hw-timeline::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+      z-index: 0;
+    }
+    .hw-timeline-step {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+    .hw-timeline-week {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--color-primary-light);
+      margin-bottom: 8px;
+    }
+    .hw-timeline-icon {
+      width: 50px; height: 50px;
+      margin: 0 auto var(--space-md);
+      background: var(--color-surface);
+      border: 2px solid var(--color-primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hw-timeline-icon svg {
+      width: 22px; height: 22px;
+      color: var(--color-primary-light);
+    }
+    .hw-timeline-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+    .hw-timeline-desc {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      max-width: 140px;
+      margin: 0 auto;
+    }
+
+    /* --- SLA Cards --- */
+    .hw-sla-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-lg);
+    }
+    .hw-sla-card {
+      text-align: center;
+      padding: var(--space-xl);
+      background: var(--color-surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+    }
+    .hw-sla-icon {
+      width: 44px; height: 44px;
+      margin: 0 auto var(--space-md);
+      background: rgba(36,157,121,0.1);
+      border: 1px solid rgba(36,157,121,0.2);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hw-sla-icon svg {
+      width: 22px; height: 22px;
+      color: var(--color-primary-light);
+    }
+    .hw-sla-value {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+    .hw-sla-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      margin-bottom: 8px;
+    }
+    .hw-sla-desc {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+
+    /* --- Common Specs --- */
+    .hw-common {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-lg);
+    }
+    .hw-common-item {
+      text-align: center;
+      padding: var(--space-lg);
+      background: var(--color-surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+    }
+    .hw-common-icon {
+      width: 48px; height: 48px;
+      margin: 0 auto var(--space-md);
+      background: rgba(36,157,121,0.1);
+      border: 1px solid rgba(36,157,121,0.2);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hw-common-icon svg {
+      width: 24px; height: 24px;
+      color: var(--color-primary-light);
+    }
+    .hw-common-title {
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+    .hw-common-desc {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    /* --- Use Cases / Lokasi --- */
+    .hw-locations-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-lg);
+    }
+    .hw-location-card {
+      background: var(--color-surface);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      transition: all 0.3s ease;
+    }
+    .hw-location-card:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-4px);
+    }
+    .hw-location-icon {
+      width: 48px; height: 48px;
+      margin-bottom: var(--space-md);
+      background: rgba(36,157,121,0.1);
+      border: 1px solid rgba(36,157,121,0.2);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hw-location-icon svg {
+      width: 24px; height: 24px;
+      color: var(--color-primary-light);
+    }
+    .hw-location-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+    .hw-location-list {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      line-height: 1.8;
+    }
+    .hw-location-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hw-location-list li::before {
+      content: '✓';
+      color: var(--color-primary);
+      font-weight: bold;
+    }
+
+    /* --- PDAM Monitoring Locations (New Style) --- */
+    .pdam-diagram-wrapper {
+      text-align: center;
+      margin: 40px 0 60px;
+      padding: 20px;
+    }
+    .pdam-diagram {
+      width: 100%;
+      max-width: 1000px;
+      height: auto;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 40px rgba(36, 157, 121, 0.15);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: block;
+      margin: 0 auto;
+    }
+    .pdam-diagram-caption {
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      margin-top: 16px;
+      font-style: italic;
+      text-align: center;
+    }
+    .monitoring-points-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+    }
+    .monitoring-point {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .monitoring-point:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(36, 157, 121, 0.15);
+    }
+    .monitoring-header {
+      background: rgba(255,255,255,0.04);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 70px;
+    }
+    .monitoring-icon {
+      width: 28px;
+      height: 28px;
+      color: var(--color-primary);
+      flex-shrink: 0;
+    }
+    .monitoring-header h3 {
+      color: var(--color-text);
+      font-size: 1.1rem;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .monitoring-body {
+      padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .monitoring-sensors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .sensor-tag {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(36, 157, 121, 0.1);
+      color: var(--color-primary-light);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid rgba(36, 157, 121, 0.2);
+      white-space: nowrap;
+    }
+    .monitoring-desc {
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .pdam-cta {
+      text-align: center;
+      padding: 60px 40px;
+      margin-top: 80px;
+      background: linear-gradient(135deg, rgba(36, 157, 121, 0.1), rgba(191, 163, 90, 0.1));
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .pdam-cta h3 {
+      color: var(--color-text);
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+    .pdam-cta p {
+      color: var(--color-text-muted);
+      font-size: 1.05rem;
+      margin-bottom: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+    .pdam-cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .pdam-cta-buttons .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pdam-cta-buttons .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* --- Node Types (Marketing Style) --- */
+    .node-types {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .node-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .node-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+    .node-card-a::before { background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); }
+    .node-card-b::before { background: linear-gradient(90deg, #0066FF, #6C5CE7); }
+    .node-card-c::before { background: linear-gradient(90deg, var(--color-accent), #d4a94a); }
+    .node-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .node-type-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 12px;
+    }
+    .node-card h3 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+      color: var(--color-text);
+    }
+    .node-card .node-desc {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .node-specs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .node-spec {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+    .node-spec-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .node-spec-icon .lucide-spec,
+    .node-spec-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 1.8;
+      color: var(--color-primary);
+    }
+    .node-spec-text {
+      color: var(--color-text-muted);
+    }
+    .node-spec-text strong {
+      color: var(--color-text);
+    }
+    .node-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .node-tag {
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .node-card-a .node-tag {
+      background: rgba(36, 157, 121, 0.1);
+      color: var(--color-primary-light);
+    }
+    .node-card-b .node-tag {
+      background: rgba(0, 102, 255, 0.08);
+      color: #60a5fa;
+    }
+    .node-card-c .node-tag {
+      background: rgba(191, 163, 90, 0.1);
+      color: var(--color-accent-light);
+    }
+    .lucide-spec {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* --- Solar Panel Section --- */
+    .solar-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .solar-visual {
+      background: linear-gradient(135deg, rgba(255,193,7,0.08), rgba(255,152,0,0.12));
+      border-radius: 20px;
+      padding: 48px 32px;
+      text-align: center;
+      border: 1px solid rgba(255,193,7,0.2);
+    }
+    .solar-icon-large {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lucide-solar {
+      width: 64px;
+      height: 64px;
+      stroke: #ffc107;
+      filter: drop-shadow(0 0 12px rgba(255,193,7,0.4));
+    }
+    .solar-spec-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .solar-spec-item {
+      background: rgba(255,255,255,0.05);
+      padding: 16px 8px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .solar-spec-item .value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffc107;
+    }
+    .solar-spec-item .label {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+    .solar-info h3 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .solar-info > p {
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .solar-benefits {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .solar-benefit {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .solar-benefit .lucide-check {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      stroke: var(--color-primary);
+      margin-top: 2px;
+    }
+    .solar-benefit div {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+    }
+    .solar-benefit strong {
+      color: var(--color-text);
+    }
+
+    /* --- Comparison Table --- */
+    .comparison-wrapper {
+      overflow-x: auto;
+      background: rgba(255,255,255,0.03);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+      backdrop-filter: blur(10px);
+    }
+    .comparison-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
+      min-width: 800px;
+    }
+    .comparison-table thead th {
+      padding: 24px 20px 20px;
+      text-align: center;
+      vertical-align: bottom;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 2px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .comparison-table th.ct-feature-col {
+      text-align: left;
+      min-width: 200px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+    .ct-col-a, .ct-col-b, .ct-col-c {
+      min-width: 180px;
+    }
+    .ct-col-badge {
+      width: 40px;
+      height: 4px;
+      border-radius: 100px;
+      margin: 0 auto 12px;
+    }
+    .ct-badge-a {
+      background: linear-gradient(90deg, #60a5fa, #3b82f6);
+    }
+    .ct-badge-b {
+      background: linear-gradient(90deg, var(--color-primary), #004a99);
+    }
+    .ct-badge-c {
+      background: linear-gradient(90deg, var(--color-accent), #b5953e);
+    }
+    .ct-col-type {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--color-text);
+      letter-spacing: 0.5px;
+    }
+    .ct-col-name {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+    .comparison-table tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.2s;
+    }
+    .comparison-table tbody td {
+      padding: 14px 20px;
+      text-align: center;
+      vertical-align: middle;
+      color: var(--color-text-muted);
+      font-size: 0.88rem;
+    }
+    .comparison-table tbody td:first-child {
+      text-align: left;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+    }
+    .comparison-table tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+    .group-row {
+      background: rgba(255,255,255,0.06) !important;
+    }
+    .group-row td {
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--color-text) !important;
+      text-align: left !important;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .group-icon {
+      font-size: 0.95rem;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    /* Pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 14px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .pill-yes {
+      background: rgba(0,212,170,0.12);
+      color: #00E4B8;
+      border: 1px solid rgba(0,212,170,0.2);
+    }
+    .pill-inc {
+      background: rgba(0,212,170,0.18);
+      color: #00FFD0;
+      border: 1px solid rgba(0,212,170,0.3);
+      font-weight: 700;
+    }
+    .pill-highlight {
+      background: rgba(0,102,255,0.15);
+      color: #6CB4FF;
+      border: 1px solid rgba(0,102,255,0.25);
+      font-weight: 700;
+    }
+    .pill-opt {
+      background: rgba(255,190,60,0.1);
+      color: #FFBE3C;
+      border: 1px solid rgba(255,190,60,0.2);
+    }
+    .pill-val {
+      background: rgba(255,255,255,0.06);
+      color: var(--color-text-muted);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-weight: 500;
+    }
+    .pill-no {
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    /* Hover glow on pills */
+    .comparison-table tbody tr:hover .pill-yes { box-shadow: 0 0 12px rgba(0,212,170,0.15); }
+    .comparison-table tbody tr:hover .pill-inc { box-shadow: 0 0 12px rgba(0,212,170,0.2); }
+    .comparison-table tbody tr:hover .pill-highlight { box-shadow: 0 0 12px rgba(0,102,255,0.15); }
+    /* Column borders */
+    .comparison-table tbody td:nth-child(2) { border-left: 1px solid rgba(255,255,255,0.03); }
+    .comparison-table tbody td:nth-child(4) { border-right: 1px solid rgba(255,255,255,0.03); }
+
+    /* Legend */
+    .ct-legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding: 16px;
+    }
+    .ct-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    /* --- Animation --- */
+    .hw-anim {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .hw-anim.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 1024px) {
+      .hw-nodes { grid-template-columns: 1fr; }
+      .node-types { grid-template-columns: 1fr; }
+      .hw-common { grid-template-columns: repeat(2, 1fr); }
+      .hw-gallery { grid-template-columns: 1fr; }
+      .solar-grid { grid-template-columns: 1fr; }
+      .comparison-table { min-width: 700px; }
+      .solar-spec-grid { grid-template-columns: repeat(2, 1fr); }
+      .hw-faq-grid { grid-template-columns: 1fr; }
+      .hw-sla-grid { grid-template-columns: repeat(2, 1fr); }
+      .hw-timeline { flex-direction: column; align-items: center; }
+      .hw-timeline::before { display: none; }
+      .hw-locations-grid { grid-template-columns: repeat(2, 1fr); }
+      .monitoring-points-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .monitoring-points-grid { grid-template-columns: 1fr; }
+      .pdam-cta h3 { font-size: 1.4rem; }
+      .pdam-cta { padding: 40px 20px; margin-top: 60px; }
+      .pdam-diagram-wrapper { margin: 30px 0 40px; padding: 10px; }
+      .monitoring-header h3 { font-size: 1rem; }
+      .solar-grid { gap: 40px; }
+      .solar-visual { padding: 32px 20px; }
+      .solar-spec-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .comparison-table { font-size: 0.82rem; }
+      .comparison-table th, .comparison-table tbody td { padding: 10px 12px; }
+      .ct-legend { gap: 12px 20px; }
+    }
+    @media (max-width: 600px) {
+      .hw-common { grid-template-columns: 1fr; }
+      .hw-hero-stats { gap: var(--space-lg); }
+      .hw-sla-grid { grid-template-columns: 1fr; }
+      .hw-locations-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar__brand">
+        <span class="navbar__logo">D</span>
+        DEVETEK <span style="color:var(--color-accent-light);font-weight:400;">IoT</span>
+      </a>
+
+      <ul class="navbar__links">
+        <li><a href="index.html">Beranda</a></li>
+        <li><a href="features.html">Platform</a></li>
+        <li><a href="hardware.html" class="active">Hardware</a></li>
+        <li><a href="installation-guide.html">Panduan</a></li>
+        <li><a href="screenshots.html">Galeri</a></li>
+        <li><a href="contact.html">Kontak</a></li>
+      </ul>
+
+      <div class="navbar__actions">
+        <a href="contact.html" class="btn btn--ghost" style="font-size:0.8rem; padding:8px 18px;">Coba Demo</a>
+        <a href="contact.html" class="btn btn--primary" style="font-size:0.8rem; padding:8px 18px;">Minta Demo →</a>
+        <button class="navbar__hamburger" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="navbar__mobile">
+    <a href="index.html">Beranda</a>
+    <a href="features.html">Platform</a>
+    <a href="hardware.html" class="active">Hardware</a>
+    <a href="installation-guide.html">Panduan</a>
+    <a href="screenshots.html">Galeri</a>
+    <a href="contact.html">Kontak</a>
+    <a href="contact.html" class="btn btn--ghost">Coba Demo</a>
+    <a href="contact.html" class="btn btn--primary">Minta Demo →</a>
+  </div>
+
+  <!-- ============================================================
+       HERO
+       ============================================================ -->
+  <section class="hw-hero">
+    <div class="container">
+      <span class="hw-hero-badge hw-anim" data-delay="0">DEVETEK-IOT NODE</span>
+      <h1 class="hw-hero-title hw-anim" data-delay="1">Mata & Tangan <span>di Lapangan</span></h1>
+      <p class="hw-hero-sub hw-anim" data-delay="2">
+        Tiga varian hardware yang dirancang untuk kebutuhan berbeda — dari monitoring pipeline hingga automation pump station. 
+        Solar powered, 4G/2G connectivity, dan siap diintegrasikan dengan platform HELIOS.
+      </p>
+      <div class="hw-hero-stats hw-anim" data-delay="3">
+        <div class="hw-hero-stat">
+          <div class="hw-hero-stat-num">4G / 2G</div>
+          <div class="hw-hero-stat-label">Konektivitas</div>
+        </div>
+        <div class="hw-hero-stat">
+          <div class="hw-hero-stat-num">Solar</div>
+          <div class="hw-hero-stat-label">Powered 20WP</div>
+        </div>
+        <div class="hw-hero-stat">
+          <div class="hw-hero-stat-num">24/7</div>
+          <div class="hw-hero-stat-label">Real-Time Data</div>
+        </div>
+        <div class="hw-hero-stat">
+          <div class="hw-hero-stat-num">IP65</div>
+          <div class="hw-hero-stat-label">Weatherproof</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TOPOLOGY / HOW IT WORKS
+       ============================================================ -->
+  <section class="section section--dark" id="topology">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill">🌐 Topologi Sistem</span>
+        <h2>Arsitektur & Alur Data</h2>
+        <p>Lihat bagaimana data mengalir dari sensor di lapangan hingga dashboard di genggaman Anda — end-to-end, real-time, dan aman.</p>
+      </div>
+
+      <!-- TOPOLOGY DIAGRAM -->
+      <div class="topology fade-in">
+
+        <!-- LAYER 1: FIELD / SENSOR -->
+        <div class="topo-layer topo-layer-field topo-animate" data-delay="0">
+          <div class="topo-layer-label">
+            <span class="topo-layer-tag topo-tag-field">LAPANGAN</span>
+          </div>
+          <div class="topo-layer-content">
+            <div class="topo-device topo-animate" data-delay="1">
+              <div class="topo-device-icon"><i data-lucide="gauge" class="lucide-topo"></i></div>
+              <div class="topo-device-name">Sensor<br>Tekanan</div>
+            </div>
+            <div class="topo-device topo-animate" data-delay="2">
+              <div class="topo-device-icon"><i data-lucide="waves" class="lucide-topo"></i></div>
+              <div class="topo-device-name">Flowmeter<br>TUF-2000M</div>
+            </div>
+            <div class="topo-device topo-animate" data-delay="3">
+              <div class="topo-device-icon"><i data-lucide="zap" class="lucide-topo"></i></div>
+              <div class="topo-device-name">Power<br>Meter</div>
+            </div>
+            <div class="topo-device topo-animate" data-delay="4">
+              <div class="topo-device-icon"><i data-lucide="activity" class="lucide-topo"></i></div>
+              <div class="topo-device-name">Analog<br>4-20mA</div>
+            </div>
+            <div class="topo-device topo-animate" data-delay="5">
+              <div class="topo-device-icon"><i data-lucide="toggle-right" class="lucide-topo"></i></div>
+              <div class="topo-device-name">Digital<br>Input</div>
+            </div>
+            <div class="topo-device topo-animate" data-delay="6">
+              <div class="topo-device-icon"><i data-lucide="settings" class="lucide-topo"></i></div>
+              <div class="topo-device-name">VSD /<br>Inverter</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR: Field to Node -->
+        <div class="topo-connector topo-animate" data-delay="7">
+          <div class="topo-connector-line"></div>
+          <div class="topo-connector-labels">
+            <span class="topo-protocol topo-animate" data-delay="8">RS485</span>
+            <span class="topo-protocol topo-animate" data-delay="9">Modbus RTU</span>
+            <span class="topo-protocol topo-animate" data-delay="10">4-20mA</span>
+          </div>
+        </div>
+
+        <!-- LAYER 2: NODE HARDWARE -->
+        <div class="topo-layer topo-layer-node topo-animate" data-delay="11">
+          <div class="topo-layer-label">
+            <span class="topo-layer-tag topo-tag-node">NODE HARDWARE</span>
+          </div>
+          <div class="topo-layer-content topo-nodes-row">
+            <div class="topo-node-box topo-node-a topo-animate" data-delay="12">
+              <div class="topo-node-type">Type A</div>
+              <div class="topo-node-name">Universal Logger</div>
+              <div class="topo-node-detail">RS485 + Relay + Sensor</div>
+              <div class="topo-node-power">
+                <span><i data-lucide="sun" class="lucide-xs"></i> 20WP</span>
+                <span><i data-lucide="battery-charging" class="lucide-xs"></i> 25Ah</span>
+              </div>
+            </div>
+            <div class="topo-node-box topo-node-b topo-animate" data-delay="13">
+              <div class="topo-node-type">Type B</div>
+              <div class="topo-node-name">Pipeline Logger</div>
+              <div class="topo-node-detail">Tekanan + Analog + DI</div>
+              <div class="topo-node-power">
+                <span><i data-lucide="sun" class="lucide-xs"></i> 20WP</span>
+                <span><i data-lucide="battery-charging" class="lucide-xs"></i> 8Ah</span>
+              </div>
+            </div>
+            <div class="topo-node-box topo-node-c topo-animate" data-delay="14">
+              <div class="topo-node-type">Type C</div>
+              <div class="topo-node-name">Custom Solution</div>
+              <div class="topo-node-detail">Konfigurasi Sesuai Kebutuhan</div>
+              <div class="topo-node-power">
+                <span><i data-lucide="sun" class="lucide-xs"></i> 20WP</span>
+                <span><i data-lucide="wrench" class="lucide-xs"></i> Custom</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR: Node to Cloud -->
+        <div class="topo-connector topo-animate" data-delay="15">
+          <div class="topo-connector-line topo-connector-line-accent"></div>
+          <div class="topo-connector-labels">
+            <span class="topo-protocol topo-protocol-accent topo-animate" data-delay="16">4G LTE</span>
+            <span class="topo-protocol topo-protocol-accent topo-animate" data-delay="17">2G GSM</span>
+            <span class="topo-protocol topo-protocol-warn topo-animate" data-delay="18">LoRa</span>
+            <span class="topo-protocol topo-animate" data-delay="19">MQTT / HTTPS</span>
+          </div>
+        </div>
+
+        <!-- LAYER 3: HELIOS CLOUD -->
+        <div class="topo-layer topo-layer-cloud topo-animate" data-delay="20">
+          <div class="topo-layer-label">
+            <span class="topo-layer-tag topo-tag-cloud">DEVETEK-HELIOS CLOUD</span>
+          </div>
+          <div class="topo-layer-content">
+            <div class="topo-cloud-pipeline">
+              <div class="topo-cloud-step topo-animate" data-delay="21">
+                <div class="topo-cloud-step-num">1</div>
+                <div class="topo-cloud-step-icon"><i data-lucide="radio-tower" class="lucide-cloud"></i></div>
+                <div class="topo-cloud-step-name">Gateway</div>
+                <div class="topo-cloud-step-desc">Terima data</div>
+              </div>
+              <div class="topo-cloud-arrow topo-animate" data-delay="22"><i data-lucide="chevron-right" class="lucide-arrow"></i></div>
+              <div class="topo-cloud-step topo-animate" data-delay="23">
+                <div class="topo-cloud-step-num">2</div>
+                <div class="topo-cloud-step-icon"><i data-lucide="code-2" class="lucide-cloud"></i></div>
+                <div class="topo-cloud-step-name">Parsing</div>
+                <div class="topo-cloud-step-desc">Olah &amp; validasi</div>
+              </div>
+              <div class="topo-cloud-arrow topo-animate" data-delay="24"><i data-lucide="chevron-right" class="lucide-arrow"></i></div>
+              <div class="topo-cloud-step topo-animate" data-delay="25">
+                <div class="topo-cloud-step-num">3</div>
+                <div class="topo-cloud-step-icon"><i data-lucide="database" class="lucide-cloud"></i></div>
+                <div class="topo-cloud-step-name">Storage</div>
+                <div class="topo-cloud-step-desc">Simpan &amp; retensi</div>
+              </div>
+              <div class="topo-cloud-arrow topo-animate" data-delay="26"><i data-lucide="chevron-right" class="lucide-arrow"></i></div>
+              <div class="topo-cloud-step topo-animate" data-delay="27">
+                <div class="topo-cloud-step-num">4</div>
+                <div class="topo-cloud-step-icon"><i data-lucide="brain-circuit" class="lucide-cloud"></i></div>
+                <div class="topo-cloud-step-name">AI Analisa</div>
+                <div class="topo-cloud-step-desc">Anomali &amp; prediksi</div>
+              </div>
+              <div class="topo-cloud-arrow topo-animate" data-delay="28"><i data-lucide="chevron-right" class="lucide-arrow"></i></div>
+              <div class="topo-cloud-step topo-animate" data-delay="29">
+                <div class="topo-cloud-step-num">5</div>
+                <div class="topo-cloud-step-icon"><i data-lucide="bell-ring" class="lucide-cloud"></i></div>
+                <div class="topo-cloud-step-name">Alert</div>
+                <div class="topo-cloud-step-desc">WA / Email / Telegram</div>
+              </div>
+            </div>
+            <div class="topo-cloud-partner topo-animate" data-delay="30">
+              Didukung oleh <strong>PT Bakti Air Indonesia</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR: Cloud to Output -->
+        <div class="topo-connector topo-animate" data-delay="31">
+          <div class="topo-connector-line"></div>
+          <div class="topo-connector-labels">
+            <span class="topo-protocol topo-animate" data-delay="32">Webhook</span>
+            <span class="topo-protocol topo-animate" data-delay="33">MySQL</span>
+            <span class="topo-protocol topo-animate" data-delay="34">PostgreSQL</span>
+            <span class="topo-protocol topo-animate" data-delay="35">HTTP POST</span>
+          </div>
+        </div>
+
+        <!-- LAYER 4: OUTPUT / USERS -->
+        <div class="topo-layer topo-layer-output topo-animate" data-delay="36">
+          <div class="topo-layer-label">
+            <span class="topo-layer-tag topo-tag-output">OUTPUT &amp; MONITORING</span>
+          </div>
+          <div class="topo-layer-content">
+            <div class="topo-output-box topo-animate" data-delay="37">
+              <div class="topo-output-icon"><i data-lucide="layout-dashboard" class="lucide-output"></i></div>
+              <div class="topo-output-name">Dashboard<br>Custom</div>
+            </div>
+            <div class="topo-output-box topo-animate" data-delay="38">
+              <div class="topo-output-icon"><i data-lucide="bar-chart-3" class="lucide-output"></i></div>
+              <div class="topo-output-name">Grafana<br>Dashboard</div>
+            </div>
+            <div class="topo-output-box topo-animate" data-delay="39">
+              <div class="topo-output-icon"><i data-lucide="smartphone" class="lucide-output"></i></div>
+              <div class="topo-output-name">Mobile<br>Monitoring</div>
+            </div>
+            <div class="topo-output-box topo-animate" data-delay="40">
+              <div class="topo-output-icon"><i data-lucide="server" class="lucide-output"></i></div>
+              <div class="topo-output-name">Server<br>PDAM</div>
+            </div>
+            <div class="topo-output-box topo-animate" data-delay="41">
+              <div class="topo-output-icon"><i data-lucide="shield-alert" class="lucide-output"></i></div>
+              <div class="topo-output-name">AI Early<br>Warning</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TOPOLOGY LEGEND -->
+      <div class="topo-legend fade-in delay-1">
+        <div class="topo-legend-item">
+          <span class="topo-legend-dot" style="background:var(--color-primary)"></span>
+          <span>4G / 2G Cellular</span>
+        </div>
+        <div class="topo-legend-item">
+          <span class="topo-legend-dot" style="background:#FFE66D"></span>
+          <span>LoRa (Type C only)</span>
+        </div>
+        <div class="topo-legend-item">
+          <span class="topo-legend-dot" style="background:#0066FF"></span>
+          <span>RS485 / Modbus RTU</span>
+        </div>
+        <div class="topo-legend-item">
+          <span class="topo-legend-dot" style="background:var(--color-text-muted)"></span>
+          <span>Analog 4-20mA</span>
+        </div>
+        <div class="topo-legend-item">
+          <span class="topo-legend-dot" style="background:#FF6B6B"></span>
+          <span>Webhook / API Transfer</span>
+        </div>
+      </div>
+
+      <!-- KEY METRICS -->
+      <div class="topo-metrics fade-in delay-2">
+        <div class="topo-metric">
+          <div class="topo-metric-value">2 menit</div>
+          <div class="topo-metric-label">Default Interval</div>
+        </div>
+        <div class="topo-metric">
+          <div class="topo-metric-value">End-to-End</div>
+          <div class="topo-metric-label">Enkripsi TLS/SSL</div>
+        </div>
+        <div class="topo-metric">
+          <div class="topo-metric-value">Auto Buffer</div>
+          <div class="topo-metric-label">SD Card jika offline</div>
+        </div>
+        <div class="topo-metric">
+          <div class="topo-metric-value">OTA Update</div>
+          <div class="topo-metric-label">Firmware via cloud</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       LOKASI MONITORING PDAM
+       ============================================================ -->
+  <section class="section section--alt" id="locations">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill badge-pill--accent">🌊 USE CASES</span>
+        <h2>Titik Monitoring di Jaringan PDAM</h2>
+        <p>Dari sumber air hingga keran pelanggan — monitoring end-to-end untuk mengoptimalkan operasional dan mengurangi kehilangan air (NRW)</p>
+      </div>
+
+      <!-- Smart Water Journey Diagram -->
+      <div class="pdam-diagram-wrapper hw-anim" data-delay="1">
+        <img src="smart-water-journey-pdam%20(2).png" alt="Smart Water Journey PDAM" class="pdam-diagram" />
+        <p class="pdam-diagram-caption">Gambar: Smart Water Journey dari WTP hingga pelanggan akhir</p>
+      </div>
+
+      <!-- Monitoring Points Grid -->
+      <div class="monitoring-points-grid">
+        <!-- WTP -->
+        <div class="monitoring-point hw-anim" data-delay="2">
+          <div class="monitoring-header">
+            <i data-lucide="droplet" class="monitoring-icon"></i>
+            <h3>Water Treatment Plant (WTP)</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Level Sensor</span>
+              <span class="sensor-tag">Turbidity</span>
+              <span class="sensor-tag">pH & Klorin</span>
+              <span class="sensor-tag">Flow Meter</span>
+              <span class="sensor-tag">Power Meter</span>
+            </div>
+            <p class="monitoring-desc">Monitor kualitas air output WTP, level reservoir, dan konsumsi listrik pompa distribusi</p>
+          </div>
+        </div>
+
+        <!-- Reservoir -->
+        <div class="monitoring-point hw-anim" data-delay="3">
+          <div class="monitoring-header">
+            <i data-lucide="database" class="monitoring-icon"></i>
+            <h3>Reservoir & Tandon</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Level Sensor</span>
+              <span class="sensor-tag">Pressure Sensor</span>
+              <span class="sensor-tag">VSD/Inverter</span>
+            </div>
+            <p class="monitoring-desc">Pantau level air, tekanan outlet, dan kinerja pompa booster untuk memastikan distribusi optimal</p>
+          </div>
+        </div>
+
+        <!-- Transmission -->
+        <div class="monitoring-point hw-anim" data-delay="4">
+          <div class="monitoring-header">
+            <i data-lucide="git-branch" class="monitoring-icon"></i>
+            <h3>Jaringan Pipa Transmisi</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Flow Meter</span>
+              <span class="sensor-tag">Pressure Sensor</span>
+            </div>
+            <p class="monitoring-desc">Deteksi kebocoran besar di jalur transmisi melalui anomali flow dan pressure drop</p>
+          </div>
+        </div>
+
+        <!-- DMA -->
+        <div class="monitoring-point hw-anim" data-delay="5">
+          <div class="monitoring-header">
+            <i data-lucide="map" class="monitoring-icon"></i>
+            <h3>DMA (District Metered Area)</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Flow Meter</span>
+              <span class="sensor-tag">Pressure Sensor</span>
+            </div>
+            <p class="monitoring-desc">Hitung NRW per zona DMA dengan membandingkan flow inlet vs outlet + konsumsi pelanggan</p>
+          </div>
+        </div>
+
+        <!-- Critical Point -->
+        <div class="monitoring-point hw-anim" data-delay="6">
+          <div class="monitoring-header">
+            <i data-lucide="alert-triangle" class="monitoring-icon"></i>
+            <h3>Critical Point</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Pressure Sensor</span>
+            </div>
+            <p class="monitoring-desc">Monitor tekanan di ujung jaringan untuk memastikan tekanan memadai hingga pelanggan terjauh</p>
+          </div>
+        </div>
+
+        <!-- Pumping Station -->
+        <div class="monitoring-point hw-anim" data-delay="7">
+          <div class="monitoring-header">
+            <i data-lucide="settings" class="monitoring-icon"></i>
+            <h3>Rumah Pompa</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Power Meter</span>
+              <span class="sensor-tag">VSD/Inverter</span>
+              <span class="sensor-tag">Flow Meter</span>
+              <span class="sensor-tag">Pressure Sensor</span>
+            </div>
+            <p class="monitoring-desc">Optimasi konsumsi energi pompa dan deteksi anomali kinerja pompa (cavitation, dry run)</p>
+          </div>
+        </div>
+
+        <!-- Industrial Customer -->
+        <div class="monitoring-point hw-anim" data-delay="8">
+          <div class="monitoring-header">
+            <i data-lucide="building-2" class="monitoring-icon"></i>
+            <h3>Pelanggan Industri</h3>
+          </div>
+          <div class="monitoring-body">
+            <div class="monitoring-sensors">
+              <span class="sensor-tag">Flow Meter</span>
+            </div>
+            <p class="monitoring-desc">Monitoring konsumsi real-time untuk billing akurat dan deteksi kebocoran di sisi pelanggan</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="pdam-cta hw-anim" data-delay="9">
+        <h3>Butuh Konsultasi untuk Proyek PDAM Anda?</h3>
+        <p>Tim kami siap membantu survey lokasi, desain sistem, hingga instalasi dan konfigurasi</p>
+        <div class="pdam-cta-buttons">
+          <a href="installation-guide.html" class="btn btn--primary">
+            <i data-lucide="book-open"></i> Lihat Panduan Instalasi
+          </a>
+          <a href="https://wa.me/628562302229?text=Halo%20DEVETEK%2C%20saya%20ingin%20konsultasi%20untuk%20proyek%20PDAM" class="btn btn--ghost" target="_blank">
+            <i data-lucide="message-circle"></i> Chat via WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       NODE TYPES
+       ============================================================ -->
+  <section class="section" id="nodes">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill badge-pill--accent"><i data-lucide="cpu"></i> Hardware</span>
+        <h2>Pilih Node Sesuai Kebutuhan</h2>
+        <p>Tiga varian hardware yang dirancang untuk kebutuhan berbeda — dari monitoring pipeline hingga automation pump station.</p>
+      </div>
+
+      <div class="node-types">
+        <!-- Type A -->
+        <div class="node-card node-card-a hw-anim" data-delay="1">
+          <div class="node-type-label">Type A</div>
+          <h3>Universal Logger</h3>
+          <p class="node-desc">All-in-one untuk monitoring dan kontrol. Dilengkapi relay untuk otomasi jarak jauh dan baterai besar untuk area remote.</p>
+          <div class="node-specs">
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="cable" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>RS485 Modbus</strong> 1~5 Address</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="activity" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>2x Analog</strong> 4-20mA</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="toggle-right" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>2x Digital Input</strong></div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="zap" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>2x Relay</strong> 10A @ 250VAC</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="gauge" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Sensor Tekanan</strong> Included</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="waves" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Sensor Debit</strong> TUF-2000M Included</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="battery-charging" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>LiFePO4 25Ah</strong> (3-5 hari backup)</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="sun" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Solar 20WP</strong> (1.2mm tempered glass)</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="cloud-cog" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Cloud Config</strong> Konfigurasi dinamis via server</div>
+            </div>
+          </div>
+          <div class="node-highlights">
+            <span class="node-tag">Monitoring</span>
+            <span class="node-tag">Kontrol Relay</span>
+            <span class="node-tag">Pump Station</span>
+            <span class="node-tag">Industri</span>
+          </div>
+        </div>
+
+        <!-- Type B -->
+        <div class="node-card node-card-b hw-anim" data-delay="2">
+          <div class="node-type-label">Type B</div>
+          <h3>Pipeline Logger</h3>
+          <p class="node-desc">Dirancang khusus untuk monitoring jaringan perpipaan PDAM. Sudah termasuk sensor tekanan — langsung pakai.</p>
+          <div class="node-specs">
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="activity" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>2x Analog</strong> 4-20mA</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="toggle-right" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>2x Digital Input</strong></div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="gauge" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Sensor Tekanan</strong> Included</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="battery-charging" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>LiFePO4 8Ah</strong> (1-2 hari backup)</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="sun" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Solar 20WP</strong> (1.2mm tempered glass)</div>
+            </div>
+          </div>
+          <div class="node-highlights">
+            <span class="node-tag">PDAM</span>
+            <span class="node-tag">Pressure Monitoring</span>
+            <span class="node-tag">Pipeline</span>
+            <span class="node-tag">Langsung Pakai</span>
+          </div>
+        </div>
+
+        <!-- Type C -->
+        <div class="node-card node-card-c hw-anim" data-delay="3">
+          <div class="node-type-label">Type C</div>
+          <h3>Custom Solution</h3>
+          <p class="node-desc">Solusi fleksibel yang dapat disesuaikan. Pilih konektivitas (GSM atau LoRa), sensor, dan fitur sesuai kebutuhan proyek.</p>
+          <div class="node-specs">
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="radio" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>GSM 4G/2G atau LoRa</strong> Pilih konektivitas</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="cable" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>RS485 Modbus</strong> Opsional</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="activity" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Analog 4-20mA</strong> Opsional</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="zap" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Relay Output</strong> Opsional</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="gauge" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Sensor Tekanan &amp; Debit</strong> Opsional</div>
+            </div>
+            <div class="node-spec">
+              <div class="node-spec-icon"><i data-lucide="wrench" class="lucide-spec"></i></div>
+              <div class="node-spec-text"><strong>Sepenuhnya Dapat Disesuaikan</strong> Sesuai kebutuhan</div>
+            </div>
+          </div>
+          <div class="node-highlights">
+            <span class="node-tag">Fleksibel</span>
+            <span class="node-tag">LoRa Ready</span>
+            <span class="node-tag">Tanpa SIM Card</span>
+            <span class="node-tag">Skalabel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SOLAR POWER
+       ============================================================ -->
+  <section class="section section--alt" id="solar">
+    <div class="container">
+      <div class="solar-grid">
+        <div class="solar-visual hw-anim" data-delay="0">
+          <div class="solar-icon-large"><i data-lucide="sun" class="lucide-solar"></i></div>
+          <h3 style="font-size:1.4rem;font-weight:700;margin-bottom:8px;color:var(--color-text)">Solar Panel 20WP</h3>
+          <p style="font-size:0.9rem;color:var(--color-text-muted);margin-bottom:24px">Monocrystalline &middot; 1.2mm Tempered Glass</p>
+          <div class="solar-spec-grid">
+            <div class="solar-spec-item">
+              <div class="value">20W</div>
+              <div class="label">Max Power</div>
+            </div>
+            <div class="solar-spec-item">
+              <div class="value">&ge;18%</div>
+              <div class="label">Efisiensi</div>
+            </div>
+            <div class="solar-spec-item">
+              <div class="value">1.2mm</div>
+              <div class="label">Glass Thickness</div>
+            </div>
+            <div class="solar-spec-item">
+              <div class="value">IP67</div>
+              <div class="label">Protection</div>
+            </div>
+          </div>
+        </div>
+        <div class="solar-info hw-anim" data-delay="1">
+          <span class="badge-pill badge-pill--accent" style="margin-bottom:16px">Tenaga Surya</span>
+          <h3>Mandiri Energi,<br>Tanpa Ketergantungan Listrik</h3>
+          <p>Setiap node DEVETEK-IOT dirancang untuk beroperasi 100% mandiri dengan solar panel 20WP. Tidak perlu tarik kabel listrik — pasang di mana saja, data langsung mengalir.</p>
+          <div class="solar-benefits">
+            <div class="solar-benefit">
+              <i data-lucide="check" class="lucide-check"></i>
+              <div><strong>Tempered glass 1.2mm</strong> — 4x lebih kuat dari kaca biasa, tahan hujan es dan angin kencang</div>
+            </div>
+            <div class="solar-benefit">
+              <i data-lucide="check" class="lucide-check"></i>
+              <div><strong>Baterai LiFePO4</strong> — Backup 1-5 hari tanpa matahari (tergantung varian)</div>
+            </div>
+            <div class="solar-benefit">
+              <i data-lucide="check" class="lucide-check"></i>
+              <div><strong>MPPT Solar Charger</strong> — Efisiensi charging optimal di segala cuaca</div>
+            </div>
+            <div class="solar-benefit">
+              <i data-lucide="check" class="lucide-check"></i>
+              <div><strong>Power monitoring</strong> — Pantau tegangan, arus, dan daya baterai real-time via dashboard</div>
+            </div>
+            <div class="solar-benefit">
+              <i data-lucide="check" class="lucide-check"></i>
+              <div><strong>25+ tahun lifespan</strong> — Panel surya dengan garansi output hingga 25 tahun</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       COMPARISON TABLE (Enhanced)
+       ============================================================ -->
+  <section class="section" id="comparison">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill"><i data-lucide="table-2"></i> Perbandingan</span>
+        <h2>Perbandingan Fitur</h2>
+        <p>Lihat detail perbedaan setiap varian node untuk memilih yang paling sesuai dengan kebutuhan Anda.</p>
+      </div>
+
+      <div class="comparison-wrapper hw-anim" data-delay="1">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th class="ct-feature-col">Fitur</th>
+              <th class="ct-col-a">
+                <div class="ct-col-badge ct-badge-a"></div>
+                <span class="ct-col-type">Type A</span>
+                <span class="ct-col-name">Universal Logger</span>
+              </th>
+              <th class="ct-col-b">
+                <div class="ct-col-badge ct-badge-b"></div>
+                <span class="ct-col-type">Type B</span>
+                <span class="ct-col-name">Pipeline Logger</span>
+              </th>
+              <th class="ct-col-c">
+                <div class="ct-col-badge ct-badge-c"></div>
+                <span class="ct-col-type">Type C</span>
+                <span class="ct-col-name">Custom Solution</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="group-row"><td colspan="4"><span class="group-icon">📡</span> Konektivitas</td></tr>
+            <tr>
+              <td>Modem GSM (4G / 2G)</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+            <tr>
+              <td>LoRa (tanpa SIM Card)</td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Bluetooth Low Energy</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">🔌</span> Input / Output</td></tr>
+            <tr>
+              <td>RS485 Modbus RTU</td>
+              <td><span class="pill pill-highlight">1~5 Address</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Analog 4-20mA</td>
+              <td><span class="pill pill-val">2 Channel</span></td>
+              <td><span class="pill pill-val">2 Channel</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Digital Input</td>
+              <td><span class="pill pill-val">2 Channel</span></td>
+              <td><span class="pill pill-val">2 Channel</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Relay Output (10A)</td>
+              <td><span class="pill pill-highlight">2 Channel</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">📦</span> Sensor</td></tr>
+            <tr>
+              <td>Sensor Tekanan</td>
+              <td><span class="pill pill-inc">✓ Included</span></td>
+              <td><span class="pill pill-inc">✓ Included</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Sensor Debit TUF-2000M</td>
+              <td><span class="pill pill-inc">✓ Included</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Sensor Power Meter</td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Pembacaan VSD</td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">🔋</span> Daya</td></tr>
+            <tr>
+              <td>Solar Panel</td>
+              <td><span class="pill pill-val">20WP (1.2mm)</span></td>
+              <td><span class="pill pill-val">20WP (1.2mm)</span></td>
+              <td><span class="pill pill-val">20WP (1.2mm)</span></td>
+            </tr>
+            <tr>
+              <td>Baterai LiFePO4</td>
+              <td><span class="pill pill-highlight">25Ah</span></td>
+              <td><span class="pill pill-val">8Ah</span></td>
+              <td><span class="pill pill-val">Sesuai kebutuhan</span></td>
+            </tr>
+            <tr>
+              <td>Backup Duration</td>
+              <td><span class="pill pill-highlight">3-5 Hari</span></td>
+              <td><span class="pill pill-val">1-2 Hari</span></td>
+              <td><span class="pill pill-val">Sesuai baterai</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">🏗️</span> Enclosure &amp; Tiang</td></tr>
+            <tr>
+              <td>Material Panel</td>
+              <td><span class="pill pill-val">Plat 1.2mm Anti Air</span></td>
+              <td><span class="pill pill-val">Plat 1.2mm Anti Air</span></td>
+              <td><span class="pill pill-val">Plat 1.2mm Anti Air</span></td>
+            </tr>
+            <tr>
+              <td>IP Rating</td>
+              <td><span class="pill pill-highlight">IP65</span></td>
+              <td><span class="pill pill-highlight">IP65</span></td>
+              <td><span class="pill pill-highlight">IP65</span></td>
+            </tr>
+            <tr>
+              <td>Tiang Panel</td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">📊</span> Kontrol &amp; Automation</td></tr>
+            <tr>
+              <td>Remote Relay Control</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Time-based Scheduling</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Conditional Logic (IF-THEN)</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">☁️</span> Cloud Platform</td></tr>
+            <tr>
+              <td>DEVETEK-HELIOS</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+            <tr>
+              <td>Grafana Dashboard</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+            <tr>
+              <td>AI Analytics &amp; Early Warning</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+            <tr>
+              <td>OTA Firmware Update</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+            <tr>
+              <td>Konfigurasi Dinamis via Cloud</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-no">—</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">📶</span> Data &amp; Koneksi</td></tr>
+            <tr>
+              <td>Interval Pengiriman Data</td>
+              <td><span class="pill pill-val">2 menit (dapat diatur)</span></td>
+              <td><span class="pill pill-val">2 menit (dapat diatur)</span></td>
+              <td><span class="pill pill-val">2 menit (dapat diatur)</span></td>
+            </tr>
+            <tr>
+              <td>SIM Card (4G / 2G)</td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Transfer Data ke Server PDAM</td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+              <td><span class="pill pill-yes">✓ Ya</span></td>
+            </tr>
+
+            <tr class="group-row"><td colspan="4"><span class="group-icon">📜</span> Garansi &amp; Support</td></tr>
+            <tr>
+              <td>Garansi Hardware</td>
+              <td><span class="pill pill-val">12 Bulan</span></td>
+              <td><span class="pill pill-val">12 Bulan</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Garansi Baterai</td>
+              <td><span class="pill pill-val">24 Bulan</span></td>
+              <td><span class="pill pill-val">24 Bulan</span></td>
+              <td><span class="pill pill-opt">Opsional</span></td>
+            </tr>
+            <tr>
+              <td>Support Teknis</td>
+              <td><span class="pill pill-val">3 Bulan</span></td>
+              <td><span class="pill pill-val">3 Bulan</span></td>
+              <td><span class="pill pill-val">3 Bulan</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Legend -->
+      <div class="ct-legend hw-anim" data-delay="2">
+        <div class="ct-legend-item"><span class="pill pill-yes" style="font-size:0.7rem">✓ Ya</span> Tersedia</div>
+        <div class="ct-legend-item"><span class="pill pill-inc" style="font-size:0.7rem">✓ Included</span> Sudah termasuk</div>
+        <div class="ct-legend-item"><span class="pill pill-highlight" style="font-size:0.7rem">Unggulan</span> Fitur unggulan</div>
+        <div class="ct-legend-item"><span class="pill pill-opt" style="font-size:0.7rem">Opsional</span> Bisa ditambahkan</div>
+        <div class="ct-legend-item"><span class="pill pill-no" style="font-size:0.7rem">—</span> Tidak tersedia</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       GALLERY
+       ============================================================ -->
+  <section class="section section--alt" id="gallery">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill">GALERI</span>
+        <h2>Dashboard & Instalasi Lapangan</h2>
+        <p>Lihat platform HELIOS beraksi dan foto instalasi di berbagai lokasi PDAM.</p>
+      </div>
+
+      <div class="hw-gallery hw-anim" data-delay="1">
+        <div class="hw-gallery-main">
+          <img src="images/gallery/terpasang-1.jpg" alt="Instalasi Terpasang" onerror="this.classList.add('img-fallback')">
+          <div class="hw-gallery-main-overlay">
+            <h4>Instalasi Lengkap — Tiang Solar + IoT Node</h4>
+            <p>Tiang monitoring terpasang dengan panel surya dan enclosure sensor</p>
+          </div>
+        </div>
+        <div class="hw-gallery-side">
+          <div class="hw-gallery-card">
+            <img src="images/gallery/terpasang-2.jpg" alt="Instalasi di Lokasi PDAM" onerror="this.classList.add('img-fallback')">
+            <div class="hw-gallery-card-overlay">
+              <span>Terpasang di Lokasi PDAM</span>
+            </div>
+          </div>
+          <div class="hw-gallery-card">
+            <img src="images/gallery/terpasang-3.jpg" alt="Node dengan Sensor" onerror="this.classList.add('img-fallback')">
+            <div class="hw-gallery-card-overlay">
+              <span>Instalasi dengan Sensor Lengkap</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Gallery Row -->
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-md); margin-top:var(--space-lg);" class="hw-anim" data-delay="2">
+        <div class="hw-gallery-card" style="min-height:160px;">
+          <img src="images/gallery/rakit-tiang-1.jpg" alt="Proses Rakit" onerror="this.classList.add('img-fallback')">
+          <div class="hw-gallery-card-overlay"><span>Rakit Tiang Galvanis</span></div>
+        </div>
+        <div class="hw-gallery-card" style="min-height:160px;">
+          <img src="images/gallery/rakit-tiang-2.jpg" alt="Pasang Bracket" onerror="this.classList.add('img-fallback')">
+          <div class="hw-gallery-card-overlay"><span>Instalasi Bracket Panel</span></div>
+        </div>
+        <div class="hw-gallery-card" style="min-height:160px;">
+          <img src="images/gallery/pasang-tiang-1.jpg" alt="Persiapan Pondasi" onerror="this.classList.add('img-fallback')">
+          <div class="hw-gallery-card-overlay"><span>Persiapan Pondasi</span></div>
+        </div>
+        <div class="hw-gallery-card" style="min-height:160px;">
+          <img src="images/gallery/pasang-tiang-2.jpg" alt="Pengangkatan Tiang" onerror="this.classList.add('img-fallback')">
+          <div class="hw-gallery-card-overlay"><span>Pengangkatan Tiang</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FAQ
+       ============================================================ -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill badge-pill--accent">FAQ</span>
+        <h2>Pertanyaan Umum</h2>
+        <p>Jawaban untuk pertanyaan yang sering ditanyakan oleh calon pengguna.</p>
+      </div>
+
+      <div class="hw-faq-grid">
+        <div class="hw-faq-item hw-anim" data-delay="1">
+          <div class="hw-faq-q">
+            <div class="hw-faq-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h4>Berapa lama proses instalasi?</h4>
+          </div>
+          <p class="hw-faq-a">Proses dari PO hingga sistem live membutuhkan waktu <strong>maksimal 30 hari</strong>. Ini mencakup pengadaan hardware, konfigurasi, pengiriman, dan instalasi di lokasi.</p>
+        </div>
+
+        <div class="hw-faq-item hw-anim" data-delay="2">
+          <div class="hw-faq-q">
+            <div class="hw-faq-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
+            <h4>Bisa integrasi dengan sistem billing PDAM?</h4>
+          </div>
+          <p class="hw-faq-a"><strong>Bisa banget!</strong> Platform HELIOS mendukung transfer data via Webhook, MySQL, PostgreSQL, dan HTTP POST — memudahkan integrasi dengan sistem billing atau database existing PDAM.</p>
+        </div>
+
+        <div class="hw-faq-item hw-anim" data-delay="3">
+          <div class="hw-faq-q">
+            <div class="hw-faq-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>
+            </div>
+            <h4>Bagaimana jika sinyal 4G lemah?</h4>
+          </div>
+          <p class="hw-faq-a">Semua node DEVETEK mendukung <strong>dual-band 4G dan 2G</strong>. Jika sinyal 4G lemah, perangkat otomatis fallback ke jaringan 2G. Untuk area sangat terpencil, tersedia opsi <strong>LoRa (Type C)</strong> tanpa perlu SIM Card.</p>
+        </div>
+
+        <div class="hw-faq-item hw-anim" data-delay="4">
+          <div class="hw-faq-q">
+            <div class="hw-faq-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/></svg>
+            </div>
+            <h4>SIM Card pakai apa? Siapa yang bayar?</h4>
+          </div>
+          <p class="hw-faq-a">Kami merekomendasikan <strong>Telkomsel M2M atau Halo</strong> untuk stabilitas jaringan. Ada 2 opsi: <strong>(1)</strong> PDAM menyediakan SIM Card sendiri, atau <strong>(2)</strong> DEVETEK menyediakan dan mengelola SIM Card untuk Anda.</p>
+        </div>
+
+        <div class="hw-faq-item hw-anim" data-delay="5">
+          <div class="hw-faq-q">
+            <div class="hw-faq-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+            </div>
+            <h4>Kalau cloud down, data hilang tidak?</h4>
+          </div>
+          <p class="hw-faq-a"><strong>Tidak.</strong> DEVETEK-HELIOS menggunakan arsitektur database terdistribusi dengan ClickHouse DB, dilengkapi server backup. Setiap node juga memiliki <strong>SD Card buffer</strong> — data tetap tersimpan lokal dan otomatis sync saat online kembali.</p>
+        </div>
+
+        <div class="hw-faq-item hw-anim" data-delay="6">
+          <div class="hw-faq-q">
+            <div class="hw-faq-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <h4>Apakah ada opsi sewa hardware?</h4>
+          </div>
+          <p class="hw-faq-a">Saat ini <strong>tidak ada opsi sewa</strong>. Hardware dibeli satu kali (menjadi aset PDAM), sementara layanan cloud HELIOS berlangganan per node. Model ini memberikan kepemilikan penuh atas perangkat dan fleksibilitas dalam pengelolaan.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TIMELINE & SLA
+       ============================================================ -->
+  <section class="section section--alt" id="timeline">
+    <div class="container">
+      <div class="section-header hw-anim" data-delay="0">
+        <span class="badge-pill badge-pill--accent">PROSES IMPLEMENTASI</span>
+        <h2>30 Hari dari PO hingga Live</h2>
+        <p>Timeline implementasi yang jelas dan terukur — kami pastikan proyek Anda berjalan sesuai jadwal.</p>
+      </div>
+
+      <div class="hw-timeline hw-anim" data-delay="1">
+        <div class="hw-timeline-step">
+          <div class="hw-timeline-week">Minggu 1</div>
+          <div class="hw-timeline-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="hw-timeline-title">PO & Kick-off</div>
+          <div class="hw-timeline-desc">Konfirmasi PO, kick-off meeting, finalisasi spesifikasi</div>
+        </div>
+
+        <div class="hw-timeline-step">
+          <div class="hw-timeline-week">Minggu 2</div>
+          <div class="hw-timeline-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          </div>
+          <div class="hw-timeline-title">Produksi & QC</div>
+          <div class="hw-timeline-desc">Assembly hardware, konfigurasi firmware, quality control</div>
+        </div>
+
+        <div class="hw-timeline-step">
+          <div class="hw-timeline-week">Minggu 3</div>
+          <div class="hw-timeline-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </div>
+          <div class="hw-timeline-title">Pengiriman</div>
+          <div class="hw-timeline-desc">Packaging, pengiriman ke lokasi PDAM, persiapan instalasi</div>
+        </div>
+
+        <div class="hw-timeline-step">
+          <div class="hw-timeline-week">Minggu 4</div>
+          <div class="hw-timeline-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="hw-timeline-title">Instalasi & Go-Live</div>
+          <div class="hw-timeline-desc">Instalasi di lokasi, testing, training, serah terima</div>
+        </div>
+      </div>
+
+      <!-- SLA Cards -->
+      <div class="hw-sla-grid hw-anim" data-delay="2">
+        <div class="hw-sla-card">
+          <div class="hw-sla-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div class="hw-sla-value">99.5%</div>
+          <div class="hw-sla-label">Uptime Guarantee</div>
+          <div class="hw-sla-desc">Platform HELIOS dengan redundansi server</div>
+        </div>
+        <div class="hw-sla-card">
+          <div class="hw-sla-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="hw-sla-value">< 24 Jam</div>
+          <div class="hw-sla-label">Response Time</div>
+          <div class="hw-sla-desc">Support teknis hari kerja via WhatsApp/Email</div>
+        </div>
+        <div class="hw-sla-card">
+          <div class="hw-sla-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+          </div>
+          <div class="hw-sla-value">1 Tahun</div>
+          <div class="hw-sla-label">Data Retention</div>
+          <div class="hw-sla-desc">Minimum retensi data historis di cloud</div>
+        </div>
+        <div class="hw-sla-card">
+          <div class="hw-sla-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><polyline points="9 12 12 15 16 10"/></svg>
+          </div>
+          <div class="hw-sla-value">12 Bulan</div>
+          <div class="hw-sla-label">Garansi Hardware</div>
+          <div class="hw-sla-desc">Garansi penuh untuk kerusakan non-user</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CTA
+       ============================================================ -->
+  <section class="section">
+    <div class="container">
+      <div class="hw-anim" data-delay="0" style="text-align:center; padding:var(--space-2xl); background:var(--color-surface); border-radius:var(--radius-xl); border:1px solid rgba(255,255,255,0.06);">
+        <span class="badge-pill badge-pill--accent" style="margin-bottom:var(--space-md);">SIAP MEMULAI?</span>
+        <h2 style="font-family:var(--font-heading); font-size:clamp(1.5rem,3vw,2rem); font-weight:800; margin-bottom:var(--space-md);">Mari Diskusi Kebutuhan Anda</h2>
+        <p style="color:var(--color-text-muted); max-width:600px; margin:0 auto var(--space-xl); line-height:1.7;">Tim kami siap membantu Anda merancang solusi monitoring yang tepat — mulai dari survei lokasi hingga instalasi dan konfigurasi.</p>
+        <div style="display:flex; gap:var(--space-md); justify-content:center; flex-wrap:wrap; margin-bottom:var(--space-xl);">
+          <a href="https://wa.me/628562302229?text=Halo%20DEVETEK%2C%20saya%20ingin%20tahu%20lebih%20lanjut%20tentang%20solusi%20IoT" class="btn btn--primary btn--lg" target="_blank">💬 Chat via WhatsApp</a>
+          <a href="contact.html" class="btn btn--ghost btn--lg">📧 Kirim Email</a>
+          <a href="features.html" class="btn btn--ghost btn--lg">☁️ Pelajari Platform HELIOS</a>
+        </div>
+        <div style="display:flex; gap:var(--space-xl); justify-content:center; flex-wrap:wrap; font-size:0.9rem; color:var(--color-text-muted);">
+          <a href="tel:+628562302229" style="color:var(--color-text-muted);">📞 +62 856-2302-229</a>
+          <a href="mailto:koko@devetek.com" style="color:var(--color-text-muted);">✉️ koko@devetek.com</a>
+          <a href="https://devetek.com" style="color:var(--color-text-muted);" target="_blank">🌐 devetek.com</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer style="padding:var(--space-2xl) 0; border-top:1px solid rgba(255,255,255,0.06);">
+    <div class="container" style="text-align:center;">
+      <p style="color:var(--color-text-muted); font-size:0.85rem; margin-bottom:var(--space-md);">
+        &copy; 2026 DEVETEK — PT. Comon Cipta Inovasi. All rights reserved.
+      </p>
+      <p style="color:var(--color-text-muted); font-size:0.8rem;">
+        <a href="index.html" style="color:var(--color-primary-light);">Beranda</a> · 
+        <a href="features.html" style="color:var(--color-primary-light);">Platform</a> · 
+        <a href="hardware.html" style="color:var(--color-primary-light);">Hardware</a> · 
+        <a href="installation-guide.html" style="color:var(--color-primary-light);">Panduan</a> · 
+        <a href="contact.html" style="color:var(--color-primary-light);">Kontak</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/main.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Animation observer for hw-anim elements
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const delay = parseInt(entry.target.getAttribute('data-delay') || '0') * 100;
+            setTimeout(() => {
+              entry.target.classList.add('visible');
+            }, delay);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+      document.querySelectorAll('.hw-anim').forEach(el => observer.observe(el));
+
+      // Topology staggered animations
+      const topoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const delay = parseInt(entry.target.getAttribute('data-delay') || '0') * 80;
+            setTimeout(() => {
+              entry.target.classList.add('visible');
+            }, delay);
+            topoObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      document.querySelectorAll('.topo-animate').forEach(el => topoObserver.observe(el));
+    });
+  </script>
+</body>
+</html>

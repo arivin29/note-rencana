@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Instalasi Teknis — DEVETEK IoT</title>
+    <meta name="description" content="Panduan teknis instalasi IoT DEVETEK untuk PDAM. Cara kerja sistem, spesifikasi tiang, checklist syarat minimum, dan rekomendasi paket.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/marketing-style.css">
+    <link rel="stylesheet" href="installation-guide.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">D</div>
+                <span class="logo-text">DEVETEK</span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Beranda</a></li>
+                <li><a href="features.html">Platform</a></li>
+                <li><a href="hardware.html">Hardware</a></li>
+                <li><a href="installation-guide.html" class="active">Panduan</a></li>
+                <li><a href="screenshots.html">Galeri</a></li>
+                <li><a href="contact.html" class="nav-cta">Hubungi Kami</a></li>
+            </ul>
+            <button class="mobile-toggle" onclick="toggleNav()">&#9776;</button>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero hero-guide" id="hero">
+        <div class="hero-grid"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge badge-light">📋 Technical Installation Guide</span>
+                </div>
+                <h1>Panduan Instalasi<br><span class="gradient-text">IoT untuk PDAM</span></h1>
+                <p>Dokumen teknis lengkap tentang cara kerja sistem, persyaratan instalasi, spesifikasi tiang, dan checklist untuk tim Sales DEVETEK & Tim Teknis PDAM.</p>
+                <div class="hero-buttons">
+                    <a href="#how-it-works" class="btn btn-primary btn-lg">Mulai Baca</a>
+                    <a href="quotation-v2.html" class="btn btn-outline btn-lg">Buat Quotation</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TABLE OF CONTENTS -->
+    <section class="section section-dark-alt" id="toc">
+        <div class="container">
+            <div class="toc-grid">
+                <a href="#how-it-works" class="toc-item">
+                    <div class="toc-number">01</div>
+                    <div class="toc-text">
+                        <h4>Cara Kerja Sistem</h4>
+                        <p>Alur data dari sensor ke dashboard</p>
+                    </div>
+                </a>
+                <a href="#locations" class="toc-item">
+                    <div class="toc-number">02</div>
+                    <div class="toc-text">
+                        <h4>Titik Pemasangan</h4>
+                        <p>Lokasi strategis di jaringan PDAM</p>
+                    </div>
+                </a>
+                <a href="#installation" class="toc-item">
+                    <div class="toc-number">03</div>
+                    <div class="toc-text">
+                        <h4>Panduan Instalasi</h4>
+                        <p>Pemasangan sensor & flow meter</p>
+                    </div>
+                </a>
+                <a href="#tiang" class="toc-item">
+                    <div class="toc-number">04</div>
+                    <div class="toc-text">
+                        <h4>Spesifikasi Tiang</h4>
+                        <p>Material, ukuran & estimasi biaya</p>
+                    </div>
+                </a>
+                <a href="#checklist" class="toc-item">
+                    <div class="toc-number">05</div>
+                    <div class="toc-text">
+                        <h4>Checklist</h4>
+                        <p>Syarat minimum sebelum instalasi</p>
+                    </div>
+                </a>
+                <a href="#packages" class="toc-item">
+                    <div class="toc-number">06</div>
+                    <div class="toc-text">
+                        <h4>Rekomendasi Paket</h4>
+                        <p>Paket per aplikasi</p>
+                    </div>
+                </a>
+                <a href="#faq" class="toc-item">
+                    <div class="toc-number">07</div>
+                    <div class="toc-text">
+                        <h4>FAQ Instalasi</h4>
+                        <p>Pertanyaan yang sering diajukan</p>
+                    </div>
+                </a>
+                <a href="#warranty" class="toc-item">
+                    <div class="toc-number">08</div>
+                    <div class="toc-text">
+                        <h4>Garansi & Support</h4>
+                        <p>Layanan purna jual & SLA</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1. CARA KERJA SISTEM -->
+    <section class="section section-dark" id="how-it-works">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">01</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Cara Kerja Sistem</h2>
+            <p class="section-subtitle">Alur data end-to-end dari sensor lapangan hingga dashboard di genggaman Anda</p>
+
+            <!-- Flow Diagram -->
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="flow-icon">
+                        <i data-lucide="gauge" class="lucide-icon"></i>
+                    </div>
+                    <h4>SENSOR</h4>
+                    <p>Tekanan, Debit, Level, Power</p>
+                </div>
+                <div class="flow-arrow">
+                    <i data-lucide="arrow-right" class="lucide-arrow"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-icon">
+                        <i data-lucide="cpu" class="lucide-icon"></i>
+                    </div>
+                    <h4>NODE</h4>
+                    <p>Baca, proses, kirim via 4G/2G</p>
+                </div>
+                <div class="flow-arrow">
+                    <i data-lucide="arrow-right" class="lucide-arrow"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-icon">
+                        <i data-lucide="cloud" class="lucide-icon"></i>
+                    </div>
+                    <h4>HELIOS CLOUD</h4>
+                    <p>Gateway, parsing, AI analytics</p>
+                </div>
+                <div class="flow-arrow">
+                    <i data-lucide="arrow-right" class="lucide-arrow"></i>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-icon">
+                        <i data-lucide="monitor" class="lucide-icon"></i>
+                    </div>
+                    <h4>DASHBOARD</h4>
+                    <p>Visualisasi, alert, laporan</p>
+                </div>
+            </div>
+
+            <!-- Keunggulan -->
+            <div class="features-grid-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i data-lucide="database" class="lucide-card"></i></div>
+                    <h4>Offline Buffer</h4>
+                    <p>Data tersimpan di SD Card jika sinyal hilang</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i data-lucide="refresh-cw" class="lucide-card"></i></div>
+                    <h4>Auto Reconnect</h4>
+                    <p>Otomatis reconnect jika koneksi terputus</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i data-lucide="download-cloud" class="lucide-card"></i></div>
+                    <h4>OTA Update</h4>
+                    <p>Firmware update remote tanpa ke lokasi</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i data-lucide="shield-check" class="lucide-card"></i></div>
+                    <h4>Enkripsi TLS</h4>
+                    <p>Data aman dari node ke cloud</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. TITIK PEMASANGAN -->
+    <section class="section section-dark-alt" id="locations">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">02</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Titik Pemasangan di Jaringan PDAM</h2>
+            <p class="section-subtitle">Lokasi strategis untuk monitoring infrastruktur air</p>
+
+            <!-- Smart Water Journey Diagram -->
+            <div class="pdam-diagram-section">
+                <img src="images/smart-water-journey-pdam.png" alt="Smart Water Journey - Dari Sumber Hingga Keran Anda (PDAM)" class="pdam-diagram-image">
+                <p class="diagram-caption">Diagram Smart Water Journey: Dari intake hingga pelanggan dengan monitoring IoT di setiap titik kritis</p>
+            </div>
+
+            <div class="location-table-wrapper">
+                <table class="location-table">
+                    <thead>
+                        <tr>
+                            <th>Lokasi</th>
+                            <th>Tujuan Monitoring</th>
+                            <th>Sensor</th>
+                            <th>Tipe Node</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Intake / Sumber Air</strong></td>
+                            <td>Monitor debit & kualitas air masuk</td>
+                            <td>Flow meter, Level, Turbidity</td>
+                            <td><span class="node-badge node-a">Type A</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>WTP (Water Treatment Plant)</strong></td>
+                            <td>Monitor proses pengolahan</td>
+                            <td>Klorin, Turbidity, pH, Flow meter</td>
+                            <td><span class="node-badge node-a">Type A</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Rumah Pompa / Booster</strong></td>
+                            <td>Monitor pompa & energi</td>
+                            <td>Power meter, Pressure, VSD/Inverter</td>
+                            <td><span class="node-badge node-a">Type A</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Reservoir / Tandon</strong></td>
+                            <td>Monitor level air</td>
+                            <td>Level sensor (ultrasonic/submersible)</td>
+                            <td><span class="node-badge node-b">Type B</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Meter Induk DMA</strong></td>
+                            <td>Monitor distribusi zona</td>
+                            <td>Flow meter, Pressure</td>
+                            <td><span class="node-badge node-ab">Type A/B</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jaringan Perpipaan Transmisi</strong></td>
+                            <td>Monitor pipa transmisi utama</td>
+                            <td>Pressure, Flow meter</td>
+                            <td><span class="node-badge node-b">Type B</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jaringan Perpipaan Distribusi</strong></td>
+                            <td>Monitor titik kritis distribusi</td>
+                            <td>Pressure sensor</td>
+                            <td><span class="node-badge node-b">Type B</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Titik Pipa Kritis</strong></td>
+                            <td>Deteksi kebocoran</td>
+                            <td>Pressure sensor</td>
+                            <td><span class="node-badge node-b">Type B</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pelanggan Besar</strong></td>
+                            <td>Monitoring konsumsi</td>
+                            <td>Flow meter</td>
+                            <td><span class="node-badge node-bc">Type B/C</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tips -->
+            <div class="tips-box">
+                <h4><i data-lucide="lightbulb" class="lucide-card"></i> Tips Pemilihan Lokasi</h4>
+                <ol>
+                    <li>Prioritaskan titik dengan nilai tinggi (meter induk, rumah pompa)</li>
+                    <li>Mulai dari hulu ke hilir</li>
+                    <li>Cek sinyal seluler sebelum instalasi</li>
+                    <li>Pilih lokasi yang mudah akses maintenance</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. PANDUAN INSTALASI FISIK -->
+    <section class="section section-dark" id="installation">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">03</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Panduan Instalasi Fisik</h2>
+            <p class="section-subtitle">Cara pemasangan sensor tekanan, flow meter, power meter, VSD, level sensor, dan water quality</p>
+
+            <div class="install-grid">
+                <!-- Sensor Tekanan -->
+                <div class="install-card">
+                    <div class="install-header">
+                        <i data-lucide="gauge" class="lucide-card"></i>
+                        <h3>Sensor Tekanan</h3>
+                    </div>
+                    <div class="install-content">
+                        <h5>Posisi di Pipa:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Pasang di posisi jam 10:00 - 02:00 (JANGAN di bawah)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Jarak dari elbow: minimal 5x diameter pipa (upstream)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Jarak dari valve: minimal 3x diameter pipa (downstream)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Gunakan ball valve 1/2" untuk isolasi</li>
+                        </ul>
+                        <h5>Yang Harus Dihindari:</h5>
+                        <ul class="x-list">
+                            <li><i data-lucide="x" class="lucide-x"></i> Bagian bawah pipa (risiko endapan)</li>
+                            <li><i data-lucide="x" class="lucide-x"></i> Terlalu dekat pompa (getaran)</li>
+                            <li><i data-lucide="x" class="lucide-x"></i> Dead-end pipe</li>
+                            <li><i data-lucide="x" class="lucide-x"></i> Area panas > 60°C</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Flow Meter -->
+                <div class="install-card">
+                    <div class="install-header">
+                        <i data-lucide="waves" class="lucide-card"></i>
+                        <h3>Flow Meter Clamp-On (TUF-2000M)</h3>
+                    </div>
+                    <div class="install-content">
+                        <h5>Syarat Pemasangan:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Jarak dari elbow upstream: min 10x diameter pipa</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Jarak dari elbow downstream: min 5x diameter pipa</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Pipa harus 100% terisi air</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Permukaan pipa bersih dari karat/cat</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Gunakan gel ultrasonic sebagai coupling</li>
+                        </ul>
+                        <h5>Tips:</h5>
+                        <ol>
+                            <li>Bersihkan permukaan pipa</li>
+                            <li>Ukur diameter & ketebalan akurat</li>
+                            <li>Cek signal strength > 60%</li>
+                            <li>Kalibrasi dengan meter existing jika ada</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Power Meter -->
+                <div class="install-card">
+                    <div class="install-header">
+                        <i data-lucide="zap" class="lucide-card"></i>
+                        <h3>Power Meter (RS485)</h3>
+                    </div>
+                    <div class="install-content">
+                        <h5>Konfigurasi:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Baud rate: 9600</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Modbus address: 1-247 (unik per device)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> CT Ratio: sesuai ampere (misal 100/5A)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: VSD, Level Sensor, Water Quality -->
+            <div class="install-grid" style="margin-top: 24px;">
+                <!-- VSD / Inverter -->
+                <div class="install-card">
+                    <div class="install-header">
+                        <i data-lucide="settings" class="lucide-card"></i>
+                        <h3>VSD / Inverter (RS485)</h3>
+                    </div>
+                    <div class="install-content">
+                        <h5>Syarat Pemasangan:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Kabel RS485 shielded twisted pair</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Jarak max 100m tanpa repeater</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Terminasi 120 ohm di ujung kabel</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Pisahkan dari kabel power</li>
+                        </ul>
+                        <h5>Konfigurasi Modbus:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Baud rate: 9600 / 19200</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Address: 1-247 (unik)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Parity: None / Even</li>
+                        </ul>
+                        <h5>Parameter Yang Dibaca:</h5>
+                        <p style="color: var(--gray-3); font-size: 0.85rem;">Frekuensi, RPM, Arus, Status Run/Stop, Fault Code</p>
+                    </div>
+                </div>
+
+                <!-- Level Sensor -->
+                <div class="install-card">
+                    <div class="install-header">
+                        <i data-lucide="layers" class="lucide-card"></i>
+                        <h3>Level Sensor (Ketinggian Air)</h3>
+                    </div>
+                    <div class="install-content">
+                        <h5>Tipe Sensor:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> <strong>Ultrasonic</strong> - Non-contact, untuk tandon terbuka</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> <strong>Submersible</strong> - Celup, untuk sumur/tandon dalam</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> <strong>Radar</strong> - Akurasi tinggi, area berbusa</li>
+                        </ul>
+                        <h5>Syarat Pemasangan Ultrasonic:</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Posisi tegak lurus permukaan air</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Dead zone min 30cm dari sensor</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Hindari area turbulen/berbusa</li>
+                        </ul>
+                        <h5>Output:</h5>
+                        <p style="color: var(--gray-3); font-size: 0.85rem;">4-20mA atau RS485 Modbus</p>
+                    </div>
+                </div>
+
+                <!-- Water Quality -->
+                <div class="install-card">
+                    <div class="install-header">
+                        <i data-lucide="droplets" class="lucide-card"></i>
+                        <h3>Water Quality (Klorin & Turbidity)</h3>
+                    </div>
+                    <div class="install-content">
+                        <h5>Sensor Klorin (Cl₂):</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Pasang setelah injeksi klorin</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Flow cell dengan debit konstan</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Kalibrasi rutin (1-2 minggu)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Range: 0-5 mg/L (ppm)</li>
+                        </ul>
+                        <h5>Sensor Turbidity (Kejernihan):</h5>
+                        <ul class="check-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Pasang di outlet WTP</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Hindari gelembung udara</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Bersihkan sensor berkala</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Range: 0-1000 NTU</li>
+                        </ul>
+                        <h5>Output:</h5>
+                        <p style="color: var(--gray-3); font-size: 0.85rem;">4-20mA atau RS485 Modbus</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. SPESIFIKASI TIANG -->
+    <section class="section section-dark-alt" id="tiang">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">04</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Spesifikasi Tiang & Mounting</h2>
+            <p class="section-subtitle">Standar tiang DEVETEK untuk instalasi outdoor</p>
+
+            <!-- Why Tiang Important -->
+            <div class="tiang-why">
+                <h3>Mengapa Tiang Penting?</h3>
+                <div class="tiang-reasons">
+                    <div class="tiang-reason">
+                        <span class="emoji">☀️</span>
+                        <span>Sudut optimal panel surya</span>
+                    </div>
+                    <div class="tiang-reason">
+                        <span class="emoji">🌧️</span>
+                        <span>Tahan cuaca ekstrem</span>
+                    </div>
+                    <div class="tiang-reason">
+                        <span class="emoji">🔒</span>
+                        <span>Keamanan perangkat</span>
+                    </div>
+                    <div class="tiang-reason">
+                        <span class="emoji">🔧</span>
+                        <span>Kemudahan maintenance</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gambar Spesifikasi Tiang -->
+            <div class="tiang-image-section">
+                <img src="images/tiang/spesifikasi-tiang.png" alt="Spesifikasi Tiang DEVETEK" class="tiang-main-image">
+            </div>
+
+            <!-- Spec Tables -->
+            <div class="spec-tables-grid">
+                <!-- Tiang -->
+                <div class="spec-table-card">
+                    <h4><i data-lucide="columns" class="lucide-spec"></i> Spesifikasi Tiang</h4>
+                    <table class="spec-table">
+                        <tr><td>Tinggi</td><td>3 meter</td></tr>
+                        <tr><td>Material</td><td>Galvanis hot-dip / SS304</td></tr>
+                        <tr><td>Diameter</td><td>2 inch (50mm)</td></tr>
+                        <tr><td>Ketebalan</td><td>3.2mm</td></tr>
+                        <tr><td>Finishing</td><td>Powder coating outdoor</td></tr>
+                    </table>
+                </div>
+
+                <!-- Pondasi -->
+                <div class="spec-table-card">
+                    <h4><i data-lucide="box" class="lucide-spec"></i> Spesifikasi Pondasi</h4>
+                    <table class="spec-table">
+                        <tr><td>Ukuran</td><td>40 x 40 x 60 cm</td></tr>
+                        <tr><td>Material</td><td>Beton K-225 + besi 10mm</td></tr>
+                        <tr><td>Angkur</td><td>Dynabolt 4 pcs M12</td></tr>
+                    </table>
+                </div>
+
+                <!-- Enclosure -->
+                <div class="spec-table-card">
+                    <h4><i data-lucide="hard-drive" class="lucide-spec"></i> Spesifikasi Enclosure</h4>
+                    <table class="spec-table">
+                        <tr><td>Material</td><td>Plat besi 1.2mm powder coated</td></tr>
+                        <tr><td>Dimensi</td><td>40 x 30 x 20 cm</td></tr>
+                        <tr><td>IP Rating</td><td>IP65</td></tr>
+                        <tr><td>Kabel gland</td><td>PG9/PG11 IP68</td></tr>
+                    </table>
+                </div>
+
+                <!-- Bracket Panel -->
+                <div class="spec-table-card">
+                    <h4><i data-lucide="sun" class="lucide-spec"></i> Bracket Panel Surya</h4>
+                    <table class="spec-table">
+                        <tr><td>Material</td><td>Aluminium / SS304</td></tr>
+                        <tr><td>Sudut adjustable</td><td>0 - 45 derajat</td></tr>
+                        <tr><td>Sudut ideal Indonesia</td><td>10 - 15° menghadap utara</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Image Gallery -->
+            <div class="gallery-section">
+                <h3><i data-lucide="images" class="lucide-card"></i> Galeri Instalasi</h3>
+                <p class="gallery-subtitle">Dokumentasi proses perakitan, pemasangan, dan hasil instalasi tiang monitoring IoT DEVETEK</p>
+                
+                <div class="image-gallery">
+                    <!-- Rakit Tiang -->
+                    <div class="gallery-category">
+                        <h4>📦 Proses Rakit Tiang</h4>
+                        <div class="gallery-grid-new">
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/rakit-tiang-1.jpg', 'Perakitan tiang galvanis 3 meter')">
+                                <img src="images/gallery/rakit-tiang-1.jpg" alt="Rakit Tiang 1">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/rakit-tiang-2.jpg', 'Instalasi bracket panel surya')">
+                                <img src="images/gallery/rakit-tiang-2.jpg" alt="Rakit Tiang 2">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/rakit-tiang-3.jpg', 'Pemasangan enclosure dan komponen')">
+                                <img src="images/gallery/rakit-tiang-3.jpg" alt="Rakit Tiang 3">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pasang Tiang -->
+                    <div class="gallery-category">
+                        <h4>🔧 Proses Pasang Tiang</h4>
+                        <div class="gallery-grid-new">
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/pasang-tiang-1.jpg', 'Persiapan pondasi beton')">
+                                <img src="images/gallery/pasang-tiang-1.jpg" alt="Pasang Tiang 1">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/pasang-tiang-2.jpg', 'Pengangkatan tiang ke posisi')">
+                                <img src="images/gallery/pasang-tiang-2.jpg" alt="Pasang Tiang 2">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/pasang-tiang-3.jpg', 'Pemasangan angkur dan fiksasi')">
+                                <img src="images/gallery/pasang-tiang-3.jpg" alt="Pasang Tiang 3">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terpasang -->
+                    <div class="gallery-category">
+                        <h4>✅ Hasil Instalasi Terpasang</h4>
+                        <div class="gallery-grid-new">
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/terpasang-1.jpg', 'Tiang terpasang dengan panel surya')">
+                                <img src="images/gallery/terpasang-1.jpg" alt="Terpasang 1">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/terpasang-2.jpg', 'Instalasi lengkap dengan sensor')">
+                                <img src="images/gallery/terpasang-2.jpg" alt="Terpasang 2">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                            <div class="gallery-item-new" onclick="openLightbox('images/gallery/terpasang-3.jpg', 'Contoh terpasang di lokasi PDAM')">
+                                <img src="images/gallery/terpasang-3.jpg" alt="Terpasang 3">
+                                <div class="gallery-overlay">
+                                    <i data-lucide="maximize-2" class="lucide-card"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lightbox Modal -->
+            <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+                <span class="lightbox-close">&times;</span>
+                <img class="lightbox-content" id="lightbox-img">
+                <div class="lightbox-caption" id="lightbox-caption"></div>
+                <button class="lightbox-prev" onclick="event.stopPropagation(); navigateLightbox(-1)">&#10094;</button>
+                <button class="lightbox-next" onclick="event.stopPropagation(); navigateLightbox(1)">&#10095;</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. CHECKLIST -->
+    <section class="section section-dark" id="checklist">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">05</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Checklist Syarat Minimum</h2>
+            <p class="section-subtitle">Sebelum instalasi, PDAM harus siapkan hal-hal berikut</p>
+
+            <div class="checklist-grid">
+                <!-- Lokasi -->
+                <div class="checklist-card">
+                    <div class="checklist-header">
+                        <i data-lucide="map-pin" class="lucide-card"></i>
+                        <h4>Lokasi & Infrastruktur</h4>
+                    </div>
+                    <ul class="checklist-items">
+                        <li><input type="checkbox" id="c1"><label for="c1">Lokasi sudah ditentukan (koordinat GPS)</label></li>
+                        <li><input type="checkbox" id="c2"><label for="c2">Akses untuk pemasangan tiang (lahan min 1x1m)</label></li>
+                        <li><input type="checkbox" id="c3"><label for="c3">Izin jika di lahan publik/pribadi</label></li>
+                        <li><input type="checkbox" id="c4"><label for="c4">Tersedia tapping point (ball valve 1/2")</label></li>
+                        <li><input type="checkbox" id="c5"><label for="c5">Pipa bersih (untuk flow meter clamp-on)</label></li>
+                    </ul>
+                </div>
+
+                <!-- Konektivitas -->
+                <div class="checklist-card">
+                    <div class="checklist-header">
+                        <i data-lucide="signal" class="lucide-card"></i>
+                        <h4>Konektivitas</h4>
+                    </div>
+                    <ul class="checklist-items">
+                        <li><input type="checkbox" id="c6"><label for="c6">Cek sinyal seluler (test pakai HP, min 2-3 bar)</label></li>
+                        <li><input type="checkbox" id="c7"><label for="c7">Identifikasi operator terbaik</label></li>
+                    </ul>
+                </div>
+
+                <!-- Listrik -->
+                <div class="checklist-card">
+                    <div class="checklist-header">
+                        <i data-lucide="plug" class="lucide-card"></i>
+                        <h4>Listrik (jika indoor)</h4>
+                    </div>
+                    <ul class="checklist-items">
+                        <li><input type="checkbox" id="c8"><label for="c8">Sumber 220V AC</label></li>
+                        <li><input type="checkbox" id="c9"><label for="c9">MCB dedicated 2A</label></li>
+                        <li><input type="checkbox" id="c10"><label for="c10">Grounding tersedia</label></li>
+                    </ul>
+                </div>
+
+                <!-- Data & Integrasi -->
+                <div class="checklist-card">
+                    <div class="checklist-header">
+                        <i data-lucide="database" class="lucide-card"></i>
+                        <h4>Data & Integrasi</h4>
+                    </div>
+                    <ul class="checklist-items">
+                        <li><input type="checkbox" id="c11"><label for="c11">PIC IT PDAM</label></li>
+                        <li><input type="checkbox" id="c12"><label for="c12">Format data (JSON/CSV/database)</label></li>
+                        <li><input type="checkbox" id="c13"><label for="c13">Endpoint server (Webhook/MySQL/PostgreSQL)</label></li>
+                        <li><input type="checkbox" id="c14"><label for="c14">Firewall rules (buka port jika perlu)</label></li>
+                    </ul>
+                </div>
+
+                <!-- Administrasi -->
+                <div class="checklist-card">
+                    <div class="checklist-header">
+                        <i data-lucide="file-text" class="lucide-card"></i>
+                        <h4>Administrasi</h4>
+                    </div>
+                    <ul class="checklist-items">
+                        <li><input type="checkbox" id="c15"><label for="c15">PO/SPK sudah terbit</label></li>
+                        <li><input type="checkbox" id="c16"><label for="c16">Jadwal instalasi disepakati</label></li>
+                        <li><input type="checkbox" id="c17"><label for="c17">Kontak PIC lapangan</label></li>
+                        <li><input type="checkbox" id="c18"><label for="c18">Denah/peta jaringan</label></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="checklist-actions">
+                <button class="btn btn-outline" onclick="resetChecklist()">
+                    <i data-lucide="refresh-cw" class="lucide-btn"></i> Reset
+                </button>
+                <button class="btn btn-primary" onclick="printChecklist()">
+                    <i data-lucide="printer" class="lucide-btn"></i> Cetak Checklist
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. REKOMENDASI PAKET -->
+    <section class="section section-dark-alt" id="packages">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">06</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Rekomendasi Paket per Aplikasi</h2>
+            <p class="section-subtitle">Pilih paket sesuai kebutuhan monitoring Anda</p>
+
+            <div class="packages-grid">
+                <!-- Paket A -->
+                <div class="package-card">
+                    <div class="package-header package-a">
+                        <span class="package-label">PAKET A</span>
+                        <h3>Rumah Pompa / Booster Station</h3>
+                    </div>
+                    <div class="package-body">
+                        <h5>Komponen:</h5>
+                        <ul>
+                            <li>Node Type A (dengan relay)</li>
+                            <li>Power Meter SDM630/PM2100</li>
+                            <li>Sensor Tekanan 0-16 bar</li>
+                            <li>CT sesuai ampere pompa</li>
+                        </ul>
+                        <h5>Fitur:</h5>
+                        <ul class="feature-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Monitoring Volt, Ampere, kWh</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Monitoring tekanan discharge</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Remote ON/OFF pompa</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Scheduling otomatis</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Alert overcurrent/undervoltage</li>
+                        </ul>
+                        <div class="package-price">
+                            <a href="quotation-v2.html" class="btn btn-outline btn-sm">Lihat Detail</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paket B -->
+                <div class="package-card">
+                    <div class="package-header package-b">
+                        <span class="package-label">PAKET B</span>
+                        <h3>Pipeline / DMA Monitoring</h3>
+                    </div>
+                    <div class="package-body">
+                        <h5>Komponen:</h5>
+                        <ul>
+                            <li>Node Type A atau B</li>
+                            <li>Sensor Tekanan (included di Type B)</li>
+                            <li>Flow Meter TUF-2000M (opsional)</li>
+                            <li>Tiang + Panel Surya</li>
+                        </ul>
+                        <h5>Fitur:</h5>
+                        <ul class="feature-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Monitoring tekanan real-time</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Monitoring debit</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Deteksi anomali (possible leak)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Solar powered</li>
+                        </ul>
+                        <div class="package-price">
+                            <a href="quotation-v2.html" class="btn btn-outline btn-sm">Lihat Detail</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paket C -->
+                <div class="package-card">
+                    <div class="package-header package-c">
+                        <span class="package-label">PAKET C</span>
+                        <h3>Reservoir / Tandon</h3>
+                    </div>
+                    <div class="package-body">
+                        <h5>Komponen:</h5>
+                        <ul>
+                            <li>Node Type B</li>
+                            <li>Level Sensor (ultrasonic/submersible)</li>
+                            <li>Sensor Tekanan</li>
+                            <li>Tiang + Panel Surya</li>
+                        </ul>
+                        <h5>Fitur:</h5>
+                        <ul class="feature-list">
+                            <li><i data-lucide="check" class="lucide-check"></i> Monitoring level (%)</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Alert HIGH/LOW level</li>
+                            <li><i data-lucide="check" class="lucide-check"></i> Monitoring tekanan outlet</li>
+                        </ul>
+                        <div class="package-price">
+                            <a href="quotation-v2.html" class="btn btn-outline btn-sm">Lihat Detail</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paket D -->
+                <div class="package-card package-card-custom">
+                    <div class="package-header package-d">
+                        <span class="package-label">PAKET D</span>
+                        <h3>Custom Solution</h3>
+                    </div>
+                    <div class="package-body">
+                        <div class="custom-content">
+                            <i data-lucide="settings" class="lucide-icon"></i>
+                            <p>Punya kebutuhan khusus? Hubungi tim DEVETEK untuk konfigurasi custom sesuai kebutuhan Anda.</p>
+                            <a href="#contact" class="btn btn-primary">Konsultasi Gratis</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. FAQ -->
+    <section class="section section-dark" id="faq">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">07</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">FAQ Instalasi</h2>
+            <p class="section-subtitle">Pertanyaan yang sering diajukan</p>
+
+            <!-- Search Bar -->
+            <div class="faq-search-wrapper">
+                <div class="faq-search-box">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input 
+                        type="text" 
+                        id="faqSearch" 
+                        class="faq-search-input" 
+                        placeholder="🔍 Cari pertanyaan... (contoh: waktu instalasi, sinyal, baterai)"
+                        oninput="searchFAQ(this.value)"
+                    />
+                </div>
+                <div id="faqResultCount" class="faq-result-count"></div>
+            </div>
+
+            <div class="faq-search-results" id="searchResults">
+                <div class="faq-search-item" data-keywords="instalasi waktu durasi lama">
+                    <h4>Berapa lama waktu instalasi per titik?</h4>
+                    <p>Sederhana (sensor tekanan): <strong>2-3 jam</strong> | Lengkap (flow meter + tiang): <strong>1 hari</strong> | Rumah pompa (power meter): <strong>1-2 hari</strong></p>
+                </div>
+
+                <div class="faq-search-item" data-keywords="pipa air matikan shutdown tutup">
+                    <h4>Perlu matikan pipa saat instalasi?</h4>
+                    <p>Jika sudah ada tapping point: <strong>Tidak perlu</strong> | Jika buat tapping baru: <strong>Ya, shutdown 30-60 menit</strong></p>
+                </div>
+
+                <div class="faq-search-item" data-keywords="flow meter akurasi akurat debit">
+                    <h4>Flow meter clamp-on akurat?</h4>
+                    <p>Akurasi <strong>1-2%</strong> untuk kondisi ideal (pipa penuh, bersih, jarak dari elbow sesuai standar)</p>
+                </div>
+
+                <div class="faq-search-item" data-keywords="sinyal lemah signal cellular 4g lte antenna">
+                    <h4>Bagaimana jika sinyal lemah?</h4>
+                    <p>Solusi: <strong>1)</strong> Antena eksternal (gain 5-7dBi), <strong>2)</strong> Ganti operator, <strong>3)</strong> LoRa (Type C - tanpa SIM), <strong>4)</strong> Repeater seluler</p>
+                </div>
+
+                <div class="faq-search-item" data-keywords="kabel jarak maksimal panjang sensor rs485 modbus">
+                    <h4>Jarak maksimal kabel sensor?</h4>
+                    <p>Analog 4-20mA: <strong>100-300 meter</strong> | RS485 Modbus: <strong>1000+ meter</strong> | Digital input: <strong>50-100 meter</strong></p>
+                </div>
+
+                <div class="faq-search-item" data-keywords="pln mati listrik backup baterai solar panel">
+                    <h4>Kalau PLN mati bagaimana?</h4>
+                    <p>Baterai backup: Type A (25Ah) bertahan <strong>3-5 hari</strong> | Type B (8Ah) bertahan <strong>1-2 hari</strong></p>
+                </div>
+
+                <div class="faq-search-item" data-keywords="maintenance perawatan rutin service kalibrasi">
+                    <h4>Perlu maintenance rutin?</h4>
+                    <p><strong>Bulanan:</strong> Cek visual panel surya | <strong>6 bulan:</strong> Cek koneksi kabel | <strong>Tahunan:</strong> Cek baterai, kalibrasi sensor</p>
+                </div>
+            </div>
+
+            
+        </div>
+    </section>
+
+    <!-- 8. GARANSI & SUPPORT -->
+    <section class="section section-dark-alt" id="warranty">
+        <div class="container">
+            <div class="section-label">
+                <span class="badge badge-accent">08</span>
+            </div>
+            <h2 class="section-title" style="color:#fff">Garansi & Support</h2>
+            <p class="section-subtitle">Layanan purna jual & SLA yang kami berikan</p>
+
+            <!-- Warranty Cards -->
+            <div class="warranty-grid">
+                <!-- Hardware -->
+                <div class="warranty-card">
+                    <div class="warranty-icon">
+                        <i data-lucide="cpu" style="width:32px;height:32px;color:#00D4AA;"></i>
+                    </div>
+                    <h3>Hardware</h3>
+                    <div class="warranty-period">12 Bulan</div>
+                    <ul class="warranty-list">
+                        <li><i data-lucide="check" class="lucide-check"></i> Node & komponen elektronik</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Sensor & flow meter</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Kerusakan manufacturing defect</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Kalibrasi gratis 1x/tahun</li>
+                    </ul>
+                    <p class="warranty-note">Tidak termasuk: Kerusakan fisik akibat petir, bencana alam, vandalisme</p>
+                </div>
+
+                <!-- Panel Surya & Baterai -->
+                <div class="warranty-card">
+                    <div class="warranty-icon">
+                        <i data-lucide="sun" style="width:32px;height:32px;color:#00D4AA;"></i>
+                    </div>
+                    <h3>Panel Surya & Baterai</h3>
+                    <div class="warranty-period">Panel: 5 Tahun | Baterai: 12 Bulan</div>
+                    <ul class="warranty-list">
+                        <li><i data-lucide="check" class="lucide-check"></i> Panel surya: output min 80%</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Baterai LiFePO4: 500 cycles</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Gratis ganti jika drop signifikan</li>
+                    </ul>
+                    <p class="warranty-note">Kondisi normal usage & maintenance proper</p>
+                </div>
+
+                <!-- HELIOS Platform -->
+                <div class="warranty-card">
+                    <div class="warranty-icon">
+                        <i data-lucide="cloud" style="width:32px;height:32px;color:#00D4AA;"></i>
+                    </div>
+                    <h3>Platform HELIOS</h3>
+                    <div class="warranty-period">99.5% Uptime</div>
+                    <ul class="warranty-list">
+                        <li><i data-lucide="check" class="lucide-check"></i> Monitoring 24/7</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Data retention 12-24 bulan</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Daily backup otomatis</li>
+                        <li><i data-lucide="check" class="lucide-check"></i> Firmware update OTA gratis</li>
+                    </ul>
+                    <p class="warranty-note">SLA sesuai subscription plan</p>
+                </div>
+            </div>
+
+            <!-- Support Services -->
+            <div class="support-section">
+                <h3 style="text-align:center;color:#fff;margin-bottom:40px;margin-top:60px;">
+                    <i data-lucide="headphones" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                    Layanan Support
+                </h3>
+                
+                <div class="support-grid">
+                    <!-- Remote Support -->
+                    <div class="support-card">
+                        <div class="support-header">
+                            <i data-lucide="laptop" class="lucide-card"></i>
+                            <h4>Remote Troubleshooting</h4>
+                        </div>
+                        <div class="support-body">
+                            <div class="support-label">Response Time</div>
+                            <div class="support-value">< 2 Jam (WhatsApp) | < 4 Jam (Email)</div>
+                            <div class="support-label" style="margin-top:16px;">Gratis</div>
+                            <ul class="support-list">
+                                <li>Unlimited remote diagnosis</li>
+                                <li>Analisa log & data historis</li>
+                                <li>Konfigurasi & setting sensor</li>
+                                <li>Firmware update OTA</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Onsite Support -->
+                    <div class="support-card">
+                        <div class="support-header">
+                            <i data-lucide="map-pin" class="lucide-card"></i>
+                            <h4>Kunjungan Lapangan</h4>
+                        </div>
+                        <div class="support-body">
+                            <div class="support-label">Response Time</div>
+                            <div class="support-value">3-5 Hari Kerja</div>
+                            <div class="support-label" style="margin-top:16px;">Gratis (dalam garansi)</div>
+                            <ul class="support-list">
+                                <li>Jika diagnosa remote = hardware failure</li>
+                                <li>Max 2x kunjungan/tahun</li>
+                                <li>Area Jabodetabek & sekitarnya</li>
+                            </ul>
+                            <div class="support-label" style="margin-top:16px;">Berbayar</div>
+                            <ul class="support-list">
+                                <li>Luar Jabodetabek (+ transport)</li>
+                                <li>Maintenance preventif</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Training -->
+                    <div class="support-card">
+                        <div class="support-header">
+                            <i data-lucide="graduation-cap" class="lucide-card"></i>
+                            <h4>Training & Knowledge Transfer</h4>
+                        </div>
+                        <div class="support-body">
+                            <div class="support-label">Basic Training (Gratis)</div>
+                            <ul class="support-list">
+                                <li>Pengenalan hardware & sensor</li>
+                                <li>Akses dashboard HELIOS</li>
+                                <li>Basic troubleshooting</li>
+                                <li>Durasi: 2-3 jam (saat instalasi)</li>
+                            </ul>
+                            <div class="support-label" style="margin-top:16px;">Advanced Training (Berbayar)</div>
+                            <ul class="support-list">
+                                <li>Konfigurasi via terminal</li>
+                                <li>Analisa data & interpretasi</li>
+                                <li>Maintenance preventif</li>
+                                <li>Durasi: 1 hari (Rp 5jt/batch)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLA Table -->
+            <div class="sla-section">
+                <h3 style="text-align:center;color:#fff;margin-bottom:30px;margin-top:60px;">
+                    SLA Response Time
+                </h3>
+                <div class="table-responsive">
+                    <table class="sla-table">
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>Contoh</th>
+                                <th>Response Time</th>
+                                <th>Resolution Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="critical">
+                                <td><span class="severity-badge critical">Critical</span></td>
+                                <td>Platform HELIOS down, semua node offline</td>
+                                <td>< 30 menit</td>
+                                <td>< 4 jam</td>
+                            </tr>
+                            <tr class="high">
+                                <td><span class="severity-badge high">High</span></td>
+                                <td>Fitur penting error, data tidak masuk</td>
+                                <td>< 2 jam</td>
+                                <td>< 1 hari kerja</td>
+                            </tr>
+                            <tr class="medium">
+                                <td><span class="severity-badge medium">Medium</span></td>
+                                <td>Minor bug, grafik tidak akurat</td>
+                                <td>< 4 jam</td>
+                                <td>< 3 hari kerja</td>
+                            </tr>
+                            <tr class="low">
+                                <td><span class="severity-badge low">Low</span></td>
+                                <td>Cosmetic issue, typo, UI glitch</td>
+                                <td>< 1 hari</td>
+                                <td>< 7 hari kerja</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contact Support -->
+            <div class="support-contacts">
+                <h3 style="text-align:center;color:#fff;margin-bottom:30px;margin-top:60px;">
+                    Hubungi Support
+                </h3>
+                <div class="support-contact-grid">
+                    <a href="https://wa.me/628562302229" class="support-contact-item" target="_blank">
+                        <i data-lucide="message-circle" style="width:24px;height:24px;color:#00D4AA;"></i>
+                        <div>
+                            <div class="support-contact-label">WhatsApp Support</div>
+                            <div class="support-contact-value">+62 856-2302-229</div>
+                            <div class="support-contact-hours">Senin - Jumat, 08:00 - 17:00 WIB</div>
+                        </div>
+                    </a>
+                    <a href="mailto:support@devetek.com" class="support-contact-item">
+                        <i data-lucide="mail" style="width:24px;height:24px;color:#00D4AA;"></i>
+                        <div>
+                            <div class="support-contact-label">Email Support</div>
+                            <div class="support-contact-value">support@devetek.com</div>
+                            <div class="support-contact-hours">Response < 4 jam kerja</div>
+                        </div>
+                    </a>
+                    <a href="mailto:tech@devetek.com" class="support-contact-item">
+                        <i data-lucide="wrench" style="width:24px;height:24px;color:#00D4AA;"></i>
+                        <div>
+                            <div class="support-contact-label">Technical Issue</div>
+                            <div class="support-contact-value">tech@devetek.com</div>
+                            <div class="support-contact-hours">Untuk masalah teknis kompleks</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Maintenance Tips -->
+            <div class="maintenance-tips">
+                <h3 style="text-align:center;color:#fff;margin-bottom:30px;margin-top:60px;">
+                    <i data-lucide="clipboard-check" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                    Rekomendasi Maintenance
+                </h3>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-period">Bulanan</div>
+                        <div class="tip-icon">📅</div>
+                        <ul class="tip-list">
+                            <li>Cek dashboard: semua node online?</li>
+                            <li>Cek fisik panel surya (debu/kotoran)</li>
+                            <li>Cek kabel: ada yang kendor/putus?</li>
+                        </ul>
+                        <div class="tip-type">Self-Service</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-period">6 Bulan</div>
+                        <div class="tip-icon">📆</div>
+                        <ul class="tip-list">
+                            <li>Cek baut tiang & bracket</li>
+                            <li>Cek kondisi enclosure seal</li>
+                            <li>Cek grounding (jika ada)</li>
+                        </ul>
+                        <div class="tip-type">Self-Service</div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-period">12 Bulan</div>
+                        <div class="tip-icon">📋</div>
+                        <ul class="tip-list">
+                            <li>Kalibrasi sensor pressure & flow meter</li>
+                            <li>Load test kapasitas baterai</li>
+                            <li>Test output panel surya</li>
+                            <li>Firmware update (jika belum OTA)</li>
+                        </ul>
+                        <div class="tip-type">By DEVETEK (Rp 1.5jt/titik)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="warranty-cta">
+                <p>Butuh informasi lebih lanjut tentang garansi & support?</p>
+                <a href="https://wa.me/628562302229?text=Halo%20DEVETEK%2C%20saya%20ingin%20tanya%20tentang%20garansi%20dan%20support" class="btn btn-primary" target="_blank">
+                    <i data-lucide="message-circle" class="lucide-btn"></i> Chat Support Team
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section class="section section-dark-alt" id="contact">
+        <div class="container">
+            <div class="contact-box">
+                <h3>Hubungi Kami</h3>
+                <p style="color: var(--gray-3); margin-bottom: 32px; text-align: center;">Butuh bantuan instalasi atau konsultasi teknis? Tim kami siap membantu Anda.</p>
+                <div class="contact-grid">
+                    <a href="https://wa.me/628562302229" class="contact-item" target="_blank">
+                        <i data-lucide="message-circle" class="lucide-contact"></i>
+                        <div>
+                            <span class="contact-label">WhatsApp</span>
+                            <span class="contact-value">+62 856-2302-229</span>
+                        </div>
+                    </a>
+                    <a href="mailto:koko@devetek.com" class="contact-item">
+                        <i data-lucide="mail" class="lucide-contact"></i>
+                        <div>
+                            <span class="contact-label">Email</span>
+                            <span class="contact-value">koko@devetek.com</span>
+                        </div>
+                    </a>
+                    <a href="https://devetek.com" class="contact-item" target="_blank">
+                        <i data-lucide="globe" class="lucide-contact"></i>
+                        <div>
+                            <span class="contact-label">Website</span>
+                            <span class="contact-value">devetek.com</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <div class="logo-icon">D</div>
+                        <span class="logo-text">DEVETEK</span>
+                    </a>
+                    <p>Let Technology Help You.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="index.html">Landing Page</a>
+                    <a href="quotation-v2.html">Quotation Generator</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 PT. Comon Cipta Inovasi. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mobile nav toggle
+        function toggleNav() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        // FAQ toggle
+        function toggleFaq(element) {
+            const faqItem = element.parentElement;
+            faqItem.classList.toggle('active');
+        }
+
+        // FAQ Search Filter (Layout #4)
+        function searchFAQ(query) {
+            const searchQuery = query.toLowerCase();
+            const faqItems = document.querySelectorAll('.faq-search-item');
+            const resultCount = document.getElementById('faqResultCount');
+            let visibleCount = 0;
+
+            faqItems.forEach(item => {
+                const title = item.querySelector('h4').textContent.toLowerCase();
+                const content = item.querySelector('p').textContent.toLowerCase();
+                const keywords = item.getAttribute('data-keywords').toLowerCase();
+                
+                if (title.includes(searchQuery) || content.includes(searchQuery) || keywords.includes(searchQuery)) {
+                    item.classList.remove('hidden');
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                    item.style.display = 'none';
+                }
+            });
+
+            // Update result count
+            if (searchQuery === '') {
+                resultCount.textContent = '';
+            } else {
+                resultCount.textContent = `Ditemukan ${visibleCount} dari ${faqItems.length} pertanyaan`;
+            }
+        }
+
+        // Reset checklist
+        function resetChecklist() {
+            document.querySelectorAll('.checklist-items input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+
+        // Print checklist
+        function printChecklist() {
+            window.print();
+        }
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Lightbox functionality
+        let currentLightboxIndex = 0;
+        const galleryImages = [
+            { src: 'images/gallery/rakit-tiang-1.jpg', caption: 'Perakitan tiang galvanis 3 meter' },
+            { src: 'images/gallery/rakit-tiang-2.jpg', caption: 'Instalasi bracket panel surya' },
+            { src: 'images/gallery/rakit-tiang-3.jpg', caption: 'Pemasangan enclosure dan komponen' },
+            { src: 'images/gallery/pasang-tiang-1.jpg', caption: 'Persiapan pondasi beton' },
+            { src: 'images/gallery/pasang-tiang-2.jpg', caption: 'Pengangkatan tiang ke posisi' },
+            { src: 'images/gallery/pasang-tiang-3.jpg', caption: 'Pemasangan angkur dan fiksasi' },
+            { src: 'images/gallery/terpasang-1.jpg', caption: 'Tiang terpasang dengan panel surya' },
+            { src: 'images/gallery/terpasang-2.jpg', caption: 'Instalasi lengkap dengan sensor' },
+            { src: 'images/gallery/terpasang-3.jpg', caption: 'Contoh terpasang di lokasi PDAM' }
+        ];
+
+        function openLightbox(src, caption) {
+            currentLightboxIndex = galleryImages.findIndex(img => img.src === src);
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxCaption = document.getElementById('lightbox-caption');
+            
+            lightbox.style.display = 'flex';
+            lightboxImg.src = src;
+            lightboxCaption.textContent = caption;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function navigateLightbox(direction) {
+            currentLightboxIndex = (currentLightboxIndex + direction + galleryImages.length) % galleryImages.length;
+            const img = galleryImages[currentLightboxIndex];
+            document.getElementById('lightbox-img').src = img.src;
+            document.getElementById('lightbox-caption').textContent = img.caption;
+        }
+
+        // Keyboard navigation for lightbox
+        document.addEventListener('keydown', function(e) {
+            const lightbox = document.getElementById('lightbox');
+            if (lightbox.style.display === 'flex') {
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') navigateLightbox(-1);
+                if (e.key === 'ArrowRight') navigateLightbox(1);
+            }
+        });
+    </script>
+</body>
+</html>
