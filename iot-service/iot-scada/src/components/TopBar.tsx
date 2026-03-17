@@ -7,6 +7,7 @@ import React from 'react'
 import { useDiagramStore } from '@/stores/useDiagramStore'
 import { useUiStore } from '@/stores/useUiStore'
 import { useRuntimeStore } from '@/stores/useRuntimeStore'
+import { useShallow } from 'zustand/react/shallow'
 
 interface TopBarProps {
   onSave: () => void
@@ -14,12 +15,12 @@ interface TopBarProps {
 
 function RuntimeIndicator() {
   const { isPolling, lastSuccessAt, pollingError, summary } = useRuntimeStore(
-    (s) => ({
-      isPolling:    s.isPolling,
+    useShallow((s) => ({
+      isPolling:     s.isPolling,
       lastSuccessAt: s.lastSuccessAt,
-      pollingError: s.pollingError,
-      summary:      s.runtime?.summary ?? null,
-    }),
+      pollingError:  s.pollingError,
+      summary:       s.runtime?.summary ?? null,
+    })),
   )
 
   const hasError = Boolean(pollingError)
@@ -45,6 +46,9 @@ function RuntimeIndicator() {
       </span>
       {summary && !hasError && (
         <span className="text-xs text-[var(--text-muted)] hidden md:inline">
+          <span className="text-status-ok ml-1">
+            {Math.max(0, summary.totalBindings - summary.offlineBindings - summary.staleBindings)}/{summary.totalBindings}
+          </span>
           {summary.offlineBindings > 0 && (
             <span className="text-status-alert ml-1">
               {summary.offlineBindings} offline
@@ -70,6 +74,7 @@ export function TopBar({ onSave }: TopBarProps) {
   const mode     = useUiStore((s) => s.mode)
   const setMode  = useUiStore((s) => s.setMode)
   const setDiscardConfirmOpen = useUiStore((s) => s.setDiscardConfirmOpen)
+  const setDiagramSettingsOpen = useUiStore((s) => s.setDiagramSettingsOpen)
 
   const handleToggleMode = () => {
     if (mode === 'edit' && isDirty) {
@@ -101,9 +106,22 @@ export function TopBar({ onSave }: TopBarProps) {
         <div className="w-px h-5 bg-surface-border" />
 
         {/* Diagram name */}
-        <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[200px]">
-          {meta?.name ?? 'Loading...'}
-        </span>
+        {mode === 'edit' ? (
+          <button
+            onClick={() => setDiagramSettingsOpen(true)}
+            className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[200px] hover:text-accent transition-colors flex items-center gap-1.5 group"
+            title="Diagram Settings"
+          >
+            <span className="truncate">{meta?.name ?? 'Loading...'}</span>
+            <svg viewBox="0 0 12 12" className="w-3 h-3 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : (
+          <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[200px]">
+            {meta?.name ?? 'Loading...'}
+          </span>
+        )}
 
         {/* Unsaved indicator */}
         {isDirty && (

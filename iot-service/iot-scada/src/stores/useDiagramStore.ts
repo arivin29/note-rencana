@@ -49,6 +49,9 @@ export interface DiagramState {
   updateEdge: (id: string, patch: Partial<ScadaEdgeDto>) => void
   removeEdge: (id: string) => void
 
+  // Actions — Meta
+  updateMeta: (patch: Partial<ScadaDiagramMeta>) => void
+
   // Actions — Dirty
   resetToSaved: () => void
   clearDiagram: () => void
@@ -129,6 +132,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   removeEdge: (id) => set((s) => ({
     edges: s.edges.filter((e) => e.id !== id),
+    isDirty: true,
+  })),
+
+  // Meta
+  updateMeta: (patch) => set((s) => ({
+    meta: s.meta ? { ...s.meta, ...patch } : s.meta,
     isDirty: true,
   })),
 

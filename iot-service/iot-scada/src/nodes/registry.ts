@@ -11,72 +11,59 @@ import {
   ReservoirNode,
   WtpNode,
   JunctionNode,
+  SensorNode,
+  HeatExchangerNode,
   UnknownNode,
+  // PDAM-specific
+  AeratorNode,
+  FilterNode,
+  ClarifierNode,
+  ChemicalDosingNode,
+  BlowerNode,
+  CheckValveNode,
+  GroundTankNode,
+  ElevatedTankNode,
+  DistributionNode,
+  MeterNode,
+  PrvNode,
+  SludgeNode,
+  MotorNode,
 } from './ScadaNodes'
+import { TextLabelNode } from './TextLabelNode'
+import { ValueDisplayNode } from './ValueDisplayNode'
 
 // Stabil di module scope agar React Flow tidak re-register tiap render
 export const nodeTypes = {
-  intake:     IntakeNode,
-  pump:       PumpNode,
-  valve:      ValveNode,
-  flowmeter:  FlowmeterNode,
-  pressure:   PressureNode,
-  reservoir:  ReservoirNode,
-  wtp:        WtpNode,
-  junction:   JunctionNode,
-  unknown:    UnknownNode,
+  intake:          IntakeNode,
+  pump:            PumpNode,
+  valve:           ValveNode,
+  flowmeter:       FlowmeterNode,
+  pressure:        PressureNode,
+  reservoir:       ReservoirNode,
+  wtp:             WtpNode,
+  junction:        JunctionNode,
+  sensor:          SensorNode,
+  heat_exchanger:  HeatExchangerNode,
+  text_label:      TextLabelNode,
+  value_display:   ValueDisplayNode,
+  // PDAM-specific
+  aerator:         AeratorNode,
+  filter:          FilterNode,
+  clarifier:       ClarifierNode,
+  chemical_dosing: ChemicalDosingNode,
+  blower:          BlowerNode,
+  check_valve:     CheckValveNode,
+  ground_tank:     GroundTankNode,
+  elevated_tank:   ElevatedTankNode,
+  distribution:    DistributionNode,
+  meter:           MeterNode,
+  prv:             PrvNode,
+  sludge:          SludgeNode,
+  motor:           MotorNode,
+  unknown:         UnknownNode,
 } as const
 
 export type RegisteredNodeType = keyof typeof nodeTypes
 
-// Node type library (untuk NodeLibraryDrawer)
-export const NODE_LIBRARY = [
-  {
-    type: 'intake'    as RegisteredNodeType,
-    label: 'Intake',
-    description: 'Titik pengambilan air baku',
-    defaultSize: { width: 100, height: 100 },
-  },
-  {
-    type: 'pump'      as RegisteredNodeType,
-    label: 'Pompa',
-    description: 'Unit pemompaan',
-    defaultSize: { width: 100, height: 100 },
-  },
-  {
-    type: 'valve'     as RegisteredNodeType,
-    label: 'Katup/Valve',
-    description: 'Katup kontrol aliran',
-    defaultSize: { width: 90, height: 90 },
-  },
-  {
-    type: 'flowmeter' as RegisteredNodeType,
-    label: 'Flow Meter',
-    description: 'Pengukur laju aliran',
-    defaultSize: { width: 90, height: 90 },
-  },
-  {
-    type: 'pressure'  as RegisteredNodeType,
-    label: 'Pressure Sensor',
-    description: 'Sensor tekanan',
-    defaultSize: { width: 90, height: 90 },
-  },
-  {
-    type: 'reservoir' as RegisteredNodeType,
-    label: 'Reservoir/Bak',
-    description: 'Tangki penyimpanan',
-    defaultSize: { width: 120, height: 80 },
-  },
-  {
-    type: 'wtp'       as RegisteredNodeType,
-    label: 'WTP/IPA',
-    description: 'Unit pengolahan air',
-    defaultSize: { width: 140, height: 100 },
-  },
-  {
-    type: 'junction'  as RegisteredNodeType,
-    label: 'Junction',
-    description: 'Titik percabangan pipa',
-    defaultSize: { width: 60, height: 60 },
-  },
-] as const
+// Re-export from new NodeLibraryDrawer module for compatibility
+export { NODE_LIBRARY, NODE_CATALOG } from '@/components/NodeLibraryDrawer'

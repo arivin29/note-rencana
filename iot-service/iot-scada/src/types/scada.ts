@@ -70,6 +70,24 @@ export type ScadaNodeType =
   | 'reservoir'
   | 'wtp'
   | 'junction'
+  | 'sensor'
+  | 'heat_exchanger'
+  | 'text_label'
+  | 'value_display'
+  // ── PDAM-specific equipment ──
+  | 'aerator'
+  | 'filter'
+  | 'clarifier'
+  | 'chemical_dosing'
+  | 'blower'
+  | 'check_valve'
+  | 'ground_tank'
+  | 'elevated_tank'
+  | 'distribution'
+  | 'meter'
+  | 'prv'
+  | 'sludge'
+  | 'motor'
 
 export interface ScadaNodePosition {
   x: number
@@ -90,6 +108,8 @@ export interface ScadaNodeBinding {
   transform?: Record<string, unknown> | null
   priorityOrder?: number
   isPrimary?: boolean
+  showTrend?: boolean              // tampilkan sparkline trend chart di node
+  trendHours?: number              // jendela waktu trend (default: 1 jam)
 }
 
 export interface ScadaNodeDto {
@@ -109,18 +129,28 @@ export interface ScadaNodeDto {
 
 // ── Edge ─────────────────────────────────────────────────────
 
-export type PipeType = 'raw' | 'treated'
-export type FlowDirection = 'forward' | 'reverse' | 'bidirectional'
+export type PipeType = 'raw' | 'treated' | 'waste' | 'chemical' | 'electrical' | 'generic'
+export type FlowDirection = 'forward' | 'reverse' | 'bidirectional' | 'none'
+export type PathMode = 'smoothstep' | 'bezier' | 'straight' | 'step'
 
 export interface ScadaEdgeDto {
   id: string
   source: string
   target: string
+  sourceHandle?: string | null
+  targetHandle?: string | null
   edgeType?: string
   label?: string | null
   pipeType?: PipeType | null
+  pathMode?: PathMode | null
   flowDirection?: FlowDirection | null
   animated?: boolean
+  strokeWidth?: number | null
+  labelFontSize?: number | null       // edge label font size in px (default: 10)
+  showBorder?: boolean                // show/hide the outer pipe wall (default: true)
+  borderWidth?: number | null         // extra width added to each side for the wall (default: 2)
+  lineCap?: 'round' | 'square' | 'butt' | null  // stroke-linecap for pipe endpoints
+  borderRadius?: number | null        // corner radius for smoothstep/step paths (px)
   style?: Record<string, unknown>
   config?: Record<string, unknown>
 }
@@ -204,6 +234,33 @@ export interface BindingOptionChannel {
   precision?: number | null
   minThreshold?: number | null
   maxThreshold?: number | null
+}
+
+// ── Node Style Config (custom appearance) ───────────────────
+
+export type IconPosition = 'top' | 'center' | 'left' | 'right' | 'hidden'
+export type BgImageFit  = 'cover' | 'contain' | 'fill'
+export type NodeRenderMode = 'card' | 'schematic'  // card = dark box, schematic = symbol only
+export type LabelPlacement = 'center' | 'bottom' | 'top' | 'left' | 'right'  // where label+value sit relative to symbol
+
+export interface NodeStyleConfig {
+  renderMode?: NodeRenderMode        // visual mode: 'card' (default) or 'schematic' (P&ID style)
+  labelPlacement?: LabelPlacement    // label/value position: center (overlay), bottom, top, left, right
+  iconMode?: 'builtin' | 'custom'    // default: builtin (uses nodeType glyph)
+  customSvg?: string                 // raw SVG markup for custom icon
+  iconPosition?: IconPosition        // icon placement: top (default), center, left, right, hidden
+  iconSize?: number                  // override icon/svg size in px (default: auto-scaled)
+  accentColor?: string               // override glyph/status color
+  bgColor?: string                   // override background color
+  borderColor?: string               // override border color
+  borderWidth?: number               // border width in px (0 = no border)
+  showBorder?: boolean               // show/hide border entirely (default true)
+  borderRadius?: number              // override border radius (px)
+  opacity?: number                   // 0-1 node opacity
+  bgImage?: string                   // background image URL
+  bgImageFit?: BgImageFit            // how bg image fits: cover, contain, fill
+  labelFontSize?: number             // label text size in px (default: 10)
+  valueFontSize?: number             // live value text size in px (default: auto)
 }
 
 // ── Create / Update DTOs ─────────────────────────────────────

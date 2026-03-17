@@ -16,7 +16,7 @@ import type { ScadaDiagramListItemResponseDto } from '@/sdk/models'
 // ── Types ─────────────────────────────────────────────────────
 
 interface ProjectItem {
-  id: string
+  idProject: string
   name: string
   projectCode?: string
 }
@@ -61,7 +61,8 @@ export function DiagramListPage() {
     try {
       setLoading(true)
       const res = await scadaDiagramsControllerFindAll()
-      setDiagrams(res.data?.data ?? [])
+      const list = res.data ?? []
+      setDiagrams(Array.isArray(list) ? list : [])
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Load failed')
     } finally {
@@ -71,8 +72,9 @@ export function DiagramListPage() {
 
   // Load projects untuk dropdown
   const loadProjects = async () => {
+    if (!ownerId) return
     try {
-      const res = await fetch('/api/projects', {
+      const res = await fetch(`/api/owners/${ownerId}/projects`, {
         headers: getAuthHeaders(),
       })
       if (!res.ok) return
@@ -101,14 +103,12 @@ export function DiagramListPage() {
     setCreating(true)
     try {
       const res = await scadaDiagramsControllerCreate({
-        body: {
           name:      newName.trim(),
           ownerId,
           projectId: newProjectId || undefined,
           status:    'draft',
-        },
       })
-      const id = res.data?.data?.diagram?.id
+      const id = res.data?.diagram?.id
       if (id) navigate(`/diagrams/${id}/edit`)
     } catch {
       setError('Failed to create diagram')
@@ -120,7 +120,7 @@ export function DiagramListPage() {
     e.stopPropagation()
     if (!confirm('Archive this diagram?')) return
     try {
-      await scadaDiagramsControllerArchive({ path: { diagramId: id } })
+      await scadaDiagramsControllerArchive(id)
       setDiagrams((d) => d.filter((x) => x.id !== id))
     } catch { /* ignore */ }
   }
@@ -207,7 +207,7 @@ export function DiagramListPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-accent transition-colors line-clamp-2">{d.name}</h3>
-                  {d.description && <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{d.description}</p>}
+                  {d.description && <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{String(d.description)}</p>}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
                   {d.nodeCount != null && <span>{d.nodeCount} nodes</span>}
@@ -291,7 +291,7 @@ export function DiagramListPage() {
                   >
                     <option value="">— Tanpa project —</option>
                     {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
+                      <option key={p.idProject} value={p.idProject}>
                         {p.name}{p.projectCode ? ` (${p.projectCode})` : ''}
                       </option>
                     ))}

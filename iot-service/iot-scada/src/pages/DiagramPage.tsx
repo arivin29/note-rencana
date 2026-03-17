@@ -9,17 +9,24 @@ import { ReactFlowProvider } from '@xyflow/react'
 
 import { ScadaCanvas }     from '@/canvas/ScadaCanvas'
 import { TopBar }          from '@/components/TopBar'
-import { ToolRail, NodeLibraryDrawer } from '@/components/ToolRail'
+import { ToolRail } from '@/components/ToolRail'
+import { NodeLibraryDrawer } from '@/components/NodeLibraryDrawer'
 import { InspectorPanel }  from '@/components/InspectorPanel'
+import { NodeConfigDrawer } from '@/components/NodeConfigDrawer'
+import { EdgeConfigDrawer } from '@/components/EdgeConfigDrawer'
+import { RuntimeBanner }   from '@/components/RuntimeBanner'
+import { ToastContainer }  from '@/components/Toast'
+import { DiagramSettingsPanel } from '@/components/DiagramSettingsPanel'
 
 import { useScadaDiagram } from '@/hooks/useScadaDiagram'
 import { useRuntimePolling } from '@/hooks/useRuntimePolling'
+import { useTrendPolling } from '@/stores/useTrendStore'
 
 import { useDiagramStore } from '@/stores/useDiagramStore'
 import { useUiStore }      from '@/stores/useUiStore'
 
 import type { ScadaNodeDto } from '@/types/scada'
-import { NODE_LIBRARY } from '@/nodes/registry'
+import { NODE_LIBRARY } from '@/components/NodeLibraryDrawer'
 
 interface DiagramPageProps {
   initialMode?: 'view' | 'edit'
@@ -33,6 +40,9 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
 
   // Runtime polling — aktif di kedua mode
   useRuntimePolling(diagramId, Boolean(diagramId))
+
+  // Trend history polling — aktif di kedua mode, slower cadence
+  useTrendPolling(Boolean(diagramId))
 
   // Set initial mode from route
   const setMode      = useUiStore((s) => s.setMode)
@@ -70,6 +80,17 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
       // Shift + F → fit view
       if (e.shiftKey && e.key === 'F') {
         useUiStore.getState().triggerFitView()
+      }
+      // Delete / Backspace → remove selected (handled by React Flow onDelete,
+      // but also handle here for ToolRail-based deletion)
+      if ((e.key === 'Delete' || e.key === 'Backspace') && mode === 'edit') {
+        // Only if focus is NOT in an input/textarea
+        const tag = (e.target as HTMLElement)?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        const { selectedNodeIds, selectedEdgeIds } = useUiStore.getState()
+        const { removeNode, removeEdge } = useDiagramStore.getState()
+        selectedEdgeIds.forEach((id) => removeEdge(id))
+        selectedNodeIds.forEach((id) => removeNode(id))
       }
     }
     window.addEventListener('keydown', handler)
@@ -132,6 +153,12 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
       {/* Top bar */}
       <TopBar onSave={save} />
 
+      {/* Runtime degraded/offline banner */}
+      <RuntimeBanner />
+
+      {/* Diagram settings popover (edit mode, from TopBar name click) */}
+      <DiagramSettingsPanel />
+
       {/* Main area */}
       <div className="flex-1 flex relative overflow-hidden">
         {/* Canvas (fullscreen) */}
@@ -148,6 +175,10 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
         {/* Inspector panel — kanan */}
         <InspectorPanel />
       </div>
+
+      {/* Node config drawer — full-screen overlay */}
+      <NodeConfigDrawer />
+      <EdgeConfigDrawer />
 
       {/* Empty state overlay */}
       {!isLoading && !loadError && meta && (useDiagramStore.getState().nodes.length === 0) && mode === 'edit' && (
@@ -204,6 +235,9 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
           </div>
         </div>
       )}
+
+      {/* Toast notifications (portal to body) */}
+      <ToastContainer />
     </div>
   )
 }

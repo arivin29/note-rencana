@@ -45,8 +45,6 @@
 
 /* ── React Flow overrides ──────────────────────────────────── */
 @layer base {
-  .react-flow__renderer { overflow: visible; }
-
   .react-flow__background {
     background-color: var(--canvas-bg);
   }
@@ -85,13 +83,30 @@
     border: 2px solid #30363d !important;
     background-color: #1c2128 !important;
     transition: all 0.15s ease;
+    z-index: 10 !important;
+    pointer-events: all !important;
+    opacity: 0.4;
+  }
+
+  .react-flow__node:hover .react-flow__handle {
+    opacity: 0.8;
+    background-color: #30363d !important;
   }
 
   .react-flow__handle:hover,
   .react-flow__handle-connecting {
     background-color: #0ea5e9 !important;
     border-color: #0ea5e9 !important;
-    transform: scale(1.3);
+    transform: scale(1.4);
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.7);
+    opacity: 1;
+  }
+
+  /* Connection line style */
+  .react-flow__connection-path {
+    stroke: #0ea5e9 !important;
+    stroke-width: 2 !important;
+    stroke-dasharray: 5 3;
   }
 
   .react-flow__node.selected > * {
@@ -196,6 +211,11 @@
     to   { stroke-dashoffset: 0; }
   }
 
+  @keyframes pipeFlowReverse {
+    from { stroke-dashoffset: 0; }
+    to   { stroke-dashoffset: 24; }
+  }
+
   /* Status pulse dot */
   .status-dot-pulse {
     animation: statusPulse 2s ease-in-out infinite;
@@ -214,5 +234,114 @@
   @keyframes panelSlideIn {
     from { transform: translateX(16px); opacity: 0; }
     to   { transform: translateX(0);    opacity: 1; }
+  }
+
+  /* Node Library Drawer — slide from left */
+  .node-library-drawer {
+    animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes drawerSlideIn {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  /* Node Library Backdrop */
+  .node-library-backdrop {
+    animation: backdropFadeIn 0.2s ease-out;
+  }
+
+  @keyframes backdropFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Node Library scrollbar */
+  .node-library-scroll::-webkit-scrollbar { width: 5px; }
+  .node-library-scroll::-webkit-scrollbar-track { background: transparent; }
+  .node-library-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  .node-library-scroll::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+  /* Toast animations */
+  .toast-enter {
+    animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .toast-exit {
+    animation: toastSlideOut 0.2s ease-in forwards;
+  }
+
+  @keyframes toastSlideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  @keyframes toastSlideOut {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0; }
+  }
+
+  /* Runtime banner */
+  .runtime-banner-enter {
+    animation: bannerSlideDown 0.2s ease-out;
+  }
+
+  @keyframes bannerSlideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+}
+
+/* ── SCADA Node Handle Visibility ──────────────────────────── */
+@layer components {
+  /* View mode: handles completely hidden */
+  .scada-node-view ~ .scada-handle.react-flow__handle,
+  .scada-node-view ~ .react-flow__handle {
+    opacity: 0 !important;
+    width: 6px !important;
+    height: 6px !important;
+    pointer-events: none !important;
+    transition: all 0.2s ease;
+  }
+
+  /* Edit mode: handles subtle, visible on node hover */
+  .scada-node-edit ~ .scada-handle.react-flow__handle,
+  .scada-node-edit ~ .react-flow__handle {
+    width: 10px !important;
+    height: 10px !important;
+    border: 2px solid #30363d !important;
+    background-color: #1c2128 !important;
+    opacity: 0.35;
+    transition: all 0.2s ease;
+    pointer-events: all !important;
+  }
+
+  /* Edit mode: on node hover, handles more visible */
+  .react-flow__node:hover .scada-node-edit ~ .scada-handle.react-flow__handle,
+  .react-flow__node:hover .scada-node-edit ~ .react-flow__handle {
+    opacity: 1;
+    width: 12px !important;
+    height: 12px !important;
+    background-color: #30363d !important;
+    border-color: #484f58 !important;
+  }
+
+  /* Edit mode: handle hover glow */
+  .scada-node-edit ~ .scada-handle.react-flow__handle:hover,
+  .scada-node-edit ~ .react-flow__handle:hover,
+  .scada-node-edit ~ .react-flow__handle.react-flow__handle-connecting {
+    background-color: #0ea5e9 !important;
+    border-color: #0ea5e9 !important;
+    transform: scale(1.3);
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.7);
+    opacity: 1;
+  }
+
+  /* Selected node: handles always visible */
+  .react-flow__node.selected .scada-node-edit ~ .scada-handle.react-flow__handle,
+  .react-flow__node.selected .scada-node-edit ~ .react-flow__handle {
+    opacity: 0.8;
+    width: 12px !important;
+    height: 12px !important;
+    background-color: #30363d !important;
+    border-color: #0ea5e9 !important;
   }
 }

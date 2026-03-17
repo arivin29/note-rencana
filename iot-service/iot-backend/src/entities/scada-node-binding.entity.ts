@@ -42,6 +42,12 @@ export class ScadaNodeBinding {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive: boolean;
 
+  @Column({ type: 'boolean', name: 'show_trend', default: false })
+  showTrend: boolean;
+
+  @Column({ type: 'smallint', name: 'trend_hours', default: 1, nullable: true })
+  trendHours: number | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 

@@ -27,7 +27,7 @@ export function useRuntimePolling(
       if (!active) return
       setIsPolling(true)
       try {
-        const res = await scadaRuntimeControllerGetRuntime({ path: { diagramId } })
+        const res = await scadaRuntimeControllerGetRuntime(diagramId)
         if (active && res.data) {
           setRuntime(res.data as unknown as ScadaRuntimeResponse)
         }

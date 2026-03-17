@@ -5,7 +5,6 @@
 import React from 'react'
 import { useUiStore } from '@/stores/useUiStore'
 import { useDiagramStore } from '@/stores/useDiagramStore'
-import { NODE_LIBRARY } from '@/nodes/registry'
 
 export function ToolRail() {
   const mode             = useUiStore((s) => s.mode)
@@ -92,66 +91,6 @@ export function ToolRail() {
           </span>
         </div>
       )}
-    </div>
-  )
-}
-
-// ── Node Library Drawer ───────────────────────────────────────
-
-interface NodeLibraryDrawerProps {
-  onAddNode: (type: string, label: string, size: { width: number; height: number }) => void
-}
-
-export function NodeLibraryDrawer({ onAddNode }: NodeLibraryDrawerProps) {
-  const isOpen = useUiStore((s) => s.isNodeLibraryOpen)
-  const setOpen = useUiStore((s) => s.setNodeLibraryOpen)
-  const setActiveTool = useUiStore((s) => s.setActiveTool)
-
-  if (!isOpen) return null
-
-  return (
-    <div className="absolute left-16 top-1/2 -translate-y-1/2 z-20 panel-slide-in">
-      <div className="w-56 bg-surface border border-surface-border rounded-xl shadow-panel overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-surface-border">
-          <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-            Components
-          </span>
-          <button
-            onClick={() => { setOpen(false); setActiveTool('select') }}
-            className="w-5 h-5 flex items-center justify-center rounded hover:bg-surface-hover text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-          >
-            <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Node list */}
-        <div className="p-2 flex flex-col gap-1">
-          {NODE_LIBRARY.map((item) => (
-            <button
-              key={item.type}
-              onClick={() => {
-                onAddNode(item.type, item.label, item.defaultSize)
-                setOpen(false)
-                setActiveTool('select')
-              }}
-              className="flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-surface-hover text-left w-full transition-colors duration-100 group"
-            >
-              <div className="w-7 h-7 rounded-md bg-canvas border border-surface-border flex items-center justify-center flex-shrink-0 group-hover:border-accent/30 transition-colors">
-                <span className="text-[var(--text-muted)] text-[9px] font-mono font-bold uppercase">
-                  {item.type.slice(0, 2)}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-[var(--text-primary)]">{item.label}</div>
-                <div className="text-[11px] text-[var(--text-muted)] leading-tight">{item.description}</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

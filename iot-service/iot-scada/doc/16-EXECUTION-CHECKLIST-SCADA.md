@@ -185,13 +185,19 @@ Selesai jika:
 - [x] implement `PipeEdge`
 - [x] implement warna `raw` dan `treated`
 - [x] implement animasi flow sederhana
+- [x] implement schematic render mode (P&ID SVGs 64×64)
+- [x] implement 3D pipe effect (7 layers: highlight, main, shade, inner glow, specular, caps, flow)
+- [x] implement 12 handles per node (top×3, right×3, bottom×3, left×3)
+- [x] implement 13 PDAM equipment types: aerator, filter, clarifier, chemical_dosing, blower, check_valve, ground_tank, elevated_tank, distribution, meter, prv, sludge, motor
+- [x] implement 17 PDAM sensor categories: orp, color_ptco, iron, manganese, ammonia, hardness, alkalinity, bod, cod, residual_chlorine, run_hours, energy, vibration, head_loss, ssi, totalizer, valve_position, pump_status
+- [x] total: 25 node types, 37 sensor categories
 
-Catatan implementasi 2026-03-16:
+Catatan implementasi 2026-03-17:
 
-- canvas sekarang memakai shared SCADA node frame dengan badge runtime, live value, dan glyph per type
-- type visual baseline yang sudah dibedakan: `intake`, `pump`, `valve`, `flowmeter`, `pressure`, `reservoir`, `wtp`, `junction`
-- custom `PipeEdge` sudah aktif dan membedakan warna pipa `raw` vs `treated`
-- edge sekarang juga bisa menampilkan arah flow dan animasi dasar saat `animated = true`
+- 13 equipment node types ditambahkan beserta SchematicGlyph (64×64) dan NodeGlyph (24×24) per type
+- 17 sensor categories baru fokus kebutuhan PDAM (kualitas air, energi, mekanik, distribusi)
+- semua terdaftar di registry.ts, ScadaNodes.tsx (factory pattern), sensorCategories.tsx
+- canvas sekarang support dual render mode: card (default) dan schematic (P&ID symbol style)
 
 Selesai jika:
 
@@ -207,14 +213,20 @@ Selesai jika:
 - [x] implement binding editor
 - [x] implement threshold form dasar
 - [x] implement diagram settings panel
+- [x] implement NodeConfigDrawer (3-tab: General, Bindings, Appearance)
+- [x] implement EdgeConfigDrawer (12 handle ports, border, pipe type, path mode, flow, animation)
+- [x] implement NodeLibraryDrawer n8n-style (search, 7 category groups, SVG icons, backdrop)
+- [x] implement Toast notification system (save success/error, non-blocking portal)
+- [x] implement RuntimeBanner (polling error + degraded bindings strip)
+- [x] implement DiagramSettingsPanel (edit name/description/status from TopBar)
 
-Catatan implementasi 2026-03-16:
+Catatan implementasi 2026-03-17:
 
-- panel kanan sekarang sudah bisa edit nama/deskripsi diagram
-- panel node sudah bisa edit label, type, size
-- panel edge sudah bisa edit label, pipe type, dan flow direction
-- binding editor dasar sudah memakai lookup `GET /api/scada/binding-options`
-- binding editor sekarang juga bisa edit display label, unit override, priority, primary flag, dan membaca threshold baseline channel
+- NodeConfigDrawer sekarang punya 3 tab lengkap: General (label, type, size, position), Bindings (lookup channel, unit override, precision, isPrimary), Appearance (render mode card/schematic, label/value placement, icon, colors, border, opacity)
+- EdgeConfigDrawer mendukung 12 handle port selection, border toggle/width/lineCap/borderRadius, pipe type, path mode, flow direction, animation
+- NodeLibraryDrawer di-redesign menjadi n8n-style left drawer dengan search input (auto-focus, highlight match), 7 collapsible category accordion, actual SVG node icons per item, color-coded category badges, backdrop overlay, slide-in animation, Esc to close
+- tooltip di view mode sekarang menggunakan createPortal ke document.body (z-index 99999) dengan explicit close button
+- edge delete button sekarang muncul saat edge di-select di edit mode
 
 Selesai jika:
 
@@ -304,8 +316,12 @@ Pastikan ini tidak ikut masuk diam-diam ke MVP:
 ### Milestone 3
 
 - [x] widget visual dasar selesai
+- [x] widget visual PDAM (13 equipment + 17 sensor categories) selesai
 - [x] property panel usable
+- [x] NodeConfigDrawer + EdgeConfigDrawer selesai
+- [x] NodeLibraryDrawer n8n-style selesai
 - [x] edit/view UX usable
+- [x] tooltip + edge delete UX selesai
 
 ### Milestone 4
 

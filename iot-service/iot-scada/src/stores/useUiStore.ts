@@ -24,6 +24,9 @@ export interface UiState {
   // Inspector
   inspectorTarget: InspectorTarget
   setInspectorTarget: (t: InspectorTarget) => void
+  inspectorPinned: boolean
+  setInspectorPinned: (v: boolean) => void
+  closeInspector: () => void
 
   // Tool rail
   activeTool: ActiveTool
@@ -32,6 +35,21 @@ export interface UiState {
   // Drawers / panels
   isNodeLibraryOpen: boolean
   setNodeLibraryOpen: (v: boolean) => void
+
+  // Node config drawer (full config slide-over)
+  configDrawerNodeId: string | null
+  openNodeConfig: (nodeId: string) => void
+  closeNodeConfig: () => void
+
+  // Edge config drawer
+  configDrawerEdgeId: string | null
+  openEdgeConfig: (edgeId: string) => void
+  closeEdgeConfig: () => void
+
+  // View-mode tooltip — only ONE node tooltip visible at a time
+  activeTooltipNodeId: string | null
+  setActiveTooltipNodeId: (id: string | null) => void
+  toggleTooltipNodeId: (id: string) => void
 
   // FitView trigger (counter yang change = trigger)
   fitViewTrigger: number
@@ -45,6 +63,10 @@ export interface UiState {
   runtimeBannerDismissed: boolean
   dismissRuntimeBanner: () => void
   resetRuntimeBanner: () => void
+
+  // Diagram settings panel
+  diagramSettingsOpen: boolean
+  setDiagramSettingsOpen: (v: boolean) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -55,25 +77,66 @@ export const useUiStore = create<UiState>((set) => ({
   // Selection
   selectedNodeIds: [],
   selectedEdgeIds: [],
-  setSelectedNodes: (ids) => set({
-    selectedNodeIds: ids,
-    selectedEdgeIds: [],
-    inspectorTarget: ids.length > 0 ? 'node' : 'none',
+  setSelectedNodes: (ids) => set((s) => {
+    // If inspector is pinned (user editing), don't close it on deselection
+    if (ids.length > 0) {
+      return {
+        selectedNodeIds: ids,
+        selectedEdgeIds: [],
+        inspectorTarget: 'node',
+        inspectorPinned: true,
+      }
+    }
+    // Deselecting — only close inspector if NOT pinned
+    if (s.inspectorPinned) {
+      return { selectedNodeIds: ids, selectedEdgeIds: [] }
+    }
+    return {
+      selectedNodeIds: ids,
+      selectedEdgeIds: [],
+      inspectorTarget: 'none',
+    }
   }),
-  setSelectedEdges: (ids) => set({
-    selectedEdgeIds: ids,
-    selectedNodeIds: [],
-    inspectorTarget: ids.length > 0 ? 'edge' : 'none',
+  setSelectedEdges: (ids) => set((s) => {
+    if (ids.length > 0) {
+      return {
+        selectedEdgeIds: ids,
+        selectedNodeIds: [],
+        inspectorTarget: 'edge',
+        inspectorPinned: true,
+      }
+    }
+    if (s.inspectorPinned) {
+      return { selectedEdgeIds: ids, selectedNodeIds: [] }
+    }
+    return {
+      selectedEdgeIds: ids,
+      selectedNodeIds: [],
+      inspectorTarget: 'none',
+    }
   }),
-  clearSelection: () => set({
-    selectedNodeIds: [],
-    selectedEdgeIds: [],
-    inspectorTarget: 'none',
+  clearSelection: () => set((s) => {
+    if (s.inspectorPinned) {
+      return { selectedNodeIds: [], selectedEdgeIds: [] }
+    }
+    return {
+      selectedNodeIds: [],
+      selectedEdgeIds: [],
+      inspectorTarget: 'none',
+    }
   }),
 
   // Inspector
   inspectorTarget: 'none',
   setInspectorTarget: (t) => set({ inspectorTarget: t }),
+  inspectorPinned: false,
+  setInspectorPinned: (v) => set({ inspectorPinned: v }),
+  closeInspector: () => set({
+    inspectorTarget: 'none',
+    inspectorPinned: false,
+    selectedNodeIds: [],
+    selectedEdgeIds: [],
+  }),
 
   // Tool
   activeTool: 'select',
@@ -82,6 +145,23 @@ export const useUiStore = create<UiState>((set) => ({
   // Drawers
   isNodeLibraryOpen: false,
   setNodeLibraryOpen: (v) => set({ isNodeLibraryOpen: v }),
+
+  // Node config drawer
+  configDrawerNodeId: null,
+  openNodeConfig: (nodeId) => set({ configDrawerNodeId: nodeId }),
+  closeNodeConfig: () => set({ configDrawerNodeId: null }),
+
+  // Edge config drawer
+  configDrawerEdgeId: null,
+  openEdgeConfig: (edgeId) => set({ configDrawerEdgeId: edgeId }),
+  closeEdgeConfig: () => set({ configDrawerEdgeId: null }),
+
+  // View-mode tooltip — single active
+  activeTooltipNodeId: null,
+  setActiveTooltipNodeId: (id) => set({ activeTooltipNodeId: id }),
+  toggleTooltipNodeId: (id) => set((s) => ({
+    activeTooltipNodeId: s.activeTooltipNodeId === id ? null : id,
+  })),
 
   // FitView
   fitViewTrigger: 0,
@@ -95,4 +175,8 @@ export const useUiStore = create<UiState>((set) => ({
   runtimeBannerDismissed: false,
   dismissRuntimeBanner: () => set({ runtimeBannerDismissed: true }),
   resetRuntimeBanner: () => set({ runtimeBannerDismissed: false }),
+
+  // Diagram settings
+  diagramSettingsOpen: false,
+  setDiagramSettingsOpen: (v) => set({ diagramSettingsOpen: v }),
 }))

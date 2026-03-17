@@ -1,8 +1,6 @@
 // ============================================================
-// Custom Fetch Mutator untuk orval SDK
+// Custom Fetch Mutator untuk Orval SDK
 // Inject Authorization header ke setiap request generated SDK
-//
-// JANGAN edit file ini — file ini adalah entrypoint konfigurasi
 // ============================================================
 
 export interface ErrorType<Error> {
@@ -13,15 +11,17 @@ export interface ErrorType<Error> {
 export type BodyType<BodyData> = BodyData
 
 function getToken(): string | null {
-  // Fallback dev bearer dari env
   const devBearer = import.meta.env.VITE_SCADA_DEV_BEARER as string | undefined
   if (devBearer) return devBearer
   return localStorage.getItem('scada_token')
 }
 
 /**
- * Custom fetch mutator — dipanggil oleh setiap generated service function
- * Otomatis inject Authorization header dan handle error response
+ * Custom fetch mutator — dipanggil oleh setiap generated service function.
+ * Otomatis inject Authorization header dan handle error response.
+ *
+ * Orval generated types mengharapkan response shape: { data, status, headers }
+ * Jadi kita wrap response.json() agar sesuai.
  */
 export const customFetch = async <T>(
   url: string,
@@ -45,23 +45,19 @@ export const customFetch = async <T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: `HTTP ${response.status}` }))
-    throw {
-      status: response.status,
-      data: errorData,
-    }
+    throw { status: response.status, data: errorData }
   }
 
   // 204 No Content
   if (response.status === 204) {
-    return {} as T
+    return { data: undefined, status: response.status, headers: response.headers } as T
   }
 
-  return response.json()
+  const data = await response.json()
+  return { data, status: response.status, headers: response.headers } as T
 }
 
-// setup function (untuk kompatibilitas)
+// Setup function (untuk kompatibilitas dengan main.tsx)
 export function setupSdkClient() {
-  // No-op saat pakai orval custom mutator
-  // Auth dihandle di customFetch di atas
-  console.debug('[SDK] Custom fetch mutator aktif')
+  console.debug('[SDK] Orval custom fetch mutator aktif')
 }

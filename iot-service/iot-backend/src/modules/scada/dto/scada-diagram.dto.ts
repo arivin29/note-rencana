@@ -90,6 +90,16 @@ export class ScadaBindingPayloadDto {
   @IsBoolean()
   @IsOptional()
   isPrimary?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsBoolean()
+  @IsOptional()
+  showTrend?: boolean;
+
+  @ApiPropertyOptional({ default: 1 })
+  @IsNumber()
+  @IsOptional()
+  trendHours?: number;
 }
 
 export class ScadaPositionDto {
