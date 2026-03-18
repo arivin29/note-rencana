@@ -17,6 +17,7 @@ import { EdgeConfigDrawer } from '@/components/EdgeConfigDrawer'
 import { RuntimeBanner }   from '@/components/RuntimeBanner'
 import { ToastContainer }  from '@/components/Toast'
 import { DiagramSettingsPanel } from '@/components/DiagramSettingsPanel'
+import { ViewNavControls, FullscreenOverlay } from '@/components/ViewNavControls'
 
 import { useScadaDiagram } from '@/hooks/useScadaDiagram'
 import { useRuntimePolling } from '@/hooks/useRuntimePolling'
@@ -49,6 +50,7 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
   const mode         = useUiStore((s) => s.mode)
   const discardConfirmOpen  = useUiStore((s) => s.discardConfirmOpen)
   const setDiscardConfirmOpen = useUiStore((s) => s.setDiscardConfirmOpen)
+  const isFullscreen = useUiStore((s) => s.isFullscreen)
   const isDirty      = useDiagramStore((s) => s.isDirty)
   const resetToSaved = useDiagramStore((s) => s.resetToSaved)
   const addNode      = useDiagramStore((s) => s.addNode)
@@ -81,12 +83,21 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
       if (e.shiftKey && e.key === 'F') {
         useUiStore.getState().triggerFitView()
       }
+      // F (no modifier, not in input) → toggle fullscreen
+      const tag = (e.target as HTMLElement)?.tagName
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA'
+      if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && !isInput) {
+        useUiStore.getState().toggleFullscreen()
+      }
+      // Escape → exit fullscreen
+      if (e.key === 'Escape' && useUiStore.getState().isFullscreen) {
+        document.exitFullscreen?.()
+      }
       // Delete / Backspace → remove selected (handled by React Flow onDelete,
       // but also handle here for ToolRail-based deletion)
       if ((e.key === 'Delete' || e.key === 'Backspace') && mode === 'edit') {
         // Only if focus is NOT in an input/textarea
-        const tag = (e.target as HTMLElement)?.tagName
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        if (isInput) return
         const { selectedNodeIds, selectedEdgeIds } = useUiStore.getState()
         const { removeNode, removeEdge } = useDiagramStore.getState()
         selectedEdgeIds.forEach((id) => removeEdge(id))
@@ -150,11 +161,11 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
   // ── Main diagram view ─────────────────────────────────────────
   return (
     <div className="h-full w-full flex flex-col bg-canvas overflow-hidden">
-      {/* Top bar */}
-      <TopBar onSave={save} />
+      {/* Top bar — hidden in fullscreen */}
+      {!isFullscreen && <TopBar onSave={save} />}
 
-      {/* Runtime degraded/offline banner */}
-      <RuntimeBanner />
+      {/* Runtime degraded/offline banner — hidden in fullscreen */}
+      {!isFullscreen && <RuntimeBanner />}
 
       {/* Diagram settings popover (edit mode, from TopBar name click) */}
       <DiagramSettingsPanel />
@@ -167,6 +178,12 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
 
           {/* Tool rail — overlay kiri */}
           <ToolRail />
+
+          {/* View navigation controls — both modes */}
+          <ViewNavControls />
+
+          {/* Fullscreen overlay (clock + exit) */}
+          <FullscreenOverlay />
 
           {/* Node library drawer — overlay kiri tengah */}
           <NodeLibraryDrawer onAddNode={handleAddNode} />

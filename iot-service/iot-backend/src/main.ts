@@ -49,6 +49,7 @@ async function bootstrap() {
       'http://localhost:3000',           // Backend Swagger UI
       'https://devetek-helios.web.app',  // Firebase Hosting
       'https://devetek-helios.firebaseapp.com', // Firebase Hosting (alternative)
+      'https://devetek-helios-scada.web.app', // Firebase Hosting (alternative)
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,

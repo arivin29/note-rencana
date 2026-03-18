@@ -7,7 +7,7 @@
 import type { ScadaAuthUser } from '@/types/scada'
 
 const STORAGE_KEY = 'scada_token'
-const BASE_URL = '/api'
+const BASE_URL = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api`
 
 export function getToken(): string | null {
   const devBearer = import.meta.env.VITE_SCADA_DEV_BEARER as string | undefined

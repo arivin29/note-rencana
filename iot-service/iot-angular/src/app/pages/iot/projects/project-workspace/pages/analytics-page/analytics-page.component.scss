@@ -1,57 +1,85 @@
-.coming-soon-page {
+// ═══════════════════════════════════════════════════════════
+// SCADA Page Styles
+// ═══════════════════════════════════════════════════════════
+
+// ── Embed container (iframe mode) ──
+.scada-embed-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px); // full height minus Angular top nav
+  margin: -1rem; // bleed into parent padding
+
+  .scada-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #0d1117;
+  }
+}
+
+// ── Diagram list ──
+.scada-list-page {
+  padding: 0.5rem 0;
+}
+
+.scada-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: rgba(14, 165, 233, 0.3);
+    box-shadow: 0 4px 20px rgba(14, 165, 233, 0.08);
+  }
+
+  .card-title {
+    font-weight: 600;
+    font-size: 15px;
+  }
+}
+
+.delete-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+// ── Empty state ──
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
   text-align: center;
-  
+
   .icon-wrapper {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(14, 165, 233, 0.05));
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 24px;
-    
+    margin-bottom: 20px;
+
     i {
-      font-size: 40px;
+      font-size: 32px;
       color: #0ea5e9;
     }
   }
-  
-  h2 {
-    font-size: 28px;
+
+  h5 {
     font-weight: 700;
     margin-bottom: 8px;
-  }
-  
-  p {
-    font-size: 16px;
-    margin-bottom: 32px;
-  }
-  
-  .features {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-    justify-content: center;
-    
-    .feature-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      color: rgba(255, 255, 255, 0.7);
-      
-      i {
-        color: #0ea5e9;
-      }
-    }
   }
 }

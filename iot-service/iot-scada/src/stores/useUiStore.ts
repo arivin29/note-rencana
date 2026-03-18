@@ -67,6 +67,15 @@ export interface UiState {
   // Diagram settings panel
   diagramSettingsOpen: boolean
   setDiagramSettingsOpen: (v: boolean) => void
+
+  // Fullscreen
+  isFullscreen: boolean
+  setFullscreen: (v: boolean) => void
+  toggleFullscreen: () => void
+
+  // Lock pan (view mode)
+  isPanLocked: boolean
+  togglePanLock: () => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -179,4 +188,13 @@ export const useUiStore = create<UiState>((set) => ({
   // Diagram settings
   diagramSettingsOpen: false,
   setDiagramSettingsOpen: (v) => set({ diagramSettingsOpen: v }),
+
+  // Fullscreen
+  isFullscreen: false,
+  setFullscreen: (v) => set({ isFullscreen: v }),
+  toggleFullscreen: () => set((s) => ({ isFullscreen: !s.isFullscreen })),
+
+  // Lock pan
+  isPanLocked: false,
+  togglePanLock: () => set((s) => ({ isPanLocked: !s.isPanLocked })),
 }))

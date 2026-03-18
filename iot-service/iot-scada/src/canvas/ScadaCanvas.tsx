@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
-  Controls,
   ConnectionMode,
   BackgroundVariant,
   type Node,
@@ -86,6 +85,7 @@ function CanvasInner() {
 
   const mode             = useUiStore((s) => s.mode)
   const fitViewTrigger   = useUiStore((s) => s.fitViewTrigger)
+  const isPanLocked      = useUiStore((s) => s.isPanLocked)
   const setSelectedNodes = useUiStore((s) => s.setSelectedNodes)
   const setSelectedEdges = useUiStore((s) => s.setSelectedEdges)
 
@@ -225,6 +225,10 @@ function CanvasInner() {
       deleteKeyCode={isEditMode ? ['Backspace', 'Delete'] : null}
       nodesDraggable={isEditMode}
       nodesConnectable={isEditMode}
+      panOnDrag={!isPanLocked}
+      zoomOnScroll={!isPanLocked}
+      zoomOnPinch={!isPanLocked}
+      zoomOnDoubleClick={false}
       elementsSelectable={true}
       fitView
       fitViewOptions={{ padding: 0.2 }}
@@ -238,10 +242,6 @@ function CanvasInner() {
         size={1}
         color="#30363d"
         style={{ backgroundColor: '#0d1117' }}
-      />
-      <Controls
-        position="bottom-right"
-        showInteractive={false}
       />
     </ReactFlow>
   )

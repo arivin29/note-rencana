@@ -10,8 +10,10 @@ export interface ScadaBindingPayloadDto {
   isPrimary?: boolean;
   priorityOrder?: number;
   sensorChannelId: string;
+  showTrend?: boolean;
   transform?: {
 };
+  trendHours?: number;
   unitOverride?: {
 };
 }

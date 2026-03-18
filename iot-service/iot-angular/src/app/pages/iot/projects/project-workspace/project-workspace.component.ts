@@ -50,7 +50,7 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     { path: 'nodes', icon: 'fa-server', label: 'Nodes' },
     { path: 'monitor', icon: 'fa-chart-line', label: 'Monitor', expanded: false, children: [] },
     { path: 'map', icon: 'fa-map-marked-alt', label: 'Map', expanded: false },
-    { path: 'analytics', icon: 'fa-chart-pie', label: 'Analytics' },
+    { path: 'analytics', icon: 'fa-project-diagram', label: 'SCADA' },
     { path: 'config', icon: 'fa-cog', label: 'Config' }
   ];
   

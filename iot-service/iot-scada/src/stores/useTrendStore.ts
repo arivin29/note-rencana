@@ -58,7 +58,8 @@ async function fetchChannelTrend(
     startDate,
     limit: '120',
   })
-  const url = `/api/sensor-logs?${params}`
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
+  const url = `${baseUrl}/api/sensor-logs?${params}`
   const res = await fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
