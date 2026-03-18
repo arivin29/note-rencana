@@ -1,26 +1,132 @@
-<div class="coming-soon-page">
-  <div class="icon-wrapper">
-    <i class="fa fa-chart-pie"></i>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCADA Page — List + Embedded View/Edit                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<!-- ── Embedded iframe mode (no header — user clicks SCADA menu to go back) ── -->
+<div *ngIf="embedUrl" class="scada-embed-container">
+  <iframe
+    #scadaIframe
+    [src]="embedUrl"
+    class="scada-iframe"
+    (load)="onIframeLoad()"
+    allow="fullscreen"
+    frameborder="0"
+  ></iframe>
+</div>
+
+<!-- ── Diagram list mode ────────────────────────────────────── -->
+<div *ngIf="!embedUrl" class="scada-list-page">
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="mb-1"><i class="fa fa-project-diagram me-2 text-info"></i>SCADA Diagrams</h4>
+      <p class="text-muted mb-0 small">Manage and view SCADA diagrams for this project</p>
+    </div>
+    <button class="btn btn-info btn-sm" (click)="openAddModal()">
+      <i class="fa fa-plus me-1"></i> New Diagram
+    </button>
   </div>
-  <h2>Analytics</h2>
-  <p class="text-muted">Trends, reports, and data analysis</p>
-  
-  <div class="features">
-    <div class="feature-item">
-      <i class="fa fa-chart-line"></i>
-      <span>Trend Analysis</span>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fa fa-exclamation-triangle me-1"></i> {{ error }}
+    <button type="button" class="btn-close" (click)="error = ''"></button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-info" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
-    <div class="feature-item">
-      <i class="fa fa-calendar-alt"></i>
-      <span>Custom Date Ranges</span>
+    <p class="text-muted mt-2 small">Loading diagrams…</p>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && diagrams.length === 0" class="empty-state">
+    <div class="icon-wrapper">
+      <i class="fa fa-project-diagram"></i>
     </div>
-    <div class="feature-item">
-      <i class="fa fa-file-export"></i>
-      <span>Export Reports</span>
+    <h5>No SCADA Diagrams</h5>
+    <p class="text-muted">Create your first SCADA diagram to visualize and monitor your project.</p>
+    <button class="btn btn-info btn-sm" (click)="openAddModal()">
+      <i class="fa fa-plus me-1"></i> Create Diagram
+    </button>
+  </div>
+
+  <!-- Diagram cards grid -->
+  <div *ngIf="!loading && diagrams.length > 0" class="row g-3">
+    <div *ngFor="let d of diagrams" class="col-12 col-md-6 col-lg-4">
+      <div class="card scada-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <h6 class="card-title mb-0 text-truncate" style="max-width: 70%">{{ d.name }}</h6>
+            <span class="badge" [ngClass]="getStatusBadgeClass(d.status)">{{ d.status }}</span>
+          </div>
+          <p *ngIf="d.description" class="text-muted small mb-2 text-truncate">{{ d.description }}</p>
+          <div class="d-flex gap-3 text-muted small mb-3">
+            <span><i class="fa fa-cube me-1"></i>{{ d.nodeCount || 0 }} nodes</span>
+            <span><i class="fa fa-link me-1"></i>{{ d.edgeCount || 0 }} edges</span>
+          </div>
+          <div class="text-muted small mb-3">
+            <i class="fa fa-clock me-1"></i> {{ formatDate(d.updatedAt) }}
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info flex-fill" (click)="openDiagram(d, 'view')">
+              <i class="fa fa-eye me-1"></i> View
+            </button>
+            <button class="btn btn-sm btn-outline-warning flex-fill" (click)="openDiagram(d, 'edit')">
+              <i class="fa fa-edit me-1"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="confirmDelete(d.id)"
+                    [disabled]="deletingId === d.id">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Delete confirmation overlay -->
+        <div *ngIf="deletingId === d.id" class="delete-confirm-overlay">
+          <p class="mb-2 small">Delete <strong>{{ d.name }}</strong>?</p>
+          <div class="d-flex gap-2 justify-content-center">
+            <button class="btn btn-sm btn-danger" (click)="deleteDiagram(d.id)">Yes, Delete</button>
+            <button class="btn btn-sm btn-outline-light" (click)="cancelDelete()">Cancel</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  
-  <div class="badge bg-warning-subtle text-warning">
-    <i class="fa fa-tools me-1"></i> Coming Soon
+</div>
+
+<!-- ── Add Diagram Modal ────────────────────────────────────── -->
+<div *ngIf="showAddModal" class="modal-backdrop fade show"></div>
+<div *ngIf="showAddModal" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title"><i class="fa fa-plus me-2 text-info"></i>New SCADA Diagram</h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeAddModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small">Diagram Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
+                 [(ngModel)]="newDiagramName" placeholder="e.g. Main PDAM Overview"
+                 (keyup.enter)="createDiagram()">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Description</label>
+          <textarea class="form-control form-control-sm bg-dark text-white border-secondary" rows="3"
+                    [(ngModel)]="newDiagramDescription" placeholder="Optional description"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeAddModal()">Cancel</button>
+        <button type="button" class="btn btn-sm btn-info" (click)="createDiagram()"
+                [disabled]="creating || !newDiagramName.trim()">
+          <span *ngIf="creating" class="spinner-border spinner-border-sm me-1"></span>
+          {{ creating ? 'Creating…' : 'Create' }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>

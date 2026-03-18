@@ -38,7 +38,8 @@ export const customFetch = async <T>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
+  const response = await fetch(`${baseUrl}${url}`, {
     ...options,
     headers,
   })

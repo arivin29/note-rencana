@@ -24,6 +24,14 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    // In embed mode, don't redirect to login — just show waiting state
+    if (window.location.pathname.startsWith('/embed/')) {
+      return (
+        <div className="h-full w-full bg-canvas flex items-center justify-center text-white/50 text-sm">
+          Waiting for authentication…
+        </div>
+      )
+    }
     return <Navigate to="/login" replace />
   }
 
@@ -59,6 +67,24 @@ function AppRoutes() {
 
       <Route
         path="/diagrams/:diagramId/edit"
+        element={
+          <RequireAuth>
+            <DiagramPage initialMode="edit" />
+          </RequireAuth>
+        }
+      />
+
+      {/* ── Embed routes (loaded inside Angular iframe) ── */}
+      <Route
+        path="/embed/:projectId/diagrams/:diagramId/view"
+        element={
+          <RequireAuth>
+            <DiagramPage initialMode="view" />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/embed/:projectId/diagrams/:diagramId/edit"
         element={
           <RequireAuth>
             <DiagramPage initialMode="edit" />

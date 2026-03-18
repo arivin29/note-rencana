@@ -6,5 +6,6 @@
 export const environment = {
   production: false,
     // apiUrl: 'https://iot-api.demo.vm.devetek.com'
-    apiUrl: 'http://localhost:3000'
+    apiUrl: 'https://iot-api.demo.vm.devetek.com',
+    scadaUrl: 'https://devetek-helios-scada.web.app'
 };
