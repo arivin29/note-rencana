@@ -108,13 +108,13 @@
               <span class="fw-medium">{{ formatDate(forecast.forecastTime) }}</span>
             </td>
             <td>
-              <span class="fw-medium">{{ forecast.sensorInfo?.metricCode || 'Unknown' }}</span>
+              <span class="fw-medium">{{ forecast.sensorChannel?.channelName || 'Unknown' }}</span>
               <br>
               <small class="text-muted">{{ forecast.idSensorChannel | slice:0:8 }}...</small>
             </td>
             <td class="text-end">
               <span class="fw-bold text-primary">{{ forecast.forecastValue | number:'1.2-2' }}</span>
-              <small class="text-muted ms-1">{{ forecast.sensorInfo?.unit || '' }}</small>
+              <small class="text-muted ms-1">{{ forecast.sensorChannel?.unitMeasure || '' }}</small>
             </td>
             <td class="text-end">
               <span class="text-muted">{{ forecast.lowerBound | number:'1.2-2' }}</span>

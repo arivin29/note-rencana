@@ -1,289 +1,222 @@
-<div class="container-fluid py-3">
-  <!-- Page Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h1 class="h3 mb-1">ML Dashboard</h1>
-      <p class="text-muted mb-0">Anomaly Detection & Forecasting</p>
-    </div>
-    <div class="d-flex gap-2">
-      <div class="btn-group" role="group">
-        <button type="button" class="btn btn-sm" 
-                [class.btn-primary]="selectedTimeRange === '24h'"
-                [class.btn-outline-primary]="selectedTimeRange !== '24h'"
-                (click)="onTimeRangeChange('24h')">24h</button>
-        <button type="button" class="btn btn-sm" 
-                [class.btn-primary]="selectedTimeRange === '7d'"
-                [class.btn-outline-primary]="selectedTimeRange !== '7d'"
-                (click)="onTimeRangeChange('7d')">7 Hari</button>
-        <button type="button" class="btn btn-sm" 
-                [class.btn-primary]="selectedTimeRange === '30d'"
-                [class.btn-outline-primary]="selectedTimeRange !== '30d'"
-                (click)="onTimeRangeChange('30d')">30 Hari</button>
-      </div>
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshData()">
-        <i class="bi bi-arrow-clockwise"></i> Refresh
-      </button>
-    </div>
-  </div>
-
-  <!-- Error Alert -->
-  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
-    <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
-    <button type="button" class="btn-close" (click)="error = null"></button>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-2 text-muted">Memuat data...</p>
-  </div>
-
-  <!-- Dashboard Content -->
-  <div *ngIf="!isLoading">
-    <!-- KPI Cards Row -->
-    <div class="row g-3 mb-4">
-      <!-- Total Anomalies -->
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <p class="text-muted small mb-1">Total Anomali</p>
-                <h2 class="mb-0 fw-bold">{{ summary?.anomalies?.total || 0 }}</h2>
-              </div>
-              <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                <i class="bi bi-exclamation-diamond text-primary fs-4"></i>
-              </div>
-            </div>
-            <div class="mt-3 small">
-              <span [class]="getTrendClass()">
-                <i [class]="'bi ' + getTrendIcon()"></i>
-                {{ summary?.trends?.changePercent | number:'1.0-1' }}%
-              </span>
-              <span class="text-muted ms-1">vs periode sebelumnya</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Critical Anomalies -->
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 border-start border-danger border-4">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <p class="text-muted small mb-1">Kritis</p>
-                <h2 class="mb-0 fw-bold text-danger">{{ summary?.anomalies?.critical || 0 }}</h2>
-              </div>
-              <div class="rounded-circle bg-danger bg-opacity-10 p-3">
-                <i class="bi bi-x-octagon text-danger fs-4"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Unacknowledged -->
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 border-start border-warning border-4">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <p class="text-muted small mb-1">Belum Diproses</p>
-                <h2 class="mb-0 fw-bold text-warning">{{ summary?.anomalies?.unacknowledged || 0 }}</h2>
-              </div>
-              <div class="rounded-circle bg-warning bg-opacity-10 p-3">
-                <i class="bi bi-clock-history text-warning fs-4"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Forecasted Sensors -->
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <p class="text-muted small mb-1">Sensor dengan Prakiraan</p>
-                <h2 class="mb-0 fw-bold text-info">{{ summary?.forecasts?.totalSensors || 0 }}</h2>
-              </div>
-              <div class="rounded-circle bg-info bg-opacity-10 p-3">
-                <i class="bi bi-graph-up-arrow text-info fs-4"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Content Row -->
-    <div class="row g-3">
-      <!-- Recent Anomalies Card -->
-      <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-          <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-              <i class="bi bi-exclamation-triangle me-2"></i>Anomali Terbaru
-            </h5>
-            <a routerLink="/iot/ml/anomalies" class="btn btn-sm btn-outline-primary">
-              Lihat Semua <i class="bi bi-arrow-right"></i>
-            </a>
-          </div>
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Waktu</th>
-                    <th>Sensor</th>
-                    <th>Nilai</th>
-                    <th>Grade</th>
-                    <th class="text-end">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let anomaly of recentAnomalies">
-                    <td class="text-nowrap">
-                      <small class="text-muted">{{ formatDate(anomaly.detectedAt) }}</small>
-                    </td>
-                    <td>
-                      <span class="fw-medium">{{ anomaly.sensorInfo?.metricCode || anomaly.idSensorChannel }}</span>
-                      <br>
-                      <small class="text-muted">{{ anomaly.sensorInfo?.unit || '' }}</small>
-                    </td>
-                    <td>
-                      <span class="fw-bold">{{ anomaly.actualValue | number:'1.2-2' }}</span>
-                      <br>
-                      <small class="text-muted">exp: {{ anomaly.expectedValue | number:'1.2-2' }}</small>
-                    </td>
-                    <td>
-                      <span class="badge" [class]="getGradeBadgeClass(anomaly.anomalyGrade)">
-                        {{ getGradeLabel(anomaly.anomalyGrade) }}
-                      </span>
-                    </td>
-                    <td class="text-end">
-                      <button class="btn btn-sm btn-outline-success" 
-                              (click)="acknowledgeAnomaly(anomaly)"
-                              title="Acknowledge">
-                        <i class="bi bi-check-lg"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="recentAnomalies.length === 0">
-                    <td colspan="5" class="text-center py-4 text-muted">
-                      <i class="bi bi-check-circle fs-3 d-block mb-2"></i>
-                      Tidak ada anomali yang belum diproses
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grade Distribution Card -->
-      <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-transparent">
-            <h5 class="mb-0">
-              <i class="bi bi-pie-chart me-2"></i>Distribusi Grade
-            </h5>
-          </div>
-          <div class="card-body">
-            <div *ngFor="let item of gradeSummary" class="mb-3">
-              <div class="d-flex justify-content-between mb-1">
-                <span class="small fw-medium">{{ getGradeLabel(item.grade) }}</span>
-                <span class="small text-muted">{{ item.count }}</span>
-              </div>
-              <div class="progress" style="height: 8px;">
-                <div class="progress-bar" 
-                     [style.backgroundColor]="getGradeColor(item.grade)"
-                     [style.width.%]="(item.count / (summary?.anomalies?.total || 1)) * 100">
+<div class="ops-console">
+    <!-- Welcome Header -->
+    <card class="welcome-header mb-4">
+        <card-body>
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="welcome-content">
+                        <h2 class="welcome-title">
+                            <span class="greeting">Machine Learning</span>
+                            <span class="owner-name">Dashboard</span>
+                        </h2>
+                        <p class="welcome-subtitle">
+                            Monitoring anomali dan prakiraan sensor berbasis ML
+                        </p>
+                    </div>
                 </div>
-              </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <div class="d-flex gap-2 justify-content-lg-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm" 
+                                    [class.btn-primary]="selectedTimeRange === '24h'"
+                                    [class.btn-outline-primary]="selectedTimeRange !== '24h'"
+                                    (click)="onTimeRangeChange('24h')">24h</button>
+                            <button type="button" class="btn btn-sm" 
+                                    [class.btn-primary]="selectedTimeRange === '7d'"
+                                    [class.btn-outline-primary]="selectedTimeRange !== '7d'"
+                                    (click)="onTimeRangeChange('7d')">7 Hari</button>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" (click)="refreshData()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-            
-            <div *ngIf="gradeSummary.length === 0" class="text-center py-4 text-muted">
-              <i class="bi bi-bar-chart fs-3 d-block mb-2"></i>
-              Tidak ada data
-            </div>
-          </div>
-        </div>
-      </div>
+        </card-body>
+    </card>
+
+    <!-- Error Alert -->
+    <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+        <button type="button" class="btn-close" (click)="error = null"></button>
     </div>
 
-    <!-- Quick Stats Row -->
-    <div class="row g-3 mt-3">
-      <!-- Anomalies by Severity -->
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center">
-            <h3 class="text-danger mb-1">{{ summary?.anomalies?.critical || 0 }}</h3>
-            <small class="text-muted">Kritis</small>
-          </div>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center">
-            <h3 class="text-orange mb-1">{{ summary?.anomalies?.severe || 0 }}</h3>
-            <small class="text-muted">Parah</small>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center">
-            <h3 class="text-warning mb-1">{{ summary?.anomalies?.moderate || 0 }}</h3>
-            <small class="text-muted">Sedang</small>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body text-center">
-            <h3 class="text-info mb-1">{{ summary?.anomalies?.mild || 0 }}</h3>
-            <small class="text-muted">Ringan</small>
-          </div>
-        </div>
-      </div>
+        <p class="mt-2 text-muted">Memuat data...</p>
     </div>
 
-    <!-- Navigation Cards -->
-    <div class="row g-3 mt-3">
-      <div class="col-md-6">
-        <a routerLink="/iot/ml/anomalies" class="card border-0 shadow-sm text-decoration-none h-100">
-          <div class="card-body d-flex align-items-center">
-            <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
-              <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+    <!-- Dashboard Content -->
+    <ng-container *ngIf="!loading">
+        <!-- Quick Stats KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3" *ngFor="let stat of quickStats">
+                <card class="stat-card h-100" [routerLink]="stat.link">
+                    <card-body>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon" [ngClass]="stat.iconClass">
+                                <i [class]="stat.icon"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" [class.text-danger]="stat.severity === 'critical'">
+                                    {{ stat.value }}
+                                </div>
+                                <div class="stat-label">{{ stat.label }}</div>
+                            </div>
+                        </div>
+                    </card-body>
+                </card>
             </div>
-            <div>
-              <h5 class="mb-1 text-dark">Daftar Anomali</h5>
-              <p class="text-muted mb-0 small">Lihat dan kelola semua anomali yang terdeteksi</p>
+        </div>
+
+        <!-- Anomali Kritis Panel -->
+        <card class="attention-panel mb-4" *ngIf="summary && summary.criticalCount > 0">
+            <card-body>
+                <div class="panel-head">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="panel-icon text-danger">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                        </div>
+                        <div>
+                            <div class="panel-label">ANOMALI KRITIS</div>
+                            <div class="panel-hint">{{ summary.criticalCount }} anomali kritis terdeteksi</div>
+                        </div>
+                    </div>
+                    <a routerLink="/iot/ml/anomalies" class="btn btn-sm btn-outline-danger">
+                        Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </card-body>
+        </card>
+
+        <!-- All Good Panel -->
+        <card class="all-good-panel mb-4" *ngIf="summary && summary.criticalCount === 0 && summary.unacknowledgedCount === 0">
+            <card-body class="text-center py-4">
+                <div class="all-good-icon">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="all-good-title">Semua Berjalan Normal</div>
+                <div class="all-good-hint text-muted">Tidak ada anomali kritis yang memerlukan perhatian</div>
+            </card-body>
+        </card>
+
+        <!-- Main Content Row -->
+        <div class="row g-3">
+            <!-- Recent Anomalies (Left) -->
+            <div class="col-lg-8">
+                <card class="h-100">
+                    <card-body>
+                        <div class="panel-head">
+                            <div>
+                                <div class="panel-label">ANOMALI TERBARU</div>
+                                <div class="panel-hint">Anomali yang belum diproses</div>
+                            </div>
+                            <a routerLink="/iot/ml/anomalies" class="btn btn-sm btn-outline-primary">
+                                Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="anomaly-list" *ngIf="recentAnomalies.length > 0; else noAnomalies">
+                            <div class="anomaly-item" *ngFor="let anomaly of recentAnomalies">
+                                <div class="anomaly-icon" [ngClass]="getGradeClass(anomaly.anomalyGrade)">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div class="anomaly-content">
+                                    <div class="anomaly-title">
+                                        {{ anomaly.sensorChannel?.channelName || anomaly.idSensorChannel }}
+                                    </div>
+                                    <div class="anomaly-meta">
+                                        <span class="anomaly-value">{{ anomaly.actualValue | number:'1.2-2' }}</span>
+                                        <span class="anomaly-time">{{ formatDate(anomaly.detectedAt) }}</span>
+                                    </div>
+                                </div>
+                                <div class="anomaly-badge">
+                                    <span class="badge" [ngClass]="getGradeBadgeClass(anomaly.anomalyGrade)">
+                                        {{ getGradeLabel(anomaly.anomalyGrade) }}
+                                    </span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-success ms-2" 
+                                        (click)="acknowledgeAnomaly(anomaly)"
+                                        title="Acknowledge">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <ng-template #noAnomalies>
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-check-circle fs-1 d-block mb-2"></i>
+                                <div>Tidak ada anomali yang belum diproses</div>
+                            </div>
+                        </ng-template>
+                    </card-body>
+                </card>
             </div>
-            <i class="bi bi-chevron-right ms-auto text-muted"></i>
-          </div>
-        </a>
-      </div>
-      <div class="col-md-6">
-        <a routerLink="/iot/ml/forecasts" class="card border-0 shadow-sm text-decoration-none h-100">
-          <div class="card-body d-flex align-items-center">
-            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-              <i class="bi bi-graph-up text-primary fs-4"></i>
+
+            <!-- Grade Distribution (Right) -->
+            <div class="col-lg-4">
+                <card class="h-100">
+                    <card-body>
+                        <div class="panel-head">
+                            <div>
+                                <div class="panel-label">DISTRIBUSI GRADE</div>
+                                <div class="panel-hint">Berdasarkan tingkat keparahan</div>
+                            </div>
+                        </div>
+                        <div class="grade-distribution">
+                            <div class="grade-item" *ngFor="let item of gradeStats">
+                                <div class="grade-header">
+                                    <span class="grade-name">{{ getGradeLabel(item.grade) }}</span>
+                                    <span class="grade-count">{{ item.count }}</span>
+                                </div>
+                                <div class="grade-bar">
+                                    <div class="grade-fill" 
+                                         [ngClass]="getGradeClass(item.grade)"
+                                         [style.width.%]="item.percent">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </card-body>
+                </card>
             </div>
-            <div>
-              <h5 class="mb-1 text-dark">Prakiraan Sensor</h5>
-              <p class="text-muted mb-0 small">Lihat prakiraan nilai sensor 7 hari ke depan</p>
+        </div>
+
+        <!-- Navigation Cards -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-6">
+                <card class="nav-card" routerLink="/iot/ml/anomalies">
+                    <card-body>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="nav-icon icon-danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="nav-content">
+                                <div class="nav-title">Daftar Anomali</div>
+                                <div class="nav-hint">Lihat dan kelola semua anomali terdeteksi</div>
+                            </div>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </div>
+                    </card-body>
+                </card>
             </div>
-            <i class="bi bi-chevron-right ms-auto text-muted"></i>
-          </div>
-        </a>
-      </div>
-    </div>
-  </div>
+            <div class="col-md-6">
+                <card class="nav-card" routerLink="/iot/ml/forecasts">
+                    <card-body>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="nav-icon icon-primary">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <div class="nav-content">
+                                <div class="nav-title">Prakiraan Sensor</div>
+                                <div class="nav-hint">Lihat prakiraan nilai sensor ke depan</div>
+                            </div>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </div>
+                    </card-body>
+                </card>
+            </div>
+        </div>
+    </ng-container>
 </div>

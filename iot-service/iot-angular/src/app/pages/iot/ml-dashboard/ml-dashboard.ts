@@ -1,7 +1,24 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { MlService, DashboardSummary, AnomalyResponse, GradeSummary } from './ml.service';
+import { Subject, forkJoin } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
+import { MlAnomaliesService, MlDashboardService } from 'src/sdk/core/services';
+import { AnomalySummaryDto, AnomalyResponseDto } from 'src/sdk/core/models';
+import { AuthService } from '../../../services/auth.service';
+
+interface QuickStat {
+  icon: string;
+  iconClass: string;
+  value: string | number;
+  label: string;
+  link: string;
+  severity?: string;
+}
+
+interface GradeStat {
+  grade: string;
+  count: number;
+  percent: number;
+}
 
 @Component({
   selector: 'ml-dashboard-page',
@@ -12,22 +29,25 @@ import { MlService, DashboardSummary, AnomalyResponse, GradeSummary } from './ml
 export class MlDashboardPage implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
-  isLoading = true;
+  loading = true;
   error: string | null = null;
   
   // Dashboard data
-  summary: DashboardSummary | null = null;
-  recentAnomalies: AnomalyResponse[] = [];
-  gradeSummary: GradeSummary[] = [];
+  summary: AnomalySummaryDto | null = null;
+  recentAnomalies: any[] = [];
   
-  // Chart data
-  anomalyTrendData: any[] = [];
-  gradeDistributionData: any[] = [];
+  // Quick stats
+  quickStats: QuickStat[] = [];
+  gradeStats: GradeStat[] = [];
   
   // Filter state
   selectedTimeRange = '24h';
   
-  constructor(private mlService: MlService) {}
+  constructor(
+    private anomaliesService: MlAnomaliesService,
+    private dashboardService: MlDashboardService,
+    private authService: AuthService
+  ) {}
   
   ngOnInit(): void {
     this.loadDashboard();
@@ -39,67 +59,89 @@ export class MlDashboardPage implements OnInit, OnDestroy {
   }
   
   loadDashboard(): void {
-    this.isLoading = true;
+    this.loading = true;
     this.error = null;
     
-    // Load dashboard summary
-    this.mlService.getDashboardSummary()
-      .pipe(takeUntil(this.destroy$))
+    // Load anomaly summary using SDK
+    this.anomaliesService.anomaliesControllerGetSummary()
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loading = false)
+      )
       .subscribe({
         next: (data) => {
           this.summary = data;
-          this.updateCharts();
+          this.buildQuickStats();
+          this.buildGradeStats();
         },
         error: (err) => {
-          console.error('Failed to load dashboard summary:', err);
-          this.error = 'Gagal memuat ringkasan dashboard';
+          console.error('Failed to load summary:', err);
+          this.error = 'Gagal memuat ringkasan anomali';
         }
       });
     
-    // Load recent anomalies
-    this.mlService.getAnomalies({ limit: 10, isAcknowledged: false })
+    // Load recent anomalies using SDK
+    this.anomaliesService.anomaliesControllerFindAll$Response({ 
+      limit: 8, 
+      isAcknowledged: false 
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.recentAnomalies = data;
-          this.isLoading = false;
+        next: (response: any) => {
+          this.recentAnomalies = response.body?.data || response.body || [];
         },
         error: (err) => {
           console.error('Failed to load anomalies:', err);
-          this.isLoading = false;
-        }
-      });
-    
-    // Load grade summary
-    this.mlService.getAnomalySummary()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.gradeSummary = data;
-          this.updateGradeChart();
-        },
-        error: (err) => {
-          console.error('Failed to load grade summary:', err);
         }
       });
   }
   
-  updateCharts(): void {
+  buildQuickStats(): void {
     if (!this.summary) return;
     
-    // Update anomaly trend data
-    this.anomalyTrendData = [
-      { label: 'Last 24h', value: this.summary.trends.anomaliesLast24h },
-      { label: 'Last 7d', value: this.summary.trends.anomaliesLast7d }
+    this.quickStats = [
+      {
+        icon: 'bi bi-exclamation-diamond',
+        iconClass: 'icon-danger',
+        value: this.summary.totalAnomalies || 0,
+        label: 'Total Anomali',
+        link: '/iot/ml/anomalies'
+      },
+      {
+        icon: 'bi bi-x-octagon-fill',
+        iconClass: 'icon-danger',
+        value: this.summary.criticalCount || 0,
+        label: 'Kritis',
+        link: '/iot/ml/anomalies',
+        severity: 'critical'
+      },
+      {
+        icon: 'bi bi-clock-history',
+        iconClass: 'icon-warning',
+        value: this.summary.unacknowledgedCount || 0,
+        label: 'Belum Diproses',
+        link: '/iot/ml/anomalies'
+      },
+      {
+        icon: 'bi bi-activity',
+        iconClass: 'icon-info',
+        value: this.summary.affectedSensors || 0,
+        label: 'Sensor Terpengaruh',
+        link: '/iot/ml/anomalies'
+      }
     ];
   }
   
-  updateGradeChart(): void {
-    this.gradeDistributionData = this.gradeSummary.map(g => ({
-      label: this.getGradeLabel(g.grade),
-      value: g.count,
-      color: this.getGradeColor(g.grade)
-    }));
+  buildGradeStats(): void {
+    if (!this.summary) return;
+    
+    const total = this.summary.totalAnomalies || 1;
+    this.gradeStats = [
+      { grade: 'critical', count: this.summary.criticalCount || 0, percent: ((this.summary.criticalCount || 0) / total) * 100 },
+      { grade: 'severe', count: this.summary.severeCount || 0, percent: ((this.summary.severeCount || 0) / total) * 100 },
+      { grade: 'moderate', count: this.summary.moderateCount || 0, percent: ((this.summary.moderateCount || 0) / total) * 100 },
+      { grade: 'mild', count: this.summary.mildCount || 0, percent: ((this.summary.mildCount || 0) / total) * 100 }
+    ];
   }
   
   getGradeLabel(grade: string): string {
@@ -112,34 +154,24 @@ export class MlDashboardPage implements OnInit, OnDestroy {
     return labels[grade] || grade;
   }
   
-  getGradeColor(grade: string): string {
-    const colors: Record<string, string> = {
-      critical: '#dc2626',
-      severe: '#ea580c',
-      moderate: '#d97706',
-      mild: '#ca8a04'
+  getGradeClass(grade: string): string {
+    const classes: Record<string, string> = {
+      critical: 'grade-critical',
+      severe: 'grade-severe',
+      moderate: 'grade-moderate',
+      mild: 'grade-mild'
     };
-    return colors[grade] || '#6b7280';
+    return classes[grade] || '';
   }
   
   getGradeBadgeClass(grade: string): string {
     const classes: Record<string, string> = {
       critical: 'bg-danger',
       severe: 'bg-orange',
-      moderate: 'bg-warning',
-      mild: 'bg-yellow'
+      moderate: 'bg-warning text-dark',
+      mild: 'bg-yellow text-dark'
     };
     return classes[grade] || 'bg-secondary';
-  }
-  
-  getTrendIcon(): string {
-    if (!this.summary) return 'bi-dash';
-    return this.summary.trends.changePercent >= 0 ? 'bi-arrow-up' : 'bi-arrow-down';
-  }
-  
-  getTrendClass(): string {
-    if (!this.summary) return 'text-secondary';
-    return this.summary.trends.changePercent >= 0 ? 'text-danger' : 'text-success';
   }
   
   formatDate(dateStr: string): string {
@@ -153,16 +185,17 @@ export class MlDashboardPage implements OnInit, OnDestroy {
     });
   }
   
-  acknowledgeAnomaly(anomaly: AnomalyResponse): void {
-    this.mlService.acknowledgeAnomaly(anomaly.idAnomalyResult)
+  acknowledgeAnomaly(anomaly: any): void {
+    const id = anomaly.idAnomalyResult;
+    const userId = this.authService.currentUserValue?.idUser || 'system';
+    this.anomaliesService.anomaliesControllerAcknowledge({ 
+      id, 
+      body: { acknowledgedBy: userId } 
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          // Remove from list or mark as acknowledged
-          this.recentAnomalies = this.recentAnomalies.filter(
-            a => a.idAnomalyResult !== anomaly.idAnomalyResult
-          );
-          // Reload summary
+          this.recentAnomalies = this.recentAnomalies.filter(a => a.idAnomalyResult !== id);
           this.loadDashboard();
         },
         error: (err) => {

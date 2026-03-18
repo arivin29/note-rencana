@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { MlService, AnomalyResponse, AnomalyQueryParams } from '../ml.service';
+import { MlAnomaliesService } from 'src/sdk/core/services';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'anomalies-list',
@@ -14,7 +15,7 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();
   
   isLoading = true;
-  anomalies: AnomalyResponse[] = [];
+  anomalies: any[] = [];
   
   // Pagination
   currentPage = 1;
@@ -22,12 +23,8 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   totalItems = 0;
   
   // Filters
-  filters: AnomalyQueryParams = {
-    limit: 20,
-    offset: 0
-  };
   selectedGrade = '';
-  selectedAcknowledged = '';
+  selectedAcknowledged: boolean | null = null;
   searchTerm = '';
   
   // Sort
@@ -38,7 +35,10 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   selectedAnomalies: Set<string> = new Set();
   selectAll = false;
   
-  constructor(private mlService: MlService) {}
+  constructor(
+    private anomaliesService: MlAnomaliesService,
+    private authService: AuthService
+  ) {}
   
   ngOnInit(): void {
     this.loadAnomalies();
@@ -63,25 +63,36 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   loadAnomalies(): void {
     this.isLoading = true;
     
-    const params: AnomalyQueryParams = {
-      ...this.filters,
+    const params: any = {
       limit: this.pageSize,
-      offset: (this.currentPage - 1) * this.pageSize
+      page: this.currentPage
     };
     
     if (this.selectedGrade) {
       params.minGrade = this.selectedGrade;
     }
     
-    if (this.selectedAcknowledged !== '') {
-      params.isAcknowledged = this.selectedAcknowledged === 'true';
+    if (this.selectedAcknowledged !== null) {
+      params.isAcknowledged = this.selectedAcknowledged;
     }
     
-    this.mlService.getAnomalies(params)
+    this.anomaliesService.anomaliesControllerFindAll$Response(params)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.anomalies = data;
+        next: (response: any) => {
+          let body = response.body;
+          // Parse body if it's a string
+          if (typeof body === 'string') {
+            try {
+              body = JSON.parse(body);
+            } catch (e) {
+              body = {};
+            }
+          }
+          body = body || {};
+          this.anomalies = body.data || [];
+          this.totalItems = body.total || this.anomalies.length;
+          console.log('Loaded anomalies:', this.anomalies.length, 'total:', this.totalItems);
           this.isLoading = false;
         },
         error: (err) => {
@@ -103,7 +114,11 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   }
   
   onAcknowledgedFilter(value: string): void {
-    this.selectedAcknowledged = value;
+    if (value === '') {
+      this.selectedAcknowledged = null;
+    } else {
+      this.selectedAcknowledged = value === 'true';
+    }
     this.currentPage = 1;
     this.loadAnomalies();
   }
@@ -152,9 +167,13 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   acknowledgeSelected(): void {
     const ids = Array.from(this.selectedAnomalies);
     let completed = 0;
+    const userId = this.authService.currentUserValue?.idUser || 'system';
     
     ids.forEach(id => {
-      this.mlService.acknowledgeAnomaly(id)
+      this.anomaliesService.anomaliesControllerAcknowledge({ 
+        id, 
+        body: { acknowledgedBy: userId } 
+      })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -169,8 +188,12 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
     });
   }
   
-  acknowledgeOne(anomaly: AnomalyResponse): void {
-    this.mlService.acknowledgeAnomaly(anomaly.idAnomalyResult)
+  acknowledgeOne(anomaly: any): void {
+    const userId = this.authService.currentUserValue?.idUser || 'system';
+    this.anomaliesService.anomaliesControllerAcknowledge({ 
+      id: anomaly.idAnomalyResult, 
+      body: { acknowledgedBy: userId } 
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -224,7 +247,7 @@ export class AnomaliesListComponent implements OnInit, OnDestroy {
   
   clearFilters(): void {
     this.selectedGrade = '';
-    this.selectedAcknowledged = '';
+    this.selectedAcknowledged = null;
     this.searchTerm = '';
     this.currentPage = 1;
     this.loadAnomalies();

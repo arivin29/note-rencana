@@ -214,6 +214,37 @@ Status implementasi frontend per 2026-03-16:
   - delete selection
   - drag node
   - save penuh ke backend
+- property editing dasar juga sudah ada:
+  - edit metadata diagram
+  - edit property node dasar
+  - edit property edge dasar
+  - binding picker dasar dari backend
+  - edit binding display/unit/priority/primary
+  - threshold baseline channel di inspector
+- visual foundation dasar juga sudah ada:
+  - shared SCADA node frame
+  - custom `PipeEdge`
+  - live value + runtime badge di node
+  - warna pipa `raw` dan `treated`
+  - loading/empty overlay di canvas stage
+  - visual node tambahan `intake` dan `wtp`
+  - animasi flow dasar dan arah flow pada edge
+- hardening UX dasar juga sudah ada:
+  - discard confirm saat reset/pindah mode
+  - warning browser saat tab ditutup dengan perubahan lokal
+  - shortcut editor dasar untuk save, fit view, delete, dan clear selection
+  - retry load jika diagram gagal dimuat
+  - indikator `runtime degraded` tanpa menjatuhkan diagram yang sudah tampil
+- auth bridge sementara juga sudah ada:
+  - login langsung ke backend existing
+  - fallback bearer token manual
+  - fallback bearer dev via `.env.local`
+  - validasi session lewat `GET /api/auth/me`
+  - logout lokal dengan clear token
+- launcher routing dasar juga sudah aman:
+  - root app tidak lagi mengarah ke `diagramId=demo` palsu
+  - alias `demo` sekarang resolve ke diagram nyata pertama milik tenant aktif
+  - jika tenant belum punya diagram, launcher bisa membuat draft awal dan lanjut ke editor
 
 ---
 

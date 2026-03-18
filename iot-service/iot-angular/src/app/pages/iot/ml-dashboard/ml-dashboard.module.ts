@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { SharedComponentsModule } from '../../../shared/shared-components.module';
 
 // Main Dashboard
 import { MlDashboardPage } from './ml-dashboard';
-import { MlService } from './ml.service';
 
 // Components
 import { AnomaliesListComponent } from './components/anomalies-list';
@@ -40,10 +40,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     NgApexchartsModule,
+    SharedComponentsModule,
     RouterModule.forChild(routes)
-  ],
-  providers: [
-    MlService
   ],
   exports: [
     RouterModule

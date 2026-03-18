@@ -92,6 +92,7 @@ async function bootstrap() {
   // Enable CORS with specific origins
   app.enableCors({
     origin: [
+      'http://localhost:4300',           // Angular dev server
       'http://localhost:4200',           // Angular dev server
       'http://localhost:3000',           // Backend Swagger UI
       'https://devetek-helios.web.app',  // Firebase Hosting

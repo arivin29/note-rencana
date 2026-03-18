@@ -43,6 +43,10 @@ import { MlAnomaliesService } from './services/ml-anomalies.service';
 import { MlForecastsService } from './services/ml-forecasts.service';
 import { MlDashboardService } from './services/ml-dashboard.service';
 import { ReportsService } from './services/reports.service';
+import { SearchService } from './services/search.service';
+import { ScadaDiagramsService } from './services/scada-diagrams.service';
+import { ScadaRuntimeService } from './services/scada-runtime.service';
+import { ScadaBindingOptionsService } from './services/scada-binding-options.service';
 
 /**
  * Module that provides all services and configuration.
@@ -89,6 +93,10 @@ import { ReportsService } from './services/reports.service';
     MlForecastsService,
     MlDashboardService,
     ReportsService,
+    SearchService,
+    ScadaDiagramsService,
+    ScadaRuntimeService,
+    ScadaBindingOptionsService,
     ApiConfiguration
   ],
 })

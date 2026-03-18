@@ -52,6 +52,8 @@ Status implementasi 2026-03-16:
   - React Flow
   - Zustand
 - styling foundation saat ini masih CSS app-level ringan, belum Tailwind penuh
+- visual runtime baseline sekarang sudah langsung dirender di custom node/edge component
+- auth sementara juga sudah ada di app SCADA sebelum integrasi launcher Angular
 
 ### 3.1 Peran tiap stack
 
@@ -220,6 +222,22 @@ Status implementasi 2026-03-16:
   - add node
   - delete selection
   - mode toggle via top bar
+  - fit view
+- add node sekarang langsung diikuti auto-select ke node baru
+- shortcut dasar editor sekarang juga ada: `Ctrl/Cmd+S`, `Shift+F`, `Delete/Backspace`, `Escape`
+
+Status implementasi 2026-03-16 untuk `modules/nodes`:
+
+- `modules/nodes/scada-node.tsx` sudah menjadi shared node frame awal
+- node frame menampilkan glyph type, runtime badge, live value, dan freshness summary
+- baseline visual yang sudah dicakup: `intake`, `pump`, `valve`, `flowmeter`, `pressure`, `reservoir`, `wtp`, `junction`
+
+Status implementasi 2026-03-16 untuk `modules/edges`:
+
+- `modules/edges/pipe-edge.tsx` sudah aktif sebagai custom edge utama
+- warna pipa sudah dibedakan untuk `raw` dan `treated`
+- arah flow sekarang ikut tampil di edge label
+- animasi flow dasar sekarang aktif saat edge `animated = true`
 
 ### 6.8 `modules/properties`
 
@@ -233,7 +251,13 @@ Tanggung jawab:
 Status implementasi 2026-03-16:
 
 - inspector panel dasar sudah context-sensitive terhadap selection
-- saat ini panel baru menampilkan ringkasan diagram, mode, runtime, dan selection
+- panel diagram sudah bisa edit metadata dasar
+- panel node sudah bisa edit label/type/size
+- panel edge sudah bisa edit label/pipe type/flow direction
+- binding editor dasar sudah tersambung ke lookup backend
+- binding editor sekarang juga bisa mengubah display label, unit override, priority, dan primary flag
+- threshold baseline channel sekarang ditampilkan di inspector sebagai referensi editor
+- panel edge sekarang juga bisa toggle `animated` untuk flow visualization dasar
 
 ### 6.9 `modules/runtime`
 
@@ -244,6 +268,13 @@ Tanggung jawab:
 - status evaluation
 - mapping binding ke node presentation state
 
+Status implementasi 2026-03-16:
+
+- polling runtime by `diagramId` sudah aktif
+- snapshot runtime dipetakan ke node data sebelum render React Flow
+- node membaca binding runtime primer untuk badge status dan live reading
+- runtime error sekarang dipisah dari diagram load error agar UX failover lebih jelas
+
 ### 6.10 `modules/bindings`
 
 Tanggung jawab:
@@ -251,6 +282,12 @@ Tanggung jawab:
 - binding editor UI
 - binding option resolver
 - sensor channel lookup data
+
+Status implementasi 2026-03-16:
+
+- hook binding options dasar sudah dibuat
+- lookup memakai `GET /api/scada/binding-options`
+- picker saat ini masih sederhana, tetapi sudah cukup untuk foundation editor
 
 ### 6.11 `modules/alarms`
 
@@ -289,6 +326,9 @@ Status implementasi 2026-03-16:
   - `/scada/diagrams/:diagramId/view`
   - `/scada/diagrams/:diagramId/edit`
 - page engine yang dipakai saat ini adalah `ScadaDiagramPage`
+- route ini sekarang dibungkus auth gate sementara di level app router
+- root app dan alias `/scada/diagrams/demo/:mode` sekarang resolve ke diagram valid pertama dari `GET /api/scada/diagrams`
+- jika list diagram kosong, launcher bisa membuat draft diagram pertama lalu redirect ke editor
 
 ---
 
@@ -379,6 +419,7 @@ Status implementasi 2026-03-16:
   - remove edge
   - commit hasil save ke snapshot saved
 - commit saved snapshot
+- stage canvas juga sudah menangani loading overlay dan empty diagram overlay
 
 ### 9.2 `useRuntimeStore`
 
@@ -390,6 +431,11 @@ Tanggung jawab:
 - set polling state
 - clear runtime
 
+Status implementasi 2026-03-16:
+
+- store runtime saat ini menyimpan snapshot hasil polling, status polling, dan error banner dasar
+- store runtime sekarang juga memisahkan `diagramError`, `runtimeError`, dan `lastSuccessAt`
+
 ### 9.3 `useUiStore`
 
 Tanggung jawab:
@@ -399,6 +445,10 @@ Tanggung jawab:
 - drawer/panel visibility
 - active tool
 - dialog visibility
+
+Status implementasi 2026-03-16:
+
+- UI store saat ini juga memegang trigger `fitView` agar viewport action tidak mencampur diagram state
 
 ---
 
@@ -476,6 +526,10 @@ Rekomendasi:
 7. replace `saved` and `working` snapshot
 8. `isDirty = false`
 
+Status implementasi 2026-03-16:
+
+- sebelum reload tab atau pindah mode dari editor, user sekarang diperingatkan jika masih ada perubahan lokal
+
 ### 12.3 Runtime flow
 
 1. runtime timer tick
@@ -493,6 +547,12 @@ Agar render tetap sehat:
 - React Flow memegang nodes dan edges visual
 - runtime snapshot dipetakan ke data node yang dibutuhkan untuk render
 - hindari memaksa seluruh page rerender tiap polling
+
+Status implementasi 2026-03-16:
+
+- canvas wrapper saat ini memang masih memetakan runtime ke nodes di page-level memo
+- ini cukup untuk baseline MVP, tetapi masih perlu dicek lagi jika jumlah node sudah besar
+- registry `nodeTypes` dan `edgeTypes` sekarang sudah distabilkan di module scope untuk mengurangi rerender noise
 
 ### 13.1 Prinsip render
 
@@ -514,6 +574,10 @@ Tampilkan:
 - bindings
 - thresholds
 - visual config
+
+Status implementasi 2026-03-16:
+
+- inspector node saat ini sudah menampilkan editor bindings dan threshold baseline per channel
 
 ### 14.2 Jika edge dipilih
 
@@ -570,6 +634,15 @@ Minimal service:
 - `scadaRuntimeApi`
 - `scadaBindingApi` bila perlu lookup terpisah
 
+Status implementasi 2026-03-16:
+
+- service auth sementara juga sudah ditambahkan:
+  - login ke `/api/auth/login`
+  - profile check ke `/api/auth/me`
+  - bearer token disimpan lokal untuk request SCADA frontend
+  - fallback token dev juga bisa dibaca dari `VITE_SCADA_DEV_BEARER`
+- launcher juga sudah memakai `GET /api/scada/diagrams` dan `POST /api/scada/diagrams` untuk bootstrap diagram pertama tenant
+
 Jangan biarkan komponen UI memanggil fetch langsung secara acak.
 
 ---
@@ -604,6 +677,12 @@ Frontend harus menangani minimal:
 - save gagal: tampil notification dan pertahankan working state
 - runtime gagal: tampil indicator runtime issue, jangan hilangkan diagram
 
+Status implementasi 2026-03-16:
+
+- jika load awal gagal, stage sekarang menampilkan full-state error
+- save/runtime error saat diagram sudah ada tetap ditampilkan sebagai banner non-blocking
+- load failure sekarang juga menyediakan action retry eksplisit dari stage overlay
+
 ---
 
 ## 19. Mobile approach
@@ -617,6 +696,11 @@ Frontend architecture harus memberi ruang:
 
 - responsive shell
 - inspector dapat berubah menjadi bottom sheet
+
+Catatan UX implementasi 2026-03-16:
+
+- mode `view` dan `edit` sekarang sudah terasa lebih tegas karena interaksi destructive tersimpan di mode edit
+- viewer tetap bisa dipakai untuk inspect tanpa menampilkan tool rail editor
 
 ---
 
@@ -643,6 +727,11 @@ Baseline frontend architecture yang direkomendasikan:
 - inspector context-sensitive
 - tool rail kiri kecil saat edit
 - drawer/property panel on-demand
+
+Catatan sementara 2026-03-16:
+
+- sebelum Angular launcher diintegrasikan, auth bridge lokal di `iot-scada` dianggap solusi sementara yang aman untuk development dan demo internal
+- `.env.example` dan `.gitignore` lokal juga sudah disiapkan agar bearer dev tidak masuk file tracked
 
 Jika baseline ini diterima, langkah berikut yang paling logis adalah:
 

@@ -162,14 +162,14 @@ import { AlertService } from './service/alert.service';
 })
 
 export class AppModule {
-    title: string = 'HUD';
+    title: string = 'Devetek Helios';
 
     constructor(private router: Router, private titleService: Title, private route: ActivatedRoute) {
         router.events.subscribe((e) => {
             if (e instanceof NavigationEnd) {
                 const pageTitle = this.getDeepestTitle(this.route);
                 if (pageTitle) {
-                    this.title = 'HUD | ' + pageTitle;
+                    this.title = pageTitle + ' | Devetek Helios';
                 }
                 this.titleService.setTitle(this.title);
 

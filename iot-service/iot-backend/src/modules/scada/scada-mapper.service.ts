@@ -123,6 +123,8 @@ export class ScadaMapperService {
       transform: binding.transformJson,
       priorityOrder: binding.priorityOrder,
       isPrimary: binding.isPrimary,
+      showTrend: binding.showTrend ?? false,
+      trendHours: binding.trendHours ?? 1,
     };
   }
 

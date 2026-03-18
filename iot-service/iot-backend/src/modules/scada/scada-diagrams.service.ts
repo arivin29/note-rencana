@@ -278,6 +278,8 @@ export class ScadaDiagramsService {
                 transformJson: binding.transformJson,
                 priorityOrder: binding.priorityOrder,
                 isPrimary: binding.isPrimary,
+                showTrend: binding.showTrend ?? false,
+                trendHours: binding.trendHours ?? 1,
                 isActive: true,
               }),
             ),
@@ -480,6 +482,8 @@ export class ScadaDiagramsService {
           transformJson: bindingPayload.transform ?? null,
           priorityOrder: bindingPayload.priorityOrder ?? 0,
           isPrimary: bindingPayload.isPrimary ?? false,
+          showTrend: bindingPayload.showTrend ?? false,
+          trendHours: bindingPayload.trendHours ?? 1,
           isActive: true,
         }),
       );
