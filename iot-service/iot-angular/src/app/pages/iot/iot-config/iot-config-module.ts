@@ -6,6 +6,7 @@ import { IotConfigRoutingModule } from './iot-config-routing-module';
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { IotConfigHomePage } from './iot-config-home/iot-config-home';
 import { NodeModelDrawerComponent } from './iot-config-home/node-models/node-model-drawer/node-model-drawer.component';
+import { NodeModelCommandDrawerComponent } from './iot-config-home/node-models/node-model-command-drawer/node-model-command-drawer.component';
 import { NodeModelDetailPage } from './iot-config-home/node-models/node-model-detail/node-model-detail';
 import { NodeModelsPage } from './iot-config-home/node-models/node-models';
 import { SensorTypesPage } from './iot-config-home/sensor-types/sensor-types';
@@ -20,6 +21,7 @@ import { ChannelsConfigEditorComponent } from './iot-config-home/sensor-catalogs
     declarations: [
         IotConfigHomePage,
         NodeModelDrawerComponent,
+        NodeModelCommandDrawerComponent,
         NodeModelsPage,
         SensorTypesPage,
         SensorTypeDrawerComponent,

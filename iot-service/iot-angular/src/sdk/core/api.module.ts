@@ -11,6 +11,7 @@ import { AuthenticationService } from './services/authentication.service';
 import { OwnersService } from './services/owners.service';
 import { ProjectsService } from './services/projects.service';
 import { NodeModelsService } from './services/node-models.service';
+import { NodeModelCommandsService } from './services/node-model-commands.service';
 import { SensorTypesService } from './services/sensor-types.service';
 import { SensorCatalogsService } from './services/sensor-catalogs.service';
 import { NodeLocationsService } from './services/node-locations.service';
@@ -61,6 +62,7 @@ import { ScadaBindingOptionsService } from './services/scada-binding-options.ser
     OwnersService,
     ProjectsService,
     NodeModelsService,
+    NodeModelCommandsService,
     SensorTypesService,
     SensorCatalogsService,
     NodeLocationsService,

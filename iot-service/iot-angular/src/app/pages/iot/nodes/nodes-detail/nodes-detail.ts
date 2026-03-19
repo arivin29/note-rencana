@@ -14,6 +14,8 @@ import { SensorLogsService } from '../../../../../sdk/core/services/sensor-logs.
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
 import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
 import { IoTLogsService } from '../../../../../sdk/core/services/io-t-logs.service';
+import { NodeModelCommandsService } from '../../../../../sdk/core/services/node-model-commands.service';
+import { NodeModelCommandResponseDto } from '../../../../../sdk/core/models/node-model-command-response-dto';
 
 interface IoTLogItem {
     id: string;
@@ -119,6 +121,7 @@ export class NodesDetailPage implements OnInit, OnChanges {
         projectId: '',
         project: '',
         projectCode: '',
+        idNodeModel: '',
         model: '',
         protocol: '',
         firmware: '',
@@ -165,6 +168,11 @@ export class NodesDetailPage implements OnInit, OnChanges {
     selectedLog: IoTLogItem | null = null;
     logDrawerOpen = false;
 
+    // Node Model Commands
+    nodeModelCommands: NodeModelCommandResponseDto[] = [];
+    commandsLoading = false;
+    commandsError = '';
+
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -172,7 +180,8 @@ export class NodesDetailPage implements OnInit, OnChanges {
         private sensorLogsService: SensorLogsService,
         private sensorsService: SensorsService,
         private sensorChannelsService: SensorChannelsService,
-        private iotLogsService: IoTLogsService
+        private iotLogsService: IoTLogsService,
+        private commandsService: NodeModelCommandsService
     ) {
         // Only subscribe to route params if not in embedded mode
         this.route.paramMap.subscribe((params) => {
@@ -244,6 +253,7 @@ export class NodesDetailPage implements OnInit, OnChanges {
                     projectId: node.project?.idProject || '',
                     project: node.project?.name || 'Unknown Project',
                     projectCode: node.project?.areaType || '-',
+                    idNodeModel: node.idNodeModel || node.nodeModel?.idNodeModel || '',
                     model: node.nodeModel?.modelName || '-',
                     protocol: node.nodeModel?.protocol?.toUpperCase() || '-',
                     firmware: node.firmwareVersion || 'N/A',
@@ -356,6 +366,11 @@ export class NodesDetailPage implements OnInit, OnChanges {
                 // Load IoT Logs
                 if (this.nodeId) {
                     this.loadIoTLogs();
+                }
+
+                // Load Node Model Commands
+                if (this.nodeMeta.idNodeModel) {
+                    this.loadNodeModelCommands(this.nodeMeta.idNodeModel);
                 }
             },
             error: (err) => {
@@ -802,6 +817,60 @@ export class NodesDetailPage implements OnInit, OnChanges {
                 this.iotLogsLoading = false;
             }
         });
+    }
+
+    /**
+     * Load command templates for this node's model
+     */
+    loadNodeModelCommands(idNodeModel: string): void {
+        if (!idNodeModel) return;
+
+        this.commandsLoading = true;
+        this.commandsError = '';
+
+        this.commandsService.nodeModelCommandsControllerFindByNodeModel({
+            idNodeModel
+        }).subscribe({
+            next: (response: any) => {
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                this.nodeModelCommands = Array.isArray(data) ? data : (data?.data || []);
+                this.commandsLoading = false;
+            },
+            error: (err) => {
+                console.error('Error loading commands:', err);
+                this.commandsError = err.message || 'Failed to load commands';
+                this.nodeModelCommands = [];
+                this.commandsLoading = false;
+            }
+        });
+    }
+
+    /**
+     * Execute a command - generates the command string with placeholders replaced
+     */
+    executeCommand(cmd: NodeModelCommandResponseDto): void {
+        const template = cmd.template || '';
+        const resolvedCmd = template
+            .replace(/\{device_id\}/g, this.nodeUuid)
+            .replace(/\{serial\}/g, this.nodeId)
+            .replace(/\{cmd\}/g, cmd.code);
+
+        if (cmd.channel === 'sms' && this.nodeMeta.picPhone) {
+            // Open SMS app with pre-filled message
+            const smsUrl = `sms:${this.nodeMeta.picPhone}?body=${encodeURIComponent(resolvedCmd)}`;
+            window.open(smsUrl, '_blank');
+        } else if (cmd.channel === 'call' && this.nodeMeta.picPhone) {
+            // Open phone dialer
+            window.open(`tel:${this.nodeMeta.picPhone}`, '_blank');
+        } else if (cmd.channel === 'telegram') {
+            // Copy command to clipboard for telegram
+            navigator.clipboard.writeText(resolvedCmd).then(() => {
+                alert(`Command copied to clipboard:\n\n${resolvedCmd}`);
+            });
+        } else {
+            // For MQTT/HTTP, just show the resolved command
+            alert(`Command Template:\n\n${resolvedCmd}\n\nChannel: ${cmd.channel.toUpperCase()}`);
+        }
     }
 
     /**

@@ -87,6 +87,7 @@ interface ChannelOption {
   sensorCode: string
   nodeName: string
   nodeCode: string
+  nodeAddress: string
   projectName: string
   category: string
   unit: string
@@ -320,8 +321,9 @@ function BindingsTab({ nodeId }: { nodeId: string }) {
         metricCode: ch.metricCode ?? '',
         sensorName: ch.sensor?.label ?? ch.sensor?.name ?? ch.metricCode ?? 'Unknown',
         sensorCode: ch.sensor?.sensorCode ?? '',
-        nodeName: ch.node?.name ?? '',
+        nodeName: ch.node?.name || ch.node?.address || '',
         nodeCode: ch.node?.code ?? '',
+        nodeAddress: ch.node?.address || '',
         projectName: ch.project?.name ?? '',
         category: ch.sensorType?.category ?? ch.sensorType?.name ?? '',
         unit: ch.unit ?? ch.sensorType?.defaultUnit ?? '',
@@ -463,7 +465,6 @@ function BindingsTab({ nodeId }: { nodeId: string }) {
                 const alreadyBound = bindings.some((b) => b.sensorChannelId === ch.channelId)
                 // Build the best display name
                 const displayName = ch.sensorName || ch.metricCode || 'Unnamed Channel'
-                const deviceLabel = ch.nodeCode || ch.nodeName || ''
                 return (
                   <button
                     key={ch.channelId}
@@ -489,24 +490,45 @@ function BindingsTab({ nodeId }: { nodeId: string }) {
                       {ch.unit && <span className="bg-surface px-1 py-0.5 rounded text-[10px]">{ch.unit}</span>}
                       {ch.category && <span className="text-[10px] truncate">{ch.category}</span>}
                     </div>
-                    {(deviceLabel || ch.projectName) && (
+                    {/* Node info row: code + name/address */}
+                    {(ch.nodeCode || ch.nodeName) && (
                       <div className="flex items-center gap-1.5 mt-1 text-[10px] text-[var(--text-muted)]">
-                        {deviceLabel && (
-                          <span className="flex items-center gap-0.5">
+                        {ch.nodeCode && (
+                          <span className="flex items-center gap-0.5 font-mono">
                             <svg viewBox="0 0 10 10" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
                               <rect x="1" y="2" width="8" height="6" rx="1" />
                             </svg>
-                            {deviceLabel}
+                            {ch.nodeCode}
                           </span>
                         )}
-                        {ch.projectName && (
-                          <span className="flex items-center gap-0.5">
+                        {ch.nodeName && (
+                          <span className="flex items-center gap-0.5 text-accent/80">
                             <svg viewBox="0 0 10 10" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                              <path d="M2 8V3l3-1.5L8 3v5" />
+                              <path d="M5 1C3.3 1 2 2.3 2 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" />
+                              <circle cx="5" cy="4" r="1" />
                             </svg>
-                            {ch.projectName}
+                            {ch.nodeName}
                           </span>
                         )}
+                      </div>
+                    )}
+                    {/* Address row (if different from name) */}
+                    {ch.nodeAddress && ch.nodeAddress !== ch.nodeName && (
+                      <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-[var(--text-muted)] pl-0.5">
+                        <svg viewBox="0 0 10 10" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <path d="M5 1C3.3 1 2 2.3 2 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" />
+                          <circle cx="5" cy="4" r="1" />
+                        </svg>
+                        {ch.nodeAddress}
+                      </div>
+                    )}
+                    {/* Project row */}
+                    {ch.projectName && (
+                      <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-[var(--text-muted)]">
+                        <svg viewBox="0 0 10 10" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                          <path d="M2 8V3l3-1.5L8 3v5" />
+                        </svg>
+                        {ch.projectName}
                       </div>
                     )}
                     {(ch.minThreshold != null || ch.maxThreshold != null) && (

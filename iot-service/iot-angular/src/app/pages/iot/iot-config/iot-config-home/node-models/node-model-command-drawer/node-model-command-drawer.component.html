@@ -1,0 +1,137 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="handleBackdropClick()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">{{ mode === 'edit' ? 'Update Command' : 'New Command' }}</div>
+      <h5 class="mb-0">{{ drawerTitle }}</h5>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="handleCloseClick($event)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+  <div class="config-drawer-body">
+    <form #commandForm="ngForm" (ngSubmit)="handleSubmit(commandForm.valid ?? false)">
+      
+      <!-- Code -->
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Code <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="code" 
+               [(ngModel)]="formModel.code" 
+               required
+               placeholder="e.g., RELAY_ON, STATUS, RESET">
+        <small class="text-muted">Unique identifier for this command</small>
+      </div>
+
+      <!-- Label -->
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Label <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="label" 
+               [(ngModel)]="formModel.label" 
+               required
+               placeholder="e.g., Turn Relay ON">
+        <small class="text-muted">Human-readable name shown in UI</small>
+      </div>
+
+      <!-- Channel -->
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Channel <span class="text-danger">*</span></label>
+        <select class="form-select" name="channel" [(ngModel)]="formModel.channel" required>
+          <option *ngFor="let opt of channelOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+        </select>
+        <small class="text-muted">Communication method to send command</small>
+      </div>
+
+      <!-- Template -->
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Template <span class="text-danger">*</span></label>
+        <textarea class="form-control font-monospace" name="template" 
+                  [(ngModel)]="formModel.template" 
+                  required
+                  rows="3"
+                  placeholder="CMD {device_id} {cmd}"></textarea>
+        <small class="text-muted">
+          Use placeholders: <code>&#123;device_id&#125;</code>, <code>&#123;serial&#125;</code>, <code>&#123;cmd&#125;</code>
+        </small>
+      </div>
+
+      <!-- Config JSON -->
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Config (JSON)</label>
+        <textarea class="form-control font-monospace" name="configJson"
+                  [(ngModel)]="configJson"
+                  (blur)="validateConfig()"
+                  rows="3"
+                  placeholder='{"topic": "cmd/device", "method": "POST"}'></textarea>
+        <small class="text-danger" *ngIf="configError">{{ configError }}</small>
+        <small class="text-muted" *ngIf="!configError">
+          Channel-specific config (mqtt: topic, http: method/url)
+        </small>
+      </div>
+
+      <hr class="my-3">
+
+      <!-- Icon & Color -->
+      <div class="row">
+        <div class="col-6">
+          <div class="mb-3">
+            <label class="form-label text-muted text-uppercase small">Icon</label>
+            <select class="form-select" name="icon" [(ngModel)]="formModel.icon">
+              <option *ngFor="let opt of iconOptions" [ngValue]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="mb-3">
+            <label class="form-label text-muted text-uppercase small">Color</label>
+            <select class="form-select" name="color" [(ngModel)]="formModel.color">
+              <option *ngFor="let opt of colorOptions" [ngValue]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="mb-3 p-3 bg-light rounded d-flex align-items-center gap-2">
+        <i class="fa {{ formModel.icon }}" [ngClass]="'text-' + formModel.color"></i>
+        <span>{{ formModel.label || 'Command Preview' }}</span>
+        <span class="badge ms-auto" 
+              [ngClass]="{
+                'bg-success': formModel.channel === 'sms',
+                'bg-info': formModel.channel === 'mqtt',
+                'bg-warning': formModel.channel === 'http',
+                'bg-primary': formModel.channel === 'call',
+                'bg-secondary': formModel.channel === 'telegram'
+              }">
+          {{ formModel.channel | uppercase }}
+        </span>
+      </div>
+
+      <!-- Sort Order -->
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Sort Order</label>
+        <input type="number" class="form-control" name="sortOrder" 
+               [(ngModel)]="formModel.sortOrder" 
+               min="0">
+      </div>
+
+      <!-- Active Toggle -->
+      <div class="form-check form-switch mb-4">
+        <input class="form-check-input" type="checkbox" role="switch" name="isActive"
+          [(ngModel)]="formModel.isActive" id="isActiveSwitch">
+        <label class="form-check-label" for="isActiveSwitch">Active</label>
+      </div>
+
+      <!-- Submit Buttons -->
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="close.emit()">Cancel</button>
+        <button type="submit" class="btn btn-theme flex-fill" [disabled]="commandForm.invalid || configError">
+          {{ submitButtonLabel }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
