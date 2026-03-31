@@ -143,6 +143,97 @@
     </div> 
 </card>
 
+<!-- Commands Section -->
+<card class="shadow-sm mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+            <i class="fa fa-terminal me-2 text-theme"></i>
+            Command Templates
+        </h4>
+        <button class="btn btn-theme btn-sm" (click)="openCommandDrawer()">
+            <i class="fa fa-plus me-1"></i>
+            Add Command
+        </button>
+    </div>
+    <div class="card-body">
+        <!-- Commands Loading -->
+        <div *ngIf="commandsLoading" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-theme" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-2 text-muted">Loading commands...</span>
+        </div>
+
+        <!-- Commands Error -->
+        <div *ngIf="commandsError && !commandsLoading" class="alert alert-danger alert-sm">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            {{ commandsError }}
+        </div>
+
+        <!-- Commands Empty -->
+        <div *ngIf="!commandsLoading && !commandsError && commands.length === 0" class="text-center py-4 text-muted">
+            <i class="fa fa-terminal fa-2x mb-2 opacity-50"></i>
+            <p class="mb-0">No command templates defined yet.</p>
+            <small>Add commands like SMS, MQTT, or HTTP to control this device model.</small>
+        </div>
+
+        <!-- Commands Table -->
+        <div *ngIf="!commandsLoading && commands.length > 0" class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="text-uppercase text-muted small">
+                    <tr>
+                        <th style="width: 50px;"></th>
+                        <th>Code</th>
+                        <th>Label</th>
+                        <th>Channel</th>
+                        <th>Template</th>
+                        <th class="text-center" style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let cmd of commands" [class.opacity-50]="!cmd.isActive">
+                        <td class="text-center">
+                            <i class="fa {{ cmd.icon || 'fa-terminal' }}" 
+                               [ngClass]="'text-' + (cmd.color || 'primary')"></i>
+                        </td>
+                        <td><code>{{ cmd.code }}</code></td>
+                        <td>{{ cmd.label }}</td>
+                        <td>
+                            <span class="badge" 
+                                  [ngClass]="{
+                                    'bg-success': cmd.channel === 'sms',
+                                    'bg-info': cmd.channel === 'mqtt',
+                                    'bg-warning': cmd.channel === 'http',
+                                    'bg-primary': cmd.channel === 'call',
+                                    'bg-secondary': cmd.channel === 'telegram'
+                                  }">
+                                {{ cmd.channel | uppercase }}
+                            </span>
+                        </td>
+                        <td>
+                            <code class="small text-truncate d-inline-block" style="max-width: 200px;">
+                                {{ cmd.template }}
+                            </code>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-warning me-1" 
+                                    (click)="openCommandDrawer(cmd)" 
+                                    title="Edit">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    (click)="deleteCommand(cmd)" 
+                                    title="Delete">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</card>
+
 </div>
 <!-- End Content -->
 
@@ -160,3 +251,13 @@
   (save)="handleDrawerSave($event)" 
   (close)="closeDrawer()">
 </app-node-model-drawer>
+
+<!-- Command Drawer -->
+<app-node-model-command-drawer
+  [isOpen]="isCommandDrawerOpen"
+  [mode]="editingCommand ? 'edit' : 'create'"
+  [existingCommand]="editingCommand"
+  [channelOptions]="channelOptions"
+  (save)="handleCommandSave($event)"
+  (close)="closeCommandDrawer()">
+</app-node-model-command-drawer>

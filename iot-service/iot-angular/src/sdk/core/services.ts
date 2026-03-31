@@ -7,6 +7,7 @@ export { AuthenticationService } from './services/authentication.service';
 export { OwnersService } from './services/owners.service';
 export { ProjectsService } from './services/projects.service';
 export { NodeModelsService } from './services/node-models.service';
+export { NodeModelCommandsService } from './services/node-model-commands.service';
 export { SensorTypesService } from './services/sensor-types.service';
 export { SensorCatalogsService } from './services/sensor-catalogs.service';
 export { NodeLocationsService } from './services/node-locations.service';

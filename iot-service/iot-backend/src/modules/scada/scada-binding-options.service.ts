@@ -76,7 +76,8 @@ export class ScadaBindingOptionsService {
       node: {
         idNode: channel.sensor.node.idNode,
         code: channel.sensor.node.code,
-        name: channel.sensor.node.name,
+        name: channel.sensor.node.name || channel.sensor.node.address || null,
+        address: channel.sensor.node.address,
       },
       project: {
         idProject: channel.sensor.node.project.idProject,

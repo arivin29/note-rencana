@@ -116,7 +116,8 @@ function CanvasInner() {
   }, [storeEdges])
 
   // Handle ALL node changes locally (so React Flow can track dimensions).
-  // Only sync position-drag-end and removes back to Zustand store.
+  // Only sync position-drag-end back to Zustand store.
+  // NOTE: Removes are handled by onDelete callback, not here
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     // Apply all changes to local RF state (dimensions, select, position, etc.)
     setRfNodes((nds) => applyNodeChanges(changes, nds))
@@ -136,22 +137,19 @@ function CanvasInner() {
       setStoreNodes(updated)
     }
 
-    // Sync removes to store
-    const removes = changes.filter((c) => c.type === 'remove')
-    if (removes.length > 0) {
-      removes.forEach((c) => removeNode(c.id))
-    }
-  }, [setStoreNodes, removeNode])
+    // NOTE: Don't call removeNode here — it's handled by onDelete callback
+    // Calling it here causes infinite loop because:
+    // 1. removeNode updates store
+    // 2. useEffect syncs store → rfNodes
+    // 3. React Flow detects change → triggers onNodesChange again
+    // 4. onNodesChange calls removeNode again → infinite loop
+  }, [setStoreNodes])
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
     setRfEdges((eds) => applyEdgeChanges(changes, eds))
-
-    // Sync removes to store
-    const removes = changes.filter((c) => c.type === 'remove')
-    if (removes.length > 0) {
-      removes.forEach((c) => removeEdge(c.id))
-    }
-  }, [removeEdge])
+    // NOTE: Don't call removeEdge here — it's handled by onDelete callback
+    // Same reasoning as onNodesChange to avoid infinite loop
+  }, [])
 
   const onConnect = useCallback((connection: Connection) => {
     if (mode !== 'edit') return

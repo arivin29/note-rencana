@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { OwnersModule } from './modules/owners/owners.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { NodeModelsModule } from './modules/node-models/node-models.module';
+import { NodeModelCommandsModule } from './modules/node-model-commands/node-model-commands.module';
 import { SensorTypesModule } from './modules/sensor-types/sensor-types.module';
 import { SensorCatalogsModule } from './modules/sensor-catalogs/sensor-catalogs.module';
 import { NodeLocationsModule } from './modules/node-locations/node-locations.module';
@@ -83,6 +84,7 @@ import * as entities from './entities';
     OwnersModule,
     ProjectsModule,
     NodeModelsModule,
+    NodeModelCommandsModule,
     SensorTypesModule,
     SensorCatalogsModule,
     NodeLocationsModule,

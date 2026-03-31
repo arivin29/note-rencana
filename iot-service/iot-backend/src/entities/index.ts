@@ -7,6 +7,7 @@ export { Owner } from './owner.entity';
 export { Project } from './project.entity';
 export { NodeLocation } from './node-location.entity';
 export { NodeModel } from './node-model.entity';
+export { NodeModelCommand, CommandChannel } from './node-model-command.entity';
 export { Node } from './node.entity';
 export { NodeAssignment } from './node-assignment.entity';
 export { SensorType } from './sensor-type.entity';

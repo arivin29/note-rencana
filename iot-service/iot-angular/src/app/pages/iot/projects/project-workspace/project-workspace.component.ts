@@ -39,6 +39,7 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
   
   // Sidebar state
   sidebarCollapsed = false;
+  mobileSidebarOpen = false;
   
   // Asset tree data
   assetTree: AssetTreeNode[] = [];
@@ -320,6 +321,14 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     localStorage.setItem('projectSidebarCollapsed', String(this.sidebarCollapsed));
   }
   
+  toggleMobileSidebar() {
+    this.mobileSidebarOpen = !this.mobileSidebarOpen;
+  }
+  
+  closeMobileSidebar() {
+    this.mobileSidebarOpen = false;
+  }
+  
   toggleTreeNode(node: AssetTreeNode) {
     node.expanded = !node.expanded;
     
@@ -353,6 +362,9 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
         }
         break;
     }
+    
+    // Close mobile sidebar after navigation
+    this.closeMobileSidebar();
   }
   
   findParentNode(sensorId: string): AssetTreeNode | null {
@@ -372,6 +384,7 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
   
   navigateTo(path: string) {
     this.router.navigate([path], { relativeTo: this.route });
+    this.closeMobileSidebar();
   }
   
   toggleNavItem(item: NavItem, event: MouseEvent) {
@@ -389,6 +402,7 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
   
   navigateToDashboard(dashboardId: string) {
     this.router.navigate(['monitor', dashboardId], { relativeTo: this.route });
+    this.closeMobileSidebar();
   }
   
   // --- Layer tree methods (for map page) ---

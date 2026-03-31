@@ -461,6 +461,106 @@ const SchematicGlyph: Record<string, React.ReactNode> = {
       <line x1="44" y1="52" x2="44" y2="56" strokeWidth={2} />
     </svg>
   ),
+
+  // ══════════════════════════════════════════════════════════════
+  // ADDITIONAL SCHEMATIC GLYPHS (64x64 P&ID style)
+  // ══════════════════════════════════════════════════════════════
+
+  generator: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="0" y1="32" x2="10" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="54" y1="32" x2="64" y2="32" strokeWidth={3} opacity={0.5} />
+      <circle cx="32" cy="32" r="22" strokeWidth={2.5} />
+      <text x="32" y="40" textAnchor="middle" fill="currentColor" fontSize="22" stroke="none" fontWeight="bold">G</text>
+    </svg>
+  ),
+
+  tank: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="0" y1="32" x2="8" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="56" y1="32" x2="64" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="32" y1="0" x2="32" y2="6" strokeWidth={3} opacity={0.5} />
+      <line x1="32" y1="58" x2="32" y2="64" strokeWidth={3} opacity={0.5} />
+      <rect x="8" y="6" width="48" height="52" rx="6" strokeWidth={2.5} />
+      <path d="M8 28h48" strokeDasharray="3 2" opacity={0.4} />
+      <rect x="10" y="28" width="44" height="28" rx="2" fill="currentColor" opacity={0.08} stroke="none" />
+    </svg>
+  ),
+
+  alarm: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <path d="M28 8L8 52a4 4 0 003.4 6h41.2a4 4 0 003.4-6L36 8a4 4 0 00-8 0z" strokeWidth={2.5} />
+      <path d="M32 24v12" strokeWidth={3} strokeLinecap="round" />
+      <circle cx="32" cy="44" r="2" fill="currentColor" />
+    </svg>
+  ),
+
+  level_sensor: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="32" y1="0" x2="32" y2="8" strokeWidth={3} opacity={0.5} />
+      <line x1="32" y1="56" x2="32" y2="64" strokeWidth={3} opacity={0.5} />
+      <rect x="10" y="8" width="44" height="48" rx="4" strokeWidth={2.5} />
+      <path d="M10 36h44" strokeDasharray="3 2" opacity={0.4} />
+      <rect x="12" y="36" width="40" height="18" fill="currentColor" opacity={0.1} stroke="none" />
+      <text x="32" y="26" textAnchor="middle" fill="currentColor" fontSize="12" stroke="none" fontWeight="bold">LT</text>
+    </svg>
+  ),
+
+  ph_sensor: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="32" y1="0" x2="32" y2="10" strokeWidth={3} opacity={0.5} />
+      <rect x="14" y="10" width="36" height="48" rx="4" strokeWidth={2.5} />
+      <circle cx="32" cy="28" r="12" strokeWidth={2} />
+      <text x="32" y="33" textAnchor="middle" fill="currentColor" fontSize="12" stroke="none" fontWeight="bold">pH</text>
+      <rect x="20" y="44" width="24" height="8" rx="2" fill="currentColor" opacity={0.1} stroke="currentColor" strokeWidth={1.5} />
+    </svg>
+  ),
+
+  hydrant: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="32" y1="56" x2="32" y2="64" strokeWidth={3} opacity={0.5} />
+      <rect x="22" y="26" width="20" height="30" rx="3" strokeWidth={2.5} />
+      <circle cx="32" cy="16" r="10" strokeWidth={2.5} />
+      <path d="M10 38h12M42 38h12" strokeWidth={2.5} strokeLinecap="round" />
+      <line x1="20" y1="56" x2="44" y2="56" strokeWidth={2.5} />
+    </svg>
+  ),
+
+  wwtp: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="0" y1="32" x2="6" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="58" y1="32" x2="64" y2="32" strokeWidth={3} opacity={0.5} />
+      <rect x="6" y="14" width="52" height="36" rx="4" strokeWidth={2.5} />
+      <circle cx="20" cy="32" r="10" fill="currentColor" opacity={0.1} stroke="currentColor" strokeWidth={2} />
+      <circle cx="44" cy="32" r="10" fill="currentColor" opacity={0.1} stroke="currentColor" strokeWidth={2} />
+      <path d="M30 32h4" strokeWidth={2} />
+      <text x="32" y="58" textAnchor="middle" fill="currentColor" fontSize="8" stroke="none" fontWeight="bold">WWTP</text>
+    </svg>
+  ),
+
+  water_tower: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="32" y1="58" x2="32" y2="64" strokeWidth={3} opacity={0.5} />
+      <ellipse cx="32" cy="16" rx="22" ry="10" strokeWidth={2.5} />
+      <path d="M10 16v8c0 5 10 9 22 9s22-4 22-9v-8" strokeWidth={2.5} />
+      <line x1="16" y1="33" x2="12" y2="58" strokeWidth={2.5} />
+      <line x1="48" y1="33" x2="52" y2="58" strokeWidth={2.5} />
+      <line x1="32" y1="33" x2="32" y2="58" strokeWidth={2} opacity={0.5} />
+      <line x1="14" y1="46" x2="50" y2="46" strokeWidth={1.5} opacity={0.4} />
+    </svg>
+  ),
+
+  booster_station: (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="0" y1="32" x2="8" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="56" y1="32" x2="64" y2="32" strokeWidth={3} opacity={0.5} />
+      <rect x="8" y="18" width="48" height="28" rx="4" strokeWidth={2.5} />
+      <circle cx="22" cy="32" r="10" strokeWidth={2} />
+      <circle cx="42" cy="32" r="10" strokeWidth={2} />
+      <polygon points="22,26 28,34 16,34" fill="currentColor" opacity={0.2} />
+      <polygon points="42,26 48,34 36,34" fill="currentColor" opacity={0.2} />
+    </svg>
+  ),
 }
 
 // ── Icon SVGs per node type (card mode — smaller icons) ──────
@@ -653,6 +753,353 @@ export const NodeGlyph: Record<string, React.ReactNode> = {
       <line x1="20" y1="12" x2="23" y2="12" strokeWidth={2} strokeLinecap="round" />
       <rect x="9" y="2" width="6" height="3" rx="1" fill="currentColor" opacity={0.1} stroke="currentColor" strokeWidth={1} />
       <line x1="7" y1="20" x2="17" y2="20" strokeWidth={1.5} strokeLinecap="round" />
+    </svg>
+  ),
+
+  // ══════════════════════════════════════════════════════════════
+  // ADDITIONAL NODE GLYPHS (for new icon types)
+  // ══════════════════════════════════════════════════════════════
+
+  generator: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="8" />
+      <text x="12" y="16" textAnchor="middle" fill="currentColor" fontSize="10" stroke="none" fontWeight="bold">G</text>
+    </svg>
+  ),
+
+  gate_valve: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <polygon points="4,8 12,12 4,16" fill="currentColor" opacity={0.1} />
+      <polygon points="20,8 12,12 20,16" fill="currentColor" opacity={0.1} />
+      <rect x="10" y="4" width="4" height="6" rx="0.5" />
+      <line x1="12" y1="10" x2="12" y2="12" />
+    </svg>
+  ),
+
+  butterfly_valve: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="8" />
+      <ellipse cx="12" cy="12" rx="2" ry="6" fill="currentColor" opacity={0.15} transform="rotate(30 12 12)" />
+      <line x1="12" y1="4" x2="12" y2="2" />
+    </svg>
+  ),
+
+  solenoid_valve: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <polygon points="4,9 12,12 4,15" fill="currentColor" opacity={0.1} />
+      <polygon points="20,9 12,12 20,15" fill="currentColor" opacity={0.1} />
+      <rect x="9" y="3" width="6" height="8" rx="1" />
+      <path d="M10 5h4M10 7h4M10 9h4" strokeWidth={0.75} opacity={0.5} />
+    </svg>
+  ),
+
+  level_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M4 14h16" strokeDasharray="2 2" opacity={0.4} />
+      <rect x="5" y="14" width="14" height="5" fill="currentColor" opacity={0.1} />
+      <path d="M12 2v2M12 20v2" strokeLinecap="round" />
+    </svg>
+  ),
+
+  ph_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="6" y="3" width="12" height="18" rx="2" />
+      <circle cx="12" cy="9" r="4" />
+      <text x="12" y="11" textAnchor="middle" fill="currentColor" fontSize="5" stroke="none" fontWeight="bold">pH</text>
+      <rect x="8" y="15" width="8" height="3" rx="1" fill="currentColor" opacity={0.1} />
+    </svg>
+  ),
+
+  turbidity_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="5" y="4" width="14" height="16" rx="2" />
+      <circle cx="12" cy="10" r="4" fill="currentColor" opacity={0.1} />
+      <path d="M9 10l6 0M12 7v6" strokeWidth={1} opacity={0.5} />
+      <text x="12" y="18" textAnchor="middle" fill="currentColor" fontSize="4" stroke="none">NTU</text>
+    </svg>
+  ),
+
+  chlorine_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="5" y="4" width="14" height="16" rx="2" />
+      <text x="12" y="14" textAnchor="middle" fill="currentColor" fontSize="8" stroke="none" fontWeight="bold">Cl</text>
+    </svg>
+  ),
+
+  temperature_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M12 2a3 3 0 00-3 3v9.4a5 5 0 103.5 8.6h-.5a5 5 0 103.5-8.6V5a3 3 0 00-3-3z" />
+      <circle cx="12" cy="17" r="3" fill="currentColor" opacity={0.2} />
+      <path d="M12 7v7" />
+    </svg>
+  ),
+
+  conductivity_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="6" y="4" width="12" height="16" rx="2" />
+      <path d="M9 8v8M15 8v8" strokeWidth={2} />
+      <path d="M9 12h6" strokeDasharray="1 1" opacity={0.5} />
+    </svg>
+  ),
+
+  do_sensor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="5" y="4" width="14" height="16" rx="2" />
+      <text x="12" y="14" textAnchor="middle" fill="currentColor" fontSize="6" stroke="none" fontWeight="bold">O₂</text>
+    </svg>
+  ),
+
+  tank: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="5" y="4" width="14" height="16" rx="3" />
+      <path d="M5 10h14" />
+      <path d="M9 14h6" strokeDasharray="2 2" />
+    </svg>
+  ),
+
+  water_tower: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <ellipse cx="12" cy="7" rx="8" ry="4" />
+      <path d="M4 7v3c0 2.2 3.6 4 8 4s8-1.8 8-4V7" />
+      <line x1="8" y1="14" x2="6" y2="22" />
+      <line x1="16" y1="14" x2="18" y2="22" />
+      <line x1="12" y1="14" x2="12" y2="22" />
+    </svg>
+  ),
+
+  sedimentation: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <path d="M2 12h20" strokeDasharray="2 2" opacity={0.3} />
+      <circle cx="6" cy="15" r="1" fill="currentColor" opacity={0.3} />
+      <circle cx="10" cy="16" r="1.5" fill="currentColor" opacity={0.3} />
+      <circle cx="15" cy="15" r="1" fill="currentColor" opacity={0.3} />
+      <circle cx="19" cy="16" r="0.8" fill="currentColor" opacity={0.3} />
+    </svg>
+  ),
+
+  uv_disinfection: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="4" y="6" width="16" height="12" rx="2" />
+      <line x1="8" y1="12" x2="16" y2="12" strokeWidth={2} />
+      <path d="M10 8l-2 4 2 4M14 8l2 4-2 4" strokeWidth={1} opacity={0.5} />
+    </svg>
+  ),
+
+  ozone: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="8" />
+      <text x="12" y="15" textAnchor="middle" fill="currentColor" fontSize="7" stroke="none" fontWeight="bold">O₃</text>
+    </svg>
+  ),
+
+  softener: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="5" y="3" width="14" height="18" rx="3" />
+      <circle cx="12" cy="11" r="4" fill="currentColor" opacity={0.1} />
+      <path d="M9 11h6M12 8v6" strokeWidth={0.8} opacity={0.5} />
+      <rect x="8" y="17" width="8" height="2" rx="0.5" />
+    </svg>
+  ),
+
+  dma: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 12h18" opacity={0.3} />
+      <path d="M8 8v8M12 6v12M16 8v8" strokeWidth={1} opacity={0.5} />
+      <text x="12" y="20" textAnchor="middle" fill="currentColor" fontSize="4" stroke="none">DMA</text>
+    </svg>
+  ),
+
+  hydrant: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M8 20h8" />
+      <rect x="9" y="10" width="6" height="10" rx="1" />
+      <path d="M6 14h3M15 14h3" />
+      <circle cx="12" cy="6" r="4" />
+    </svg>
+  ),
+
+  customer_meter: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="4" y="6" width="16" height="10" rx="2" />
+      <text x="12" y="13" textAnchor="middle" fill="currentColor" fontSize="5" stroke="none" fontFamily="monospace">m³</text>
+      <path d="M8 16v4M16 16v4M6 20h12" />
+    </svg>
+  ),
+
+  booster_station: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="3" y="8" width="18" height="10" rx="2" />
+      <circle cx="8" cy="13" r="3" />
+      <circle cx="16" cy="13" r="3" />
+      <path d="M5 13l2-2M5 13l2 2M13 13l2-2M13 13l2 2" strokeWidth={1} />
+    </svg>
+  ),
+
+  alarm: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      <path d="M12 9v4M12 17h.01" />
+    </svg>
+  ),
+
+  indicator: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="4" fill="currentColor" opacity={0.2} />
+    </svg>
+  ),
+
+  status_light: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="6" fill="currentColor" opacity={0.2} />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2" strokeLinecap="round" opacity={0.5} />
+    </svg>
+  ),
+
+  wwtp: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="7" cy="12" r="3" fill="currentColor" opacity={0.1} />
+      <circle cx="17" cy="12" r="3" fill="currentColor" opacity={0.1} />
+      <path d="M10 12h4" />
+    </svg>
+  ),
+
+  septic_tank: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M3 8c0-2 2-4 9-4s9 2 9 4v10c0 2-2 4-9 4s-9-2-9-4z" />
+      <path d="M3 12h18" strokeDasharray="2 2" opacity={0.4} />
+      <ellipse cx="12" cy="8" rx="9" ry="3.5" />
+    </svg>
+  ),
+
+  lift_station: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="4" y="8" width="16" height="12" rx="2" />
+      <circle cx="12" cy="14" r="4" />
+      <path d="M10 14l2-2 2 2M12 12v4" />
+      <path d="M8 8V5h8v3" />
+    </svg>
+  ),
+
+  manhole: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <ellipse cx="12" cy="12" rx="9" ry="5" />
+      <path d="M3 12v4c0 2.8 4 5 9 5s9-2.2 9-5v-4" />
+      <line x1="8" y1="12" x2="8" y2="16" opacity={0.5} />
+      <line x1="16" y1="12" x2="16" y2="16" opacity={0.5} />
+    </svg>
+  ),
+
+  grease_trap: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <line x1="10" y1="6" x2="10" y2="18" />
+      <line x1="14" y1="6" x2="14" y2="18" />
+      <rect x="4" y="8" width="5" height="3" fill="currentColor" opacity={0.15} />
+    </svg>
+  ),
+
+  pipe_straight: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="9" width="20" height="6" rx="1" />
+      <line x1="2" y1="12" x2="22" y2="12" strokeDasharray="3 2" opacity={0.3} />
+    </svg>
+  ),
+
+  pipe_elbow: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M4 9h8c3 0 5 2 5 5v6" />
+      <path d="M4 15h6c2 0 3-1 3-3v-3" />
+    </svg>
+  ),
+
+  pipe_tee: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="9" width="20" height="6" rx="1" />
+      <rect x="9" y="15" width="6" height="7" rx="1" />
+    </svg>
+  ),
+
+  reducer: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M2 8h6l4 2h6l4 2" />
+      <path d="M2 16h6l4-2h6l4-2" />
+      <line x1="2" y1="8" x2="2" y2="16" />
+      <line x1="22" y1="10" x2="22" y2="14" />
+    </svg>
+  ),
+
+  expansion_joint: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="9" width="7" height="6" rx="1" />
+      <rect x="15" y="9" width="7" height="6" rx="1" />
+      <path d="M9 12c1 0 1.5-2 3-2s2 4 3 4 1.5-2 0-2" strokeDasharray="2 1" />
+    </svg>
+  ),
+
+  compressor: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="8" />
+      <text x="12" y="15" textAnchor="middle" fill="currentColor" fontSize="8" stroke="none" fontWeight="bold">C</text>
+    </svg>
+  ),
+
+  fan: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <path d="M12 4c2 2 2 4 0 6M20 12c-2 2-4 2-6 0M12 20c-2-2-2-4 0-6M4 12c2-2 4-2 6 0" strokeWidth={2} />
+    </svg>
+  ),
+
+  strainer: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <polygon points="4,9 12,12 4,15" fill="currentColor" opacity={0.1} />
+      <polygon points="20,9 12,12 20,15" fill="currentColor" opacity={0.1} />
+      <line x1="10" y1="8" x2="10" y2="16" strokeDasharray="1 1" />
+      <line x1="12" y1="7" x2="12" y2="17" strokeDasharray="1 1" />
+      <line x1="14" y1="8" x2="14" y2="16" strokeDasharray="1 1" />
+    </svg>
+  ),
+
+  air_release: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="14" r="6" />
+      <path d="M12 8V3M10 5l2-2 2 2" />
+      <circle cx="10" cy="14" r="1" fill="currentColor" opacity={0.3} />
+      <circle cx="14" cy="13" r="1.5" fill="currentColor" opacity={0.3} />
+      <circle cx="12" cy="16" r="1" fill="currentColor" opacity={0.3} />
+    </svg>
+  ),
+
+  break_tank: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="4" y="6" width="16" height="14" rx="2" />
+      <path d="M4 11h16" strokeDasharray="2 2" />
+      <path d="M2 11h2M20 11h2" />
+      <path d="M12 2v4" />
+    </svg>
+  ),
+
+  sampling_point: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="8" r="5" />
+      <rect x="10" y="13" width="4" height="8" rx="1" />
+      <path d="M10 17h4" />
+      <text x="12" y="10" textAnchor="middle" fill="currentColor" fontSize="5" stroke="none">S</text>
+    </svg>
+  ),
+
+  solar_panel: (
+    <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="6" width="20" height="12" rx="1" />
+      <path d="M2 10h20M2 14h20M8 6v12M14 6v12" strokeWidth={0.75} />
+      <path d="M12 2v4M6 3l2 3M18 3l-2 3" strokeLinecap="round" opacity={0.5} />
     </svg>
   ),
 }

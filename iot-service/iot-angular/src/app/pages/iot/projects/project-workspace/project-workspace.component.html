@@ -1,15 +1,26 @@
-<div class="project-workspace" [class.sidebar-collapsed]="sidebarCollapsed">
+<div class="project-workspace" [class.sidebar-collapsed]="sidebarCollapsed" [class.mobile-sidebar-open]="mobileSidebarOpen">
+  
+  <!-- Mobile Toggle Button -->
+  <button class="mobile-sidebar-toggle" (click)="toggleMobileSidebar()" title="Open Menu">
+    <i class="fa fa-bars"></i>
+  </button>
+  
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" (click)="closeMobileSidebar()"></div>
   
   <!-- Secondary Sidebar -->
-  <aside class="project-sidebar">
+  <aside class="project-sidebar" [class.open]="mobileSidebarOpen">
     <!-- Sidebar Header -->
     <div class="sidebar-header">
       <a [routerLink]="['/iot/projects']" class="back-link" title="Back to Projects">
         <i class="fa fa-arrow-left"></i>
       </a>
       <span class="project-title" *ngIf="!sidebarCollapsed">{{ projectName }}</span>
-      <button class="toggle-btn" (click)="toggleSidebar()" [title]="sidebarCollapsed ? 'Expand' : 'Collapse'">
+      <button class="toggle-btn desktop-only" (click)="toggleSidebar()" [title]="sidebarCollapsed ? 'Expand' : 'Collapse'">
         <i class="fa" [ngClass]="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+      </button>
+      <button class="toggle-btn mobile-only" (click)="closeMobileSidebar()" title="Close Menu">
+        <i class="fa fa-times"></i>
       </button>
     </div>
     

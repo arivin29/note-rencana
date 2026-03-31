@@ -56,6 +56,7 @@ export class ScadaBindingOptionItemDto {
     idNode: string;
     code: string;
     name?: string | null;
+    address?: string | null;
   };
 
   @ApiProperty()
