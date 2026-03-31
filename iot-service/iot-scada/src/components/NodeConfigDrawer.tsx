@@ -56,18 +56,112 @@ const TABS: { key: ConfigTab; label: string; icon: React.ReactNode }[] = [
 // ── Built-in icon gallery (includes all node types + extras) ──
 
 const BUILTIN_ICONS: { key: string; label: string; svg: string }[] = [
+  // ══════════════════════════════════════════════════════════════
+  // CORE EQUIPMENT
+  // ══════════════════════════════════════════════════════════════
   { key: 'pump', label: 'Pump', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M8 12l4-4 4 4M12 8v8"/></svg>' },
-  { key: 'valve', label: 'Valve', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h4l4-4 4 4h4"/><rect x="10" y="8" width="4" height="8" rx="1"/></svg>' },
-  { key: 'flowmeter', label: 'Flow Meter', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>' },
-  { key: 'pressure', label: 'Pressure', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="14" r="7"/><path d="M12 7V5M9 8.3L7.5 6.8M15 8.3L16.5 6.8"/><path d="M12 14 L14.5 11" stroke-linecap="round"/></svg>' },
-  { key: 'reservoir', label: 'Reservoir', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18" stroke-dasharray="2 2"/><path d="M7 7V4M17 7V4"/></svg>' },
-  { key: 'intake', label: 'Intake', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 18c1-6 4-10 9-10s8 4 9 10"/><path d="M9 18v-4M12 18v-6M15 18v-4"/></svg>' },
-  { key: 'wtp', label: 'WTP', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="11" rx="2"/><path d="M3 12h18M9 8V5h6v3M8 15.5h8"/></svg>' },
-  { key: 'junction', label: 'Junction', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>' },
-  { key: 'tank', label: 'Tank', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="4" width="14" height="16" rx="3"/><path d="M5 10h14"/><path d="M9 14h6" stroke-dasharray="2 2"/></svg>' },
   { key: 'motor', label: 'Motor', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor" stroke="none">M</text></svg>' },
   { key: 'generator', label: 'Generator', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor" stroke="none">G</text></svg>' },
+  { key: 'blower', label: 'Blower', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" opacity="0.15"/><path d="M12 12l-3-5M12 12l5-1.5M12 12l-2 5M12 12l4 3.5" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/></svg>' },
+  
+  // ══════════════════════════════════════════════════════════════
+  // VALVES
+  // ══════════════════════════════════════════════════════════════
+  { key: 'valve', label: 'Valve', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h4l4-4 4 4h4"/><rect x="10" y="8" width="4" height="8" rx="1"/></svg>' },
+  { key: 'check_valve', label: 'Check Valve', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4,7 12,12 4,17" fill="currentColor" opacity="0.1"/><polygon points="20,7 12,12 20,17" fill="currentColor" opacity="0.1"/><line x1="12" y1="6" x2="12" y2="18" stroke-width="2" stroke-linecap="round"/></svg>' },
+  { key: 'prv', label: 'PRV', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4,9 12,14 4,19" fill="currentColor" opacity="0.1"/><polygon points="20,9 12,14 20,19" fill="currentColor" opacity="0.1"/><circle cx="12" cy="6" r="4"/><line x1="12" y1="10" x2="12" y2="14" stroke-width="2"/></svg>' },
+  { key: 'gate_valve', label: 'Gate Valve', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4,8 12,12 4,16" fill="currentColor" opacity="0.1"/><polygon points="20,8 12,12 20,16" fill="currentColor" opacity="0.1"/><rect x="10" y="4" width="4" height="6" rx="0.5"/><line x1="12" y1="10" x2="12" y2="12"/></svg>' },
+  { key: 'butterfly_valve', label: 'Butterfly Valve', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><ellipse cx="12" cy="12" rx="2" ry="6" fill="currentColor" opacity="0.15" transform="rotate(30 12 12)"/><line x1="12" y1="4" x2="12" y2="2"/></svg>' },
+  { key: 'solenoid_valve', label: 'Solenoid Valve', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4,9 12,12 4,15" fill="currentColor" opacity="0.1"/><polygon points="20,9 12,12 20,15" fill="currentColor" opacity="0.1"/><rect x="9" y="3" width="6" height="8" rx="1"/><path d="M10 5h4M10 7h4M10 9h4" stroke-width="0.75" opacity="0.5"/></svg>' },
+  
+  // ══════════════════════════════════════════════════════════════
+  // SENSORS & METERS
+  // ══════════════════════════════════════════════════════════════
+  { key: 'flowmeter', label: 'Flow Meter', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>' },
+  { key: 'pressure', label: 'Pressure', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="14" r="7"/><path d="M12 7V5M9 8.3L7.5 6.8M15 8.3L16.5 6.8"/><path d="M12 14 L14.5 11" stroke-linecap="round"/></svg>' },
+  { key: 'meter', label: 'Water Meter', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="12" rx="3"/><rect x="5" y="8" width="14" height="5" rx="1" fill="currentColor" opacity="0.06"/><text x="12" y="12" text-anchor="middle" fill="currentColor" font-size="4.5" stroke="none" font-family="monospace" opacity="0.6">0385</text></svg>' },
+  { key: 'level_sensor', label: 'Level Sensor', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 14h16" stroke-dasharray="2 2" opacity="0.4"/><rect x="5" y="14" width="14" height="5" fill="currentColor" opacity="0.1"/><path d="M12 2v2M12 20v2" stroke-linecap="round"/></svg>' },
+  { key: 'ph_sensor', label: 'pH Sensor', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="9" r="4"/><text x="12" y="11" text-anchor="middle" fill="currentColor" font-size="5" stroke="none" font-weight="bold">pH</text><rect x="8" y="15" width="8" height="3" rx="1" fill="currentColor" opacity="0.1"/></svg>' },
+  { key: 'turbidity_sensor', label: 'Turbidity', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="4" width="14" height="16" rx="2"/><circle cx="12" cy="10" r="4" fill="currentColor" opacity="0.1"/><path d="M9 10l6 0M12 7v6" stroke-width="1" opacity="0.5"/><text x="12" y="18" text-anchor="middle" fill="currentColor" font-size="4" stroke="none">NTU</text></svg>' },
+  { key: 'chlorine_sensor', label: 'Chlorine', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="4" width="14" height="16" rx="2"/><text x="12" y="14" text-anchor="middle" fill="currentColor" font-size="8" stroke="none" font-weight="bold">Cl</text></svg>' },
+  { key: 'temperature_sensor', label: 'Temperature', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 00-3 3v9.4a5 5 0 103.5 8.6h-.5a5 5 0 103.5-8.6V5a3 3 0 00-3-3z"/><circle cx="12" cy="17" r="3" fill="currentColor" opacity="0.2"/><path d="M12 7v7"/></svg>' },
+  { key: 'conductivity_sensor', label: 'Conductivity', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 8v8M15 8v8" stroke-width="2"/><path d="M9 12h6" stroke-dasharray="1 1" opacity="0.5"/></svg>' },
+  { key: 'do_sensor', label: 'DO Sensor', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="4" width="14" height="16" rx="2"/><text x="12" y="14" text-anchor="middle" fill="currentColor" font-size="6" stroke="none" font-weight="bold">O₂</text></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // STORAGE TANKS
+  // ══════════════════════════════════════════════════════════════
+  { key: 'reservoir', label: 'Reservoir', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18" stroke-dasharray="2 2"/><path d="M7 7V4M17 7V4"/></svg>' },
+  { key: 'tank', label: 'Tank', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="4" width="14" height="16" rx="3"/><path d="M5 10h14"/><path d="M9 14h6" stroke-dasharray="2 2"/></svg>' },
+  { key: 'ground_tank', label: 'Ground Tank', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 11c3-1 6 1 9 0s6 1 9 0" stroke-width="1" opacity="0.5"/><rect x="4" y="11" width="16" height="8" rx="0.5" fill="currentColor" opacity="0.08"/></svg>' },
+  { key: 'elevated_tank', label: 'Elevated Tank', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5h14v5c0 2-3 3-7 3s-7-1-7-3z"/><line x1="8" y1="13" x2="6" y2="21"/><line x1="16" y1="13" x2="18" y2="21"/><line x1="12" y1="13" x2="12" y2="21" opacity="0.4"/></svg>' },
+  { key: 'water_tower', label: 'Water Tower', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="7" rx="8" ry="4"/><path d="M4 7v3c0 2.2 3.6 4 8 4s8-1.8 8-4V7"/><line x1="8" y1="14" x2="6" y2="22"/><line x1="16" y1="14" x2="18" y2="22"/><line x1="12" y1="14" x2="12" y2="22"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // WATER TREATMENT
+  // ══════════════════════════════════════════════════════════════
+  { key: 'intake', label: 'Intake', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 18c1-6 4-10 9-10s8 4 9 10"/><path d="M9 18v-4M12 18v-6M15 18v-4"/></svg>' },
+  { key: 'wtp', label: 'WTP', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="11" rx="2"/><path d="M3 12h18M9 8V5h6v3M8 15.5h8"/></svg>' },
+  { key: 'aerator', label: 'Aerator', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 12h18" stroke-dasharray="2 2" opacity="0.4"/><circle cx="8" cy="15" r="1.5" fill="currentColor" opacity="0.3"/><circle cx="12" cy="14" r="2" fill="currentColor" opacity="0.3"/><circle cx="16" cy="16" r="1" fill="currentColor" opacity="0.3"/></svg>' },
+  { key: 'filter', label: 'Filter', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="6" y="7" width="12" height="3" rx="0.5" fill="currentColor" opacity="0.08"/><rect x="6" y="11" width="12" height="3" rx="0.5" fill="currentColor" opacity="0.12"/><rect x="6" y="15" width="12" height="4" rx="0.5" fill="currentColor" opacity="0.18"/></svg>' },
+  { key: 'clarifier', label: 'Clarifier', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h18v8l-4 8H7L3 13z" stroke-linejoin="round"/><path d="M3 9h18" stroke-dasharray="2 2" opacity="0.4"/><rect x="10" y="5" width="4" height="6" fill="currentColor" opacity="0.1"/></svg>' },
+  { key: 'sedimentation', label: 'Sedimentation', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 12h20" stroke-dasharray="2 2" opacity="0.3"/><circle cx="6" cy="15" r="1" fill="currentColor" opacity="0.3"/><circle cx="10" cy="16" r="1.5" fill="currentColor" opacity="0.3"/><circle cx="15" cy="15" r="1" fill="currentColor" opacity="0.3"/><circle cx="19" cy="16" r="0.8" fill="currentColor" opacity="0.3"/></svg>' },
+  { key: 'chemical_dosing', label: 'Chemical Dosing', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="2" width="10" height="10" rx="1.5"/><text x="12" y="9" text-anchor="middle" fill="currentColor" font-size="5" stroke="none" font-weight="bold">Cl</text><line x1="12" y1="12" x2="12" y2="16" stroke-dasharray="2 1"/><circle cx="12" cy="18" r="3"/></svg>' },
+  { key: 'sludge', label: 'Sludge', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h18v10l-5 7H8L3 14z" stroke-linejoin="round"/><path d="M3 10h18" stroke-dasharray="2 2" opacity="0.3"/><circle cx="8" cy="13" r="1" fill="currentColor" opacity="0.25"/><circle cx="12" cy="15" r="1.5" fill="currentColor" opacity="0.3"/></svg>' },
+  { key: 'uv_disinfection', label: 'UV Disinfection', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="6" width="16" height="12" rx="2"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2"/><path d="M10 8l-2 4 2 4M14 8l2 4-2 4" stroke-width="1" opacity="0.5"/></svg>' },
+  { key: 'ozone', label: 'Ozone Generator', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><text x="12" y="15" text-anchor="middle" fill="currentColor" font-size="7" stroke="none" font-weight="bold">O₃</text></svg>' },
+  { key: 'softener', label: 'Water Softener', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="3"/><circle cx="12" cy="11" r="4" fill="currentColor" opacity="0.1"/><path d="M9 11h6M12 8v6" stroke-width="0.8" opacity="0.5"/><rect x="8" y="17" width="8" height="2" rx="0.5"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // DISTRIBUTION & NETWORK
+  // ══════════════════════════════════════════════════════════════
+  { key: 'junction', label: 'Junction', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>' },
+  { key: 'distribution', label: 'Distribution', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor" opacity="0.2"/><path d="M18 12l-3-1.5v3zM6 12l3-1.5v3zM12 6l-1.5 3h3zM12 18l-1.5-3h3z" fill="currentColor" opacity="0.4"/></svg>' },
+  { key: 'dma', label: 'DMA', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18" opacity="0.3"/><path d="M8 8v8M12 6v12M16 8v8" stroke-width="1" opacity="0.5"/><text x="12" y="20" text-anchor="middle" fill="currentColor" font-size="4" stroke="none">DMA</text></svg>' },
+  { key: 'hydrant', label: 'Hydrant', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 20h8"/><rect x="9" y="10" width="6" height="10" rx="1"/><path d="M6 14h3M15 14h3"/><circle cx="12" cy="6" r="4"/></svg>' },
+  { key: 'customer_meter', label: 'Customer Meter', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="6" width="16" height="10" rx="2"/><text x="12" y="13" text-anchor="middle" fill="currentColor" font-size="5" stroke="none" font-family="monospace">m³</text><path d="M8 16v4M16 16v4M6 20h12"/></svg>' },
+  { key: 'booster_station', label: 'Booster Station', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="10" rx="2"/><circle cx="8" cy="13" r="3"/><circle cx="16" cy="13" r="3"/><path d="M5 13l2-2M5 13l2 2M13 13l2-2M13 13l2 2" stroke-width="1"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // HEAT & ENERGY
+  // ══════════════════════════════════════════════════════════════
+  { key: 'heat_exchanger', label: 'Heat Exchanger', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8l2.5 2.5L7 13l2.5 2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8l2.5 2.5L12 13l2.5 2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
+  { key: 'solar_panel', label: 'Solar Panel', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="1"/><path d="M2 10h20M2 14h20M8 6v12M14 6v12" stroke-width="0.75"/><path d="M12 2v4M6 3l2 3M18 3l-2 3" stroke-linecap="round" opacity="0.5"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // ALARMS & STATUS
+  // ══════════════════════════════════════════════════════════════
   { key: 'alarm', label: 'Alarm', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>' },
+  { key: 'indicator', label: 'Indicator', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.2"/></svg>' },
+  { key: 'status_light', label: 'Status Light', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="6" fill="currentColor" opacity="0.2"/><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2" stroke-linecap="round" opacity="0.5"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // WASTEWATER & SEWER
+  // ══════════════════════════════════════════════════════════════
+  { key: 'wwtp', label: 'WWTP', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="12" r="3" fill="currentColor" opacity="0.1"/><circle cx="17" cy="12" r="3" fill="currentColor" opacity="0.1"/><path d="M10 12h4"/></svg>' },
+  { key: 'septic_tank', label: 'Septic Tank', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8c0-2 2-4 9-4s9 2 9 4v10c0 2-2 4-9 4s-9-2-9-4z"/><path d="M3 12h18" stroke-dasharray="2 2" opacity="0.4"/><ellipse cx="12" cy="8" rx="9" ry="3.5"/></svg>' },
+  { key: 'lift_station', label: 'Lift Station', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="12" cy="14" r="4"/><path d="M10 14l2-2 2 2M12 12v4"/><path d="M8 8V5h8v3"/></svg>' },
+  { key: 'manhole', label: 'Manhole', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="12" rx="9" ry="5"/><path d="M3 12v4c0 2.8 4 5 9 5s9-2.2 9-5v-4"/><line x1="8" y1="12" x2="8" y2="16" opacity="0.5"/><line x1="16" y1="12" x2="16" y2="16" opacity="0.5"/></svg>' },
+  { key: 'grease_trap', label: 'Grease Trap', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="12" rx="2"/><line x1="10" y1="6" x2="10" y2="18"/><line x1="14" y1="6" x2="14" y2="18"/><rect x="4" y="8" width="5" height="3" fill="currentColor" opacity="0.15"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // PIPES & FITTINGS
+  // ══════════════════════════════════════════════════════════════
+  { key: 'pipe_straight', label: 'Pipe Straight', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="9" width="20" height="6" rx="1"/><line x1="2" y1="12" x2="22" y2="12" stroke-dasharray="3 2" opacity="0.3"/></svg>' },
+  { key: 'pipe_elbow', label: 'Pipe Elbow', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 9h8c3 0 5 2 5 5v6"/><path d="M4 15h6c2 0 3-1 3-3v-3"/></svg>' },
+  { key: 'pipe_tee', label: 'Pipe Tee', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="9" width="20" height="6" rx="1"/><rect x="9" y="15" width="6" height="7" rx="1"/></svg>' },
+  { key: 'reducer', label: 'Reducer', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h6l4 2h6l4 2"/><path d="M2 16h6l4-2h6l4-2"/><line x1="2" y1="8" x2="2" y2="16"/><line x1="22" y1="10" x2="22" y2="14"/></svg>' },
+  { key: 'expansion_joint', label: 'Expansion Joint', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="9" width="7" height="6" rx="1"/><rect x="15" y="9" width="7" height="6" rx="1"/><path d="M9 12c1 0 1.5-2 3-2s2 4 3 4 1.5-2 0-2" stroke-dasharray="2 1"/></svg>' },
+
+  // ══════════════════════════════════════════════════════════════
+  // MISC EQUIPMENT
+  // ══════════════════════════════════════════════════════════════
+  { key: 'compressor', label: 'Compressor', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><text x="12" y="15" text-anchor="middle" fill="currentColor" font-size="8" stroke="none" font-weight="bold">C</text></svg>' },
+  { key: 'fan', label: 'Fan', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 4c2 2 2 4 0 6M20 12c-2 2-4 2-6 0M12 20c-2-2-2-4 0-6M4 12c2-2 4-2 6 0" stroke-width="2"/></svg>' },
+  { key: 'strainer', label: 'Strainer', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="4,9 12,12 4,15" fill="currentColor" opacity="0.1"/><polygon points="20,9 12,12 20,15" fill="currentColor" opacity="0.1"/><line x1="10" y1="8" x2="10" y2="16" stroke-dasharray="1 1"/><line x1="12" y1="7" x2="12" y2="17" stroke-dasharray="1 1"/><line x1="14" y1="8" x2="14" y2="16" stroke-dasharray="1 1"/></svg>' },
+  { key: 'air_release', label: 'Air Release', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="14" r="6"/><path d="M12 8V3M10 5l2-2 2 2"/><circle cx="10" cy="14" r="1" fill="currentColor" opacity="0.3"/><circle cx="14" cy="13" r="1.5" fill="currentColor" opacity="0.3"/><circle cx="12" cy="16" r="1" fill="currentColor" opacity="0.3"/></svg>' },
+  { key: 'break_tank', label: 'Break Tank', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 11h16" stroke-dasharray="2 2"/><path d="M2 11h2M20 11h2"/><path d="M12 2v4"/></svg>' },
+  { key: 'sampling_point', label: 'Sampling Point', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="5"/><rect x="10" y="13" width="4" height="8" rx="1"/><path d="M10 17h4"/><text x="12" y="10" text-anchor="middle" fill="currentColor" font-size="5" stroke="none">S</text></svg>' },
 ]
 
 // ── Color presets ─────────────────────────────────────────────

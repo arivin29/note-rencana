@@ -62,6 +62,7 @@ export interface ScadaDiagramListItem {
 // ── Node ─────────────────────────────────────────────────────
 
 export type ScadaNodeType =
+  // Core equipment
   | 'intake'
   | 'pump'
   | 'valve'
@@ -74,7 +75,7 @@ export type ScadaNodeType =
   | 'heat_exchanger'
   | 'text_label'
   | 'value_display'
-  // ── PDAM-specific equipment ──
+  // PDAM-specific equipment
   | 'aerator'
   | 'filter'
   | 'clarifier'
@@ -88,6 +89,56 @@ export type ScadaNodeType =
   | 'prv'
   | 'sludge'
   | 'motor'
+  | 'generator'
+  // Additional valves
+  | 'gate_valve'
+  | 'butterfly_valve'
+  | 'solenoid_valve'
+  // Sensors
+  | 'level_sensor'
+  | 'ph_sensor'
+  | 'turbidity_sensor'
+  | 'chlorine_sensor'
+  | 'temperature_sensor'
+  | 'conductivity_sensor'
+  | 'do_sensor'
+  // Storage
+  | 'tank'
+  | 'water_tower'
+  // Water treatment
+  | 'sedimentation'
+  | 'uv_disinfection'
+  | 'ozone'
+  | 'softener'
+  // Distribution & network
+  | 'dma'
+  | 'hydrant'
+  | 'customer_meter'
+  | 'booster_station'
+  // Alarms & status
+  | 'alarm'
+  | 'indicator'
+  | 'status_light'
+  // Wastewater & sewer
+  | 'wwtp'
+  | 'septic_tank'
+  | 'lift_station'
+  | 'manhole'
+  | 'grease_trap'
+  // Pipes & fittings
+  | 'pipe_straight'
+  | 'pipe_elbow'
+  | 'pipe_tee'
+  | 'reducer'
+  | 'expansion_joint'
+  // Misc equipment
+  | 'compressor'
+  | 'fan'
+  | 'strainer'
+  | 'air_release'
+  | 'break_tank'
+  | 'sampling_point'
+  | 'solar_panel'
 
 export interface ScadaNodePosition {
   x: number

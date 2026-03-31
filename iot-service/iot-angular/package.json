@@ -116,6 +116,7 @@
     "@types/file-saver": "^2.0.7",
     "@types/marked": "^5.0.2",
     "http-server": "^14.1.1",
-    "ng-openapi-gen": "^1.0.4"
+    "ng-openapi-gen": "^1.0.4",
+    "sharp": "^0.34.5"
   }
 }
