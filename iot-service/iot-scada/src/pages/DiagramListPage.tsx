@@ -11,7 +11,7 @@ import {
 } from '@/sdk/services.gen'
 import { useAuth } from '@/components/AuthGate'
 import { getAuthHeaders } from '@/services/auth.service'
-import type { ScadaDiagramListItemResponseDto } from '@/sdk/models'
+import type { ScadaDiagramListItemResponseDto, CreateScadaDiagramDto } from '@/sdk/models'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -105,7 +105,7 @@ export function DiagramListPage() {
       const res = await scadaDiagramsControllerCreate({
           name:      newName.trim(),
           ownerId,
-          projectId: newProjectId || undefined,
+          projectId: (newProjectId || undefined) as CreateScadaDiagramDto['projectId'],
           status:    'draft',
       })
       const id = res.data?.diagram?.id

@@ -9,6 +9,35 @@ import { AlertEventsService } from '../../../../../../../sdk/core/services/alert
 import { SensorLogsService } from '../../../../../../../sdk/core/services/sensor-logs.service';
 import { EChartsOption } from 'echarts';
 
+// Interface for sensor channel from backend
+export interface SensorChannelData {
+  idSensorChannel: string;
+  metricCode: string;
+  unit: string;
+  lastValue: number | null;
+  lastValueAt: string | null;
+}
+
+// Interface for sensor with last value from backend
+export interface SensorWithLastValue {
+  idSensor: string;
+  label: string;
+  sensorCode?: string;
+  lastValue: number | null;
+  lastValueAt: string | null;
+  status?: string;
+  channels: SensorChannelData[];
+  node?: {
+    code: string;
+    name: string;
+    address?: string;
+  };
+  sensorCatalog?: {
+    vendor: string;
+    modelName: string;
+  };
+}
+
 interface ProjectDetail {
   idProject: string;
   name: string;
@@ -71,7 +100,7 @@ export class OverviewPageComponent implements OnInit {
   
   // Additional data from separate endpoints
   nodes: any[] = [];
-  sensors: any[] = [];
+  sensors: SensorWithLastValue[] = [];
   alerts: any[] = [];
   
   // Loading states for each section
@@ -440,6 +469,36 @@ export class OverviewPageComponent implements OnInit {
         }
       });
     }
+  }
+
+  formatLastValueAt(timestamp: string | null): string {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (seconds < 60) return `${seconds}s ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  }
+
+  isDataStale(timestamp: string | null): boolean {
+    if (!timestamp) return true;
+    const diff = new Date().getTime() - new Date(timestamp).getTime();
+    const hours = diff / (1000 * 60 * 60);
+    return hours >= 1; // Stale if more than 1 hour
+  }
+
+  formatSensorValue(value: number | null, unit?: string): string {
+    if (value === null || value === undefined) return '-';
+    const numVal = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numVal)) return '-';
+    return unit ? `${numVal.toFixed(2)} ${unit}` : numVal.toFixed(2);
   }
 
   loadAlerts() {

@@ -45,8 +45,9 @@ function buildNodeRuntimeMap(
     map[nodeId].allBindings.push(binding)
 
     // Primary binding — isPrimary tidak tersedia di runtime response
-    // Gunakan priorityOrder=0 atau yang pertama muncul sebagai primary
-    if (map[nodeId].primaryStatus === 'unknown' || binding.bindingKey === 'value' || binding.isPrimary) {
+    // Gunakan priorityOrder=0 atau bindingKey='value' atau yang pertama muncul sebagai primary
+    const isPrimary = (binding as unknown as { isPrimary?: boolean }).isPrimary
+    if (map[nodeId].primaryStatus === 'unknown' || binding.bindingKey === 'value' || isPrimary) {
       map[nodeId].primaryValue     = binding.value ?? null
       map[nodeId].primaryUnit      = binding.unitOverride ?? binding.unit ?? null
       map[nodeId].primaryPrecision = binding.precision ?? null

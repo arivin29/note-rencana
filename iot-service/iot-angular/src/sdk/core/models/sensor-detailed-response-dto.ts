@@ -11,12 +11,33 @@ export interface SensorDetailedResponseDto {
    */
   calibrationStatus?: {
 };
+
+  /**
+   * Sensor channels with latest values from ClickHouse
+   */
+  channels?: Array<{
+'idSensorChannel'?: string;
+'metricCode'?: string;
+'unit'?: string;
+'lastValue'?: number;
+'lastValueAt'?: string;
+}>;
   createdAt: string;
   idNode: string;
   idSensor: string;
   idSensorCatalog?: string;
   installDate?: string;
   label: string;
+
+  /**
+   * Last sensor value (engineered) - summary from first channel
+   */
+  lastValue?: number;
+
+  /**
+   * Timestamp of last sensor value
+   */
+  lastValueAt?: string;
 
   /**
    * Physical location description

@@ -1,5 +1,145 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class NodeInfoDto {
+  @ApiProperty()
+  idNode: string;
+
+  @ApiPropertyOptional()
+  idProject?: string;
+
+  @ApiPropertyOptional()
+  idNodeModel?: string;
+
+  @ApiPropertyOptional()
+  idNodeProfile?: string;
+
+  @ApiProperty()
+  code: string;
+
+  @ApiPropertyOptional()
+  name?: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiPropertyOptional()
+  serialNumber?: string;
+
+  @ApiPropertyOptional()
+  devEui?: string;
+
+  @ApiPropertyOptional()
+  ipAddress?: string;
+
+  @ApiPropertyOptional()
+  installDate?: Date;
+
+  @ApiPropertyOptional()
+  firmwareVersion?: string;
+
+  @ApiPropertyOptional()
+  batteryType?: string;
+
+  @ApiPropertyOptional()
+  telemetryIntervalSec?: number;
+
+  @ApiProperty()
+  connectivityStatus: string;
+
+  @ApiPropertyOptional()
+  lastSeenAt?: Date;
+
+  // Location
+  @ApiPropertyOptional()
+  address?: string;
+
+  @ApiPropertyOptional()
+  city?: string;
+
+  @ApiPropertyOptional()
+  province?: string;
+
+  @ApiPropertyOptional()
+  postalCode?: string;
+
+  @ApiPropertyOptional()
+  country?: string;
+
+  @ApiPropertyOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  longitude?: number;
+
+  @ApiPropertyOptional()
+  elevationM?: number;
+
+  // Status & Maintenance
+  @ApiPropertyOptional()
+  status?: string;
+
+  @ApiPropertyOptional()
+  commissionedAt?: Date;
+
+  @ApiPropertyOptional()
+  lastMaintenanceAt?: Date;
+
+  @ApiPropertyOptional()
+  nextMaintenanceAt?: Date;
+
+  // Environment
+  @ApiPropertyOptional()
+  installationType?: string;
+
+  @ApiPropertyOptional()
+  enclosureRating?: string;
+
+  @ApiPropertyOptional()
+  powerSource?: string;
+
+  // PIC
+  @ApiPropertyOptional()
+  picName?: string;
+
+  @ApiPropertyOptional()
+  picPhone?: string;
+
+  @ApiPropertyOptional()
+  picEmail?: string;
+
+  // Notes & Tags
+  @ApiPropertyOptional()
+  notes?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  tags?: string[];
+
+  @ApiPropertyOptional()
+  iconUrl?: string;
+
+  // Related entities
+  @ApiPropertyOptional({ description: 'Node model details' })
+  nodeModel?: {
+    idNodeModel: string;
+    modelName: string;
+    vendor?: string;
+    protocol?: string;
+  };
+
+  @ApiPropertyOptional({ description: 'Project details' })
+  project?: {
+    idProject: string;
+    name: string;
+  };
+
+  // Timestamps
+  @ApiPropertyOptional()
+  createdAt?: Date;
+
+  @ApiPropertyOptional()
+  updatedAt?: Date;
+}
+
 export class SensorResponseDto {
   @ApiProperty()
   idSensor: string;
@@ -46,11 +186,39 @@ export class SensorResponseDto {
   @ApiProperty()
   updatedAt: Date;
 
-  @ApiPropertyOptional({ description: 'Node details' })
-  node?: any;
+  @ApiPropertyOptional({ description: 'Node details', type: NodeInfoDto })
+  node?: NodeInfoDto;
 
   @ApiPropertyOptional({ description: 'Sensor catalog details' })
   sensorCatalog?: any;
+
+  @ApiPropertyOptional({ description: 'Last sensor value (engineered) - summary from first channel' })
+  lastValue?: number;
+
+  @ApiPropertyOptional({ description: 'Timestamp of last sensor value' })
+  lastValueAt?: Date;
+
+  @ApiPropertyOptional({ 
+    description: 'Sensor channels with latest values from ClickHouse',
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        idSensorChannel: { type: 'string' },
+        metricCode: { type: 'string' },
+        unit: { type: 'string' },
+        lastValue: { type: 'number' },
+        lastValueAt: { type: 'string', format: 'date-time' },
+      }
+    }
+  })
+  channels?: Array<{
+    idSensorChannel: string;
+    metricCode: string;
+    unit: string;
+    lastValue: number | null;
+    lastValueAt: Date | null;
+  }>;
 }
 
 export class SensorDetailedResponseDto extends SensorResponseDto {

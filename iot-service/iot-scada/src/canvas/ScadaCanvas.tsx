@@ -99,9 +99,18 @@ function CanvasInner() {
   // Track store version to detect external store changes
   const storeNodesRef = useRef(storeNodes)
   const storeEdgesRef = useRef(storeEdges)
+  
+  // Flag to skip sync during delete operation (prevents infinite loop)
+  const isDeleting = useRef(false)
 
   // Sync store → local RF state when store changes (load, add, remove, save)
   useEffect(() => {
+    // Skip sync if we just deleted (we already updated local state)
+    if (isDeleting.current) {
+      isDeleting.current = false
+      storeNodesRef.current = storeNodes
+      return
+    }
     if (storeNodes !== storeNodesRef.current) {
       storeNodesRef.current = storeNodes
       setRfNodes(storeNodes.map(toFlowNode))
@@ -109,6 +118,11 @@ function CanvasInner() {
   }, [storeNodes])
 
   useEffect(() => {
+    // Skip sync if we just deleted (we already updated local state)  
+    if (isDeleting.current) {
+      storeEdgesRef.current = storeEdges
+      return
+    }
     if (storeEdges !== storeEdgesRef.current) {
       storeEdgesRef.current = storeEdges
       setRfEdges(storeEdges.map(toFlowEdge))
@@ -119,11 +133,17 @@ function CanvasInner() {
   // Only sync position-drag-end back to Zustand store.
   // NOTE: Removes are handled by onDelete callback, not here
   const onNodesChange = useCallback((changes: NodeChange[]) => {
-    // Apply all changes to local RF state (dimensions, select, position, etc.)
-    setRfNodes((nds) => applyNodeChanges(changes, nds))
+    // Filter out remove changes — they are handled by onDelete callback
+    // This prevents double state updates that cause infinite loops
+    const nonRemoveChanges = changes.filter((c) => c.type !== 'remove')
+    
+    if (nonRemoveChanges.length > 0) {
+      // Apply non-remove changes to local RF state (dimensions, select, position, etc.)
+      setRfNodes((nds) => applyNodeChanges(nonRemoveChanges, nds))
+    }
 
     // Sync position to store when drag ENDS (dragging becomes false)
-    const positionDone = changes.filter(
+    const positionDone = nonRemoveChanges.filter(
       (c): c is NodeChange & { type: 'position'; position: { x: number; y: number } } =>
         c.type === 'position' && 'dragging' in c && !c.dragging && 'position' in c && c.position != null,
     )
@@ -136,19 +156,14 @@ function CanvasInner() {
       })
       setStoreNodes(updated)
     }
-
-    // NOTE: Don't call removeNode here — it's handled by onDelete callback
-    // Calling it here causes infinite loop because:
-    // 1. removeNode updates store
-    // 2. useEffect syncs store → rfNodes
-    // 3. React Flow detects change → triggers onNodesChange again
-    // 4. onNodesChange calls removeNode again → infinite loop
   }, [setStoreNodes])
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    setRfEdges((eds) => applyEdgeChanges(changes, eds))
-    // NOTE: Don't call removeEdge here — it's handled by onDelete callback
-    // Same reasoning as onNodesChange to avoid infinite loop
+    // Filter out remove changes — they are handled by onDelete callback
+    const nonRemoveChanges = changes.filter((c) => c.type !== 'remove')
+    if (nonRemoveChanges.length > 0) {
+      setRfEdges((eds) => applyEdgeChanges(nonRemoveChanges, eds))
+    }
   }, [])
 
   const onConnect = useCallback((connection: Connection) => {
@@ -181,6 +196,21 @@ function CanvasInner() {
 
   // Explicit delete handler — most reliable path for deletion
   const onDelete = useCallback(({ nodes: deletedNodes, edges: deletedEdges }: { nodes: Node[], edges: Edge[] }) => {
+    // Set flag to skip store→local sync (we'll update local state directly)
+    isDeleting.current = true
+    
+    // Update local RF state directly (immediate visual feedback)
+    const deletedNodeIds = new Set(deletedNodes.map((n) => n.id))
+    const deletedEdgeIds = new Set(deletedEdges.map((e) => e.id))
+    
+    setRfNodes((nodes) => nodes.filter((n) => !deletedNodeIds.has(n.id)))
+    setRfEdges((edges) => edges.filter((e) => 
+      !deletedEdgeIds.has(e.id) && 
+      !deletedNodeIds.has(e.source) && 
+      !deletedNodeIds.has(e.target)
+    ))
+    
+    // Update store (source of truth for persistence)
     deletedEdges.forEach((e) => removeEdge(e.id))
     deletedNodes.forEach((n) => removeNode(n.id))
   }, [removeNode, removeEdge])

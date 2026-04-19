@@ -86,12 +86,12 @@ export function useScadaDiagram(diagramId: string | undefined) {
     const payload: UpdateScadaDiagramDto = {
       diagram: {
         name: meta.name,
-        description: meta.description ?? undefined,
-        projectId: meta.projectId ?? undefined,
-        diagramCode: meta.diagramCode ?? undefined,
+        description: (meta.description ?? undefined) as UpdateScadaDiagramDto['diagram']['description'],
+        projectId: meta.projectId as UpdateScadaDiagramDto['diagram']['projectId'],
+        diagramCode: meta.diagramCode as UpdateScadaDiagramDto['diagram']['diagramCode'],
         status: meta.status,
-        canvasConfig: meta.canvasConfig ?? {},
-        runtimeConfig: meta.runtimeConfig ?? {},
+        canvasConfig: (meta.canvasConfig ?? {}) as UpdateScadaDiagramDto['diagram']['canvasConfig'],
+        runtimeConfig: (meta.runtimeConfig ?? {}) as UpdateScadaDiagramDto['diagram']['runtimeConfig'],
       },
       nodes: nodes as unknown as UpdateScadaDiagramDto['nodes'],
       edges: edges.map(({ sourceHandle, targetHandle, pathMode, strokeWidth, labelFontSize, showBorder, borderWidth, lineCap, borderRadius, ...rest }: any) => ({

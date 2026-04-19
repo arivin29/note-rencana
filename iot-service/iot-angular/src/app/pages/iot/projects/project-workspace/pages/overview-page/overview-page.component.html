@@ -206,35 +206,17 @@
             </card>
         </div>
     </div>
-
-    <!-- Quick Links -->
-    <div class="quick-link-bar mb-3">
-        <div class="text-muted text-uppercase small mb-2">Deep links</div>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="quick-link" [routerLink]="['/iot/sensors']" [queryParams]="{ projectId: projectId }">
-                <i class="bi bi-bar-chart-line"></i> Sensor Explorer
-            </a>
-            <a class="quick-link" [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }">
-                <i class="bi bi-hdd-network"></i> Nodes / Devices
-            </a>
-            <a class="quick-link" [routerLink]="['/iot/telemetry']"
-                [queryParams]="{ projectId: projectId, range: '24h' }">
-                <i class="bi bi-activity"></i> Telemetry Timeline
-            </a>
-            <a class="quick-link" [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }">
-                <i class="bi bi-exclamation-triangle"></i> Alert Center
-            </a>
-        </div>
-    </div>
+ 
  
 
-    <!-- Sensor Overview & Map -->
+    <!-- Sensor Overview -->
     <div class="row g-3">
-        <div class="col-xl-8">
+        <div class="col-12">
             <card class="shadow-sm mb-3">
                 <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400 flex-wrap gap-2">
                     Sensor Overview
-                    <span class="badge bg-body text-muted border">Latest telemetry snapshot</span>
+                    <span class="badge bg-body text-muted border">Latest telemetry values</span>
+                    <span class="badge bg-theme ms-1" *ngIf="sensors.length > 0">{{ sensors.length }}</span>
                     <div class="ms-auto">
                         <button class="btn btn-sm btn-outline-default" [routerLink]="['/iot/sensors']"
                             [queryParams]="{ projectId: projectId }">
@@ -258,101 +240,63 @@
 
                 <!-- Sensors Table -->
                 <card-body class="p-0" *ngIf="!loadingSensors && sensors.length > 0">
-                    <div class="table-responsive">
-                        <table class="table mb-0 align-middle">
-                            <thead class="table-light text-muted">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm mb-0 align-middle table-hover">
+                            <thead class="table-light text-muted sticky-top">
                                 <tr>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Type</th>
-                                    <th scope="col">Location</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col" class="text-end">Node</th>
+                                    <th scope="col" style="min-width: 140px;">Sensor</th>
+                                    <th scope="col" style="min-width: 120px;">Type</th>
+                                    <th scope="col" class="text-end" style="min-width: 100px;">Value</th>
+                                    <th scope="col" class="text-center" style="min-width: 90px;">Last Update</th>
+                                    <th scope="col" style="min-width: 200px;">Node / Address</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let sensor of sensors.slice(0, 10)">
+                                <tr *ngFor="let sensor of sensors">
                                     <td>
-                                        <div class="fw-semibold">{{ sensor.label }}</div>
-                                        <div class="text-muted small" *ngIf="sensor.sensorCode">{{ sensor.sensorCode }}
+                                        <div class="fw-semibold text-truncate" style="max-width: 180px;" [title]="sensor.label">
+                                            {{ sensor.label }}
+                                        </div>
+                                        <div class="text-muted small text-truncate" style="max-width: 180px;" *ngIf="sensor.sensorCode">
+                                            {{ sensor.sensorCode }}
                                         </div>
                                     </td>
                                     <td>
-                                        <span *ngIf="sensor.sensorCatalog">
-                                            {{ sensor.sensorCatalog.vendor }} {{ sensor.sensorCatalog.modelName }}
+                                        <span *ngIf="sensor.sensorCatalog" class="text-truncate d-inline-block" style="max-width: 150px;" 
+                                              [title]="sensor.sensorCatalog.vendor + ' ' + sensor.sensorCatalog.modelName">
+                                            {{ sensor.sensorCatalog.modelName }}
                                         </span>
-                                        <span *ngIf="!sensor.sensorCatalog" class="text-muted">Unknown Type</span>
-                                    </td>
-                                    <td>
-                                        <span *ngIf="sensor.location">{{ sensor.location }}</span>
-                                        <span *ngIf="!sensor.location" class="text-muted">-</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge" [class.bg-success-subtle]="sensor.status === 'active'"
-                                            [class.text-success]="sensor.status === 'active'"
-                                            [class.bg-warning-subtle]="sensor.status === 'maintenance'"
-                                            [class.text-warning]="sensor.status === 'maintenance'"
-                                            [class.bg-secondary-subtle]="sensor.status === 'inactive'"
-                                            [class.text-secondary]="sensor.status === 'inactive'">
-                                            {{ sensor.status || 'Unknown' }}
-                                        </span>
+                                        <span *ngIf="!sensor.sensorCatalog" class="text-muted">-</span>
                                     </td>
                                     <td class="text-end">
-                                        <span *ngIf="sensor.node" class="text-muted small">{{ sensor.node.code }}</span>
+                                        <div class="fw-semibold" [class.text-muted]="sensor.lastValue === null">
+                                            {{ formatSensorValue(sensor.lastValue, sensor.channels && sensor.channels[0] ? sensor.channels[0].unit : '') }}
+                                        </div>
+                                        <div class="text-muted small" *ngIf="sensor.channels && sensor.channels.length > 1">
+                                            +{{ sensor.channels.length - 1 }} channel{{ sensor.channels.length > 2 ? 's' : '' }}
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge" 
+                                              [class.bg-success-subtle]="!isDataStale(sensor.lastValueAt) && sensor.lastValueAt"
+                                              [class.text-success]="!isDataStale(sensor.lastValueAt) && sensor.lastValueAt"
+                                              [class.bg-danger-subtle]="isDataStale(sensor.lastValueAt)"
+                                              [class.text-danger]="isDataStale(sensor.lastValueAt)"
+                                              [class.bg-secondary-subtle]="!sensor.lastValueAt"
+                                              [class.text-secondary]="!sensor.lastValueAt">
+                                            {{ formatLastValueAt(sensor.lastValueAt) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div *ngIf="sensor.node">
+                                            <div class="fw-semibold small">{{ sensor.node.code }}</div>
+                                            <div class="text-muted small" *ngIf="sensor.node.address">{{ sensor.node.address }}</div>
+                                        </div>
+                                        <span *ngIf="!sensor.node" class="text-muted">-</span>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                </card-body>
-            </card>
-        </div>
-
-        <!-- Recent Alerts Section -->
-        <div class="col-xl-4">
-            <card class="shadow-sm mb-3 h-100">
-                <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-                    <i class="fa fa-bell text-warning me-2"></i>
-                    Recent Alerts
-                    <span class="badge bg-danger ms-2" *ngIf="alerts.length > 0">{{ alerts.length }}</span>
-                    <a [routerLink]="['/iot/alerts']" [queryParams]="{ projectId: projectId }" 
-                       class="ms-auto btn btn-sm btn-outline-warning">
-                        View All
-                    </a>
-                </card-header>
-                <card-body class="p-0">
-                    <!-- Loading State -->
-                    <div *ngIf="loadingAlerts" class="text-center py-4">
-                        <div class="spinner-border spinner-border-sm text-theme" role="status">
-                            <span class="visually-hidden">Loading alerts...</span>
-                        </div>
-                    </div>
-
-                    <!-- No Alerts State -->
-                    <div *ngIf="!loadingAlerts && alerts.length === 0" class="text-center py-4 text-muted">
-                        <i class="fa fa-check-circle fa-2x mb-2 text-success opacity-50"></i>
-                        <div>No active alerts</div>
-                        <div class="small">All systems operating normally</div>
-                    </div>
-
-                    <!-- Alerts List -->
-                    <div *ngIf="!loadingAlerts && alerts.length > 0" class="alert-list">
-                        <div *ngFor="let alert of alerts.slice(0, 5)" class="alert-item p-3 border-bottom">
-                            <div class="d-flex align-items-start">
-                                <span class="badge me-3" [class]="getAlertSeverityClass(alert.severity)">
-                                    {{ alert.severity || 'Info' }}
-                                </span>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold">{{ alert.title || alert.alertRule?.name || 'Alert' }}</div>
-                                    <div class="text-muted small">{{ alert.message || alert.description || '-' }}</div>
-                                    <div class="text-muted small mt-1">
-                                        <i class="fa fa-clock me-1"></i>{{ formatAlertTime(alert.triggeredAt || alert.createdAt) }}
-                                        <span *ngIf="alert.node" class="ms-2">
-                                            <i class="fa fa-microchip me-1"></i>{{ alert.node.code || alert.node.name }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </card-body>
             </card>

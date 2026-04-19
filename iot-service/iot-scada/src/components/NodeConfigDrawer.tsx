@@ -323,7 +323,7 @@ function GeneralTab({ nodeId }: { nodeId: string }) {
               min={40}
               max={400}
               value={node.size?.height ?? 100}
-              onChange={(e) => updateNode(nodeId, { size: { width: node.size?.width ?? 100, ...node.size, height: Number(e.target.value) || 100 } })}
+              onChange={(e) => updateNode(nodeId, { size: { ...node.size, width: node.size?.width ?? 100, height: Number(e.target.value) || 100 } })}
             />
           </div>
         </div>

@@ -33,9 +33,11 @@ async function bootstrap() {
     .setTitle('IoT Monitoring System API')
     .setDescription(
       'Complete IoT monitoring system REST API with nested data queries, aggregations, and real-time telemetry. ' +
-      'Supports CRUD operations for all entities, complex queries with relations, and custom reports for dashboards.',
+      'Supports CRUD operations for all entities, complex queries with relations, and custom reports for dashboards.\n\n' +
+      '📥 **[Download OpenAPI Spec (JSON)](/api-json)** — Import this URL into Postman, Insomnia, or other API tools.',
     )
     .setVersion('1.0.0')
+    .setExternalDocs('OpenAPI JSON Spec', '/api-json')
     .addBearerAuth()
     .addTag('Authentication', 'User authentication and authorization')
     .addTag('Owners', 'Owner management and statistics')

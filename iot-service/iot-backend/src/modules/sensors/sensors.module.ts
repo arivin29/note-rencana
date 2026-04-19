@@ -4,9 +4,13 @@ import { SensorsController } from './sensors.controller';
 import { SensorsService } from './sensors.service';
 import { Sensor } from '../../entities/sensor.entity';
 import { SensorChannel } from '../../entities/sensor-channel.entity';
+import { ClickhouseModule } from '../clickhouse/clickhouse.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Sensor, SensorChannel])],
+  imports: [
+    TypeOrmModule.forFeature([Sensor, SensorChannel]),
+    ClickhouseModule,
+  ],
   controllers: [SensorsController],
   providers: [SensorsService],
   exports: [SensorsService],
