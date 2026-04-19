@@ -251,6 +251,8 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
   private async flushTelemetry(): Promise<void> {
     if (this.telemetryBuffer.length === 0) return;
 
+    this.logger.log(`🔄 Flushing ${this.telemetryBuffer.length} telemetry records, isConnected: ${this.isConnected}`);
+    
     if (!this.isConnected) {
       this.scheduleReconnect();
       return;
@@ -279,10 +281,10 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.reconnectAttempts = 0; // Reset on successful operation
-      this.logger.debug( `Flushed ${batch.length} telemetry records to ClickHouse `);
+      this.logger.log(`✅ Flushed ${batch.length} telemetry records to ClickHouse`);
     } catch (error) {
-      this.logger.error( `Failed to flush telemetry: ${error.message} `);
-      this.logger.error( `Error stack: ${error.stack} `);
+      this.logger.error(`❌ Failed to flush telemetry: ${error.message}`);
+      this.logger.error(`Error stack: ${error.stack}`);
       // Re-add failed batch to buffer (with limit to prevent memory issues)
       if (this.telemetryBuffer.length < this.batchSize * 10) {
         this.telemetryBuffer.unshift(...batch);

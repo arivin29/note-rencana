@@ -463,9 +463,11 @@ export class TelemetryProcessorService {
       }
 
       // 9. Insert to ClickHouse (async, non-blocking)
+      this.logger.log(`📊 ClickHouse batch: ${clickhouseTelemetryBatch.length} records, isReady: ${this.clickhouseService.isReady()}`);
       if (clickhouseTelemetryBatch.length > 0 && this.clickhouseService.isReady()) {
         try {
           // Batch insert telemetry
+          this.logger.log(`📤 Inserting ${clickhouseTelemetryBatch.length} records to ClickHouse buffer...`);
           await this.clickhouseService.insertTelemetryBatch(clickhouseTelemetryBatch);
 
           // Update channel latest status
