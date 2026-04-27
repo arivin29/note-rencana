@@ -440,7 +440,199 @@
     </div>
 </div>
 
-<!-- TODO: Recent Delivery Attempts - Hidden (dummy data)
+<!-- API Key Management Section -->
+<div *ngIf="!loading && !error" class="row g-3 mt-1">
+    <div class="col-12">
+        <card class="shadow-sm">
+            <card-header class="d-flex align-items-center">
+                <div>
+                    <div class="text-uppercase text-muted small">External API</div>
+                    <h5 class="mb-0">
+                        <i class="fa fa-key me-2"></i>API Key Management
+                    </h5>
+                </div>
+                <button class="btn btn-theme btn-sm ms-auto" (click)="toggleCreateApiKeyForm()">
+                    <i class="fa me-1" [ngClass]="showCreateApiKeyForm ? 'fa-times' : 'fa-plus'"></i>
+                    {{ showCreateApiKeyForm ? 'Cancel' : 'Generate API Key' }}
+                </button>
+            </card-header>
+            <card-body>
+                <!-- Generated API Key Alert -->
+                <div *ngIf="showGeneratedKey && generatedApiKey" class="alert alert-warning mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <strong>Save this API Key now! It won't be shown again.</strong>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace bg-dark text-light" 
+                               [value]="generatedApiKey" readonly>
+                        <button class="btn btn-outline-warning" (click)="copyApiKey()" title="Copy to clipboard">
+                            <i class="fa fa-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status Message -->
+                <div *ngIf="apiKeysMessage" class="alert mb-3"
+                     [ngClass]="{
+                       'alert-success': apiKeysMessage.includes('success') || apiKeysMessage.includes('copied') || apiKeysMessage.includes('revoked'),
+                       'alert-danger': apiKeysMessage.includes('Error') || apiKeysMessage.includes('Failed'),
+                       'alert-warning': apiKeysMessage.includes('Simpan') || apiKeysMessage.includes('tidak'),
+                       'alert-info': !apiKeysMessage.includes('success') && !apiKeysMessage.includes('Error') && !apiKeysMessage.includes('Simpan') && !apiKeysMessage.includes('copied')
+                     }">
+                    {{ apiKeysMessage }}
+                </div>
+
+                <!-- Create API Key Form -->
+                <div *ngIf="showCreateApiKeyForm" class="border rounded p-3 mb-3 bg-body-secondary bg-opacity-25">
+                    <h6 class="mb-3">Generate New API Key</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small text-uppercase">Label *</label>
+                            <input class="form-control" [(ngModel)]="newApiKey.label" name="apiKeyLabel"
+                                   placeholder="e.g. Production, Development">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted small text-uppercase">Expires In (Days)</label>
+                            <input type="number" class="form-control" [(ngModel)]="newApiKey.expiresInDays"
+                                   name="apiKeyExpires" min="1" max="730">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted small text-uppercase">Rate Limit Plan</label>
+                            <select class="form-select" [(ngModel)]="newApiKey.rateLimitPlan" name="apiKeyPlan">
+                                <option value="basic">Basic (60/min)</option>
+                                <option value="standard">Standard (120/min)</option>
+                                <option value="premium">Premium (300/min)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small text-uppercase">Description</label>
+                            <input class="form-control" [(ngModel)]="newApiKey.description" name="apiKeyDesc"
+                                   placeholder="What is this key used for?">
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-theme" (click)="createApiKey()" [disabled]="!newApiKey.label">
+                                <i class="fa fa-key me-1"></i> Generate Key
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div *ngIf="loadingApiKeys" class="text-center py-4">
+                    <div class="spinner-border text-theme" role="status">
+                        <span class="visually-hidden">Loading API keys...</span>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div *ngIf="apiKeysError && !loadingApiKeys" class="alert alert-danger">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    {{ apiKeysError }}
+                    <button class="btn btn-sm btn-danger ms-3" (click)="loadApiKeys()">
+                        <i class="fa fa-refresh me-1"></i> Retry
+                    </button>
+                </div>
+
+                <!-- API Keys Table -->
+                <div *ngIf="!loadingApiKeys && !apiKeysError" class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="text-muted text-uppercase small">
+                            <tr>
+                                <th>Label</th>
+                                <th>Key Prefix</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                                <th>Usage</th>
+                                <th>Expires</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="apiKeys.length === 0">
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fa fa-key fa-3x mb-2 opacity-25"></i>
+                                    <div>No API keys generated yet</div>
+                                    <button class="btn btn-sm btn-theme mt-2" (click)="toggleCreateApiKeyForm()">
+                                        <i class="fa fa-plus me-1"></i> Generate First API Key
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr *ngFor="let key of apiKeys">
+                                <td>
+                                    <div class="fw-semibold">{{ key.label }}</div>
+                                    <div *ngIf="key.description" class="text-muted small">{{ key.description }}</div>
+                                </td>
+                                <td>
+                                    <code class="text-muted">{{ key.apiKeyPrefix }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge text-uppercase"
+                                          [ngClass]="{
+                                            'bg-secondary': key.rateLimitPlan === 'basic',
+                                            'bg-info': key.rateLimitPlan === 'standard',
+                                            'bg-warning text-dark': key.rateLimitPlan === 'premium'
+                                          }">
+                                        {{ key.rateLimitPlan }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge" [ngClass]="getApiKeyStatusBadge(key).class">
+                                        {{ getApiKeyStatusBadge(key).text }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <span class="fw-semibold">{{ key.requestsToday }}</span> today
+                                    </div>
+                                    <div class="text-muted small">{{ key.requestsTotal }} total</div>
+                                </td>
+                                <td>
+                                    <span *ngIf="key.expiresAt">
+                                        {{ key.expiresAt | date:'dd MMM yyyy' }}
+                                    </span>
+                                    <span *ngIf="!key.expiresAt" class="text-muted">Never</span>
+                                    <div *ngIf="key.lastUsedAt" class="text-muted small">
+                                        Last used: {{ key.lastUsedAt | date:'dd MMM HH:mm' }}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-warning"
+                                                (click)="toggleApiKeyActive(key)"
+                                                [title]="key.isActive ? 'Deactivate' : 'Activate'">
+                                            <i class="fa" [ngClass]="key.isActive ? 'fa-pause' : 'fa-play'"></i>
+                                        </button>
+                                        <button class="btn btn-outline-theme"
+                                                (click)="regenerateApiKey(key)"
+                                                title="Regenerate key">
+                                            <i class="fa fa-refresh"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger"
+                                                (click)="revokeApiKey(key)"
+                                                title="Revoke & delete">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Info about External API -->
+                <div *ngIf="!loadingApiKeys && apiKeys.length > 0" class="mt-3 p-3 border rounded bg-body-secondary bg-opacity-25">
+                    <div class="small text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        Use these API keys with the <strong>External API</strong> by passing header 
+                        <code>X-API-Key: your_key</code>. 
+                        <a href="/external-api/docs" target="_blank">View API Documentation →</a>
+                    </div>
+                </div>
+            </card-body>
+        </card>
+    </div>
+</div>
      Needs implementation:
      1. Backend endpoint: GET /owners/:id/forwarding-logs
      2. Log insertion when forwarding happens (webhook/database)

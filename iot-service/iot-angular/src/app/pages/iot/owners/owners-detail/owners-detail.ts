@@ -8,6 +8,12 @@ import { ForwardingWebhookResponseDto } from '../../../../../sdk/core/models/for
 import { ForwardingDatabaseResponseDto } from '../../../../../sdk/core/models/forwarding-database-response-dto';
 import { UserResponseDto } from '../../../../../sdk/core/models/user-response-dto';
 import { UserModal } from '../user-modal/user-modal';
+import {
+  TenantApiKeysService,
+  TenantApiKeyResponse,
+  CreateTenantApiKeyRequest,
+  RateLimitPlan
+} from '../../../../services/tenant-api-keys.service';
 
 interface OwnerProfile {
   name: string;
@@ -208,12 +214,23 @@ export class OwnersDetailPage implements OnInit {
   loadingUsers = false;
   usersError = '';
 
+  // API Key Management
+  apiKeys: TenantApiKeyResponse[] = [];
+  loadingApiKeys = false;
+  apiKeysError = '';
+  apiKeysMessage = '';
+  showCreateApiKeyForm = false;
+  newApiKey: CreateTenantApiKeyRequest = { label: '', description: '', expiresInDays: 365, rateLimitPlan: 'basic' };
+  generatedApiKey = '';
+  showGeneratedKey = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private modalService: NgbModal,
     private ownersService: OwnersService,
-    private usersService: UsersService
+    private usersService: UsersService,
+    private tenantApiKeysService: TenantApiKeysService
   ) {
     this.route.paramMap.subscribe((params) => {
       this.ownerId = params.get('ownerId') ?? '';
@@ -240,6 +257,7 @@ export class OwnersDetailPage implements OnInit {
           this.loading = false;
           // Load users after owner details are loaded
           this.loadOwnerUsers();
+          this.loadApiKeys();
         },
         error: (err) => {
           console.error('Error loading owner detail:', err);
@@ -792,5 +810,141 @@ export class OwnersDetailPage implements OnInit {
           alert('Failed to delete user. Please try again.');
         }
       });
+  }
+
+  // ===========================
+  // API Key Management Methods
+  // ===========================
+
+  loadApiKeys(): void {
+    this.loadingApiKeys = true;
+    this.apiKeysError = '';
+
+    this.tenantApiKeysService.findAll(this.ownerId).subscribe({
+      next: (response) => {
+        this.apiKeys = response.data || [];
+        this.loadingApiKeys = false;
+      },
+      error: (err) => {
+        console.error('Error loading API keys:', err);
+        this.apiKeysError = 'Failed to load API keys';
+        this.loadingApiKeys = false;
+      }
+    });
+  }
+
+  toggleCreateApiKeyForm(): void {
+    this.showCreateApiKeyForm = !this.showCreateApiKeyForm;
+    if (this.showCreateApiKeyForm) {
+      this.newApiKey = { label: '', description: '', expiresInDays: 365, rateLimitPlan: 'basic' };
+      this.generatedApiKey = '';
+      this.showGeneratedKey = false;
+    }
+  }
+
+  createApiKey(): void {
+    if (!this.newApiKey.label) {
+      this.apiKeysMessage = 'Error: Label is required';
+      return;
+    }
+
+    this.apiKeysMessage = 'Generating API key...';
+
+    this.tenantApiKeysService.create({ ...this.newApiKey, idOwner: this.ownerId }).subscribe({
+      next: (result) => {
+        this.generatedApiKey = result.data.apiKey;
+        this.showGeneratedKey = true;
+        this.apiKeysMessage = result.warning || 'API Key generated! Copy it now — it won\'t be shown again.';
+        this.loadApiKeys();
+      },
+      error: (err: any) => {
+        console.error('Error creating API key:', err);
+        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to generate API key'}`;
+      }
+    });
+  }
+
+  copyApiKey(): void {
+    if (this.generatedApiKey) {
+      navigator.clipboard.writeText(this.generatedApiKey).then(() => {
+        this.apiKeysMessage = 'API Key copied to clipboard!';
+        setTimeout(() => {
+          if (this.apiKeysMessage === 'API Key copied to clipboard!') {
+            this.apiKeysMessage = '';
+          }
+        }, 3000);
+      });
+    }
+  }
+
+  toggleApiKeyActive(key: TenantApiKeyResponse): void {
+    const newStatus = !key.isActive;
+    const action = newStatus ? 'activate' : 'deactivate';
+
+    if (!confirm(`Are you sure you want to ${action} API key "${key.label}"?`)) {
+      return;
+    }
+
+    this.tenantApiKeysService.update(key.idApiKey, { isActive: newStatus }).subscribe({
+      next: () => {
+        key.isActive = newStatus;
+        this.apiKeysMessage = `API key ${action}d successfully`;
+        setTimeout(() => { this.apiKeysMessage = ''; }, 3000);
+      },
+      error: (err: any) => {
+        console.error('Error updating API key:', err);
+        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to update API key'}`;
+      }
+    });
+  }
+
+  regenerateApiKey(key: TenantApiKeyResponse): void {
+    if (!confirm(`Regenerate API key "${key.label}"?\n\nThe old key will be IMMEDIATELY INVALIDATED.`)) {
+      return;
+    }
+
+    this.apiKeysMessage = 'Regenerating API key...';
+
+    this.tenantApiKeysService.regenerate(key.idApiKey).subscribe({
+      next: (result) => {
+        this.generatedApiKey = result.data.apiKey;
+        this.showGeneratedKey = true;
+        this.apiKeysMessage = result.warning || 'New API Key generated! Copy it now.';
+        this.loadApiKeys();
+      },
+      error: (err: any) => {
+        console.error('Error regenerating API key:', err);
+        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to regenerate API key'}`;
+      }
+    });
+  }
+
+  revokeApiKey(key: TenantApiKeyResponse): void {
+    if (!confirm(`PERMANENTLY revoke API key "${key.label}"?\n\nThis action CANNOT be undone.`)) {
+      return;
+    }
+
+    this.tenantApiKeysService.revoke(key.idApiKey).subscribe({
+      next: () => {
+        this.apiKeys = this.apiKeys.filter(k => k.idApiKey !== key.idApiKey);
+        this.apiKeysMessage = 'API key revoked successfully';
+        setTimeout(() => { this.apiKeysMessage = ''; }, 3000);
+      },
+      error: (err: any) => {
+        console.error('Error revoking API key:', err);
+        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to revoke API key'}`;
+      }
+    });
+  }
+
+  isApiKeyExpired(key: TenantApiKeyResponse): boolean {
+    if (!key.expiresAt) return false;
+    return new Date() > new Date(key.expiresAt);
+  }
+
+  getApiKeyStatusBadge(key: TenantApiKeyResponse): { class: string; text: string } {
+    if (!key.isActive) return { class: 'bg-secondary', text: 'Inactive' };
+    if (this.isApiKeyExpired(key)) return { class: 'bg-warning text-dark', text: 'Expired' };
+    return { class: 'bg-success', text: 'Active' };
   }
 }

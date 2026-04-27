@@ -49,6 +49,7 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [
     { path: 'overview', icon: 'fa-tachometer-alt', label: 'Overview' },
     { path: 'nodes', icon: 'fa-server', label: 'Nodes' },
+    { path: 'sensors', icon: 'fa-microchip', label: 'Sensors' },
     { path: 'monitor', icon: 'fa-chart-line', label: 'Monitor', expanded: false, children: [] },
     { path: 'map', icon: 'fa-map-marked-alt', label: 'Map', expanded: false },
     { path: 'analytics', icon: 'fa-project-diagram', label: 'SCADA' },

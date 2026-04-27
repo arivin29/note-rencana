@@ -17,6 +17,14 @@ import { RateLimitPlan } from '../entities/tenant-api-key.entity';
 // ============================================
 
 export class CreateTenantApiKeyDto {
+  @ApiPropertyOptional({
+    description: 'Owner ID to create the API key for (required for admin users without owner)',
+    example: '4cabf383-cb99-47e2-9c6c-9ad4bbf543fd',
+  })
+  @IsOptional()
+  @IsString()
+  idOwner?: string;
+
   @ApiProperty({
     description: 'Label for the API key (e.g., "Production", "Development")',
     example: 'Production API Key',

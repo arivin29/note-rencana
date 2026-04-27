@@ -9,6 +9,7 @@ import { OverviewPageComponent } from './project-workspace/pages/overview-page/o
 import { NodesPageComponent } from './project-workspace/pages/nodes-page/nodes-page.component';
 import { NodeDetailPageComponent } from './project-workspace/pages/node-detail-page/node-detail-page.component';
 import { SensorPageComponent } from './project-workspace/pages/sensor-page/sensor-page.component';
+import { SensorsPageComponent } from './project-workspace/pages/sensors-page/sensors-page.component';
 import { MonitorPageComponent } from './project-workspace/pages/monitor-page/monitor-page.component';
 import { MapPageComponent } from './project-workspace/pages/map-page/map-page.component';
 import { AnalyticsPageComponent } from './project-workspace/pages/analytics-page/analytics-page.component';
@@ -26,6 +27,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'overview', component: OverviewPageComponent },
       { path: 'nodes', component: NodesPageComponent },
+      { path: 'sensors', component: SensorsPageComponent },
       { path: 'node/:nodeId', component: NodeDetailPageComponent },
       { path: 'node/:nodeId/sensor/:sensorId', component: SensorPageComponent },
       { path: 'monitor', component: MonitorPageComponent },

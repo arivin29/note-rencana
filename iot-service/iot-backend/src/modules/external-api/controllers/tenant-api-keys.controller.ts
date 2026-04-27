@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpStatus,
   HttpCode,
@@ -83,8 +84,18 @@ export class TenantApiKeysController {
     description: 'API keys retrieved successfully',
     type: TenantApiKeyListResponseDto,
   })
-  async findAll(@Request() req: any): Promise<TenantApiKeyListResponseDto> {
-    const keys = await this.apiKeysService.findAllByUser(req.user.idUser);
+  async findAll(
+    @Request() req: any,
+    @Query('ownerId') ownerId?: string,
+  ): Promise<TenantApiKeyListResponseDto> {
+    let keys;
+    if (ownerId) {
+      // Admin flow: list by owner ID
+      keys = await this.apiKeysService.findAll({ ownerId });
+    } else {
+      // Self flow: list by logged-in user
+      keys = await this.apiKeysService.findAllByUser(req.user.idUser);
+    }
     return {
       data: keys,
       total: keys.length,

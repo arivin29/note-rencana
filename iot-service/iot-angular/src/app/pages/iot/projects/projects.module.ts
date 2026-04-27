@@ -26,6 +26,7 @@ import { OverviewPageComponent } from './project-workspace/pages/overview-page/o
 import { NodesPageComponent } from './project-workspace/pages/nodes-page/nodes-page.component';
 import { NodeDetailPageComponent } from './project-workspace/pages/node-detail-page/node-detail-page.component';
 import { SensorPageComponent } from './project-workspace/pages/sensor-page/sensor-page.component';
+import { SensorsPageComponent } from './project-workspace/pages/sensors-page/sensors-page.component';
 import { MonitorPageComponent } from './project-workspace/pages/monitor-page/monitor-page.component';
 import { MapPageComponent } from './project-workspace/pages/map-page/map-page.component';
 import { AnalyticsPageComponent } from './project-workspace/pages/analytics-page/analytics-page.component';
@@ -43,6 +44,7 @@ import { ConfigPageComponent } from './project-workspace/pages/config-page/confi
     NodesPageComponent,
     NodeDetailPageComponent,
     SensorPageComponent,
+    SensorsPageComponent,
     MonitorPageComponent,
     MapPageComponent,
     AnalyticsPageComponent,

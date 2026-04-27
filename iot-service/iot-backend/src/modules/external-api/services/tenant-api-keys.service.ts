@@ -52,7 +52,10 @@ export class TenantApiKeysService {
       throw new NotFoundException('User not found');
     }
 
-    if (!user.idOwner) {
+    // Use explicit idOwner from DTO (admin flow), or fallback to user's idOwner
+    const ownerId = dto.idOwner || user.idOwner;
+
+    if (!ownerId) {
       throw new ForbiddenException('User is not associated with any tenant/owner');
     }
 
@@ -69,7 +72,7 @@ export class TenantApiKeysService {
     // Create entity
     const apiKey = this.apiKeyRepository.create({
       idUser: userId,
-      idOwner: user.idOwner,
+      idOwner: ownerId,
       apiKeyHash: keyHash,
       apiKeyPrefix: keyPrefix,
       label: dto.label,
