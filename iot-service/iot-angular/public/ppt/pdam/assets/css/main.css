@@ -396,6 +396,9 @@ iconify-icon { display: inline-block; vertical-align: middle; }
 .cover-stat-lbl {
   font-size: 14px; color: rgba(255,255,255,0.4); text-align: center; line-height: 1.4;
 }
+.cover-stat-src {
+  font-size: 10px; color: rgba(255,255,255,0.25); text-align: center; line-height: 1.3; margin-top: 2px;
+}
 .cover-stat-div {
   width: 1px; height: 40px; background: rgba(14,165,233,0.18); flex-shrink: 0; margin: 0 12px;
 }
@@ -1073,7 +1076,9 @@ iconify-icon { display: inline-block; vertical-align: middle; }
   padding: 24px 24px 20px; gap: 16px; min-width: 0;
 }
 .s8-variants {
-  flex: 1; display: grid; grid-template-columns: repeat(3, 1fr);
+  flex: 1; 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px; min-height: 0;
 }
 .s8-variant {
@@ -1127,7 +1132,7 @@ iconify-icon { display: inline-block; vertical-align: middle; }
 .s8-tag--violet { color: #8B5CF6; background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.2); }
 /* Shared features row at bottom of right panel */
 .s8-photo-strip {
-  display: flex; gap: 10px; height: 100px; flex-shrink: 0;
+  display: flex; gap: 10px; height: 200px; flex-shrink: 0;
 }
 .s8-strip-photo {
   flex: 1; border-radius: 10px;
@@ -1185,30 +1190,44 @@ iconify-icon { display: inline-block; vertical-align: middle; }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .s9-right {
-  flex: 1; padding: 26px 32px;
+  flex: 1; padding: 20px 28px;
   display: flex; flex-direction: column; gap: 14px;
+  overflow: hidden;
 }
-.s9-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 14px; flex: 1;
+.s9-screens {
+  display: flex; gap: 14px;
 }
-.s9-feat-card {
-  background: rgba(10,22,40,0.7);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(14,165,233,0.1);
-  padding: 18px 16px;
-  display: flex; flex-direction: column; gap: 10px;
-  transition: border-color 0.2s, transform 0.2s;
+.s9-screen-item {
+  flex: 1; display: flex; flex-direction: column; gap: 8px;
 }
-.s9-feat-card:hover { border-color: var(--color-accent); transform: translateY(-2px); }
-.s9-feat-icon {
-  width: 42px; height: 42px; border-radius: 12px;
-  background: rgba(14,165,233,0.1);
-  border: 1px solid rgba(14,165,233,0.2);
-  display: flex; align-items: center; justify-content: center;
+.s9-screen-img {
+  width: 100%; height: auto; aspect-ratio: 16/9; object-fit: fill;
+  border-radius: 10px;
+  border: 1px solid rgba(14,165,233,0.25);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  display: block;
 }
-.s9-feat-card h4 { font-size: 16px; font-weight: 700; color: white; }
-.s9-feat-card p  { font-size: 14px; color: rgba(255,255,255,0.45); line-height: 1.55; }
+.s9-screen-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6);
+  line-height: 1.4;
+}
+.s9-feat-chips {
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.s9-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(14,165,233,0.07);
+  border: 1px solid rgba(14,165,233,0.18);
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 12px; color: rgba(255,255,255,0.65);
+}
+.s9-chip iconify-icon { color: #0EA5E9; }
+.s9-chip-warn { border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.06); }
+.s9-chip-warn iconify-icon { color: #EF4444; }
+.s9-chip-green { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.06); }
+.s9-chip-green iconify-icon { color: #10B981; }
 
 /* =====================================================
    SLIDE 10 — HELIOS FITUR
@@ -1284,7 +1303,7 @@ iconify-icon { display: inline-block; vertical-align: middle; }
   background: rgba(10,22,40,0.7);
   border: 1px solid rgba(14,165,233,0.15);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 60px 14px;
   display: flex; align-items: flex-start; gap: 12px;
 }
 .s10-fcard-icon {
@@ -1444,7 +1463,7 @@ iconify-icon { display: inline-block; vertical-align: middle; }
 }
 /* Arrow columns */
 .s12-col-arrow {
-  width: 60px; flex-shrink: 0;
+  width: 100px; flex-shrink: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 6px;
 }

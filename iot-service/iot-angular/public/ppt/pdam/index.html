@@ -49,6 +49,7 @@
           <div class="cover-stat">
             <span class="cover-stat-num">30–40%</span>
             <span class="cover-stat-lbl">Rata-rata NRW<br>PDAM Indonesia</span>
+            <span class="cover-stat-src">Audit Kinerja BUMD Air Minum, 2024</span>
           </div>
           <div class="cover-stat-div"></div>
           <div class="cover-stat">
@@ -348,7 +349,7 @@
       <p class="s5n-desc">Air yang diproduksi tapi tidak menghasilkan pendapatan — akibat kebocoran, pencurian, dan kesalahan meter.</p>
       <div class="s5n-stat-block">
         <span class="s5n-stat-num">30–40%</span>
-        <span class="s5n-stat-label">Rata-rata NRW PDAM Indonesia<br>(BPPSPAM, 2024)</span>
+        <span class="s5n-stat-label">Rata-rata NRW PDAM Indonesia<br>(Audit Kinerja BUMD Air Minum, 2024)</span>
       </div>
     </div>
     <!-- Right: 4 cards + image bottom -->
@@ -360,7 +361,7 @@
             <div class="s5n-pcard-icon"><iconify-icon icon="fa6-solid:pipe-valve" width="18" style="color:#EF4444"></iconify-icon></div>
             <h3>Kebocoran Fisik</h3>
           </div>
-          <p>Pipa tua &amp; sambungan bocor yang tidak terdeteksi — penyebab utama NRW di Indonesia.</p>
+          <p>Pipa tua, aksesoris dan sambungan yang bocor, seringnya tidak terdeteksi — penyebab utama NRW di Indonesia.</p>
         </div>
         <div class="s5n-pcard s5n-pcard-warn">
           <div class="s5n-pcard-header">
@@ -663,36 +664,48 @@
       </div>
     </div>
     <div class="s9-right">
-      <div class="s9-grid">
-        <div class="s9-feat-card">
-          <div class="s9-feat-icon"><iconify-icon icon="fa6-solid:chart-bar" width="22" style="color:#0EA5E9"></iconify-icon></div>
-          <h4>Dashboard Builder</h4>
-          <p>6+ tipe widget (gauge, line, bar, stat card, table) — drag &amp; drop, SQL editor, refresh 5–60 detik.</p>
+      <!-- Screenshot row top -->
+      <div class="s9-screens">
+        <div class="s9-screen-item">
+          <img src="https://iot.devetek.app/img/screenshots/mockup-1.jpg" alt="Dashboard Overview" class="s9-screen-img">
+          <div class="s9-screen-label">
+            <iconify-icon icon="fa6-solid:chart-bar" width="12" style="color:#0EA5E9"></iconify-icon>
+            Dashboard Builder — 6+ Tipe Widget, SQL Editor, Real-time Refresh
+          </div>
         </div>
-        <div class="s9-feat-card">
-          <div class="s9-feat-icon"><iconify-icon icon="fa6-solid:map" width="22" style="color:#0EA5E9"></iconify-icon></div>
-          <h4>WebGIS &amp; DMA</h4>
-          <p>Peta interaktif dengan layer DMA boundary, posisi sensor, alert zone, dan live popup mini-chart.</p>
+        <div class="s9-screen-item">
+          <img src="https://iot.devetek.app/img/screenshots/mockup-4.jpg" alt="WebGIS Map" class="s9-screen-img">
+          <div class="s9-screen-label">
+            <iconify-icon icon="fa6-solid:map" width="12" style="color:#0EA5E9"></iconify-icon>
+            WebGIS &amp; DMA — OpenLayers, Live Popup, DMA Boundary Layer
+          </div>
         </div>
-        <div class="s9-feat-card">
-          <div class="s9-feat-icon"><iconify-icon icon="fa6-solid:bell" width="22" style="color:#0EA5E9"></iconify-icon></div>
-          <h4>Smart Alert</h4>
-          <p>Alert 3 level (Critical/Warning/Info) — threshold min/max, relay otomatis, notifikasi WA/Telegram/Email.</p>
+      </div>
+      <!-- Feature chips bottom -->
+      <div class="s9-feat-chips">
+        <div class="s9-chip s9-chip-warn">
+          <iconify-icon icon="fa6-solid:bell" width="12"></iconify-icon>
+          Smart Alert 3 Level (Critical / Warning / Info)
         </div>
-        <div class="s9-feat-card">
-          <div class="s9-feat-icon"><iconify-icon icon="fa6-solid:brain" width="22" style="color:#0EA5E9"></iconify-icon></div>
-          <h4>ML Anomali</h4>
-          <p>Deteksi kebocoran berbasis machine learning — early warning sebelum kehilangan air menjadi signifikan.</p>
+        <div class="s9-chip s9-chip-green">
+          <iconify-icon icon="fa6-solid:brain" width="12"></iconify-icon>
+          ML Anomali &amp; Forecasting
         </div>
-        <div class="s9-feat-card">
-          <div class="s9-feat-icon"><iconify-icon icon="fa6-solid:file-export" width="22" style="color:#0EA5E9"></iconify-icon></div>
-          <h4>Laporan Otomatis</h4>
-          <p>XLSX multi-sheet, CSV, PDF — filter per zona DMA, agregasi raw/10mnt/1jam/1hari, template tersimpan.</p>
+        <div class="s9-chip">
+          <iconify-icon icon="fa6-solid:file-export" width="12"></iconify-icon>
+          Laporan XLSX · CSV · PDF — Multi-sheet
         </div>
-        <div class="s9-feat-card">
-          <div class="s9-feat-icon"><iconify-icon icon="fa6-solid:database" width="22" style="color:#0EA5E9"></iconify-icon></div>
-          <h4>Integrasi DB PDAM</h4>
-          <p>Sinkronisasi data ke server PDAM via Webhook, MySQL, PostgreSQL, atau REST API — tidak ganti sistem lama.</p>
+        <div class="s9-chip">
+          <iconify-icon icon="fa6-solid:plug" width="12"></iconify-icon>
+          Integrasi DB PDAM via REST API / Webhook
+        </div>
+        <div class="s9-chip">
+          <iconify-icon icon="fa6-solid:microchip" width="12"></iconify-icon>
+          Manajemen Device — Auto-Discovery, Health Monitor
+        </div>
+        <div class="s9-chip">
+          <iconify-icon icon="fa6-solid:toggle-on" width="12"></iconify-icon>
+          Relay Control ON/OFF/PULSE via MQTT Bridge
         </div>
       </div>
     </div>
