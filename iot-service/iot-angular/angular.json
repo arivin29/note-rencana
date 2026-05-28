@@ -75,7 +75,21 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
-						}
+						},
+            "go": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.go.ts"
+                }
+              ]
+            }
           }
         },
         "serve": {
@@ -86,6 +100,9 @@
             },
             "development": {
               "buildTarget": "hud-angular:build:development"
+            },
+            "go": {
+              "buildTarget": "hud-angular:build:go"
             }
           },
           "defaultConfiguration": "development"

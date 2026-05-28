@@ -1,0 +1,97 @@
+// ============================================
+// COMPACT LAYOUT OVERRIDES
+// Reduces spacing and table density
+// Sidebar width is controlled via $app-sidebar-width variable
+// Import at the end of styles.scss
+// ============================================
+
+// --- Content: reduce padding ---
+.app-content {
+  padding: 1rem 1.25rem !important;
+
+  @media (max-width: 767.98px) {
+    padding: 0.75rem !important;
+  }
+}
+
+// --- Cards: tighter padding ---
+.card-body,
+card-body {
+  padding: 0.75rem !important;
+}
+.card-header,
+card-header {
+  padding: 0.5rem 0.75rem !important;
+}
+
+// --- Tables: compact rows ---
+.table td,
+.table th {
+  padding: 0.4rem 0.5rem !important;
+}
+.table-sm td,
+.table-sm th {
+  padding: 0.25rem 0.4rem !important;
+}
+
+// --- Icon boxes in tables: smaller ---
+.table .w-50px {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+}
+.table .h-50px {
+  height: 36px !important;
+}
+
+// --- Page header spacing ---
+.page-header {
+  font-size: 1.4rem;
+}
+
+// --- Reduce margin-bottom in app content context ---
+.app-content {
+  .mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+  .mb-4 {
+    margin-bottom: 0.75rem !important;
+  }
+  .mb-sm-4 {
+    @media (min-width: 576px) {
+      margin-bottom: 0.75rem !important;
+    }
+  }
+  .p-4 {
+    padding: 0.75rem !important;
+  }
+  .px-4 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .py-3 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+}
+
+// --- Tabs: tighter ---
+.nav-tabs .nav-link {
+  padding: 0.4rem 0.75rem;
+}
+
+// --- Form controls in filter areas ---
+.app-content .form-control-lg {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem;
+}
+.app-content .form-select {
+  padding: 0.35rem 2rem 0.35rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+// --- Row gap in grid ---
+.app-content .row.g-3 {
+  --bs-gutter-y: 0.5rem;
+  --bs-gutter-x: 0.5rem;
+}

@@ -174,7 +174,7 @@ $app-sidebar-minified-width: 60px;
 // When NOT minified, project sidebar should be after full sidebar
 .app:not(.app-sidebar-minified) {
   .project-sidebar {
-    left: 270px; // Full app-sidebar width
+    left: $app-sidebar-width;
   }
 }
 

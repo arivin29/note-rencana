@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEVETEK Quotation Generator v2 | Internal Tool</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <link rel="stylesheet" href="quotation-v2.css">
+</head>
+<body>
+    <!-- Internal Banner -->
+    <div class="internal-banner">
+        <i data-lucide="lock"></i>
+        <span>INTERNAL USE ONLY - DEVETEK Sales Team v2</span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">DEVETEK</span>
+                </a>
+                <div class="header-title">
+                    <i data-lucide="package" class="header-icon"></i>
+                    <span>Quotation Generator v2</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-outline" onclick="openHistoryModal()">
+                        <i data-lucide="history"></i>
+                        Riwayat
+                    </button>
+                    <button class="btn-outline" onclick="saveQuotation()">
+                        <i data-lucide="save"></i>
+                        Simpan
+                    </button>
+                    <button class="btn-outline" onclick="resetAll()">
+                        <i data-lucide="refresh-cw"></i>
+                        Reset
+                    </button>
+                    <button class="btn-primary" onclick="exportHTML()">
+                        <i data-lucide="file-text"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Customer Info Section -->
+            <section class="section customer-section">
+                <div class="section-header">
+                    <h2><i data-lucide="building-2"></i> Informasi Customer</h2>
+                    <div class="quote-number">
+                        <span class="label">No. Quotation:</span>
+                        <span class="value" id="quote-number">QUO-202602-0001</span>
+                    </div>
+                </div>
+                <div class="customer-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nama Perusahaan</label>
+                            <input type="text" id="company-name" placeholder="PT. Example Indonesia">
+                        </div>
+                        <div class="form-group">
+                            <label>Nama PIC</label>
+                            <input type="text" id="pic-name" placeholder="John Doe">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Jabatan</label>
+                            <input type="text" id="pic-position" placeholder="Manager">
+                        </div>
+                        <div class="form-group">
+                            <label>No. Telepon</label>
+                            <input type="text" id="pic-phone" placeholder="08123456789">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="pic-email" placeholder="john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Alamat</label>
+                            <input type="text" id="company-address" placeholder="Jakarta, Indonesia">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label>Keterangan Project</label>
+                            <textarea id="project-notes" rows="2" placeholder="Deskripsi singkat project..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Packages Section -->
+            <section class="section packages-section">
+                <div class="section-header">
+                    <h2><i data-lucide="package"></i> Daftar Paket</h2>
+                    <button class="btn-primary" onclick="openAddPackageModal()">
+                        <i data-lucide="plus"></i>
+                        Add Paket
+                    </button>
+                </div>
+                
+                <div id="packages-list" class="packages-list">
+                    <!-- Packages will be rendered here -->
+                    <div class="empty-state">
+                        <i data-lucide="package-open"></i>
+                        <p>Belum ada paket. Klik "Add Paket" untuk menambahkan.</p>
+                    </div>
+                </div>
+                
+                <div class="packages-summary" id="packages-summary" style="display: none;">
+                    <div class="summary-row">
+                        <span>Total Paket</span>
+                        <span id="total-packages-price">Rp 0</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Services Section -->
+            <section class="section services-section">
+                <div class="section-header">
+                    <h2><i data-lucide="cloud"></i> Cloud & Layanan</h2>
+                </div>
+                
+                <!-- Cloud Subscription -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3><i data-lucide="cloud"></i> Cloud Subscription</h3>
+                    </div>
+                    <div class="service-body cloud-subscription-body">
+                        <!-- Plan Cards -->
+                        <div class="cloud-plans-grid" id="cloud-plans-grid">
+                            <!-- Plans will be rendered here -->
+                        </div>
+                        
+                        <!-- Duration & Device Config -->
+                        <div class="cloud-config">
+                            <div class="cloud-config-item">
+                                <label>Jumlah Device:</label>
+                                <input type="number" id="cloud-devices" value="0" min="0">
+                            </div>
+                            <div class="cloud-config-item">
+                                <label>Durasi (bulan):</label>
+                                <select id="cloud-duration">
+                                    <option value="1">1 Bulan</option>
+                                    <option value="6">6 Bulan (-5%)</option>
+                                    <option value="12" selected>12 Bulan (-10%)</option>
+                                    <option value="24">24 Bulan (-15%)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Display -->
+                        <div class="cloud-total-display" id="cloud-total-section" style="display: none;">
+                            <div class="cloud-total-info">
+                                <span class="cloud-total-label">Total Cloud Subscription</span>
+                                <span class="cloud-total-detail" id="cloud-summary-detail"></span>
+                            </div>
+                            <span class="cloud-total-price" id="cloud-total">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other Services -->
+                <div class="service-card">
+                    <div class="service-header">
+                        <h3><i data-lucide="wrench"></i> Layanan Lainnya</h3>
+                    </div>
+                    <div class="service-body">
+                        <table class="services-table">
+                            <thead>
+                                <tr>
+                                    <th>Layanan</th>
+                                    <th>Harga</th>
+                                    <th>Custom Price</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-list">
+                                <!-- Services will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Summary Section -->
+            <section class="section summary-section">
+                <div class="section-header">
+                    <h2><i data-lucide="calculator"></i> Ringkasan</h2>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-details">
+                        <div class="summary-line">
+                            <span>Total Paket Hardware</span>
+                            <span id="summary-packages">Rp 0</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Total Cloud & Layanan</span>
+                            <span id="summary-services">Rp 0</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Subtotal</span>
+                            <span id="summary-subtotal">Rp 0</span>
+                        </div>
+                        <div class="summary-line discount">
+                            <span>
+                                Diskon 
+                                <input type="number" id="discount-percent" value="0" min="0" max="25" style="width: 50px;"> %
+                            </span>
+                            <span id="summary-discount">- Rp 0</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>DPP</span>
+                            <span id="summary-dpp">Rp 0</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>PPN 11%</span>
+                            <span id="summary-ppn">Rp 0</span>
+                        </div>
+                        <div class="summary-line grand">
+                            <span>GRAND TOTAL</span>
+                            <span id="summary-grand">Rp 0</span>
+                        </div>
+                    </div>
+                    <div class="summary-options">
+                        <div class="form-group">
+                            <label>Pembayaran</label>
+                            <select id="payment-terms">
+                                <option value="cbd">Cash Before Delivery (CBD)</option>
+                                <option value="dp50">DP 50%, Pelunasan setelah instalasi</option>
+                                <option value="net30">Net 30 hari</option>
+                                <option value="net60">Net 60 hari</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Validitas (hari)</label>
+                            <input type="number" id="validity-days" value="30" min="1">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Add Package Modal -->
+    <div id="add-package-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i data-lucide="package-plus"></i> Tambah Paket Baru</h3>
+                <button class="modal-close" onclick="closeAddPackageModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Select Type -->
+                <div id="step-select-type" class="step active">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Pilih Tipe Node</span>
+                    </div>
+                    <div class="type-selector">
+                        <div class="type-card" onclick="selectNodeType('type-a')">
+                            <div class="type-icon">📡</div>
+                            <div class="type-name">Type A</div>
+                            <div class="type-desc">Node LTE Standard</div>
+                            <div class="type-price" id="price-type-a">Rp 0</div>
+                        </div>
+                        <div class="type-card" onclick="selectNodeType('type-b')">
+                            <div class="type-icon">📡</div>
+                            <div class="type-name">Type B</div>
+                            <div class="type-desc">Node LTE + Modbus RS485</div>
+                            <div class="type-price" id="price-type-b">Rp 0</div>
+                        </div>
+                        <div class="type-card" onclick="selectNodeType('type-c')">
+                            <div class="type-icon">📡</div>
+                            <div class="type-name">Type C</div>
+                            <div class="type-desc">Node LTE + Multi Sensor</div>
+                            <div class="type-price" id="price-type-c">Rp 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Configure Package -->
+                <div id="step-configure" class="step">
+                    <div class="step-header">
+                        <button class="btn-back" onclick="backToTypeSelection()">
+                            <i data-lucide="arrow-left"></i>
+                        </button>
+                        <span class="step-number">2</span>
+                        <span class="step-title">Konfigurasi Paket - <span id="selected-type-name">Type A</span></span>
+                    </div>
+                    
+                    <!-- Package Info -->
+                    <div class="config-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Paket</label>
+                                <input type="text" id="package-name" placeholder="contoh: LOGER + Sensor Tekanan">
+                            </div>
+                            <div class="form-group">
+                                <label>Keterangan</label>
+                                <input type="text" id="package-desc" placeholder="contoh: Untuk monitoring pressure">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Tabs -->
+                    <div class="config-tabs">
+                        <button class="tab active" data-tab="sensors" onclick="switchConfigTab('sensors')">
+                            <i data-lucide="thermometer"></i> Sensor
+                        </button>
+                        <button class="tab" data-tab="power" onclick="switchConfigTab('power')">
+                            <i data-lucide="battery-charging"></i> Power
+                        </button>
+                        <button class="tab" data-tab="enclosure" onclick="switchConfigTab('enclosure')">
+                            <i data-lucide="box"></i> Enclosure
+                        </button>
+                        <button class="tab" data-tab="kabel" onclick="switchConfigTab('kabel')">
+                            <i data-lucide="cable"></i> Kabel
+                        </button>
+                        <button class="tab" data-tab="connectivity" onclick="switchConfigTab('connectivity')">
+                            <i data-lucide="wifi"></i> Connectivity
+                        </button>
+                        <button class="tab" data-tab="protection" onclick="switchConfigTab('protection')">
+                            <i data-lucide="shield"></i> Protection
+                        </button>
+                        <button class="tab" data-tab="tiang" onclick="switchConfigTab('tiang')">
+                            <i data-lucide="construction"></i> Tiang
+                        </button>
+                    </div>
+                    
+                    <!-- Config Content -->
+                    <div class="config-content">
+                        <!-- Sensors Tab -->
+                        <div id="tab-sensors" class="tab-content active">
+                            <div class="filter-bar">
+                                <button class="filter-btn active" data-filter="all">Semua</button>
+                                <button class="filter-btn" data-filter="sensor-flow">Flow</button>
+                                <button class="filter-btn" data-filter="sensor-power">Power</button>
+                                <button class="filter-btn" data-filter="sensor-water">Water Quality</button>
+                                <button class="filter-btn" data-filter="sensor-pressure">Pressure</button>
+                                <button class="filter-btn" data-filter="sensor-level">Level</button>
+                                <button class="filter-btn" data-filter="sensor-temp">Temp</button>
+                            </div>
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sensors-list">
+                                    <!-- Sensors will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Power Tab -->
+                        <div id="tab-power" class="tab-content">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="power-list">
+                                    <!-- Power items will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Enclosure Tab -->
+                        <div id="tab-enclosure" class="tab-content">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="enclosure-list">
+                                    <!-- Enclosure items will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Kabel Tab -->
+                        <div id="tab-kabel" class="tab-content">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kabel-list">
+                                    <!-- Kabel items will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Connectivity Tab -->
+                        <div id="tab-connectivity" class="tab-content">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="connectivity-list">
+                                    <!-- Connectivity items will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Protection Tab -->
+                        <div id="tab-protection" class="tab-content">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="protection-list">
+                                    <!-- Protection items will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Tiang Tab -->
+                        <div id="tab-tiang" class="tab-content">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product</th>
+                                        <th class="cost">Cost</th>
+                                        <th>Sell Price</th>
+                                        <th>Margin</th>
+                                        <th>Custom Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tiang-list">
+                                    <!-- Tiang items will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Package Summary -->
+                    <div class="package-summary">
+                        <div class="summary-left">
+                            <div class="selected-items">
+                                <span class="label">Items terpilih:</span>
+                                <span class="count" id="selected-items-count">0</span>
+                            </div>
+                        </div>
+                        <div class="summary-right">
+                            <div class="package-price">
+                                <span class="label">Harga per Paket:</span>
+                                <span class="price" id="package-unit-price">Rp 0</span>
+                            </div>
+                            <div class="package-qty">
+                                <span class="label">Jumlah Paket:</span>
+                                <input type="number" id="package-qty" value="1" min="1">
+                            </div>
+                            <div class="package-total">
+                                <span class="label">Total:</span>
+                                <span class="price" id="package-total-price">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeAddPackageModal()">Batal</button>
+                <button class="btn-primary" id="btn-save-package" onclick="savePackage()" disabled>
+                    <i data-lucide="check"></i>
+                    Simpan Paket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h3><i data-lucide="history"></i> Riwayat Quotation</h3>
+                <button class="modal-close" onclick="closeHistoryModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="history-list" class="history-list">
+                    <!-- History items will be rendered here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeHistoryModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script src="quotation-v2.js"></script>
+</body>
+</html>

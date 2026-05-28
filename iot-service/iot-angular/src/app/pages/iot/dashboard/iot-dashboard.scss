@@ -1,14 +1,13 @@
-// IoT Dashboard - Owner-Friendly Layout
-// Following template pattern from dashboard.css
+// IoT Dashboard - Compact & Modern Layout
 
 // Welcome Header
 .welcome-header {
-  padding: 20px 24px;
+  padding: 14px 18px;
 
   .welcome-title {
-    font-size: 1.75rem;
+    font-size: 1.35rem;
     font-weight: 600;
-    margin: 0 0 8px 0;
+    margin: 0 0 4px 0;
     color: #f6f9ff;
 
     .greeting {
@@ -22,7 +21,7 @@
   }
 
   .welcome-subtitle {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     color: rgba(226, 232, 240, 0.65);
     margin: 0;
 
@@ -35,27 +34,25 @@
     text-align: right;
 
     .today-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       color: rgba(226, 232, 240, 0.5);
     }
 
     .today-value {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: #10b981;
       line-height: 1.2;
     }
 
     .today-hint {
-      font-size: 12px;
+      font-size: 11px;
       color: rgba(226, 232, 240, 0.5);
     }
   }
 }
-
-// Console Panel styling removed - using template <card> defaults
 
 // Quick Stats Cards
 .stat-card {
@@ -68,20 +65,21 @@
   }
 
   card-body {
-    display: flex;
+    display: flex !important;
     align-items: center;
-    gap: 16px;
-    padding: 20px;
+    gap: 12px;
+    padding: 14px !important;
   }
 
   .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 18px;
+    flex-shrink: 0;
 
     &.icon-primary {
       background: rgba(99, 102, 241, 0.15);
@@ -107,26 +105,27 @@
 
   .stat-content {
     flex: 1;
+    min-width: 0;
   }
 
   .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: #f6f9ff;
     line-height: 1.2;
   }
 
   .stat-label {
-    font-size: 12px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: rgba(226, 232, 240, 0.6);
   }
 
   .stat-detail {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(226, 232, 240, 0.5);
-    margin-top: 2px;
+    margin-top: 1px;
   }
 }
 
@@ -135,22 +134,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 
   .panel-icon {
-    font-size: 1.25rem;
-    margin-right: 8px;
+    font-size: 1.1rem;
+    margin-right: 6px;
   }
 
   .panel-label {
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.04em;
     color: rgba(226, 232, 240, 0.7);
+    font-weight: 600;
   }
 
   .panel-hint {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(226, 232, 240, 0.45);
   }
 }
@@ -162,15 +162,15 @@
   .attention-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .attention-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 10px;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     background: rgba(10, 19, 36, 0.6);
@@ -192,25 +192,27 @@
     }
 
     .attention-icon {
-      font-size: 1.25rem;
+      font-size: 1rem;
       color: rgba(226, 232, 240, 0.7);
     }
 
     .attention-content {
       flex: 1;
+      min-width: 0;
 
       .attention-title {
         font-weight: 500;
+        font-size: 13px;
         color: #f6f9ff;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
       }
 
       .attention-meta {
-        font-size: 12px;
+        font-size: 11px;
         color: rgba(226, 232, 240, 0.5);
 
         .attention-source {
-          margin-right: 12px;
+          margin-right: 10px;
         }
       }
     }
@@ -219,18 +221,26 @@
 
 // All Good Panel
 .all-good-panel {
-  border-color: rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.3);
+
+  card-body {
+    padding: 16px !important;
+  }
 
   .all-good-icon {
-    font-size: 3rem;
-    margin-bottom: 12px;
+    font-size: 2rem;
+    margin-bottom: 6px;
   }
 
   .all-good-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #f6f9ff;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+  }
+
+  .all-good-hint {
+    font-size: 12px;
   }
 }
 
@@ -238,14 +248,14 @@
 .project-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 
   .project-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 10px;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     background: rgba(10, 19, 36, 0.6);
@@ -257,60 +267,63 @@
     }
 
     .project-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
       background: rgba(99, 102, 241, 0.15);
       color: #818cf8;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
+      flex-shrink: 0;
     }
 
     .project-content {
       flex: 1;
+      min-width: 0;
 
       .project-name {
         font-weight: 500;
+        font-size: 13px;
         color: #f6f9ff;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
       }
 
       .project-stats {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-        font-size: 12px;
+        gap: 10px;
+        font-size: 11px;
         color: rgba(226, 232, 240, 0.6);
 
         .project-stat {
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
         }
       }
     }
 
     .project-status {
       .health-indicator {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
 
         &.health-good {
           background: #10b981;
-          box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
         }
 
         &.health-warning {
           background: #f59e0b;
-          box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+          box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
         }
 
         &.health-critical {
           background: #ef4444;
-          box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+          box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
         }
       }
     }
@@ -321,19 +334,19 @@
 .activity-timeline {
   .activity-item {
     display: flex;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
 
     &:last-child {
       border-bottom: none;
     }
 
     .activity-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      margin-top: 6px;
+      margin-top: 5px;
       flex-shrink: 0;
 
       &.dot-success { background: #10b981; }
@@ -347,13 +360,13 @@
 
       .activity-text {
         color: rgba(226, 232, 240, 0.85);
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .activity-time {
-        font-size: 11px;
+        font-size: 10px;
         color: rgba(226, 232, 240, 0.45);
-        margin-top: 2px;
+        margin-top: 1px;
       }
     }
   }
@@ -363,12 +376,12 @@
 .node-health-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 8px;
 
   .health-card {
     text-align: center;
-    padding: 16px 12px;
-    border-radius: 12px;
+    padding: 12px 8px;
+    border-radius: 8px;
     background: rgba(10, 19, 36, 0.6);
 
     &.online {
@@ -382,13 +395,13 @@
     }
 
     .health-value {
-      font-size: 1.75rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: #f6f9ff;
     }
 
     .health-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       color: rgba(226, 232, 240, 0.5);
@@ -398,25 +411,29 @@
 
 .health-progress {
   .progress-sm {
-    height: 6px;
+    height: 5px;
     border-radius: 3px;
     background: rgba(148, 163, 184, 0.2);
+  }
+
+  .health-percent {
+    font-size: 12px;
   }
 }
 
 // Filter Panel
 .filter-panel {
   .filter-body {
-    padding-top: 16px;
+    padding-top: 12px;
     border-top: 1px solid rgba(148, 163, 184, 0.15);
   }
 
   .filter-label {
     text-transform: uppercase;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.04em;
     color: rgba(226, 232, 240, 0.6);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
 
   .form-select {
@@ -435,6 +452,8 @@
 card .btn-outline-theme {
   border-color: rgba(14, 165, 233, 0.6);
   color: #67e8f9;
+  font-size: 12px;
+  padding: 4px 10px;
 
   &:hover {
     background: rgba(14, 165, 233, 0.1);
@@ -445,6 +464,8 @@ card .btn-outline-theme {
 card .btn-outline-warning {
   border-color: rgba(245, 158, 11, 0.6);
   color: #fbbf24;
+  font-size: 12px;
+  padding: 4px 10px;
 
   &:hover {
     background: rgba(245, 158, 11, 0.1);

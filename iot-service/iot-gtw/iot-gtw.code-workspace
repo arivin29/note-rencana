@@ -17,6 +17,9 @@
         },
         {
             "path": "../../../iot-device-esp32-v1/marketing"
+        },
+        {
+            "path": "../../../iot-backend-go"
         }
     ],
     "settings": {

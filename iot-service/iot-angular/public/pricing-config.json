@@ -1,0 +1,1576 @@
+{
+    "currency": "IDR",
+    "lastUpdated": "2026-02-09",
+    "version": "2.0.0",
+    "meta": {
+        "appName": "DEVETEK Quotation Generator",
+        "appVersion": "2.0",
+        "purpose": "Internal sales tool for generating customer quotations",
+        "accessLevel": "internal"
+    },
+    "packages": [
+        {
+            "id": "pkg-pdam-starter",
+            "sku": "PKG-PDAM-START",
+            "name": "PDAM Starter Kit",
+            "description": "Paket pemula monitoring flow meter untuk 1 lokasi",
+            "contents": [
+                {
+                    "id": "node-type-a",
+                    "qty": 1
+                },
+                {
+                    "id": "flow-tuf2000m",
+                    "qty": 1
+                },
+                {
+                    "id": "enclosure-ip65",
+                    "qty": 1
+                },
+                {
+                    "id": "cable-rs485-10m",
+                    "qty": 1
+                },
+                {
+                    "id": "sim-card-telkomsel",
+                    "qty": 1
+                }
+            ],
+            "originalPrice": 12600000,
+            "costPrice": 9488000,
+            "sellingPrice": 11500000,
+            "savings": 1100000,
+            "minPrice": 10500000,
+            "subscriptionIncluded": {
+                "plan": "sub-basic",
+                "months": 12,
+                "devices": 1
+            },
+            "notes": "Paket entry level. Cocok untuk pilot project."
+        },
+        {
+            "id": "pkg-pdam-solar",
+            "sku": "PKG-PDAM-SOLAR",
+            "name": "PDAM Solar Package",
+            "description": "Paket lengkap off-grid dengan solar panel untuk lokasi tanpa PLN",
+            "contents": [
+                {
+                    "id": "node-type-b",
+                    "qty": 1
+                },
+                {
+                    "id": "flow-tuf2000m",
+                    "qty": 1
+                },
+                {
+                    "id": "solar-panel-50w",
+                    "qty": 1
+                },
+                {
+                    "id": "battery-12v-20ah",
+                    "qty": 1
+                },
+                {
+                    "id": "enclosure-ip65-large",
+                    "qty": 1
+                },
+                {
+                    "id": "cable-rs485-10m",
+                    "qty": 1
+                },
+                {
+                    "id": "sim-card-telkomsel",
+                    "qty": 1
+                }
+            ],
+            "originalPrice": 17250000,
+            "costPrice": 12590000,
+            "sellingPrice": 15500000,
+            "savings": 1750000,
+            "minPrice": 14000000,
+            "subscriptionIncluded": {
+                "plan": "sub-professional",
+                "months": 12,
+                "devices": 1
+            },
+            "notes": "Best seller untuk PDAM. Solar system untuk 24/7 operation."
+        },
+        {
+            "id": "pkg-power-monitoring",
+            "sku": "PKG-POWER-MON",
+            "name": "Power Monitoring Kit",
+            "description": "Monitoring listrik 3-phase dengan power meter Eastron",
+            "contents": [
+                {
+                    "id": "node-type-a",
+                    "qty": 1
+                },
+                {
+                    "id": "power-eastron-sdm630",
+                    "qty": 1
+                },
+                {
+                    "id": "enclosure-ip65",
+                    "qty": 1
+                },
+                {
+                    "id": "cable-rs485-10m",
+                    "qty": 1
+                },
+                {
+                    "id": "sim-card-telkomsel",
+                    "qty": 1
+                }
+            ],
+            "originalPrice": 8400000,
+            "costPrice": 5768000,
+            "sellingPrice": 7500000,
+            "savings": 900000,
+            "minPrice": 6800000,
+            "subscriptionIncluded": {
+                "plan": "sub-basic",
+                "months": 12,
+                "devices": 1
+            },
+            "notes": "Paket monitoring listrik standar."
+        },
+        {
+            "id": "pkg-water-quality",
+            "sku": "PKG-WQ",
+            "name": "Water Quality Package",
+            "description": "Monitoring kualitas air: pH, turbidity untuk WTP/PDAM",
+            "contents": [
+                {
+                    "id": "node-type-c",
+                    "qty": 1
+                },
+                {
+                    "id": "ph-sensor",
+                    "qty": 1
+                },
+                {
+                    "id": "turbidity-sensor",
+                    "qty": 1
+                },
+                {
+                    "id": "enclosure-ip67-ss",
+                    "qty": 1
+                },
+                {
+                    "id": "cable-420ma-10m",
+                    "qty": 2
+                },
+                {
+                    "id": "sim-card-telkomsel",
+                    "qty": 1
+                }
+            ],
+            "originalPrice": 18400000,
+            "costPrice": 13410000,
+            "sellingPrice": 16500000,
+            "savings": 1900000,
+            "minPrice": 15000000,
+            "subscriptionIncluded": {
+                "plan": "sub-professional",
+                "months": 12,
+                "devices": 1
+            },
+            "notes": "Untuk WTP dan outlet distribusi PDAM."
+        }
+    ],
+    "hardware": {
+        "nodes": [
+            {
+                "id": "node-type-a",
+                "sku": "DVT-NODE-A",
+                "name": "Node Type A",
+                "subtitle": "Standard",
+                "description": "Gateway IoT standar dengan konektivitas 4G LTE, RS485 Modbus, dan input analog 4-20mA",
+                "costPrice": 2000000,
+                "sellingPrice": 2500000,
+                "defaultMargin": 25,
+                "minPrice": 2500000,
+                "category": "node",
+                "unit": "unit",
+                "leadTime": "3-5 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "ready",
+                "weight": "250g",
+                "specs": {
+                    "connectivity": "4G LTE Cat-4 (SIM7600)",
+                    "rs485": "1x RS485 Modbus RTU (non-isolated)",
+                    "analog": "2x 4-20mA input (12-bit ADC)",
+                    "digital": "4x Digital I/O",
+                    "storage": "MicroSD up to 32GB",
+                    "power": "12-24VDC, 500mA max",
+                    "enclosure": "ABS IP54 (tanpa enclosure external)",
+                    "processor": "ESP32-S3 Dual Core 240MHz"
+                },
+                "includes": [
+                    "Node Type A unit",
+                    "Antenna 4G LTE",
+                    "Kabel power DC",
+                    "Quick start guide"
+                ],
+                "notIncludes": [
+                    "SIM Card",
+                    "Enclosure external",
+                    "Sensor",
+                    "Kabel RS485"
+                ]
+            },
+            {
+                "id": "node-type-b",
+                "sku": "DVT-NODE-B",
+                "name": "Node Type B",
+                "subtitle": "Solar Ready",
+                "description": "Gateway IoT dengan fitur solar charging dan battery management untuk lokasi off-grid",
+                "costPrice": 1700000,
+                "sellingPrice": 2200000,
+                "defaultMargin": 25,
+                "minPrice": 2200000,
+                "category": "node",
+                "unit": "unit",
+                "leadTime": "5-7 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "ready",
+                "weight": "350g",
+                "specs": {
+                    "connectivity": "4G LTE Cat-4 (SIM7600)",
+                    "rs485": "1x RS485 Modbus RTU (non-isolated)",
+                    "analog": "2x 4-20mA input (12-bit ADC)",
+                    "digital": "4x Digital I/O",
+                    "storage": "MicroSD up to 32GB",
+                    "power": "Solar input 6-24V, Battery 12V management",
+                    "solar": "MPPT Solar Charge Controller built-in",
+                    "battery": "Battery voltage monitoring, low battery protection",
+                    "processor": "ESP32-S3 Dual Core 240MHz"
+                },
+                "includes": [
+                    "Node Type B unit",
+                    "Antenna 4G LTE",
+                    "Kabel power DC",
+                    "Solar connector cable",
+                    "Quick start guide"
+                ],
+                "notIncludes": [
+                    "SIM Card",
+                    "Solar panel",
+                    "Battery",
+                    "Enclosure external",
+                    "Sensor"
+                ]
+            },
+            {
+                "id": "node-type-c",
+                "sku": "DVT-NODE-C",
+                "name": "Node Type C",
+                "subtitle": "Advanced",
+                "description": "Gateway IoT advanced dengan remote configuration dan multi-sensor support",
+                "costPrice": 500000,
+                "sellingPrice": 500000,
+                "defaultMargin": 25,
+                "minPrice": 500000,
+                "category": "node",
+                "unit": "unit",
+                "leadTime": "7-10 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "indent",
+                "weight": "400g",
+                "specs": {
+                    "connectivity": "4G LTE Cat-4 (SIM7600)",
+                    "rs485": "2x RS485 Modbus RTU (1 isolated)",
+                    "analog": "4x 4-20mA input (16-bit ADC)",
+                    "digital": "8x Digital I/O",
+                    "storage": "MicroSD up to 64GB",
+                    "power": "Solar input 6-24V, Battery 12V management",
+                    "solar": "MPPT Solar Charge Controller built-in",
+                    "config": "Cloud remote configuration",
+                    "modbus": "Modbus RTU Master (multi-device)",
+                    "ota": "OTA Firmware Update",
+                    "processor": "ESP32-S3 Dual Core 240MHz + External RTC"
+                },
+                "includes": [
+                    "Node Type C unit",
+                    "Antenna 4G LTE (high gain)",
+                    "Kabel power DC",
+                    "Solar connector cable",
+                    "RS485 terminal block",
+                    "Quick start guide"
+                ],
+                "notIncludes": [
+                    "SIM Card",
+                    "Solar panel",
+                    "Battery",
+                    "Enclosure external",
+                    "Sensor"
+                ]
+            }
+        ],
+        "sensors": [
+            {
+                "id": "flow-tuf2000m",
+                "sku": "SNS-FLOW-TUF",
+                "name": "TUF-2000M Ultrasonic Flow Meter",
+                "brand": "TUF",
+                "description": "Clamp-on ultrasonic flow meter untuk pipa DN50-DN700",
+                "costPrice": 3500000,
+                "sellingPrice": 4000000,
+                "defaultMargin": 25,
+                "minPrice": 3700000,
+                "category": "sensor-flow",
+                "unit": "set",
+                "leadTime": "7-14 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "indent",
+                "specs": {
+                    "type": "Clamp-on Ultrasonic",
+                    "pipeSize": "DN50 - DN700",
+                    "accuracy": "±1%",
+                    "output": "Modbus RTU, 4-20mA, Pulse",
+                    "power": "AC220V atau DC24V"
+                },
+                "includes": [
+                    "TUF-2000M main unit",
+                    "Transducer pair",
+                    "Mounting clamps",
+                    "RS485 cable 5m"
+                ],
+                "notes": "Ukuran transducer harus disesuaikan dengan diameter pipa. Tanyakan ukuran pipa saat order."
+            },
+            {
+                "id": "flow-electromagnetic",
+                "sku": "SNS-FLOW-MAG",
+                "name": "Electromagnetic Flow Meter",
+                "brand": "Generic",
+                "description": "Inline electromagnetic flow meter akurasi tinggi",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 26,
+                "minPrice": 0,
+                "category": "sensor-flow",
+                "unit": "set",
+                "leadTime": "14-21 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "indent",
+                "specs": {
+                    "type": "Electromagnetic Inline",
+                    "pipeSize": "DN25 - DN300",
+                    "accuracy": "±0.5%",
+                    "output": "Modbus RTU, 4-20mA, Pulse",
+                    "power": "AC220V atau DC24V"
+                },
+                "includes": [
+                    "Flow sensor body",
+                    "Converter/transmitter",
+                    "Flanges",
+                    "Gaskets"
+                ],
+                "notes": "Butuh straight pipe minimal 5D upstream dan 3D downstream."
+            },
+            {
+                "id": "power-eastron-sdm630",
+                "sku": "SNS-PWR-SDM630",
+                "name": "Eastron SDM630 Power Meter",
+                "brand": "Eastron",
+                "description": "Power meter 3-phase dengan CT external, Modbus RTU",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 39,
+                "minPrice": 0,
+                "category": "sensor-power",
+                "unit": "set",
+                "leadTime": "3-5 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "ready",
+                "specs": {
+                    "type": "3-Phase 4-Wire",
+                    "voltage": "100-400VAC L-N",
+                    "current": "Via CT 5A secondary",
+                    "accuracy": "Class 1",
+                    "output": "Modbus RTU RS485"
+                },
+                "includes": [
+                    "SDM630 meter",
+                    "3x CT 100/5A (split core)",
+                    "Wiring diagram"
+                ],
+                "notes": "Default CT 100A. Untuk kapasitas lebih besar, sesuaikan CT dan tambah harga."
+            },
+            {
+                "id": "power-schneider-pm2100",
+                "sku": "SNS-PWR-PM2100",
+                "name": "Schneider PM2100 Power Meter",
+                "brand": "Schneider Electric",
+                "description": "Power meter industrial grade dari Schneider Electric",
+                "costPrice": 7000000,
+                "sellingPrice": 8500000,
+                "defaultMargin": 21,
+                "minPrice": 7650000,
+                "category": "sensor-power",
+                "unit": "set",
+                "leadTime": "14-21 hari kerja",
+                "warranty": "24 bulan",
+                "stock": "indent",
+                "specs": {
+                    "type": "3-Phase 4-Wire",
+                    "accuracy": "Class 0.5S (revenue grade)",
+                    "output": "Modbus RTU RS485",
+                    "memory": "Built-in data logging"
+                },
+                "includes": [
+                    "PM2100 meter",
+                    "Mounting bracket"
+                ],
+                "notIncludes": [
+                    "CT (order terpisah)"
+                ],
+                "notes": "CT harus diorder terpisah sesuai kapasitas."
+            },
+            {
+                "id": "pressure-4-20ma",
+                "sku": "SNS-PRES-420",
+                "name": "Pressure Transmitter 4-20mA",
+                "brand": "Generic",
+                "description": "Pressure transmitter 0-16 Bar output 4-20mA",
+                "costPrice": 950000,
+                "sellingPrice": 1500000,
+                "defaultMargin": 58,
+                "minPrice": 0,
+                "category": "sensor-pressure",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "ready",
+                "specs": {
+                    "range": "0-16 Bar (bisa custom)",
+                    "output": "4-20mA 2-wire",
+                    "accuracy": "±0.5% FS",
+                    "connection": "G1/4 male",
+                    "material": "SS316L diaphragm",
+                    "protection": "IP67"
+                },
+                "includes": [
+                    "Pressure transmitter",
+                    "Certificate of calibration"
+                ],
+                "notes": "Range bisa dicustom. Konfirmasi range dan thread connection saat order."
+            },
+            {
+                "id": "level-ultrasonic",
+                "sku": "SNS-LVL-US",
+                "name": "Ultrasonic Level Sensor",
+                "brand": "Generic",
+                "description": "Non-contact ultrasonic level untuk tangki dan sumur",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 40,
+                "minPrice": 0,
+                "category": "sensor-level",
+                "unit": "pcs",
+                "leadTime": "5-7 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "indent",
+                "specs": {
+                    "range": "0.3-10m",
+                    "output": "4-20mA",
+                    "accuracy": "±0.25% FS",
+                    "beam angle": "8°",
+                    "protection": "IP67"
+                },
+                "includes": [
+                    "Ultrasonic sensor",
+                    "Mounting bracket"
+                ],
+                "notes": "Dead zone 0.3m dari sensor."
+            },
+            {
+                "id": "level-submersible",
+                "sku": "SNS-LVL-SUB",
+                "name": "Submersible Level Transmitter",
+                "brand": "Generic",
+                "description": "Submersible hydrostatic level untuk sumur dalam",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 50,
+                "minPrice": 0,
+                "category": "sensor-level",
+                "unit": "pcs",
+                "leadTime": "5-7 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "indent",
+                "specs": {
+                    "range": "0-10m (bisa custom hingga 100m)",
+                    "output": "4-20mA 2-wire",
+                    "accuracy": "±0.5% FS",
+                    "cable": "PE vented cable 10m",
+                    "protection": "IP68"
+                },
+                "includes": [
+                    "Submersible sensor",
+                    "Vented cable 10m"
+                ],
+                "notes": "Panjang kabel bisa disesuaikan. Tambah Rp 50.000/meter untuk kabel extra."
+            },
+            {
+                "id": "temp-rtd-pt100",
+                "sku": "SNS-TEMP-PT100",
+                "name": "RTD PT100 Temperature Sensor",
+                "brand": "Generic",
+                "description": "RTD PT100 dengan transmitter 4-20mA built-in",
+                "costPrice": 550000,
+                "sellingPrice": 850000,
+                "defaultMargin": 55,
+                "minPrice": 700000,
+                "category": "sensor-temp",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "ready",
+                "specs": {
+                    "range": "-50°C to 200°C",
+                    "element": "PT100 Class A",
+                    "output": "4-20mA",
+                    "accuracy": "±0.3°C",
+                    "probe": "SS316, 6mm dia x 100mm"
+                },
+                "includes": [
+                    "RTD probe with transmitter"
+                ],
+                "notes": "Probe length bisa dicustom."
+            },
+            {
+                "id": "ph-sensor",
+                "sku": "SNS-WQ-PH",
+                "name": "pH Sensor + Transmitter",
+                "brand": "Generic",
+                "description": "pH sensor untuk monitoring kualitas air",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 41,
+                "minPrice": 0,
+                "category": "sensor-water",
+                "unit": "set",
+                "leadTime": "7-14 hari kerja",
+                "warranty": "6 bulan (electrode)",
+                "stock": "indent",
+                "specs": {
+                    "range": "0-14 pH",
+                    "output": "4-20mA",
+                    "accuracy": "±0.1 pH",
+                    "cable": "5m standard"
+                },
+                "includes": [
+                    "pH electrode",
+                    "Transmitter",
+                    "Cable 5m",
+                    "Calibration solutions"
+                ],
+                "notes": "Electrode lifetime 12-18 bulan. Perlu kalibrasi rutin."
+            },
+            {
+                "id": "turbidity-sensor",
+                "sku": "SNS-WQ-TURB",
+                "name": "Turbidity Sensor",
+                "brand": "Generic",
+                "description": "Sensor kekeruhan air 0-1000 NTU",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 38,
+                "minPrice": 0,
+                "category": "sensor-water",
+                "unit": "set",
+                "leadTime": "7-14 hari kerja",
+                "warranty": "12 bulan",
+                "stock": "indent",
+                "specs": {
+                    "range": "0-1000 NTU",
+                    "output": "4-20mA",
+                    "accuracy": "±5% or ±1 NTU",
+                    "method": "Nephelometric 90°"
+                },
+                "includes": [
+                    "Turbidity sensor",
+                    "Transmitter",
+                    "Cable 5m",
+                    "Cleaning brush"
+                ],
+                "notes": "Perlu pembersihan sensor rutin."
+            },
+            {
+                "id": "chlorine-sensor",
+                "sku": "SNS-WQ-CL",
+                "name": "Residual Chlorine Sensor",
+                "brand": "Generic",
+                "description": "Sensor residual chlorine untuk air minum",
+                "costPrice": 0,
+                "sellingPrice": 0,
+                "defaultMargin": 31,
+                "minPrice": 0,
+                "category": "sensor-water",
+                "unit": "set",
+                "leadTime": "14-21 hari kerja",
+                "warranty": "6 bulan (membrane)",
+                "stock": "indent",
+                "specs": {
+                    "range": "0-20 mg/L",
+                    "output": "4-20mA",
+                    "accuracy": "±5%",
+                    "method": "Amperometric membrane"
+                },
+                "includes": [
+                    "Chlorine sensor",
+                    "Transmitter",
+                    "Spare membrane (2 pcs)",
+                    "Calibration solution"
+                ],
+                "notes": "Membrane perlu diganti 3-6 bulan. Spare membrane Rp 800.000/set."
+            }
+        ],
+        "power": [
+            {
+                "id": "solar-kit-20w-10a",
+                "sku": "ACC-SOLAR-20W-10A",
+                "name": "Solar Kit 20WP + Charger 10A",
+                "brand": "Generic",
+                "description": "Paket solar panel 20WP dengan solar charge controller 10A",
+                "costPrice": 450000,
+                "sellingPrice": 750000,
+                "defaultMargin": 67,
+                "minPrice": 600000,
+                "category": "power",
+                "unit": "set",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "panel": "20WP Mono",
+                    "charger": "PWM 10A 12V",
+                    "cable": "MC4 included"
+                },
+                "includes": [
+                    "Solar Panel 20WP",
+                    "Charger Controller 10A",
+                    "MC4 Cable"
+                ],
+                "notes": "Untuk Node Type B dengan konsumsi rendah."
+            },
+            {
+                "id": "solar-kit-20w-20a",
+                "sku": "ACC-SOLAR-20W-20A",
+                "name": "Solar Kit 20WP + Charger 20A",
+                "brand": "Generic",
+                "description": "Paket solar panel 20WP dengan solar charge controller 20A",
+                "costPrice": 550000,
+                "sellingPrice": 900000,
+                "defaultMargin": 64,
+                "minPrice": 750000,
+                "category": "power",
+                "unit": "set",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "panel": "20WP Mono",
+                    "charger": "PWM 20A 12V",
+                    "cable": "MC4 included"
+                },
+                "includes": [
+                    "Solar Panel 20WP",
+                    "Charger Controller 20A",
+                    "MC4 Cable"
+                ],
+                "notes": "Charger lebih besar untuk ekspansi panel di masa depan."
+            },
+            {
+                "id": "solar-kit-50w-20a",
+                "sku": "ACC-SOLAR-50W-20A",
+                "name": "Solar Kit 50WP + Charger 20A",
+                "brand": "Generic",
+                "description": "Paket solar panel 50WP dengan solar charge controller 20A",
+                "costPrice": 750000,
+                "sellingPrice": 1200000,
+                "defaultMargin": 60,
+                "minPrice": 1000000,
+                "category": "power",
+                "unit": "set",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "panel": "50WP Mono",
+                    "charger": "PWM 20A 12V",
+                    "cable": "MC4 included"
+                },
+                "includes": [
+                    "Solar Panel 50WP",
+                    "Charger Controller 20A",
+                    "MC4 Cable"
+                ],
+                "notes": "Recommended untuk Node + multiple sensor."
+            },
+            {
+                "id": "battery-lifepo4-6ah",
+                "sku": "ACC-BATT-LIFEPO4-6AH",
+                "name": "Battery LiFePO4 12V 6Ah",
+                "brand": "Generic",
+                "description": "Battery lithium LiFePO4 compact 6Ah untuk solar system",
+                "costPrice": 450000,
+                "sellingPrice": 750000,
+                "defaultMargin": 67,
+                "minPrice": 600000,
+                "category": "power",
+                "unit": "pcs",
+                "leadTime": "5-7 hari kerja",
+                "warranty": "24 bulan",
+                "stock": "ready",
+                "specs": {
+                    "type": "LiFePO4 Lithium",
+                    "voltage": "12.8V",
+                    "capacity": "6Ah",
+                    "cycle": "2000+ cycles",
+                    "size": "compact"
+                },
+                "notes": "Compact, cocok untuk box kecil. Backup ~24-48 jam."
+            },
+            {
+                "id": "battery-lifepo4-25ah",
+                "sku": "ACC-BATT-LIFEPO4-25AH",
+                "name": "Battery LiFePO4 12V 25Ah",
+                "brand": "Generic",
+                "description": "Battery lithium LiFePO4 kapasitas besar 25Ah",
+                "costPrice": 1200000,
+                "sellingPrice": 1800000,
+                "defaultMargin": 50,
+                "minPrice": 1500000,
+                "category": "power",
+                "unit": "pcs",
+                "leadTime": "7-14 hari kerja",
+                "warranty": "24 bulan",
+                "stock": "indent",
+                "specs": {
+                    "type": "LiFePO4 Lithium",
+                    "voltage": "12.8V",
+                    "capacity": "25Ah",
+                    "cycle": "2000+ cycles"
+                },
+                "notes": "Kapasitas besar untuk lokasi minim matahari. Backup 3-5 hari."
+            },
+            {
+                "id": "power-supply-24v-2a",
+                "sku": "ACC-PSU-24V2A",
+                "name": "Power Supply 24VDC 2A DIN Rail",
+                "brand": "Mean Well",
+                "description": "Power supply industrial 24V untuk sensor yang butuh arus besar (power meter, dll)",
+                "costPrice": 280000,
+                "sellingPrice": 450000,
+                "defaultMargin": 61,
+                "minPrice": 380000,
+                "category": "power",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "warranty": "24 bulan",
+                "stock": "ready",
+                "specs": {
+                    "input": "AC100-240V",
+                    "output": "24VDC 2A (48W)",
+                    "brand": "Mean Well HDR series",
+                    "mount": "DIN Rail"
+                },
+                "notes": "Wajib untuk power meter dan sensor yang butuh 24V."
+            }
+        ],
+        "enclosure": [
+            {
+                "id": "enclosure-ip65-type-a",
+                "sku": "ACC-ENC-IP65-A",
+                "name": "Enclosure IP65 ABS Type A",
+                "brand": "Generic",
+                "description": "Box outdoor IP65 ukuran besar, lengkap dengan kunci, engsel, dan gasket",
+                "costPrice": 650000,
+                "sellingPrice": 900000,
+                "defaultMargin": 71,
+                "minPrice": 800000,
+                "category": "enclosure",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "material": "ABS",
+                    "size": "40x30x20cm",
+                    "rating": "IP65"
+                },
+                "includes": [
+                    "Box ABS",
+                    "Kunci gembok",
+                    "Engsel stainless",
+                    "Gasket seal",
+                    "Mounting plate"
+                ],
+                "notes": "Box besar, muat Node + Battery 25Ah + terminal. Cocok untuk solar system."
+            },
+            {
+                "id": "enclosure-ip65-type-b",
+                "sku": "ACC-ENC-IP65-B",
+                "name": "Enclosure IP65 ABS Type B",
+                "brand": "Generic",
+                "description": "Box outdoor IP65 ukuran sedang, lengkap dengan kunci, engsel, dan gasket",
+                "costPrice": 450000,
+                "sellingPrice": 500000,
+                "defaultMargin": 82,
+                "minPrice": 450000,
+                "category": "enclosure",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "material": "ABS",
+                    "size": "30x21x15cm",
+                    "rating": "IP65"
+                },
+                "includes": [
+                    "Box ABS",
+                    "Kunci gembok",
+                    "Engsel stainless",
+                    "Gasket seal",
+                    "Mounting plate"
+                ],
+                "notes": "Box standar, muat Node + Battery 6Ah + terminal."
+            },
+            {
+                "id": "enclosure-ip67-ss",
+                "sku": "ACC-ENC-IP67-SS",
+                "name": "Enclosure IP67 Stainless Steel",
+                "brand": "Generic",
+                "description": "Box outdoor heavy duty stainless steel untuk area harsh environment",
+                "costPrice": 1100000,
+                "sellingPrice": 1500000,
+                "defaultMargin": 36,
+                "minPrice": 1350000,
+                "category": "enclosure",
+                "unit": "pcs",
+                "leadTime": "7-14 hari kerja",
+                "stock": "indent",
+                "specs": {
+                    "material": "SS304",
+                    "size": "30x20x15cm",
+                    "rating": "IP67"
+                },
+                "includes": [
+                    "Box Stainless Steel",
+                    "Kunci cam lock",
+                    "Engsel SS",
+                    "Gasket EPDM"
+                ],
+                "notes": "Heavy duty untuk chemical plant, coastal area, tambang."
+            }
+        ],
+        "kabel": [
+            {
+                "id": "cable-rs485",
+                "sku": "ACC-CBL-RS485",
+                "name": "Kabel RS485 Shielded",
+                "brand": "Generic",
+                "description": "Kabel twisted pair shielded untuk komunikasi RS485 Modbus",
+                "costPrice": 8000,
+                "sellingPrice": 15000,
+                "defaultMargin": 88,
+                "minPrice": 12000,
+                "category": "kabel",
+                "unit": "meter",
+                "leadTime": "1-3 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "type": "2-pair twisted shielded",
+                    "conductor": "24 AWG"
+                },
+                "notes": "Harga per meter. Min order 10 meter."
+            },
+            {
+                "id": "cable-420ma",
+                "sku": "ACC-CBL-420MA",
+                "name": "Kabel 4-20mA Shielded",
+                "brand": "Generic",
+                "description": "Kabel shielded untuk sensor analog 4-20mA",
+                "costPrice": 6000,
+                "sellingPrice": 12000,
+                "defaultMargin": 100,
+                "minPrice": 9500,
+                "category": "kabel",
+                "unit": "meter",
+                "leadTime": "1-3 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "type": "1-pair twisted shielded",
+                    "conductor": "22 AWG"
+                },
+                "notes": "Harga per meter. Min order 10 meter."
+            },
+            {
+                "id": "cable-gland-pg9",
+                "sku": "ACC-GLAND-PG9",
+                "name": "Cable Gland PG9 IP68",
+                "brand": "Generic",
+                "description": "Cable gland waterproof untuk kabel 4-8mm",
+                "costPrice": 8000,
+                "sellingPrice": 25000,
+                "defaultMargin": 213,
+                "minPrice": 18000,
+                "category": "kabel",
+                "unit": "pcs",
+                "leadTime": "1-3 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "thread": "PG9",
+                    "cableRange": "4-8mm",
+                    "rating": "IP68"
+                }
+            },
+            {
+                "id": "cable-gland-pg11",
+                "sku": "ACC-GLAND-PG11",
+                "name": "Cable Gland PG11 IP68",
+                "brand": "Generic",
+                "description": "Cable gland waterproof untuk kabel 5-10mm",
+                "costPrice": 10000,
+                "sellingPrice": 30000,
+                "defaultMargin": 200,
+                "minPrice": 22000,
+                "category": "kabel",
+                "unit": "pcs",
+                "leadTime": "1-3 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "thread": "PG11",
+                    "cableRange": "5-10mm",
+                    "rating": "IP68"
+                }
+            }
+        ],
+        "connectivity": [
+            {
+                "id": "sim-card-telkomsel",
+                "sku": "ACC-SIM-TSEL",
+                "name": "SIM Card Telkomsel IoT 1GB/bln 12bln",
+                "brand": "Telkomsel",
+                "description": "SIM Card IoT dengan kuota 1GB/bulan selama 12 bulan",
+                "costPrice": 450000,
+                "sellingPrice": 600000,
+                "defaultMargin": 33,
+                "minPrice": 550000,
+                "category": "connectivity",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "operator": "Telkomsel",
+                    "quota": "1GB/bulan",
+                    "validity": "12 bulan"
+                },
+                "notes": "1GB cukup untuk ~100.000 data points/bulan. Renewal Rp 50k/bulan."
+            },
+            {
+                "id": "antenna-4g-external",
+                "sku": "ACC-ANT-4G-EXT",
+                "name": "Antenna 4G External High Gain 7dBi",
+                "brand": "Generic",
+                "description": "Antena external untuk meningkatkan sinyal 4G",
+                "costPrice": 50000,
+                "sellingPrice": 150000,
+                "defaultMargin": 67,
+                "minPrice": 150000,
+                "category": "connectivity",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "type": "Omnidirectional",
+                    "gain": "7dBi",
+                    "cable": "3m"
+                },
+                "notes": "Untuk lokasi sinyal lemah atau dalam enclosure metal."
+            }
+             
+        ],
+        "protection": [
+            {
+                "id": "surge-protector-rs485",
+                "sku": "ACC-SPD-RS485",
+                "name": "Surge Protector RS485",
+                "brand": "Generic",
+                "description": "Surge protector untuk jalur komunikasi RS485",
+                "costPrice": 180000,
+                "sellingPrice": 350000,
+                "defaultMargin": 94,
+                "minPrice": 280000,
+                "category": "protection",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "protection": "RS485/RS422",
+                    "discharge": "10kA"
+                },
+                "notes": "Wajib untuk instalasi outdoor dengan kabel panjang."
+            },
+            {
+                "id": "surge-protector-power",
+                "sku": "ACC-SPD-PWR",
+                "name": "Surge Protector Power 24VDC",
+                "brand": "Generic",
+                "description": "Surge protector untuk jalur power DC",
+                "costPrice": 150000,
+                "sellingPrice": 280000,
+                "defaultMargin": 87,
+                "minPrice": 220000,
+                "category": "protection",
+                "unit": "pcs",
+                "leadTime": "3-5 hari kerja",
+                "stock": "ready",
+                "specs": {
+                    "voltage": "24VDC",
+                    "discharge": "20kA"
+                },
+                "notes": "Untuk proteksi power supply dari petir."
+            }
+        ],
+        "tiang": [
+            {
+                "id": "tiang-standar",
+                "sku": "TNG-STD-4M",
+                "name": "Tiang Standar 4 Meter",
+                "brand": "Custom DEVETEK",
+                "description": "Tiang lengkap dengan tapak, pipa, dudukan panel surya, lubang kabel",
+                "costPrice": 1500000,
+                "sellingPrice": 2500000,
+                "defaultMargin": 67,
+                "minPrice": 2000000,
+                "category": "tiang",
+                "unit": "set",
+                "leadTime": "7-14 hari kerja",
+                "stock": "indent",
+                "specs": {
+                    "tapak": "Plat 25x25cm tebal 6mm",
+                    "pipa": "2\" + 1.5\" (total 4m)",
+                    "material": "Besi galvanized"
+                },
+                "includes": [
+                    "Tapak plat",
+                    "Pipa 2\"+1.5\"",
+                    "Dudukan panel surya",
+                    "Baut anchor"
+                ],
+                "notes": "Butuh pondasi beton min 40x40x50cm"
+            }
+        ]
+    },
+    "subscriptions": [
+        {
+            "id": "sub-basic",
+            "sku": "SVC-SUB-BASIC",
+            "name": "Basic",
+            "description": "Paket dasar untuk monitoring sederhana",
+            "pricePerDevice": 200000,
+            "costPerDevice": 50000,
+            "billingCycle": "monthly",
+            "minDevices": 1,
+            "minMonths": 1,
+            "features": [
+                "Dashboard monitoring real-time",
+                "Email alerts (max 10/hari)",
+                "Data storage 30 hari",
+                "1 user account",
+                "Community support"
+            ],
+            "limitations": [
+                "Tidak ada AI features",
+                "Tidak ada WhatsApp alert",
+                "Support via email only"
+            ],
+            "sla": {
+                "uptime": "99%",
+                "supportResponse": "48 jam",
+                "dataRetention": "30 hari"
+            }
+        },
+        {
+            "id": "sub-professional",
+            "sku": "SVC-SUB-PRO",
+            "name": "Professional",
+            "description": "Paket profesional dengan AI dan alert lengkap",
+            "pricePerDevice": 300000,
+            "costPerDevice": 80000,
+            "billingCycle": "monthly",
+            "minDevices": 1,
+            "minMonths": 6,
+            "popular": true,
+            "features": [
+                "Semua fitur Basic",
+                "AI Anomaly Detection",
+                "WhatsApp alerts (unlimited)",
+                "Data storage 90 hari",
+                "5 user accounts",
+                "Priority support (WhatsApp 8x5)",
+                "API access",
+                "Custom reports",
+                "Grafana dashboard access"
+            ],
+            "limitations": [
+                "Tidak ada Predictive Maintenance",
+                "Tidak ada 24/7 support"
+            ],
+            "sla": {
+                "uptime": "99.5%",
+                "supportResponse": "8 jam",
+                "dataRetention": "90 hari"
+            }
+        },
+        {
+            "id": "sub-enterprise",
+            "sku": "SVC-SUB-ENT",
+            "name": "Enterprise",
+            "description": "Paket enterprise dengan fitur lengkap",
+            "pricePerDevice": 400000,
+            "costPerDevice": 120000,
+            "billingCycle": "monthly",
+            "minDevices": 5,
+            "minMonths": 12,
+            "features": [
+                "Semua fitur Professional",
+                "Predictive Maintenance AI",
+                "Leak Detection AI (PDAM)",
+                "Data storage 1 tahun",
+                "Unlimited users",
+                "24/7 dedicated support",
+                "Unlimited API access",
+                "Custom ML model",
+                "White-label option",
+                "Dedicated account manager"
+            ],
+            "limitations": [],
+            "sla": {
+                "uptime": "99.9%",
+                "supportResponse": "2 jam",
+                "dataRetention": "365 hari"
+            }
+        }
+    ],
+    "services": [
+        {
+            "id": "svc-survey",
+            "sku": "SVC-SURVEY",
+            "name": "Site Survey",
+            "category": "installation",
+            "description": "Survey lokasi untuk kebutuhan instalasi dan coverage sinyal",
+            "costPrice": 500000,
+            "sellingPrice": 1000000,
+            "defaultMargin": 100,
+            "minPrice": 750000,
+            "unit": "per lokasi",
+            "duration": "1 hari",
+            "scope": [
+                "Pengecekan coverage sinyal 4G",
+                "Assessment sumber power",
+                "Pengukuran jarak sensor ke Node",
+                "Dokumentasi foto lokasi",
+                "Rekomendasi teknis tertulis"
+            ],
+            "deliverables": [
+                "Site survey report",
+                "Rekomendasi instalasi",
+                "Bill of materials"
+            ],
+            "notes": "Untuk lokasi di luar Jabodetabek, tambah biaya transport."
+        },
+        {
+            "id": "svc-installation-basic",
+            "sku": "SVC-INST-BASIC",
+            "name": "Instalasi Basic",
+            "category": "installation",
+            "description": "Instalasi 1 Node + 1 Sensor, area Jabodetabek",
+            "costPrice": 800000,
+            "sellingPrice": 1500000,
+            "defaultMargin": 88,
+            "minPrice": 1200000,
+            "unit": "per titik",
+            "duration": "1 hari",
+            "scope": [
+                "Instalasi Node di lokasi",
+                "Instalasi 1 sensor",
+                "Konfigurasi koneksi ke cloud",
+                "Testing komunikasi data",
+                "Basic training operator (1 jam)"
+            ],
+            "includes": [
+                "Teknisi on-site 1 hari",
+                "Consumables dasar",
+                "Transport Jabodetabek"
+            ],
+            "notIncludes": [
+                "Hardware",
+                "Enclosure mounting structure",
+                "Civil work",
+                "Transport luar Jabodetabek"
+            ],
+            "notes": "Untuk sensor tambahan di titik sama, add Rp 500k/sensor."
+        },
+        {
+            "id": "svc-installation-standard",
+            "sku": "SVC-INST-STD",
+            "name": "Instalasi Standard",
+            "category": "installation",
+            "description": "Instalasi 1 Node + up to 3 Sensor + Solar System",
+            "costPrice": 1500000,
+            "sellingPrice": 2500000,
+            "defaultMargin": 67,
+            "minPrice": 2200000,
+            "unit": "per titik",
+            "duration": "1-2 hari",
+            "scope": [
+                "Semua scope Instalasi Basic",
+                "Instalasi hingga 3 sensor",
+                "Instalasi solar panel & battery",
+                "Pemasangan enclosure & pole mount",
+                "Testing operational 24 jam"
+            ],
+            "includes": [
+                "Teknisi on-site 2 hari",
+                "Consumables",
+                "Transport Jabodetabek"
+            ],
+            "notIncludes": [
+                "Hardware",
+                "Civil work",
+                "Transport luar Jabodetabek"
+            ],
+            "notes": "Paket paling populer untuk instalasi PDAM."
+        },
+        {
+            "id": "svc-installation-remote",
+            "sku": "SVC-INST-REMOTE",
+            "name": "Instalasi Remote Area",
+            "category": "installation",
+            "description": "Instalasi di luar Jabodetabek termasuk transport dan akomodasi",
+            "costPrice": 2500000,
+            "sellingPrice": 4000000,
+            "defaultMargin": 60,
+            "minPrice": 3500000,
+            "unit": "per titik",
+            "duration": "2-3 hari",
+            "scope": [
+                "Semua scope Instalasi Standard",
+                "Transport ke lokasi",
+                "Akomodasi teknisi",
+                "Koordinasi dengan tim lokal"
+            ],
+            "includes": [
+                "Teknisi on-site",
+                "Transport (economy class)",
+                "Akomodasi (standard hotel)",
+                "Consumables"
+            ],
+            "notIncludes": [
+                "Hardware",
+                "Civil work"
+            ],
+            "notes": "Harga dapat disesuaikan berdasarkan lokasi actual."
+        },
+        {
+            "id": "svc-commissioning",
+            "sku": "SVC-COMM",
+            "name": "Commissioning & Testing",
+            "category": "installation",
+            "description": "Commissioning sistem lengkap dengan dokumentasi",
+            "costPrice": 1200000,
+            "sellingPrice": 2000000,
+            "defaultMargin": 67,
+            "minPrice": 1700000,
+            "unit": "per sistem",
+            "duration": "1-2 hari",
+            "scope": [
+                "Verifikasi semua koneksi",
+                "Kalibrasi sensor",
+                "Testing end-to-end",
+                "Setup alerts",
+                "Dokumentasi as-built"
+            ],
+            "deliverables": [
+                "Commissioning checklist (signed)",
+                "Test report",
+                "As-built documentation"
+            ],
+            "notes": "Wajib untuk project PDAM agar ada dokumentasi formal."
+        },
+        {
+            "id": "svc-training-basic",
+            "sku": "SVC-TRAIN-BASIC",
+            "name": "Training Basic",
+            "category": "training",
+            "description": "Training operator penggunaan dashboard",
+            "costPrice": 1500000,
+            "sellingPrice": 2500000,
+            "defaultMargin": 67,
+            "minPrice": 2000000,
+            "unit": "per sesi",
+            "duration": "1 hari (4-6 jam)",
+            "maxParticipants": 5,
+            "scope": [
+                "Pengenalan sistem",
+                "Navigasi dashboard",
+                "Setup alerts",
+                "Troubleshooting dasar"
+            ],
+            "deliverables": [
+                "Training materials (PDF)",
+                "Quick reference card",
+                "Certificate"
+            ],
+            "notes": "Untuk peserta >5 orang, tambah Rp 300k/orang."
+        },
+        {
+            "id": "svc-training-advanced",
+            "sku": "SVC-TRAIN-ADV",
+            "name": "Training Advanced",
+            "category": "training",
+            "description": "Training teknis untuk admin dan supervisor",
+            "costPrice": 3000000,
+            "sellingPrice": 5000000,
+            "defaultMargin": 67,
+            "minPrice": 4500000,
+            "unit": "per sesi",
+            "duration": "2 hari",
+            "maxParticipants": 10,
+            "scope": [
+                "Semua materi Basic",
+                "Konfigurasi lanjutan",
+                "Grafana customization",
+                "API basics",
+                "Hands-on lab"
+            ],
+            "deliverables": [
+                "Comprehensive materials",
+                "Lab guide",
+                "Certificate of competency",
+                "30-hari support"
+            ],
+            "notes": "Include lunch. Cocok untuk tim IT customer."
+        },
+        {
+            "id": "svc-custom-dashboard",
+            "sku": "SVC-CUST-DASH",
+            "name": "Custom Dashboard Development",
+            "category": "customization",
+            "description": "Pembuatan dashboard custom di Grafana",
+            "costPrice": 3000000,
+            "sellingPrice": 5000000,
+            "defaultMargin": 67,
+            "minPrice": 4500000,
+            "unit": "per dashboard",
+            "duration": "5-7 hari kerja",
+            "scope": [
+                "Requirement gathering",
+                "Design mockup",
+                "Development",
+                "Testing",
+                "Revision (max 2 rounds)"
+            ],
+            "deliverables": [
+                "Custom Grafana dashboard",
+                "Documentation"
+            ],
+            "notes": "Harga untuk max 10 panels. Dashboard kompleks harga nego."
+        },
+        {
+            "id": "svc-api-integration",
+            "sku": "SVC-API-INT",
+            "name": "API Integration",
+            "category": "customization",
+            "description": "Integrasi dengan sistem existing customer",
+            "costPrice": 6000000,
+            "sellingPrice": 10000000,
+            "defaultMargin": 67,
+            "minPrice": 8500000,
+            "unit": "per integrasi",
+            "duration": "10-14 hari kerja",
+            "scope": [
+                "Technical discussion",
+                "Integration development",
+                "Testing",
+                "Documentation",
+                "Go-live support"
+            ],
+            "deliverables": [
+                "Working API integration",
+                "API documentation"
+            ],
+            "notes": "Untuk integrasi billing, ERP, SCADA, dll."
+        },
+        {
+            "id": "svc-sensor-config",
+            "sku": "SVC-SNS-CFG",
+            "name": "Konfigurasi Sensor Custom",
+            "category": "customization",
+            "description": "Setup sensor non-standar termasuk driver development",
+            "costPrice": 500000,
+            "sellingPrice": 1000000,
+            "defaultMargin": 100,
+            "minPrice": 750000,
+            "unit": "per sensor type",
+            "duration": "2-5 hari kerja",
+            "scope": [
+                "Analisa datasheet",
+                "Development driver",
+                "Konfigurasi",
+                "Testing & calibration"
+            ],
+            "deliverables": [
+                "Working configuration",
+                "Documentation"
+            ],
+            "notes": "Customer provide sensor untuk testing."
+        },
+        {
+            "id": "svc-maintenance-annual",
+            "sku": "SVC-MAINT-ANNUAL",
+            "name": "Annual Maintenance Contract",
+            "category": "support",
+            "description": "Kontrak maintenance tahunan dengan kunjungan berkala",
+            "costPrice": 4000000,
+            "sellingPrice": 6000000,
+            "defaultMargin": 50,
+            "minPrice": 5500000,
+            "unit": "per tahun per lokasi",
+            "scope": [
+                "Kunjungan preventive 4x/tahun",
+                "Health check sistem",
+                "Firmware update",
+                "Calibration check",
+                "Priority support"
+            ],
+            "includes": [
+                "4x site visit/tahun",
+                "Remote support unlimited",
+                "Minor repair"
+            ],
+            "notIncludes": [
+                "Spare parts",
+                "Major repair",
+                "Transport luar Jabodetabek"
+            ],
+            "notes": "SLA response 4 jam untuk emergency."
+        }
+    ],
+    "discounts": {
+        "volume": [
+            {
+                "minQty": 3,
+                "discount": 3,
+                "label": "3-4 units"
+            },
+            {
+                "minQty": 5,
+                "discount": 5,
+                "label": "5-9 units"
+            },
+            {
+                "minQty": 10,
+                "discount": 8,
+                "label": "10-19 units"
+            },
+            {
+                "minQty": 20,
+                "discount": 12,
+                "label": "20-49 units"
+            },
+            {
+                "minQty": 50,
+                "discount": 15,
+                "label": "50+ units"
+            }
+        ],
+        "subscriptionPrepay": [
+            {
+                "months": 6,
+                "discount": 5,
+                "label": "6 bulan prepaid"
+            },
+            {
+                "months": 12,
+                "discount": 10,
+                "label": "12 bulan prepaid"
+            },
+            {
+                "months": 24,
+                "discount": 15,
+                "label": "24 bulan prepaid"
+            }
+        ],
+        "special": [
+            {
+                "id": "gov",
+                "name": "Government/BUMN",
+                "discount": 5,
+                "requiresApproval": true
+            },
+            {
+                "id": "edu",
+                "name": "Educational",
+                "discount": 10,
+                "requiresApproval": true
+            },
+            {
+                "id": "partner",
+                "name": "Partner/Reseller",
+                "discount": 15,
+                "requiresApproval": true
+            }
+        ],
+        "maxTotalDiscount": 25,
+        "approvalRequired": {
+            "aboveDiscount": 15,
+            "approver": "Head of Sales"
+        }
+    },
+    "terms": {
+        "payment": [
+            {
+                "type": "standard",
+                "description": "DP 50% saat PO, 50% sebelum pengiriman"
+            },
+            {
+                "type": "government",
+                "description": "Sesuai kontrak institusi"
+            },
+            {
+                "type": "subscription",
+                "description": "Bulanan di muka, atau prepaid"
+            }
+        ],
+        "warranty": {
+            "hardware": "12 bulan dari tanggal instalasi",
+            "sensor": "12 bulan (electrode/membrane 6 bulan)",
+            "workmanship": "90 hari dari commissioning"
+        },
+        "leadTime": {
+            "stock": "3-7 hari kerja",
+            "indent": "14-21 hari kerja"
+        },
+        "validityDays": 30,
+        "taxNote": "Harga belum termasuk PPN 11%",
+        "cancellation": "Pembatalan setelah PO dikenakan biaya 20%"
+    },
+    "company": {
+        "name": "DEVETEK",
+        "legalName": "PT. COMON CIPTA INOVASI",
+        "tagline": "Smart IoT Solutions for Indonesia",
+        "address": "Jakarta, Indonesia",
+        "contact": {
+            "phone": "+62 856-2302-229",
+            "email": "koko@devetek.com",
+            "website": "https://devetek-iot.web.app",
+            "whatsapp": "+6285623022299"
+        },
+        "bank": {
+            "name": "Bank Central Asia (BCA)",
+            "accountNumber": "XXX-XXX-XXXX",
+            "accountName": "PT. COMON CIPTA INOVASI"
+        }
+    }
+}

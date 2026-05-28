@@ -14,4 +14,58 @@
 		position: relative;
 		flex: 1;
 	}
+
+	// Split layout variant
+	&.login-with-info {
+		padding: 0;
+		display: block;
+
+		.login-info-panel {
+			background: linear-gradient(135deg, rgba(var(--bs-theme-rgb), 0.15) 0%, rgba(0,0,0,0.95) 100%);
+			align-items: center;
+			justify-content: center;
+			position: relative;
+			overflow: hidden;
+
+			&::before {
+				content: '';
+				position: absolute;
+				top: -50%;
+				right: -50%;
+				width: 100%;
+				height: 100%;
+				background: radial-gradient(circle, rgba(var(--bs-theme-rgb), 0.08) 0%, transparent 70%);
+				pointer-events: none;
+			}
+		}
+
+		.login-info-content {
+			padding: $spacer * 3;
+			max-width: rem(480px);
+			position: relative;
+			z-index: 1;
+		}
+
+		.login-feature-icon {
+			width: rem(40px);
+			height: rem(40px);
+			border-radius: rem(8px);
+			background: rgba(var(--bs-theme-rgb), 0.15);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--bs-theme);
+			flex-shrink: 0;
+		}
+
+		.login-content {
+			padding: $spacer * 2;
+			max-width: rem(420px);
+			width: 100%;
+
+			@include media-breakpoint-down(md) {
+				padding: $spacer * 1.5;
+			}
+		}
+	}
 }

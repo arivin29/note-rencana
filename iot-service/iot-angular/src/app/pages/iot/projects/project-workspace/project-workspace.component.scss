@@ -2,7 +2,7 @@
 .project-workspace {
   display: flex;
   min-height: calc(100vh - 52px); // Account for header
-  margin: -20px -20px 0; // Extend to edges
+  margin: -1rem -1.25rem 0; // Extend to edges (match compact content padding)
   
   // Sidebar collapsed state
   &.sidebar-collapsed {
@@ -34,7 +34,7 @@
 // When main sidebar is expanded (not minified)
 :host-context(.app:not(.app-sidebar-minified)) {
   .project-sidebar {
-    left: 270px; // Full main sidebar width
+    left: 220px; // Compact main sidebar width
   }
   .workspace-content {
     margin-left: 280px; // Still relative to secondary sidebar
