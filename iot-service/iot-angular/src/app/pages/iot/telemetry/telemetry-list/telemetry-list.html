@@ -5,25 +5,7 @@
             <li class="breadcrumb-item active">Telemetry</li>
         </ul>
         <h1 class="page-header mb-0">
-            Telemetry Aggregates <br>
-            <span *ngIf="ownerIdFilter" class="badge bg-primary ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
-                <i class="fa fa-filter me-1"></i>Owner
-            </span>
-            <span *ngIf="projectIdFilter" class="badge bg-info ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
-                <i class="fa fa-filter me-1"></i>Project
-            </span>
-            <span *ngIf="nodeIdFilter" class="badge bg-success ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
-                <i class="fa fa-filter me-1"></i>Node
-            </span>
-            <span *ngIf="sensorIdFilter" class="badge bg-warning ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
-                <i class="fa fa-filter me-1"></i>Sensor
-            </span>
-            <span *ngIf="sensorChannelIdFilter" class="badge bg-theme ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
-                <i class="fa fa-filter me-1"></i>Channel
-            </span>
-            <span *ngIf="autoRefreshEnabled" class="badge bg-success ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
-                <i class="fa fa-sync fa-spin me-1"></i>Auto
-            </span>
+            Telemetry Aggregates
         </h1>
         <div class="text-muted text-opacity-75 small">
             Monitoring hasil agregasi sensor channel per window {{ selectedAggregationLabel }}
@@ -36,10 +18,10 @@
         <button *ngIf="ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter"
             (click)="clearAllFilters()" class="btn btn-outline-secondary btn-sm">
             <i class="fa fa-times fa-fw me-1"></i>
-            Clear All Filters
+            Clear Filters
         </button>
 
-        <!-- Auto Refresh Toggle (Grafana Style) -->
+        <!-- Auto Refresh Toggle -->
         <div class="btn-group btn-group-sm">
             <button class="btn" [class.btn-theme]="autoRefreshEnabled" [class.btn-outline-default]="!autoRefreshEnabled"
                 (click)="toggleAutoRefresh()">
@@ -67,232 +49,86 @@
 
         <button class="btn btn-outline-theme btn-sm" (click)="syncAggregation()" [disabled]="loading">
             <i class="fa fa-sync fa-fw me-1" [class.fa-spin]="loading"></i>
-            Sync Aggregation
-        </button>
-        <button class="btn btn-outline-default btn-sm">
-            <i class="fa fa-bell fa-fw me-1"></i>
-            Configure Alerts
+            Sync
         </button>
         <button class="btn btn-theme btn-sm" (click)="exportCsv()" [disabled]="exporting || loading">
             <i class="fa fa-fw me-1" [class.fa-file-export]="!exporting" [class.fa-spinner]="exporting" [class.fa-spin]="exporting"></i>
-            <span *ngIf="!exporting">Export CSV</span>
-            <span *ngIf="exporting">Exporting...</span>
+            <span *ngIf="!exporting">CSV</span>
+            <span *ngIf="exporting">...</span>
         </button>
     </div>
 </div>
 
 <card class="shadow-sm">
-    <ul class="nav nav-tabs nav-tabs-v2 px-4 pt-3">
-        <li class="nav-item me-3" *ngFor="let agg of aggregations">
-            <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
-                [class.active]="selectedAggregation === agg" (click)="onAggregationChange(agg)">
-                <span>{{ agg }}</span>
-                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
-                    {{ aggregationLabels[agg] || agg }}
+    <!-- Aggregation Tabs + Filters in one compact section -->
+    <div class="px-4 pt-3 pb-2 border-bottom border-opacity-25">
+        <div class="d-flex align-items-center flex-wrap gap-3 mb-2">
+            <div class="btn-group btn-group-sm">
+                <button *ngFor="let agg of aggregations" type="button"
+                    class="btn" [class.btn-theme]="selectedAggregation === agg"
+                    [class.btn-outline-default]="selectedAggregation !== agg"
+                    (click)="onAggregationChange(agg)">
+                    {{ agg }} <span class="text-opacity-75 ms-1">{{ aggregationLabels[agg] || agg }}</span>
+                </button>
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-3 text-muted small">
+                <span><strong class="text-theme">{{ totalChannels | number }}</strong> records</span>
+                <span><strong>{{ totalPoints | number }}</strong> data points</span>
+                <span><strong>{{ uniqueNodesCount }}</strong> nodes</span>
+                <span class="d-flex gap-2">
+                    <span class="text-success">{{ qualitySummary.good }} <i class="fa fa-check-circle"></i></span>
+                    <span class="text-warning">{{ qualitySummary.warning }} <i class="fa fa-exclamation-triangle"></i></span>
+                    <span class="text-danger">{{ qualitySummary.critical }} <i class="fa fa-times-circle"></i></span>
                 </span>
-            </a>
-        </li>
-    </ul>
-    <div class="p-4">
-        <!-- Cascading Filters -->
-        <div class="row g-3 mb-4">
-            <div class="col-lg-2 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">
-                    <i class="fa fa-building me-1"></i>Owner
-                </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedOwnerId"
-                    (change)="onOwnerChange(selectedOwnerId)">
-                    <option value="">All Owners</option>
-                    <option *ngFor="let opt of ownerOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">
-                    <i class="fa fa-folder me-1"></i>Project
-                </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedProjectId"
-                    (change)="onProjectChange(selectedProjectId)"
-                    [disabled]="!selectedOwnerId">
-                    <option value="">All Projects</option>
-                    <option *ngFor="let opt of projectOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">
-                    <i class="fa fa-server me-1"></i>Node
-                </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedNodeId"
-                    (change)="onNodeChange(selectedNodeId)" 
-                    [disabled]="!selectedProjectId">
-                    <option value="">All Nodes</option>
-                    <option *ngFor="let opt of nodeOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">
-                    <i class="fa fa-microchip me-1"></i>Sensor
-                </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedSensorId"
-                    (change)="onSensorChange(selectedSensorId)"
-                    [disabled]="!selectedNodeId">
-                    <option value="">All Sensors</option>
-                    <option *ngFor="let opt of sensorOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">
-                    <i class="fa fa-signal me-1"></i>Channel
-                </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedChannelId"
-                    (change)="onChannelChange(selectedChannelId)"
-                    [disabled]="!selectedSensorId">
-                    <option value="">All Channels</option>
-                    <option *ngFor="let opt of channelOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-12">
-                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-transparent border-end-0 text-muted">
-                        <i class="fa fa-search"></i>
-                    </span>
-                    <input type="text" class="form-control form-control-sm border-start-0 ps-0"
-                        placeholder="Search keyword..." [(ngModel)]="searchTerm">
-                </div>
             </div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Total Records</div>
-                    <div class="fs-3 fw-bold text-theme">{{ totalChannels | number }}</div>
-                    <div class="text-muted small">In selected time range</div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Total Data Points</div>
-                    <div class="fs-3 fw-bold">{{ totalPoints | number }}</div>
-                    <div class="text-muted small">Global count (all pages)</div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Unique Nodes</div>
-                    <div class="fs-3 fw-bold">{{ uniqueNodesCount }}</div>
-                    <div class="text-muted small">On current page</div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Data Quality</div>
-                    <div class="d-flex gap-3">
-                        <div>
-                            <div class="fw-bold text-success">{{ qualitySummary.good }}</div>
-                            <div class="text-muted small">Healthy</div>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-warning">{{ qualitySummary.warning }}</div>
-                            <div class="text-muted small">Warning</div>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-danger">{{ qualitySummary.critical }}</div>
-                            <div class="text-muted small">Critical</div>
-                        </div>
-                    </div>
-                    <div class="text-muted small mt-2">Current page only</div>
-                </div>
-            </div>
-
-            <!-- Active Filters Card -->
-            <div class="col-lg-4 col-md-6"
-                *ngIf="ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter">
-                <div class="border rounded-3 p-3 bg-primary bg-opacity-10 border-primary border-opacity-25 h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div class="text-primary text-uppercase small fw-semibold">
-                            <i class="fa fa-filter me-1"></i>Active Filters
-                        </div>
-                        <button (click)="clearAllFilters()" class="btn btn-outline-primary btn-sm py-0 px-2"
-                            style="font-size: 0.75rem;">
-                            Clear
-                        </button>
-                    </div>
-                    <div class="d-flex flex-column gap-1">
-                        <div *ngIf="ownerIdFilter" class="small">
-                            <i class="fa fa-building text-primary me-1"></i>
-                            <span class="text-muted">Owner:</span>
-                            <span class="fw-semibold">{{ ownerIdFilter }}</span>
-                        </div>
-                        <div *ngIf="projectIdFilter" class="small">
-                            <i class="fa fa-folder text-info me-1"></i>
-                            <span class="text-muted">Project:</span>
-                            <span class="fw-semibold">{{ projectIdFilter }}</span>
-                        </div>
-                        <div *ngIf="nodeIdFilter" class="small">
-                            <i class="fa fa-server text-success me-1"></i>
-                            <span class="text-muted">Node:</span>
-                            <span class="fw-semibold">{{ nodeIdFilter }}</span>
-                        </div>
-                        <div *ngIf="sensorIdFilter" class="small">
-                            <i class="fa fa-microchip text-warning me-1"></i>
-                            <span class="text-muted">Sensor:</span>
-                            <span class="fw-semibold">{{ sensorIdFilter }}</span>
-                        </div>
-                        <div *ngIf="sensorChannelIdFilter" class="small">
-                            <i class="fa fa-signal text-theme me-1"></i>
-                            <span class="text-muted">Channel:</span>
-                            <span class="fw-semibold">{{ sensorChannelIdFilter }}</span>
-                        </div>
-                    </div>
-                </div>
+        <!-- Cascading Filters - single compact row -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <select class="form-select form-select-sm" style="width: auto; min-width: 140px;"
+                [(ngModel)]="selectedOwnerId" (change)="onOwnerChange(selectedOwnerId)">
+                <option value="">All Owners</option>
+                <option *ngFor="let opt of ownerOptions" [value]="opt.id">{{ opt.label }}</option>
+            </select>
+            <i class="fa fa-chevron-right text-muted small"></i>
+            <select class="form-select form-select-sm" style="width: auto; min-width: 140px;"
+                [(ngModel)]="selectedProjectId" (change)="onProjectChange(selectedProjectId)"
+                [disabled]="!selectedOwnerId">
+                <option value="">All Projects</option>
+                <option *ngFor="let opt of projectOptions" [value]="opt.id">{{ opt.label }}</option>
+            </select>
+            <i class="fa fa-chevron-right text-muted small"></i>
+            <select class="form-select form-select-sm" style="width: auto; min-width: 150px;"
+                [(ngModel)]="selectedNodeId" (change)="onNodeChange(selectedNodeId)"
+                [disabled]="!selectedProjectId">
+                <option value="">All Nodes</option>
+                <option *ngFor="let opt of nodeOptions" [value]="opt.id">{{ opt.label }}</option>
+            </select>
+            <i class="fa fa-chevron-right text-muted small"></i>
+            <select class="form-select form-select-sm" style="width: auto; min-width: 130px;"
+                [(ngModel)]="selectedSensorId" (change)="onSensorChange(selectedSensorId)"
+                [disabled]="!selectedNodeId">
+                <option value="">All Sensors</option>
+                <option *ngFor="let opt of sensorOptions" [value]="opt.id">{{ opt.label }}</option>
+            </select>
+            <i class="fa fa-chevron-right text-muted small"></i>
+            <select class="form-select form-select-sm" style="width: auto; min-width: 130px;"
+                [(ngModel)]="selectedChannelId" (change)="onChannelChange(selectedChannelId)"
+                [disabled]="!selectedSensorId">
+                <option value="">All Channels</option>
+                <option *ngFor="let opt of channelOptions" [value]="opt.id">{{ opt.label }}</option>
+            </select>
+            <div class="input-group input-group-sm ms-auto" style="width: 180px;">
+                <span class="input-group-text bg-transparent border-end-0 text-muted">
+                    <i class="fa fa-search"></i>
+                </span>
+                <input type="text" class="form-control form-control-sm border-start-0 ps-0"
+                    placeholder="Search..." [(ngModel)]="searchTerm">
             </div>
         </div>
+    </div>
 
-        <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-4">
-                    <div class="text-muted text-uppercase small">Time Range</div>
-                    <div class="fw-semibold">Last {{ selectedAggregationLabel }}</div>
-                    <div class="text-muted small">
-                        Real-time sensor readings
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted text-uppercase small">Active Filter Scope</div>
-                    <div class="fw-semibold"
-                        *ngIf="!ownerIdFilter && !projectIdFilter && !nodeIdFilter && !sensorIdFilter && !sensorChannelIdFilter">
-                        All Data (No Filters)
-                    </div>
-                    <div class="fw-semibold" *ngIf="sensorChannelIdFilter">
-                        <i class="fa fa-signal me-1"></i>Single Channel
-                    </div>
-                    <div class="fw-semibold" *ngIf="!sensorChannelIdFilter && sensorIdFilter">
-                        <i class="fa fa-microchip me-1"></i>All Channels in Sensor
-                    </div>
-                    <div class="fw-semibold" *ngIf="!sensorIdFilter && nodeIdFilter">
-                        <i class="fa fa-server me-1"></i>All Sensors in Node
-                    </div>
-                    <div class="fw-semibold" *ngIf="!nodeIdFilter && projectIdFilter">
-                        <i class="fa fa-folder me-1"></i>All Nodes in Project
-                    </div>
-                    <div class="fw-semibold" *ngIf="!projectIdFilter && ownerIdFilter">
-                        <i class="fa fa-building me-1"></i>All Projects in Owner
-                    </div>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <div class="text-muted small">Records displayed</div>
-                    <div class="fw-semibold fs-4">{{ totalChannels }}</div>
-                    <div class="text-muted small">({{ totalPoints | number }} data points)</div>
-                </div>
-            </div>
-        </div>
-
+    <div class="p-3">
         <div class="table-responsive">
             <!-- Loading State -->
             <div *ngIf="loading" class="text-center py-5">
@@ -309,7 +145,7 @@
             </div>
 
             <!-- Data Table -->
-            <table *ngIf="!loading && !error" class="table table-hover text-nowrap align-middle mb-0">
+            <table *ngIf="!loading && !error" class="table table-hover text-nowrap align-middle mb-0 table-sm">
                 <thead class="text-uppercase text-muted small">
                     <tr>
                         <th class="pt-0 pb-2">Channel / Sensor</th>
@@ -339,7 +175,7 @@
                             <div class="text-muted small">{{ row.owner }}</div>
                         </td>
                         <td class="text-end">
-                            <div class="fw-bold fs-5">{{ row.latest | number: '1.2-2' }}</div>
+                            <div class="fw-bold">{{ row.latest | number: '1.2-2' }}</div>
                             <div class="text-muted small">{{ row.unit || '-' }}</div>
                         </td>
                         <td class="text-center">
@@ -363,7 +199,7 @@
 
             <!-- Pagination -->
             <div *ngIf="!loading && !error && totalRecords > pageSize"
-                class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                 <div class="text-muted small">
                     Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalRecords | number }} records
                 </div>
