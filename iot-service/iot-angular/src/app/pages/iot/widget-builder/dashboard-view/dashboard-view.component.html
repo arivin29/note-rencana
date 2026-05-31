@@ -1,35 +1,25 @@
-<!-- Page Header -->
-<div class="d-flex align-items-center mb-2">
-    <!-- Breadcrumb & Title (hidden in embedded mode) -->
-    <div *ngIf="!embeddedMode">
-        <ul class="breadcrumb mb-0" style="font-size: 11px;">
-            <li class="breadcrumb-item"><a href="javascript:;" routerLink="/iot/widget-builder">Widget Builder</a></li>
-            <li class="breadcrumb-item"><a href="javascript:;">Dashboards</a></li>
-            <li class="breadcrumb-item active">{{ dashboard?.name || 'Dashboard' }}</li>
-        </ul>
-        <h1 class="page-header mb-0" style="font-size: 18px;">
-            {{ dashboard?.name || 'Loading...' }}
-            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal" style="font-size: 12px !important;">
-                {{ dashboard?.description }}
-            </small>
-        </h1>
+<!-- Compact Dashboard Toolbar -->
+<div class="dashboard-toolbar" [class.kiosk-toolbar]="kioskMode">
+    <!-- Left: Title & breadcrumb -->
+    <div class="toolbar-left" *ngIf="!embeddedMode">
+        <nav class="toolbar-breadcrumb">
+            <a routerLink="/iot/widget-builder">Dashboards</a>
+            <i class="bi bi-chevron-right"></i>
+            <span>{{ dashboard?.name || 'Dashboard' }}</span>
+        </nav>
     </div>
-    <!-- Embedded mode: show dashboard name only -->
-    <div *ngIf="embeddedMode">
-        <h1 class="page-header mb-0" style="font-size: 18px;">
-            {{ dashboard?.name || 'Loading...' }}
-            <small *ngIf="dashboard?.description" class="text-muted d-block fs-6 fw-normal" style="font-size: 12px !important;">
-                {{ dashboard?.description }}
-            </small>
-        </h1>
+    <div class="toolbar-left" *ngIf="embeddedMode">
+        <span class="toolbar-title">{{ dashboard?.name || 'Dashboard' }}</span>
     </div>
-    <div class="ms-auto d-flex align-items-center gap-2">
-        <!-- Grafana-style Time Range Picker -->
+
+    <!-- Right: Actions -->
+    <div class="toolbar-right">
+        <!-- Time Range Picker (compact) -->
         <div class="time-picker-wrapper">
-            <button class="btn btn-outline-theme time-picker-btn" (click)="toggleTimePicker()">
-                <i class="bi bi-calendar3 me-2"></i>
-                <span class="time-range-display">{{ formatRelativeTime() }}</span>
-                <i class="bi bi-chevron-down ms-2"></i>
+            <button class="toolbar-btn time-picker-btn" (click)="toggleTimePicker()">
+                <i class="bi bi-clock"></i>
+                <span class="d-none d-sm-inline">{{ formatRelativeTime() }}</span>
+                <i class="bi bi-chevron-down ms-1" style="font-size: 10px;"></i>
             </button>
             
             <!-- Time Picker Dropdown Panel -->
@@ -50,7 +40,6 @@
                                     <i class="bi bi-calendar"></i>
                                 </button>
                             </div>
-                            <!-- From Calendar Popup -->
                             <div class="calendar-popup" *ngIf="activeCalendar === 'from'">
                                 <div class="calendar-header">
                                     <button class="cal-nav" (click)="prevMonth('from')"><i class="bi bi-chevron-left"></i></button>
@@ -93,7 +82,6 @@
                                     <i class="bi bi-calendar"></i>
                                 </button>
                             </div>
-                            <!-- To Calendar Popup -->
                             <div class="calendar-popup" *ngIf="activeCalendar === 'to'">
                                 <div class="calendar-header">
                                     <button class="cal-nav" (click)="prevMonth('to')"><i class="bi bi-chevron-left"></i></button>
@@ -137,7 +125,6 @@
                             </button>
                         </div>
                         
-                        <!-- Recent Time Ranges -->
                         <div class="recent-ranges" *ngIf="recentTimeRanges.length > 0">
                             <p class="recent-hint">Recently used absolute ranges</p>
                             <div class="recent-list">
@@ -187,24 +174,24 @@
                         Browser Time <span class="text-muted">{{ getTimezone() }}</span>
                     </span>
                     <span class="timezone-offset">{{ getTimezoneOffset() }}</span>
-                    <a href="javascript:;" class="change-settings">
-                        <i class="bi bi-chevron-down me-1"></i>
-                        Change time settings
-                    </a>
                 </div>
             </div>
             
-            <!-- Click outside to close -->
             <div class="time-picker-backdrop" *ngIf="timePickerOpen" (click)="closeTimePicker()"></div>
         </div>
 
+        <!-- Refresh -->
+        <button class="toolbar-btn" (click)="refreshAllWidgets()" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
         <!-- Auto Refresh Dropdown -->
         <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="bi bi-arrow-repeat me-1"></i>
-                {{ getRefreshLabel() }}
+            <button class="toolbar-btn" data-bs-toggle="dropdown" title="Auto refresh interval">
+                <i class="bi bi-arrow-repeat"></i>
+                <span class="d-none d-md-inline ms-1" style="font-size: 11px;">{{ getRefreshLabel() }}</span>
             </button>
-            <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
                 <a *ngFor="let opt of refreshIntervals" class="dropdown-item" href="javascript:;"
                     [class.active]="refreshInterval === opt.value" (click)="onRefreshIntervalChange(opt.value)">
                     {{ opt.label }}
@@ -212,42 +199,48 @@
             </div>
         </div>
 
-        <!-- Manual Refresh -->
-        <button class="btn btn-outline-secondary" (click)="refreshAllWidgets()" title="Refresh Now">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
+        <div class="toolbar-divider"></div>
 
-        <!-- Last Refresh Time -->
-        <span class="text-muted small d-none d-md-inline">
-            <i class="bi bi-clock me-1"></i>
-            {{ lastRefresh | date:'HH:mm:ss' }}
-        </span>
-
-        <div class="vr d-none d-md-block"></div>
-
-        <!-- Edit Mode Toggle -->
+        <!-- Dashboard Actions Dropdown (combines Add Widget + Edit Layout) -->
         <ng-container *ngIf="!editMode">
-            <button class="btn btn-outline-theme" (click)="toggleEditMode()">
-                <i class="bi bi-pencil me-1"></i>
-                Edit Layout
-            </button>
-            <button class="btn btn-theme" (click)="addWidget()">
-                <i class="fa fa-plus me-1"></i>
-                Add Widget
-            </button>
+            <div class="dropdown">
+                <button class="toolbar-btn toolbar-btn-primary" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                    <span class="d-none d-sm-inline ms-1">Dashboard</span>
+                    <i class="bi bi-chevron-down ms-1" style="font-size: 10px;"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                    <a class="dropdown-item" href="javascript:;" (click)="addWidget()">
+                        <i class="bi bi-plus-lg me-2"></i>Add Widget
+                    </a>
+                    <a class="dropdown-item" href="javascript:;" (click)="toggleEditMode()">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>Edit Layout
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="javascript:;" (click)="toggleKioskMode()">
+                        <i class="bi bi-arrows-fullscreen me-2"></i>
+                        {{ kioskMode ? 'Exit Fullscreen' : 'Fullscreen' }}
+                    </a>
+                </div>
+            </div>
         </ng-container>
 
         <!-- Edit Mode Actions -->
         <ng-container *ngIf="editMode">
-            <button class="btn btn-outline-danger" (click)="cancelEdit()">
-                <i class="bi bi-x me-1"></i>
-                Cancel
+            <button class="toolbar-btn" (click)="cancelEdit()" title="Cancel">
+                <i class="bi bi-x-lg"></i>
+                <span class="d-none d-sm-inline ms-1">Cancel</span>
             </button>
-            <button class="btn btn-theme" (click)="saveLayout()">
-                <i class="bi bi-check2 me-1"></i>
-                Save Layout
+            <button class="toolbar-btn toolbar-btn-primary" (click)="saveLayout()" title="Save">
+                <i class="bi bi-check-lg"></i>
+                <span class="d-none d-sm-inline ms-1">Save</span>
             </button>
         </ng-container>
+
+        <!-- Kiosk/Fullscreen Toggle (always visible as icon) -->
+        <button class="toolbar-btn" (click)="toggleKioskMode()" [title]="kioskMode ? 'Exit Fullscreen' : 'Fullscreen'">
+            <i [class]="kioskMode ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen'"></i>
+        </button>
     </div>
 </div>
 

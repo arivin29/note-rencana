@@ -213,6 +213,27 @@ export class NodeDetailAddSensorDrawerComponent implements OnChanges {
     }
 
     /**
+     * Handle catalog selection change - auto-fill code and label
+     */
+    onCatalogChange(): void {
+        const catalogId = this.sensorForm.get('idSensorCatalog')?.value;
+        const catalog = this.catalogOptions.find(c => c.idSensorCatalog === catalogId);
+        if (catalog && !this.sensorId) {
+            // Only auto-fill in add mode
+            const code = `${catalog.modelName || 'SENSOR'}`.toUpperCase().replace(/\s+/g, '-');
+            const label = `${catalog.vendor} ${catalog.modelName}`.trim();
+            
+            // Only fill if empty or still default
+            if (!this.sensorForm.get('sensorCode')?.value) {
+                this.sensorForm.patchValue({ sensorCode: code });
+            }
+            if (!this.sensorForm.get('label')?.value) {
+                this.sensorForm.patchValue({ label: label });
+            }
+        }
+    }
+
+    /**
      * Helper: Check if form field is invalid
      */
     isFieldInvalid(fieldName: string): boolean {

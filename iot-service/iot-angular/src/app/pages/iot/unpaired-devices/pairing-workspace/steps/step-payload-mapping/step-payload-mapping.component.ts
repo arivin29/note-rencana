@@ -106,9 +106,10 @@ export class StepPayloadMappingComponent implements OnInit, OnChanges {
             this.selectPayload(this.samplePayloads[0]);
         }
         if (!this.profileForm.code) {
-            const timestamp = Date.now();
-            this.profileForm.code = `profile-${timestamp}`;
-            this.profileForm.name = `Profile ${new Date(timestamp).toLocaleDateString()}`;
+            const hwId = (this.unpairedDevice as any)?.hardwareId || '';
+            const shortId = hwId ? hwId.replace(/[^a-zA-Z0-9-]/g, '').substring(0, 30) : `profile-${Date.now()}`;
+            this.profileForm.code = shortId;
+            this.profileForm.name = hwId ? `Mapping ${hwId}` : `Profile ${new Date().toLocaleDateString()}`;
         }
         this.emitValidation();
         this.emitMetaChanges();

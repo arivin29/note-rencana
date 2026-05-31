@@ -21,15 +21,44 @@
         <!-- Form -->
         <form *ngIf="!loading && !loadingSensor" [formGroup]="sensorForm" (ngSubmit)="handleSubmit()">
             <div class="mb-3">
-                <label class="form-label text-muted text-uppercase small">Sensor Code *</label>
-                <input class="form-control" formControlName="sensorCode" 
-                       [class.is-invalid]="isFieldInvalid('sensorCode')"
-                       placeholder="e.g., SENSOR-001">
-                <div class="invalid-feedback" *ngIf="hasError('sensorCode', 'required')">
-                    Sensor code is required
+                <label class="form-label text-muted text-uppercase small">Sensor Catalog *</label>
+                <select class="form-select" formControlName="idSensorCatalog"
+                        [class.is-invalid]="isFieldInvalid('idSensorCatalog')"
+                        (change)="onCatalogChange()">
+                    <option value="">Select catalog...</option>
+                    <option *ngFor="let catalog of catalogOptions" [value]="catalog.idSensorCatalog">
+                        {{ catalog.vendor }} - {{ catalog.modelName }}
+                    </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="hasError('idSensorCatalog', 'required')">
+                    Sensor catalog is required
                 </div>
-                <div class="form-text" *ngIf="!isFieldInvalid('sensorCode')">
-                    Unique identifier for this sensor
+                <div class="form-text" *ngIf="!isFieldInvalid('idSensorCatalog')">
+                    Select catalog first — code and label will be auto-generated
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted text-uppercase small">Sensor Code *</label>
+                        <input class="form-control" formControlName="sensorCode" 
+                               [class.is-invalid]="isFieldInvalid('sensorCode')"
+                               placeholder="e.g., SENSOR-001">
+                        <div class="invalid-feedback" *ngIf="hasError('sensorCode', 'required')">
+                            Required
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted text-uppercase small">Status *</label>
+                        <select class="form-select" formControlName="status">
+                            <option value="active">Active</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -41,62 +70,32 @@
                 <div class="invalid-feedback" *ngIf="hasError('label', 'required')">
                     Sensor label is required
                 </div>
-                <div class="form-text" *ngIf="!isFieldInvalid('label')">
-                    Display name for this sensor
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label text-muted text-uppercase small">Sensor Catalog *</label>
-                <select class="form-select" formControlName="idSensorCatalog"
-                        [class.is-invalid]="isFieldInvalid('idSensorCatalog')">
-                    <option value="">Select catalog...</option>
-                    <option *ngFor="let catalog of catalogOptions" [value]="catalog.idSensorCatalog">
-                        {{ catalog.vendor }} - {{ catalog.modelName }}
-                    </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="hasError('idSensorCatalog', 'required')">
-                    Sensor catalog is required
-                </div>
-                <div class="form-text" *ngIf="!isFieldInvalid('idSensorCatalog')">
-                    Sensor model/catalog type
-                </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label text-muted text-uppercase small">Location / Mounting</label>
                 <input class="form-control" formControlName="location"
                        placeholder="e.g., Inlet Pipe Section A">
-                <div class="form-text">Physical installation location</div>
             </div>
 
-            <div class="mb-4">
-                <label class="form-label text-muted text-uppercase small">Status *</label>
-                <select class="form-select" formControlName="status">
-                    <option value="active">Active</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-                <div class="form-text">Current operational status</div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label text-muted text-uppercase small">Protocol Channel</label>
-                <input class="form-control" formControlName="protocolChannel"
-                       placeholder="e.g., CH1, A0, Pin 12">
-                <div class="form-text">Communication channel or port number</div>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label text-muted text-uppercase small">Sampling Rate (seconds)</label>
-                <input type="number" class="form-control" formControlName="samplingRate"
-                       [class.is-invalid]="isFieldInvalid('samplingRate')"
-                       min="1" placeholder="e.g., 30">
-                <div class="invalid-feedback" *ngIf="hasError('samplingRate', 'min')">
-                    Sampling rate must be at least 1 second
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label text-muted text-uppercase small">Protocol Channel</label>
+                        <input class="form-control" formControlName="protocolChannel"
+                               placeholder="e.g., CH1, A0">
+                    </div>
                 </div>
-                <div class="form-text" *ngIf="!isFieldInvalid('samplingRate')">
-                    How often to read sensor data (in seconds)
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <label class="form-label text-muted text-uppercase small">Sampling Rate (s)</label>
+                        <input type="number" class="form-control" formControlName="samplingRate"
+                               [class.is-invalid]="isFieldInvalid('samplingRate')"
+                               min="1" placeholder="e.g., 30">
+                        <div class="invalid-feedback" *ngIf="hasError('samplingRate', 'min')">
+                            Min 1 second
+                        </div>
+                    </div>
                 </div>
             </div>
 

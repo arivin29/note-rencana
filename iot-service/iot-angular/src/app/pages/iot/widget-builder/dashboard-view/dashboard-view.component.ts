@@ -8,6 +8,7 @@ import {
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { WidgetBuilderService } from 'src/sdk/core/services';
+import { AppSettings } from '../../../../service/app-settings.service';
 
 interface DashboardResponse {
   idDashboard?: string;
@@ -81,6 +82,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   loading = true;
   editMode = false;
   fullscreenWidget: string | null = null;
+  kioskMode = false;
   
   // Custom time range modal
   customTimeFrom = '';
@@ -103,14 +105,25 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   toTime = '23:59:59';
   weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+  private prevSidebarMinified = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private widgetBuilderService: WidgetBuilderService
+    private widgetBuilderService: WidgetBuilderService,
+    private appSettings: AppSettings
   ) {}
 
   ngOnInit(): void {
     this.initGridsterOptions();
+
+    // Minimize sidebar for dashboard fullwidth view (same pattern as project-workspace)
+    if (!this.embeddedMode) {
+      this.prevSidebarMinified = this.appSettings.appSidebarMinified;
+      setTimeout(() => {
+        this.appSettings.appSidebarMinified = true;
+      });
+    }
     
     // If dashboardId is provided via Input, use it
     // Otherwise, get from route
@@ -133,6 +146,15 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+
+    // Restore sidebar state and exit kiosk
+    if (!this.embeddedMode) {
+      this.appSettings.appSidebarMinified = this.prevSidebarMinified;
+      if (this.kioskMode) {
+        this.appSettings.appHeaderNone = false;
+        this.appSettings.appSidebarNone = false;
+      }
+    }
   }
 
   initGridsterOptions(): void {
@@ -345,6 +367,29 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
 
   toggleFullscreen(widgetId: string): void {
     this.fullscreenWidget = this.fullscreenWidget === widgetId ? null : widgetId;
+  }
+
+  toggleKioskMode(): void {
+    this.kioskMode = !this.kioskMode;
+    if (this.kioskMode) {
+      this.appSettings.appHeaderNone = true;
+      this.appSettings.appSidebarNone = true;
+    } else {
+      this.appSettings.appHeaderNone = false;
+      this.appSettings.appSidebarNone = false;
+      setTimeout(() => {
+        this.appSettings.appSidebarMinified = true;
+      });
+    }
+    // Trigger gridster resize after layout shift
+    setTimeout(() => {
+      if (this.gridsterOptions.api?.resize) {
+        this.gridsterOptions.api.resize();
+      } else if (this.gridsterOptions.api?.optionsChanged) {
+        this.gridsterOptions.api.optionsChanged();
+      }
+      window.dispatchEvent(new Event('resize'));
+    }, 300);
   }
 
   duplicateWidget(widgetId: string): void {

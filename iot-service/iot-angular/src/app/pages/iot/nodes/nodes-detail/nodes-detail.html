@@ -194,13 +194,26 @@
                 <div *ngFor="let sensor of sensors; let idx = index" class="p-3" [ngClass]="{ 'border-top': idx > 0 }">
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         <div class="me-auto">
-                            <div class="fw-semibold">{{ sensor.label }}</div>
-                            <div class="text-muted small">
-                                ID {{ sensor.id }} · Catalog {{ sensor.sensorCatalogLabel }}
+                            <div class="fw-semibold">
+                                {{ sensor.label }}
+                                <span [class]="sensorHealthBadge(sensor.health)" class="ms-2">{{ sensor.health | titlecase }}</span>
                             </div>
-                            <div class="text-muted small">
-                                {{ sensor.location }} · {{ sensor.protocolChannel || 'Channel N/A' }} · Sampling {{
-                                sensor.samplingRate || '—' }}s
+                            <div class="text-muted small d-flex flex-wrap gap-2 mt-1">
+                                <span *ngIf="sensor.sensorCatalogLabel">
+                                    <i class="fa fa-microchip me-1"></i>{{ sensor.sensorCatalogLabel }}
+                                </span>
+                                <span *ngIf="sensor.location">
+                                    <i class="fa fa-map-marker-alt me-1"></i>{{ sensor.location }}
+                                </span>
+                                <span *ngIf="sensor.protocolChannel">
+                                    <i class="fa fa-plug me-1"></i>{{ sensor.protocolChannel }}
+                                </span>
+                                <span *ngIf="sensor.samplingRate">
+                                    <i class="fa fa-clock me-1"></i>{{ sensor.samplingRate }}s
+                                </span>
+                                <span>
+                                    <i class="fa fa-layer-group me-1"></i>{{ sensor.channels.length }} channel{{ sensor.channels.length !== 1 ? 's' : '' }}
+                                </span>
                             </div>
                         </div>
                         <button class="btn btn-outline-theme btn-sm" type="button"
@@ -219,9 +232,6 @@
                             <i class="fa fa-trash me-1"></i>
                             Delete
                         </button>
-                        <span [class]="sensorHealthBadge(sensor.health)">{{ sensor.health | titlecase }}</span>
-                        <div class="text-muted small">{{ sensor.channels.length }} channel{{ sensor.channels.length > 1
-                            ? 's' : '' }}</div>
                     </div>
                     <div class="table-responsive mt-3">
                         <table class="table table-sm align-middle mb-0">
@@ -250,7 +260,7 @@
                                         <div class="text-muted small text-uppercase">{{ channel.unit }}</div>
                                     </td>
                                     <!-- <td class="text-muted small">{{ channel.id }}</td> -->
-                                    <td class="text-end fw-semibold">{{ channel.latest }} {{ channel.unit }}</td>
+                                    <td class="text-end fw-semibold">{{ formatChannelValue(channel) }} {{ channel.unit }}</td>
                                     <td><span [class]="badgeClass(channel.status)">{{ channel.status | titlecase
                                             }}</span>
                                     </td>
@@ -498,21 +508,7 @@
 
         
 
-        <card class="mb-4">
-            <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
-                Maintenance Timeline
-                <a href="javascript:;" class="ms-auto text-decoration-none text-inverse text-opacity-50">Add log</a>
-            </card-header>
-            <card-body class="fw-bold">
-                <div *ngFor="let log of maintenanceTimeline; let last = last" class="mb-3">
-                    <div class="text-muted small">{{ log.date }}</div>
-                    <div>{{ log.title }}</div>
-                    <div class="text-muted small fw-normal">{{ log.description }}</div>
-                    <div class="text-muted small">By {{ log.actor }}</div>
-                    <hr class="my-3" *ngIf="!last">
-                </div>
-            </card-body>
-        </card>
+         
 
         <!-- IoT Raw Logs Card -->
         <card class="mb-4">

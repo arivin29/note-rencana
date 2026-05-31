@@ -30,6 +30,7 @@ interface SensorChannelRow {
     metric: string;
     unit: string;
     latest: number;
+    decimalPlaces: number;
     status: 'ok' | 'warning' | 'critical';
     trend: 'rising' | 'falling' | 'stable';
     sensorTypeId: string;
@@ -314,16 +315,21 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
                     protocolChannel: sensor.protocolChannel || '-',
                     samplingRate: sensor.samplingRate || null,
                     channels: (sensor.channels || [])
-                        .map((channel: any) => ({
-                            id: channel.idSensorChannel,
-                            metric: channel.metricCode,
-                            unit: channel.unit,
-                            latest: channel.latestValue !== null ? parseFloat(channel.latestValue) : 0,
-                            status: this.mapChannelStatus(channel.status),
-                            trend: 'stable' as const,
-                            sensorTypeId: channel.sensorTypeId || 'unknown',
-                            sensorTypeLabel: channel.sensorTypeLabel || channel.metricCode
-                        }))
+                        .map((channel: any) => {
+                            const precision = channel.precision || 0.01;
+                            const decimalPlaces = precision < 1 ? Math.abs(Math.floor(Math.log10(precision))) : 0;
+                            return {
+                                id: channel.idSensorChannel,
+                                metric: channel.metricCode,
+                                unit: channel.unit,
+                                latest: channel.latestValue !== null ? parseFloat(channel.latestValue) : 0,
+                                decimalPlaces,
+                                status: this.mapChannelStatus(channel.status),
+                                trend: 'stable' as const,
+                                sensorTypeId: channel.sensorTypeId || 'unknown',
+                                sensorTypeLabel: channel.sensorTypeLabel || channel.metricCode
+                            };
+                        })
                         // Sort channels alphabetically by metricCode
                         .sort((a: any, b: any) => (a.metric || '').localeCompare(b.metric || ''))
                 }));
@@ -715,6 +721,11 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
             default:
                 return 'badge bg-danger';
         }
+    }
+
+    formatChannelValue(channel: SensorChannelRow): string {
+        if (channel.latest === 0 && !channel.unit) return '—';
+        return channel.latest.toFixed(channel.decimalPlaces);
     }
 
     sensorHealthBadge(health: SensorHealth) {

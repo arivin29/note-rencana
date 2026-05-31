@@ -77,8 +77,8 @@
                 </div>
 
                 <!-- Profile Suggestions (Compact) -->
-                <div class="card mb-3" *ngIf="profileSuggestions.length > 0">
-                    <div class="card-body py-2">
+                <card class="mb-3" *ngIf="profileSuggestions.length > 0">
+                    <card-body class="py-2">
                         <div class="d-flex align-items-center gap-2">
                             <div class="flex-grow-1">
                                 <select class="form-select form-select-sm" [(ngModel)]="selectedProfileId"
@@ -95,16 +95,16 @@
                                 <i class="fa fa-rotate"></i>
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </card-body>
+                </card>
 
                 <!-- Metadata Mapping (Compact) -->
                 <div class="mb-3">
                     <div class="small text-muted mb-2 fw-semibold">Telemetry Metadata</div>
                     <div class="row g-2">
                         <div class="col-md-4" *ngFor="let target of metaTargets">
-                            <div class="card">
-                                <div class="card-body p-2">
+                            <card>
+                                <card-body class="p-2">
                                     <div class="small fw-semibold mb-1">{{ target.label }}</div>
                                     <div cdkDropList 
                                         class="border rounded p-2 bg-light" 
@@ -129,8 +129,8 @@
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </card-body>
+                            </card>
                         </div>
                     </div>
                 </div>
@@ -206,28 +206,27 @@
                 </div>
 
                 <!-- Save Profile Form -->
-                <div class="card mt-3" *ngIf="!profileSaved">
-                    <div class="card-body">
+                <card class="mt-3" *ngIf="!profileSaved">
+                    <card-body>
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <div class="meta-label">Save As Profile</div>
-                                <div class="meta-text">Store this mapping so similar payloads can reuse it instantly
-                                </div>
+                                <div class="fw-semibold">Save As Profile</div>
+                                <div class="text-muted small">Auto-generated from device. Edit if needed.</div>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Profile Code *</label>
+                                <label class="form-label text-muted text-uppercase small">Profile Code *</label>
                                 <input class="form-control" [(ngModel)]="profileForm.code"
-                                    (ngModelChange)="markProfileDirty()" placeholder="e.g., ESP32-WATER-001">
+                                    (ngModelChange)="markProfileDirty()">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Profile Name *</label>
+                                <label class="form-label text-muted text-uppercase small">Profile Name *</label>
                                 <input class="form-control" [(ngModel)]="profileForm.name"
-                                    (ngModelChange)="markProfileDirty()" placeholder="Water Station Mapping">
+                                    (ngModelChange)="markProfileDirty()">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Parser Type *</label>
+                                <label class="form-label text-muted text-uppercase small">Parser Type *</label>
                                 <select class="form-select" [(ngModel)]="profileForm.parserType"
                                     (ngModelChange)="markProfileDirty()">
                                     <option value="json">JSON</option>
@@ -236,15 +235,15 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Description</label>
+                                <label class="form-label text-muted text-uppercase small">Description</label>
                                 <input class="form-control" [(ngModel)]="profileForm.description"
-                                    (ngModelChange)="markProfileDirty()" placeholder="Short note for this profile">
+                                    (ngModelChange)="markProfileDirty()" placeholder="Optional note">
                             </div>
-                            <div class="col-12 mb-3">
-                                <label class="form-label">Transform Script (optional)</label>
+                            <div class="col-12 mb-3" *ngIf="profileForm.parserType === 'custom'">
+                                <label class="form-label text-muted text-uppercase small">Transform Script</label>
                                 <textarea class="form-control" rows="2" [(ngModel)]="profileForm.transformScript"
                                     (ngModelChange)="markProfileDirty()"
-                                    placeholder="// Type any custom JS transform here"></textarea>
+                                    placeholder="// Custom JS transform"></textarea>
                             </div>
                         </div>
                         <div *ngIf="profileSaveMessage" class="alert alert-success py-2">{{ profileSaveMessage }}</div>
@@ -259,8 +258,8 @@
                                 </span>
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </card-body>
+                </card>
             </div>
         </div>
 

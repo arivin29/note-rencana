@@ -1,9 +1,160 @@
 /* Dashboard View - Grafana-like clean style */
 
+/* Host background — dark neutral like Grafana */
+:host {
+  display: block;
+  min-height: 100%;
+  background: #11131a;
+  margin: -20px;
+  padding: 0;
+}
+
+/* ========================================
+   Compact Dashboard Toolbar
+   ======================================== */
+.dashboard-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  background: #181b1f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.dashboard-toolbar.kiosk-toolbar {
+  background: rgba(24, 27, 31, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.toolbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toolbar-breadcrumb a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.toolbar-breadcrumb a:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.toolbar-breadcrumb .bi-chevron-right {
+  font-size: 9px;
+  opacity: 0.4;
+}
+
+.toolbar-breadcrumb span {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.toolbar-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.toolbar-btn-primary {
+  background: rgba(var(--bs-primary-rgb, 59, 130, 246), 0.15);
+  border-color: rgba(var(--bs-primary-rgb, 59, 130, 246), 0.3);
+  color: #6ea8fe;
+}
+
+.toolbar-btn-primary:hover {
+  background: rgba(var(--bs-primary-rgb, 59, 130, 246), 0.25);
+  color: #93c5fd;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
+}
+
+/* Dropdown dark theme */
+.dropdown-menu-dark {
+  background: #1e2228;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-menu-dark .dropdown-item {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.dropdown-menu-dark .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.dropdown-menu-dark .dropdown-item.active {
+  background: rgba(var(--bs-primary-rgb, 59, 130, 246), 0.2);
+  color: #6ea8fe;
+}
+
+.dropdown-menu-dark .dropdown-divider {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Kiosk mode — full viewport */
+:host-context(.app-header-none) {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
 .dashboard-grid,
 .dashboard-gridster {
   flex: 1;
-  min-height: calc(100vh - 160px);
+  min-height: calc(100vh - 56px);
+  padding: 8px;
 }
 
 .widget-item,
@@ -153,24 +304,24 @@ gridster-item,
 }
 
 .time-picker-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
-  padding: 6px 12px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
   white-space: nowrap;
 }
 
-.time-picker-btn .time-range-display {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.time-picker-btn .bi-chevron-down {
-  font-size: 10px;
-  opacity: 0.7;
+.time-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Backdrop for click-outside */
