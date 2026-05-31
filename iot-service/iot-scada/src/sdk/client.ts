@@ -3,18 +3,14 @@
 // Inject Authorization header ke setiap request generated SDK
 // ============================================================
 
+import { getToken } from '@/services/auth.service'
+
 export interface ErrorType<Error> {
   status: number
   data: Error
 }
 
 export type BodyType<BodyData> = BodyData
-
-function getToken(): string | null {
-  const devBearer = import.meta.env.VITE_SCADA_DEV_BEARER as string | undefined
-  if (devBearer) return devBearer
-  return localStorage.getItem('scada_token')
-}
 
 /**
  * Custom fetch mutator — dipanggil oleh setiap generated service function.

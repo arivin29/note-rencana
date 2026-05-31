@@ -24,6 +24,8 @@
       </button>
     </div>
     
+    <!-- Scrollable sidebar body -->
+    <div class="sidebar-body">
     <!-- Navigation Menu -->
     <nav class="sidebar-nav" *ngIf="!sidebarCollapsed">
       <ng-container *ngFor="let item of navItems">
@@ -229,6 +231,7 @@
         <span class="count">{{ assetTree.length || 0 }}</span>
       </div>
     </div>
+    </div><!-- /.sidebar-body -->
   </aside>
   
   <!-- Main Content Area -->

@@ -61,8 +61,22 @@ export function DiagramListPage() {
     try {
       setLoading(true)
       const res = await scadaDiagramsControllerFindAll()
-      const list = res.data ?? []
-      setDiagrams(Array.isArray(list) ? list : [])
+      // API returns { data: [...], meta: {...} } wrapped by customFetch into res.data
+      const payload = res.data ?? {}
+      const rawList = Array.isArray(payload) ? payload : (payload as any).data ?? []
+      // Map Go backend field names (idScadaDiagram, idOwner, idProject) to SDK model
+      const list: ScadaDiagramListItemResponseDto[] = (Array.isArray(rawList) ? rawList : []).map((d: any) => ({
+        id: d.id ?? d.idScadaDiagram,
+        ownerId: d.ownerId ?? d.idOwner,
+        projectId: d.projectId ?? d.idProject,
+        name: d.name,
+        description: d.description,
+        status: d.status,
+        updatedAt: d.updatedAt,
+        nodeCount: d.nodeCount,
+        edgeCount: d.edgeCount,
+      }))
+      setDiagrams(list)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Load failed')
     } finally {

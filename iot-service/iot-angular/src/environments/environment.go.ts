@@ -5,6 +5,6 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000',
-  scadaUrl: 'https://devetek-helios-scada.web.app',
+    scadaUrl: 'http://localhost:4300',
   backendType: 'go-beta'
 };

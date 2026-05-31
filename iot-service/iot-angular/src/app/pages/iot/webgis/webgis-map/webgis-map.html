@@ -242,6 +242,29 @@
         </button>
       </div>
 
+      <!-- Auto-Refresh Control (Top Right) -->
+      <div class="auto-refresh-control">
+        <button class="btn btn-control btn-sm" 
+                [class.active]="autoRefreshEnabled"
+                (click)="toggleAutoRefresh()" 
+                [title]="autoRefreshEnabled ? 'Stop Auto-Refresh' : 'Start Auto-Refresh'">
+          <i class="bi" [ngClass]="autoRefreshEnabled ? 'bi-pause-circle' : 'bi-arrow-repeat'"></i>
+        </button>
+        <div class="refresh-dropdown" *ngIf="autoRefreshEnabled">
+          <select class="form-select form-select-sm" 
+                  [ngModel]="autoRefreshInterval" 
+                  (ngModelChange)="setAutoRefreshInterval($event)">
+            <option *ngFor="let sec of autoRefreshIntervals" [ngValue]="sec">{{ sec }}s</option>
+          </select>
+        </div>
+        <span class="refresh-badge" *ngIf="autoRefreshEnabled">
+          <i class="bi bi-circle-fill text-success"></i> Auto
+        </span>
+        <span class="refresh-time" *ngIf="lastSensorRefreshTime">
+          {{ lastSensorRefreshTime | date:'HH:mm:ss' }}
+        </span>
+      </div>
+
       <!-- Feature Popup (for non-node features) -->
       <feature-popup
         *ngIf="selectedFeature && popupPosition"

@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { Subject, takeUntil, forkJoin, interval } from 'rxjs';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
@@ -156,6 +156,13 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   sensorLabelsVisible = false;
   loadingSensorData = false;
 
+  // Auto-refresh for sensor data
+  autoRefreshEnabled = false;
+  autoRefreshInterval = 30; // seconds
+  autoRefreshIntervals = [10, 20, 30, 60, 120];
+  private autoRefreshSub: any = null;
+  lastSensorRefreshTime: Date | null = null;
+
   // Get visible sensor type names from layers
   get visibleSensorTypeNames(): Set<string> {
     return new Set(
@@ -276,6 +283,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopAutoRefresh();
     this.destroy$.next();
     this.destroy$.complete();
     this.map?.setTarget(undefined);
@@ -1291,6 +1299,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
         this.sensorChannelData = data;
         this.sensorLabelsVisible = true;
         this.loadingSensorData = false;
+        this.lastSensorRefreshTime = new Date();
       },
       error: (err: any) => {
         console.error('Failed to load sensor channel values:', err);
@@ -1316,6 +1325,44 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     
     this.layerStateService.setLoading(this.loadingLayers);
     this.layerStateService.updateLayers(sharedLayers);
+  }
+
+  // --- Auto-refresh for sensor channel data ---
+  toggleAutoRefresh(): void {
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    if (this.autoRefreshEnabled) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+  }
+
+  setAutoRefreshInterval(seconds: number): void {
+    this.autoRefreshInterval = seconds;
+    if (this.autoRefreshEnabled) {
+      this.stopAutoRefresh();
+      this.startAutoRefresh();
+    }
+  }
+
+  private startAutoRefresh(): void {
+    this.stopAutoRefresh();
+    this.autoRefreshSub = interval(this.autoRefreshInterval * 1000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        // Only refresh sensor values if any sensor-type layer is visible
+        const anySensorVisible = this.layers.some(l => l.type === 'sensor-type' && l.visible);
+        if (anySensorVisible) {
+          this.loadSensorChannelValues();
+        }
+      });
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.autoRefreshSub) {
+      this.autoRefreshSub.unsubscribe();
+      this.autoRefreshSub = null;
+    }
   }
 
   // Toggle all layers in a group
@@ -1361,10 +1408,12 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
         console.log('Core GeoJSON received for', layerState.name, ':', geoJson);
         this.addLayerToMap(layerState, geoJson as any);
         layerState.loading = false;
+        this.syncLayersToStateService();
       },
       error: (err) => {
         console.error('Error loading core GeoJSON for', layerState.name, ':', err);
         layerState.loading = false;
+        this.syncLayersToStateService();
       }
     });
   }
@@ -1383,6 +1432,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
         console.log('Sensor-type GeoJSON received for', layerState.name, ':', geoJson);
         this.addLayerToMap(layerState, geoJson);
         layerState.loading = false;
+        this.syncLayersToStateService();
         
         // Also load sensor channel values for labels
         this.loadSensorChannelValues();
@@ -1390,6 +1440,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       error: (err: any) => {
         console.error('Error loading sensor-type GeoJSON for', layerState.name, ':', err);
         layerState.loading = false;
+        this.syncLayersToStateService();
       }
     });
   }
@@ -1407,10 +1458,12 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
           console.log('Custom GeoJSON received for', layerState.name, ':', geoJson);
           this.addLayerToMap(layerState, geoJson);
           layerState.loading = false;
+          this.syncLayersToStateService();
         },
         error: (err) => {
           console.error('Error loading custom GeoJSON for', layerState.name, ':', err);
           layerState.loading = false;
+          this.syncLayersToStateService();
         }
       });
   }

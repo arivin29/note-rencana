@@ -13,6 +13,68 @@ import { useRuntimeStore } from '@/stores/useRuntimeStore'
 import { toast } from '@/components/Toast'
 import type { ScadaDiagramMeta, ScadaNodeDto, ScadaEdgeDto } from '@/types/scada'
 
+// Normalize Go backend field names to frontend model
+function normalizeMeta(d: any): ScadaDiagramMeta {
+  return {
+    id: d.id ?? d.idScadaDiagram,
+    ownerId: d.ownerId ?? d.idOwner,
+    projectId: d.projectId ?? d.idProject ?? null,
+    name: d.name,
+    description: d.description ?? null,
+    diagramCode: d.diagramCode ?? null,
+    status: d.status ?? 'draft',
+    canvasConfig: d.canvasConfig ?? {},
+    runtimeConfig: d.runtimeConfig ?? {},
+    createdAt: d.createdAt,
+    updatedAt: d.updatedAt,
+  }
+}
+
+function normalizeNode(n: any): ScadaNodeDto {
+  return {
+    id: n.id ?? n.idScadaNode,
+    type: n.type,
+    label: n.label ?? '',
+    position: n.position ?? { x: 0, y: 0 },
+    size: n.size ?? { width: 120, height: 80 },
+    rotationDeg: n.rotationDeg ?? null,
+    zIndex: n.zIndex ?? 0,
+    relatedNodeId: n.relatedNodeId ?? null,
+    relatedSensorId: n.relatedSensorId ?? null,
+    style: n.style ?? {},
+    config: n.config ?? {},
+    bindings: (n.bindings ?? []).map((b: any) => ({
+      ...b,
+      id: b.id ?? b.idScadaBinding,
+      sensorChannelId: b.sensorChannelId ?? b.idSensorChannel,
+    })),
+  }
+}
+
+function normalizeEdge(e: any): ScadaEdgeDto {
+  return {
+    id: e.id ?? e.idScadaEdge,
+    source: e.source ?? e.sourceNodeId,
+    target: e.target ?? e.targetNodeId,
+    sourceHandle: e.sourceHandle ?? e.config?.sourceHandle ?? undefined,
+    targetHandle: e.targetHandle ?? e.config?.targetHandle ?? undefined,
+    edgeType: e.edgeType,
+    label: e.label ?? null,
+    pipeType: e.pipeType ?? null,
+    pathMode: e.pathMode ?? e.config?.pathMode ?? null,
+    flowDirection: e.flowDirection ?? null,
+    animated: e.animated ?? false,
+    strokeWidth: e.strokeWidth ?? e.config?.strokeWidth ?? null,
+    labelFontSize: e.labelFontSize ?? e.config?.labelFontSize ?? null,
+    showBorder: e.showBorder ?? e.config?.showBorder ?? undefined,
+    borderWidth: e.borderWidth ?? e.config?.borderWidth ?? null,
+    lineCap: e.lineCap ?? e.config?.lineCap ?? null,
+    borderRadius: e.borderRadius ?? e.config?.borderRadius ?? null,
+    style: e.style ?? {},
+    config: e.config ?? {},
+  }
+}
+
 export function useScadaDiagram(diagramId: string | undefined) {
   const {
     meta,
@@ -45,24 +107,14 @@ export function useScadaDiagram(diagramId: string | undefined) {
       .then((res) => {
         if (cancelled) return
         if (!res.data) throw new Error('Empty response')
-        const { diagram, nodes, edges } = res.data
-        // Restore sourceHandle/targetHandle from config
-        const restoredEdges = (edges ?? []).map((e: any) => ({
-          ...e,
-          sourceHandle:  e.sourceHandle  ?? e.config?.sourceHandle  ?? undefined,
-          targetHandle:  e.targetHandle  ?? e.config?.targetHandle  ?? undefined,
-          pathMode:      e.pathMode      ?? e.config?.pathMode      ?? undefined,
-          strokeWidth:   e.strokeWidth   ?? e.config?.strokeWidth   ?? undefined,
-          labelFontSize: e.labelFontSize ?? e.config?.labelFontSize ?? undefined,
-          showBorder:    e.showBorder    ?? e.config?.showBorder    ?? undefined,
-          borderWidth:   e.borderWidth   ?? e.config?.borderWidth   ?? undefined,
-          lineCap:       e.lineCap       ?? e.config?.lineCap       ?? undefined,
-          borderRadius:  e.borderRadius  ?? e.config?.borderRadius  ?? undefined,
-        }))
+        // Handle Go backend wrapping response in { data: { diagram, nodes, edges } }
+        const payload = (res.data as any).diagram ? res.data : (res.data as any).data ?? res.data
+        if (!payload || !payload.diagram) throw new Error('Invalid diagram response')
+        const { diagram, nodes, edges } = payload
         loadDiagram(
-          diagram as unknown as ScadaDiagramMeta,
-          (nodes ?? []) as unknown as ScadaNodeDto[],
-          restoredEdges as unknown as ScadaEdgeDto[],
+          normalizeMeta(diagram),
+          (nodes ?? []).map(normalizeNode),
+          (edges ?? []).map(normalizeEdge),
         )
       })
       .catch((err: unknown) => {
@@ -114,24 +166,12 @@ export function useScadaDiagram(diagramId: string | undefined) {
     try {
       const res = await scadaDiagramsControllerUpdate(diagramId, payload)
       if (!res.data) throw new Error('Empty save response')
-      const { diagram, nodes: n, edges: e } = res.data
-      // Restore frontend-only fields from config
-      const restoredSaveEdges = (e ?? []).map((ed: any) => ({
-        ...ed,
-        sourceHandle:  ed.sourceHandle  ?? ed.config?.sourceHandle  ?? undefined,
-        targetHandle:  ed.targetHandle  ?? ed.config?.targetHandle  ?? undefined,
-        pathMode:      ed.pathMode      ?? ed.config?.pathMode      ?? undefined,
-        strokeWidth:   ed.strokeWidth   ?? ed.config?.strokeWidth   ?? undefined,
-        labelFontSize: ed.labelFontSize ?? ed.config?.labelFontSize ?? undefined,
-        showBorder:    ed.showBorder    ?? ed.config?.showBorder    ?? undefined,
-        borderWidth:   ed.borderWidth   ?? ed.config?.borderWidth   ?? undefined,
-        lineCap:       ed.lineCap       ?? ed.config?.lineCap       ?? undefined,
-        borderRadius:  ed.borderRadius  ?? ed.config?.borderRadius  ?? undefined,
-      }))
+      const savePayload = (res.data as any).diagram ? res.data : (res.data as any).data ?? res.data
+      const { diagram, nodes: n, edges: e } = savePayload
       commitSave(
-        diagram as unknown as ScadaDiagramMeta,
-        (n ?? []) as unknown as ScadaNodeDto[],
-        restoredSaveEdges as unknown as ScadaEdgeDto[],
+        normalizeMeta(diagram),
+        (n ?? []).map(normalizeNode),
+        (e ?? []).map(normalizeEdge),
       )
       toast.success('Diagram berhasil disimpan')
     } catch (err: unknown) {

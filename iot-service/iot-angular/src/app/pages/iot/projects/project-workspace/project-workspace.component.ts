@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { Subscription, filter, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -71,13 +71,16 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     private projectsService: ProjectsService,
     private nodesService: NodesService,
     private widgetBuilderService: WidgetBuilderService,
-    public layerStateService: WebGisLayerStateService
+    public layerStateService: WebGisLayerStateService,
+    private cdr: ChangeDetectorRef
   ) {}
   
   ngOnInit() {
     // Store previous state and enable minified sidebar mode for project workspace
     this.previousMinifiedState = this.appSettings.appSidebarMinified;
-    this.appSettings.appSidebarMinified = true;
+    setTimeout(() => {
+      this.appSettings.appSidebarMinified = true;
+    });
     
     // Get project ID from route
     this.route.paramMap.subscribe(params => {
