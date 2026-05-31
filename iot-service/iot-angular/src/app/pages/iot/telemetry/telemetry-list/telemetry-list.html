@@ -82,18 +82,17 @@
 </div>
 
 <card class="shadow-sm">
-    <ul class="nav nav-tabs nav-tabs-v2 px-4 pt-3">
-        <li class="nav-item me-3" *ngFor="let agg of aggregations">
-            <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
-                [class.active]="selectedAggregation === agg" (click)="onAggregationChange(agg)">
-                <span>{{ agg }}</span>
-                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
-                    {{ aggregationLabels[agg] || agg }}
-                </span>
-            </a>
-        </li>
-    </ul>
-    <div class="p-4">
+    <div class="px-4 pt-3 pb-2">
+        <div class="btn-group btn-group-sm" role="group">
+            <button *ngFor="let agg of aggregations" type="button"
+                class="btn" [class.btn-theme]="selectedAggregation === agg"
+                [class.btn-outline-default]="selectedAggregation !== agg"
+                (click)="onAggregationChange(agg)">
+                {{ agg }}
+            </button>
+        </div>
+    </div>
+    <div class="px-4 pb-4 pt-2">
         <!-- Cascading Filters -->
         <div class="row g-3 mb-4">
             <div class="col-lg-2 col-md-6">
