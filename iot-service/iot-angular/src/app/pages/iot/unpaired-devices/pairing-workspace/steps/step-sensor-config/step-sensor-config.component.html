@@ -76,6 +76,7 @@
                 <th class="text-end">Latest</th>
                 <th>Status</th>
                 <th class="text-end">Include</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -110,6 +111,13 @@
                       {{ channel.enabled ? 'Included' : 'Excluded' }}
                     </label>
                   </div>
+                </td>
+                <td class="text-end">
+                  <button class="btn btn-outline-danger btn-xs" type="button"
+                          (click)="deleteChannel(sensor, channel)"
+                          title="Delete channel">
+                    <i class="fa fa-trash"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>

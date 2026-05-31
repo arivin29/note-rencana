@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { NodesService, SensorsService } from 'src/sdk/core/services';
+import { NodesService, SensorsService, SensorChannelsService } from 'src/sdk/core/services';
 import { SensorCatalog, AddedSensor, AddedChannel, SensorChannelTemplate } from '../../pairing-workspace.types';
 
 @Component({
@@ -30,7 +30,8 @@ export class StepSensorConfigComponent implements OnInit, OnChanges {
 
     constructor(
         private nodesService: NodesService,
-        private sensorsService: SensorsService
+        private sensorsService: SensorsService,
+        private sensorChannelsService: SensorChannelsService
     ) { }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -160,6 +161,35 @@ export class StepSensorConfigComponent implements OnInit, OnChanges {
             channel.mappedField = undefined;
         }
         this.emitChanges();
+    }
+
+    deleteChannel(sensor: AddedSensor, channel: AddedChannel): void {
+        // Extract the actual channel ID (strip 'ch-' prefix if present)
+        const channelId = channel.tempId.startsWith('ch-') 
+            ? channel.tempId.substring(3) 
+            : channel.tempId;
+
+        if (!channelId) {
+            return;
+        }
+
+        const confirmDelete = confirm(
+            `Delete channel "${channel.template.channelName}" from sensor "${sensor.label}"?\n\nThis action cannot be undone.`
+        );
+        if (!confirmDelete) {
+            return;
+        }
+
+        this.sensorChannelsService.sensorChannelsControllerRemove({ id: channelId }).subscribe({
+            next: () => {
+                // Reload to reflect changes
+                this.loadNodeFromServer();
+            },
+            error: (err) => {
+                console.error('Failed to delete channel', err);
+                alert('Failed to delete channel. Please try again.');
+            }
+        });
     }
 
     private emitChanges(): void {
