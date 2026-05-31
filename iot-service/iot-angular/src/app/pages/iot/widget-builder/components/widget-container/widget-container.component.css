@@ -1,4 +1,4 @@
-/* Widget Container - Grafana-like compact style */
+/* Widget Container - Grafana-like clean style */
 
 /* Host element must fill gridster-item */
 :host {
@@ -11,10 +11,10 @@
 /* Wrapper to allow resize handles to be accessible */
 .widget-wrapper {
   position: absolute;
-  top: 0px;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
 }
@@ -24,12 +24,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: border-color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 2px;
+  background: rgba(24, 27, 31, 0.6);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .widget-wrapper .console-panel:hover {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Compact card-body padding */
@@ -40,19 +42,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 4px 8px 6px !important;
+  padding: 0 !important;
 }
 
 /* Grafana-style panel header - compact, left-aligned */
 .panel-head {
-  padding: 2px 0 4px;
-  min-height: 24px;
+  padding: 6px 10px 4px;
+  min-height: 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .panel-label {
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.75);
   line-height: 1.2;
   letter-spacing: 0.01em;
 }
@@ -64,6 +67,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px 8px;
 }
 
 /* Chart Wrapper - centered */
@@ -85,15 +89,20 @@
   min-height: 140px;
 }
 
-/* Icon button style - compact */
+/* Icon button style - compact, Grafana-like */
 .icon-button {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.25);
   padding: 2px 6px;
   cursor: pointer;
   transition: color 0.2s;
   font-size: 12px;
+  opacity: 0;
+}
+
+.panel-head:hover .icon-button {
+  opacity: 1;
 }
 
 .icon-button:hover {
@@ -121,8 +130,9 @@
   z-index: 1;
 }
 
-/* Debug Size Badge */
+/* Debug Size Badge - hidden by default */
 .debug-size-badge {
+  display: none;
   position: absolute;
   top: 4px;
   right: 40px;

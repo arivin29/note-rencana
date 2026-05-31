@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NodeConfig, NodeModel, AddedSensor, PayloadField } from './pairing-workspace.types';
 import { UnpairedDevicesService } from 'src/sdk/core/services';
@@ -12,7 +12,7 @@ import { StepReviewSubmitComponent } from './steps/step-review-submit/step-revie
     styleUrls: ['./pairing-workspace.scss'],
     standalone: false
 })
-export class PairingWorkspacePage implements OnInit {
+export class PairingWorkspacePage implements OnInit, OnDestroy {
     // ========================================
     // WIZARD STATE
     // ========================================
@@ -46,6 +46,7 @@ export class PairingWorkspacePage implements OnInit {
         if (this.loading && id_node && this.currentStep === 1) {
             this.loading = false;
             this.currentStep = 2;
+            this.saveState();
         }
     }
 
@@ -112,9 +113,21 @@ export class PairingWorkspacePage implements OnInit {
         private unpairedDevicesService: UnpairedDevicesService
     ) { }
 
+    private get storageKey(): string {
+        return `pairing-wizard-${this.hardwareId}`;
+    }
+
     ngOnInit(): void {
         this.hardwareId = this.route.snapshot.paramMap.get('hardwareId') || 'N/A';
+        this.restoreState();
         this.loadUnpairedDevice();
+    }
+
+    ngOnDestroy(): void {
+        // Save state when leaving (but not after successful submit)
+        if (this.currentStep < 4) {
+            this.saveState();
+        }
     }
 
     private loadUnpairedDevice(): void {
@@ -201,6 +214,7 @@ export class PairingWorkspacePage implements OnInit {
     previousStep(): void {
         if (this.currentStep > 1) {
             this.currentStep = (this.currentStep - 1) as 1 | 2 | 3 | 4;
+            this.saveState();
         }
     }
 
@@ -227,6 +241,7 @@ export class PairingWorkspacePage implements OnInit {
 
     onNodeConfigChange(config: NodeConfig): void {
         this.nodeConfig = config;
+        this.saveState();
     }
 
     onStep1ValidationChange(isValid: boolean): void {
@@ -236,6 +251,7 @@ export class PairingWorkspacePage implements OnInit {
     onSensorsChange(sensors: AddedSensor[]): void {
         console.log('Added sensors updated:', sensors);
         this.addedSensors = sensors;
+        this.saveState();
     }
 
     onStep2ValidationChange(isValid: boolean): void {
@@ -248,10 +264,12 @@ export class PairingWorkspacePage implements OnInit {
 
     onPayloadMetadataChange(mapping: Record<string, PayloadField | undefined>): void {
         this.payloadMetadata = mapping;
+        this.saveState();
     }
 
     onSensorProfileSelected(profileId: string): void {
         this.sensorProfileId = profileId || null;
+        this.saveState();
     }
 
     getActiveNodeModelId(): string | undefined {
@@ -270,17 +288,74 @@ export class PairingWorkspacePage implements OnInit {
             this.stepReviewSubmit.updateUnpairedDeviceStatus(this.id_node);
         }
 
-        // TODO: Call API to create sensors and channels
-        // For now, just show success message
-        alert('Pairing completed successfully!');
+        // Clear saved state on successful pairing
+        this.clearState();
 
-        // Navigate back to unpaired devices list
+        alert('Pairing completed successfully!');
         this.router.navigate(['/iot/unpaired-devices']);
     }
 
     discardChanges(): void {
         if (confirm('Are you sure you want to discard all changes?')) {
+            this.clearState();
             this.router.navigate(['/iot/unpaired-devices']);
         }
+    }
+
+    // ========================================
+    // LOCAL STORAGE PERSISTENCE
+    // ========================================
+
+    private saveState(): void {
+        try {
+            const state = {
+                currentStep: this.currentStep,
+                nodeConfig: this.nodeConfig,
+                id_node: this.id_node,
+                idSensorProfile: this.idSensorProfile,
+                addedSensors: this.addedSensors,
+                sensorProfileId: this.sensorProfileId,
+                payloadMetadata: this.payloadMetadata,
+                savedAt: new Date().toISOString()
+            };
+            localStorage.setItem(this.storageKey, JSON.stringify(state));
+        } catch (e) {
+            console.warn('Failed to save pairing state:', e);
+        }
+    }
+
+    private restoreState(): void {
+        try {
+            const saved = localStorage.getItem(this.storageKey);
+            if (!saved) return;
+
+            const state = JSON.parse(saved);
+            
+            // Check if saved state is older than 24 hours
+            const savedAt = new Date(state.savedAt);
+            const hoursSince = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
+            if (hoursSince > 24) {
+                this.clearState();
+                return;
+            }
+
+            // Restore wizard state
+            if (state.currentStep) this.currentStep = state.currentStep;
+            if (state.nodeConfig) this.nodeConfig = state.nodeConfig;
+            if (state.id_node) this.id_node = state.id_node;
+            if (state.idSensorProfile) this.idSensorProfile = state.idSensorProfile;
+            if (state.addedSensors) this.addedSensors = state.addedSensors;
+            if (state.sensorProfileId) this.sensorProfileId = state.sensorProfileId;
+            if (state.payloadMetadata) this.payloadMetadata = state.payloadMetadata;
+
+            console.log(`Restored pairing state at step ${this.currentStep} (saved ${Math.round(hoursSince * 60)}m ago)`);
+        } catch (e) {
+            console.warn('Failed to restore pairing state:', e);
+            this.clearState();
+        }
+    }
+
+    private clearState(): void {
+        localStorage.removeItem(this.storageKey);
     }
 }

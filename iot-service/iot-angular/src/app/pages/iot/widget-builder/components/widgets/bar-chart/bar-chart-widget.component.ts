@@ -35,8 +35,6 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
   ngOnInit(): void {
     this.setupResizeDebounce();
     this.buildChartOptions();
-    // Debug: log received dimensions
-    console.log(`[BarChart: ${this.widget?.name}] Init with size: ${this.containerWidth}px x ${this.containerHeight}px`);
   }
 
   ngAfterViewInit(): void {

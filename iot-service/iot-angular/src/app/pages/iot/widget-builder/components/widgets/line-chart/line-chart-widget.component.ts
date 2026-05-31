@@ -35,8 +35,6 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
   ngOnInit(): void {
     this.setupResizeDebounce();
     this.buildChartOptions();
-    // Debug: log received dimensions
-    console.log(`[LineChart: ${this.widget?.name}] Init with size: ${this.containerWidth}px x ${this.containerHeight}px`);
   }
 
   ngAfterViewInit(): void {

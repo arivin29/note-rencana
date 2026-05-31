@@ -12,12 +12,6 @@
   overflow: hidden;
 }
 
-/* Edit mode styles - subtle dashed border on widgets only */
-:host-context(.edit-mode) .widget-item,
-:host-context(.edit-mode) .widget-gridster-item {
-  border: 1px dashed rgba(255, 255, 255, 0.3);
-}
-
 /* Fullscreen overlay */
 .fullscreen-overlay {
   position: fixed;
@@ -36,7 +30,7 @@
 .fullscreen-widget-container {
   width: 90vw;
   height: 90vh;
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
@@ -44,153 +38,110 @@
    Gridster - Grafana-like clean appearance
    ======================================== */
 
-/* Main gridster container - no background, no grid */
-gridster {
-  background: transparent !important;
-}
-
-/* Gridster items - clean, no visible borders */
-gridster-item {
-  background: transparent !important;
-}
-
-/* Hide ALL grid lines and backgrounds */
+/* Main gridster container - solid dark bg, no grid pattern */
+gridster,
 ::ng-deep gridster {
   background: transparent !important;
 }
 
+/* Gridster items - clean */
+gridster-item,
+::ng-deep gridster-item {
+  background: transparent !important;
+}
+
+/* Hide ALL grid lines and background patterns */
 ::ng-deep .gridster-column,
-::ng-deep .gridster-row {
+::ng-deep .gridster-row,
+::ng-deep .gridster-grid {
   display: none !important;
 }
 
 /* Preview when dragging - subtle highlight */
 ::ng-deep .gridster-preview {
-  background: rgba(var(--bs-primary-rgb), 0.15) !important;
-  border: 2px dashed var(--bs-primary) !important;
-  border-radius: 8px;
+  background: rgba(var(--bs-primary-rgb), 0.1) !important;
+  border: 1px dashed rgba(var(--bs-primary-rgb), 0.5) !important;
+  border-radius: 2px;
 }
 
 /* ========================================
-   Resize Handles - Visible corner indicators
+   Resize Handles — ONLY visible in edit mode
    ======================================== */
 
-/* All resize handles */
+/* Hide all resize handles by default */
 ::ng-deep .gridster-item-resizable-handler {
+  display: none !important;
+}
+
+/* Show only when gridster has displayGrid active (edit mode) */
+::ng-deep gridster.display-grid-always .gridster-item-resizable-handler {
+  display: block !important;
   opacity: 0;
   transition: opacity 0.2s;
 }
 
-/* Show handles on hover */
-::ng-deep gridster-item:hover .gridster-item-resizable-handler {
+::ng-deep gridster.display-grid-always gridster-item:hover .gridster-item-resizable-handler {
   opacity: 1;
 }
 
-/* SE Corner (main resize handle - bottom right) */
+/* SE Corner (main resize handle) */
 ::ng-deep .gridster-item-resizable-handler.handle-se {
-  width: 20px !important;
-  height: 20px !important;
+  width: 16px !important;
+  height: 16px !important;
   right: 0 !important;
   bottom: 0 !important;
   cursor: se-resize !important;
-  background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
-  border: none !important;
-  border-radius: 0 0 4px 0;
-}
-
-/* SW Corner (bottom left) */
-::ng-deep .gridster-item-resizable-handler.handle-sw {
-  width: 20px !important;
-  height: 20px !important;
-  left: 0 !important;
-  bottom: 0 !important;
-  cursor: sw-resize !important;
-  background: linear-gradient(225deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
+  background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.3) 50%) !important;
   border: none !important;
 }
 
-/* NE Corner (top right) */
-::ng-deep .gridster-item-resizable-handler.handle-ne {
-  width: 20px !important;
-  height: 20px !important;
-  right: 0 !important;
-  top: 0 !important;
-  cursor: ne-resize !important;
-  background: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
-  border: none !important;
-}
-
-/* NW Corner (top left) */
-::ng-deep .gridster-item-resizable-handler.handle-nw {
-  width: 20px !important;
-  height: 20px !important;
-  left: 0 !important;
-  top: 0 !important;
-  cursor: nw-resize !important;
-  background: linear-gradient(315deg, transparent 50%, rgba(255,255,255,0.4) 50%) !important;
-  border: none !important;
-}
-
-/* Edge handles (N, S, E, W) */
+/* Edge handles */
 ::ng-deep .gridster-item-resizable-handler.handle-n,
 ::ng-deep .gridster-item-resizable-handler.handle-s {
-  height: 8px !important;
-  left: 20px !important;
-  right: 20px !important;
+  height: 4px !important;
+  left: 16px !important;
+  right: 16px !important;
   width: auto !important;
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border: none !important;
 }
 
-::ng-deep .gridster-item-resizable-handler.handle-n {
-  top: 0 !important;
-  cursor: n-resize !important;
-  border-radius: 4px 4px 0 0;
-}
-
-::ng-deep .gridster-item-resizable-handler.handle-s {
-  bottom: 0 !important;
-  cursor: s-resize !important;
-  border-radius: 0 0 4px 4px;
-}
+::ng-deep .gridster-item-resizable-handler.handle-n { top: 0 !important; cursor: n-resize !important; }
+::ng-deep .gridster-item-resizable-handler.handle-s { bottom: 0 !important; cursor: s-resize !important; }
 
 ::ng-deep .gridster-item-resizable-handler.handle-e,
 ::ng-deep .gridster-item-resizable-handler.handle-w {
-  width: 8px !important;
-  top: 20px !important;
-  bottom: 20px !important;
+  width: 4px !important;
+  top: 16px !important;
+  bottom: 16px !important;
   height: auto !important;
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border: none !important;
 }
 
-::ng-deep .gridster-item-resizable-handler.handle-e {
-  right: 0 !important;
-  cursor: e-resize !important;
-  border-radius: 0 4px 4px 0;
-}
+::ng-deep .gridster-item-resizable-handler.handle-e { right: 0 !important; cursor: e-resize !important; }
+::ng-deep .gridster-item-resizable-handler.handle-w { left: 0 !important; cursor: w-resize !important; }
 
-::ng-deep .gridster-item-resizable-handler.handle-w {
-  left: 0 !important;
-  cursor: w-resize !important;
-  border-radius: 4px 0 0 4px;
+/* Other corner handles */
+::ng-deep .gridster-item-resizable-handler.handle-sw,
+::ng-deep .gridster-item-resizable-handler.handle-ne,
+::ng-deep .gridster-item-resizable-handler.handle-nw {
+  width: 16px !important;
+  height: 16px !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 /* Hover effect on handles */
 ::ng-deep .gridster-item-resizable-handler:hover {
-  background: rgba(var(--bs-primary-rgb), 0.6) !important;
-}
-
-/* Remove any grid display patterns */
-::ng-deep .gridster-grid {
-  display: none !important;
+  background: rgba(var(--bs-primary-rgb), 0.5) !important;
 }
 
 /* Smooth drag animation */
 ::ng-deep gridster-item.gridster-item-moving {
   z-index: 1000;
   opacity: 0.9;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* ========================================
