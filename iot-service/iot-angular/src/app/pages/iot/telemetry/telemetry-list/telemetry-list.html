@@ -167,129 +167,30 @@
             </div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Total Records</div>
-                    <div class="fs-3 fw-bold text-theme">{{ totalChannels | number }}</div>
-                    <div class="text-muted small">In selected time range</div>
-                </div>
+        <!-- Summary Bar -->
+        <div class="d-flex align-items-center flex-wrap gap-3 mb-3 py-2 px-3 border rounded-3 bg-body bg-opacity-10">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa fa-database text-theme"></i>
+                <span class="fw-bold text-theme">{{ totalChannels | number }}</span>
+                <span class="text-muted small">records</span>
             </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Total Data Points</div>
-                    <div class="fs-3 fw-bold">{{ totalPoints | number }}</div>
-                    <div class="text-muted small">Global count (all pages)</div>
-                </div>
+            <div class="border-start ps-3 d-flex align-items-center gap-2">
+                <i class="fa fa-chart-line text-muted"></i>
+                <span class="fw-bold">{{ totalPoints | number }}</span>
+                <span class="text-muted small">data points</span>
             </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Unique Nodes</div>
-                    <div class="fs-3 fw-bold">{{ uniqueNodesCount }}</div>
-                    <div class="text-muted small">On current page</div>
-                </div>
+            <div class="border-start ps-3 d-flex align-items-center gap-2">
+                <i class="fa fa-server text-muted"></i>
+                <span class="fw-bold">{{ uniqueNodesCount }}</span>
+                <span class="text-muted small">nodes</span>
             </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="border rounded-3 p-3 bg-body bg-opacity-10 h-100">
-                    <div class="text-muted text-uppercase small mb-1">Data Quality</div>
-                    <div class="d-flex gap-3">
-                        <div>
-                            <div class="fw-bold text-success">{{ qualitySummary.good }}</div>
-                            <div class="text-muted small">Healthy</div>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-warning">{{ qualitySummary.warning }}</div>
-                            <div class="text-muted small">Warning</div>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-danger">{{ qualitySummary.critical }}</div>
-                            <div class="text-muted small">Critical</div>
-                        </div>
-                    </div>
-                    <div class="text-muted small mt-2">Current page only</div>
-                </div>
+            <div class="border-start ps-3 d-flex align-items-center gap-2">
+                <span class="text-success"><i class="fa fa-check-circle"></i> {{ qualitySummary.good }}</span>
+                <span class="text-warning"><i class="fa fa-exclamation-triangle"></i> {{ qualitySummary.warning }}</span>
+                <span class="text-danger"><i class="fa fa-times-circle"></i> {{ qualitySummary.critical }}</span>
             </div>
-
-            <!-- Active Filters Card -->
-            <div class="col-lg-4 col-md-6"
-                *ngIf="ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter">
-                <div class="border rounded-3 p-3 bg-primary bg-opacity-10 border-primary border-opacity-25 h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div class="text-primary text-uppercase small fw-semibold">
-                            <i class="fa fa-filter me-1"></i>Active Filters
-                        </div>
-                        <button (click)="clearAllFilters()" class="btn btn-outline-primary btn-sm py-0 px-2"
-                            style="font-size: 0.75rem;">
-                            Clear
-                        </button>
-                    </div>
-                    <div class="d-flex flex-column gap-1">
-                        <div *ngIf="ownerIdFilter" class="small">
-                            <i class="fa fa-building text-primary me-1"></i>
-                            <span class="text-muted">Owner:</span>
-                            <span class="fw-semibold">{{ ownerIdFilter }}</span>
-                        </div>
-                        <div *ngIf="projectIdFilter" class="small">
-                            <i class="fa fa-folder text-info me-1"></i>
-                            <span class="text-muted">Project:</span>
-                            <span class="fw-semibold">{{ projectIdFilter }}</span>
-                        </div>
-                        <div *ngIf="nodeIdFilter" class="small">
-                            <i class="fa fa-server text-success me-1"></i>
-                            <span class="text-muted">Node:</span>
-                            <span class="fw-semibold">{{ nodeIdFilter }}</span>
-                        </div>
-                        <div *ngIf="sensorIdFilter" class="small">
-                            <i class="fa fa-microchip text-warning me-1"></i>
-                            <span class="text-muted">Sensor:</span>
-                            <span class="fw-semibold">{{ sensorIdFilter }}</span>
-                        </div>
-                        <div *ngIf="sensorChannelIdFilter" class="small">
-                            <i class="fa fa-signal text-theme me-1"></i>
-                            <span class="text-muted">Channel:</span>
-                            <span class="fw-semibold">{{ sensorChannelIdFilter }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="border border-theme border-opacity-25 rounded-3 p-3 mb-4 bg-body bg-opacity-10">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-4">
-                    <div class="text-muted text-uppercase small">Time Range</div>
-                    <div class="fw-semibold">Last {{ selectedAggregationLabel }}</div>
-                    <div class="text-muted small">
-                        Real-time sensor readings
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted text-uppercase small">Active Filter Scope</div>
-                    <div class="fw-semibold"
-                        *ngIf="!ownerIdFilter && !projectIdFilter && !nodeIdFilter && !sensorIdFilter && !sensorChannelIdFilter">
-                        All Data (No Filters)
-                    </div>
-                    <div class="fw-semibold" *ngIf="sensorChannelIdFilter">
-                        <i class="fa fa-signal me-1"></i>Single Channel
-                    </div>
-                    <div class="fw-semibold" *ngIf="!sensorChannelIdFilter && sensorIdFilter">
-                        <i class="fa fa-microchip me-1"></i>All Channels in Sensor
-                    </div>
-                    <div class="fw-semibold" *ngIf="!sensorIdFilter && nodeIdFilter">
-                        <i class="fa fa-server me-1"></i>All Sensors in Node
-                    </div>
-                    <div class="fw-semibold" *ngIf="!nodeIdFilter && projectIdFilter">
-                        <i class="fa fa-folder me-1"></i>All Nodes in Project
-                    </div>
-                    <div class="fw-semibold" *ngIf="!projectIdFilter && ownerIdFilter">
-                        <i class="fa fa-building me-1"></i>All Projects in Owner
-                    </div>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <div class="text-muted small">Records displayed</div>
-                    <div class="fw-semibold fs-4">{{ totalChannels }}</div>
-                    <div class="text-muted small">({{ totalPoints | number }} data points)</div>
-                </div>
+            <div class="ms-auto text-muted small">
+                <i class="fa fa-clock me-1"></i>Last {{ selectedAggregationLabel }}
             </div>
         </div>
 
