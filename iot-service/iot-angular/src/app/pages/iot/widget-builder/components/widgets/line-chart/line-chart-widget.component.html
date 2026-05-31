@@ -1,8 +1,4 @@
 <div class="chart-wrapper">
-  <!-- Debug: Show received dimensions -->
-  <div class="debug-chart-size" *ngIf="containerWidth > 0">
-    Chart: {{ containerWidth }} x {{ containerHeight }} px
-  </div>
   <div echarts 
        [options]="chartOptions" 
        [autoResize]="true" 

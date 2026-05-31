@@ -40,6 +40,9 @@ export class StepNodeConfigComponent implements OnInit {
     @Output() configChange = new EventEmitter<NodeConfig>();
     @Output() validationChange = new EventEmitter<boolean>();
     @Output() selectNode = new EventEmitter;
+    @Output() nodeCreateFailed = new EventEmitter<void>();
+
+    creatingNode = false;
 
     existingNodes: ExistingNode[] = [];
     existingNodesLoading = false;
@@ -214,12 +217,22 @@ export class StepNodeConfigComponent implements OnInit {
                 params.ownerId = ownerId;
             }
         }
+
+        // Filter by hardware ID code to show matching nodes first
+        if (this.unpairedDevice?.hardwareId) {
+            params.search = this.unpairedDevice.hardwareId;
+        }
         
         this.nodesService.nodesControllerFindAll(params).subscribe({
             next: (response: any) => {
                 response = JSON.parse(response).data;
                 this.existingNodes = response as ExistingNode[];
                 this.existingNodesLoading = false;
+
+                // Auto-select if there's exactly one matching node
+                if (this.existingNodes.length === 1 && this.nodeConfig.mode === 'existing') {
+                    this.selectExistingNode(this.existingNodes[0]);
+                }
             },
             error: (err) => {
                 console.error('Failed to load unpaired nodes', err);
@@ -244,6 +257,7 @@ export class StepNodeConfigComponent implements OnInit {
     createNewNode(): void {
         if (!this.isStepValid()) {
             console.error('Form is invalid');
+            this.nodeCreateFailed.emit();
             return;
         }
 
@@ -251,8 +265,11 @@ export class StepNodeConfigComponent implements OnInit {
         if (!formData || !formData.projectId) {
             console.error('Project ID is required');
             alert('Please select a project before creating the node.');
+            this.nodeCreateFailed.emit();
             return;
         }
+
+        this.creatingNode = true;
 
         const createNodeDto: any = {
             idProject: formData.projectId,
@@ -296,11 +313,14 @@ export class StepNodeConfigComponent implements OnInit {
                 const nodeId = createdNode?.idNode || createdNode?.id;
                 
                 console.log('Node created successfully:', nodeId);
+                this.creatingNode = false;
                 this.selectNode.emit(nodeId);
                 this.emitChanges();
             },
             error: (error) => {
                 console.error('Failed to create node', error);
+                this.creatingNode = false;
+                this.nodeCreateFailed.emit();
                 alert('Failed to create node. Please check the form and try again.');
             }
         });

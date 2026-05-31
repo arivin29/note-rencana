@@ -45,7 +45,8 @@
             [unpairedDevice]="unpairedDevice"
             (configChange)="onNodeConfigChange($event)"
             (validationChange)="onStep1ValidationChange($event)"
-            (selectNode)="onNodeChaneged($event)">
+            (selectNode)="onNodeChaneged($event)"
+            (nodeCreateFailed)="onNodeCreateFailed()">
         </pw-step-node-config>
 
         <!-- ============================================ -->
@@ -98,8 +99,9 @@
             Step {{ currentStep }} of 4
         </div>
 
-        <button *ngIf="currentStep < 4" class="btn btn-theme" [disabled]="!canProceedToNextStep()" (click)="nextStep()">
-            Next <i class="fa fa-arrow-right ms-1"></i>
+        <button *ngIf="currentStep < 4" class="btn btn-theme" [disabled]="!canProceedToNextStep() || loading" (click)="nextStep()">
+            <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+            {{ loading ? 'Creating Node...' : 'Next' }} <i *ngIf="!loading" class="fa fa-arrow-right ms-1"></i>
         </button>
     </div>
 </div>

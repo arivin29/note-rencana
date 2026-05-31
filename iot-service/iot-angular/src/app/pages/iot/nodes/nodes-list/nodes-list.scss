@@ -1,0 +1,17 @@
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--bs-theme) !important;
+  }
+}
+
+.expanded-row td {
+  background: transparent;
+}
+
+.expanded-row .bg-body-tertiary {
+  border: 1px solid rgba(var(--bs-theme-rgb), 0.15);
+}

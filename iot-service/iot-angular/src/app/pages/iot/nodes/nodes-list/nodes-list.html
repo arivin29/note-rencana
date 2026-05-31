@@ -69,32 +69,6 @@
     </div>
 </div>
 
-<div class="mb-sm-4 mb-3 d-sm-flex" *ngIf="!embedded">
-    <div class="mt-sm-0 mt-2">
-        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
-            <i class="fa fa-download fa-fw me-1 text-theme"></i>
-            Export Nodes
-        </a>
-    </div>
-    <div class="ms-sm-4 mt-sm-0 mt-2">
-        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
-            <i class="fa fa-sync fa-fw me-1 text-theme"></i>
-            Sync Telemetry
-        </a>
-    </div>
-    <div class="ms-sm-4 mt-sm-0 mt-2 dropdown">
-        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none dropdown-toggle"
-            data-bs-toggle="dropdown">
-            More Actions
-        </a>
-        <div class="dropdown-menu dropdown-menu-end">
-            <a class="dropdown-item" href="javascript:;">Schedule Maintenance</a>
-            <a class="dropdown-item" href="javascript:;">Bulk Assign</a>
-            <div role="separator" class="dropdown-divider"></div>
-            <a class="dropdown-item" href="javascript:;">Archive Node</a>
-        </div>
-    </div>
-</div>
 <card class="shadow-sm">
     <ul class="nav nav-tabs nav-tabs-v2 px-4">
         <li class="nav-item me-3" *ngFor="let option of statusOptions">
@@ -158,56 +132,143 @@
                 <thead class="text-uppercase text-muted small">
                     <tr>
                         <th class="pt-0 pb-2 w-10px"></th>
-                        <th class="pt-0 pb-2">Node</th>
-                        <th class="pt-0 pb-2">Location</th>
-                        <th class="pt-0 pb-2" *ngIf="!embedded">Owner / Project</th>
-                        <th class="pt-0 pb-2">Status</th>
+                        <th class="pt-0 pb-2 sortable" (click)="sortBy('code')">
+                            Node
+                            <i class="fa fa-sort ms-1" *ngIf="sortField !== 'code'"></i>
+                            <i class="fa fa-sort-up ms-1" *ngIf="sortField === 'code' && sortDirection === 'asc'"></i>
+                            <i class="fa fa-sort-down ms-1" *ngIf="sortField === 'code' && sortDirection === 'desc'"></i>
+                        </th>
+                        <th class="pt-0 pb-2 sortable" (click)="sortBy('city')">
+                            Location
+                            <i class="fa fa-sort ms-1" *ngIf="sortField !== 'city'"></i>
+                            <i class="fa fa-sort-up ms-1" *ngIf="sortField === 'city' && sortDirection === 'asc'"></i>
+                            <i class="fa fa-sort-down ms-1" *ngIf="sortField === 'city' && sortDirection === 'desc'"></i>
+                        </th>
+                        <th class="pt-0 pb-2 sortable" *ngIf="!embedded" (click)="sortBy('project')">
+                            Owner / Project
+                            <i class="fa fa-sort ms-1" *ngIf="sortField !== 'project'"></i>
+                            <i class="fa fa-sort-up ms-1" *ngIf="sortField === 'project' && sortDirection === 'asc'"></i>
+                            <i class="fa fa-sort-down ms-1" *ngIf="sortField === 'project' && sortDirection === 'desc'"></i>
+                        </th>
+                        <th class="pt-0 pb-2 sortable" (click)="sortBy('connectivityStatus')">
+                            Status
+                            <i class="fa fa-sort ms-1" *ngIf="sortField !== 'connectivityStatus'"></i>
+                            <i class="fa fa-sort-up ms-1" *ngIf="sortField === 'connectivityStatus' && sortDirection === 'asc'"></i>
+                            <i class="fa fa-sort-down ms-1" *ngIf="sortField === 'connectivityStatus' && sortDirection === 'desc'"></i>
+                        </th>
                         <th class="pt-0 pb-2">Telemetry</th>
-                        <th class="pt-0 pb-2 text-end">Last Seen</th>
+                        <th class="pt-0 pb-2 text-end sortable" (click)="sortBy('lastSeenAt')">
+                            Last Seen
+                            <i class="fa fa-sort ms-1" *ngIf="sortField !== 'lastSeenAt'"></i>
+                            <i class="fa fa-sort-up ms-1" *ngIf="sortField === 'lastSeenAt' && sortDirection === 'asc'"></i>
+                            <i class="fa fa-sort-down ms-1" *ngIf="sortField === 'lastSeenAt' && sortDirection === 'desc'"></i>
+                        </th>
+                        <th class="pt-0 pb-2 w-10px"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let node of paginatedNodes">
-                        <td class="w-10px align-middle">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" [id]="'node-' + node.code">
-                                <label class="form-check-label" [for]="'node-' + node.code"></label>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div
-                                    class="w-50px h-50px bg-inverse bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center">
-                                    <i class="fa fa-microchip text-theme"></i>
+                    <ng-container *ngFor="let node of paginatedNodes">
+                        <tr [class.table-active]="expandedNodeId === node.idNode">
+                            <td class="w-10px align-middle">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" [id]="'node-' + node.code">
+                                    <label class="form-check-label" [for]="'node-' + node.code"></label>
                                 </div>
-                                <div class="ms-3">
-                                    <a (click)="navigateToNode(node.idNode)" style="cursor: pointer;"
-                                        class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
-                                        {{ node.name || node.code }}
-                                    </a>
-                                    <div class="text-muted small">{{ node.code }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div
+                                        class="w-50px h-50px bg-inverse bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center">
+                                        <i class="fa fa-microchip text-theme"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <a (click)="navigateToNode(node.idNode)" style="cursor: pointer;"
+                                            class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
+                                            {{ node.name || node.code }}
+                                        </a>
+                                        <div class="text-muted small">{{ node.code }}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="fw-semibold" *ngIf="node.city">{{ node.city }}</div>
-                            <div class="fw-semibold" *ngIf="!node.city">-</div>
-                            <div class="text-muted small" *ngIf="node.address">{{ node.address | slice:0:30 }}{{ node.address && node.address.length > 30 ? '...' : '' }}</div>
-                        </td>
-                        <td *ngIf="!embedded">
-                            <div class="fw-semibold">{{ getOwnerName(node) }}</div>
-                            <div class="text-muted small">{{ getProjectName(node) }}</div>
-                        </td>
-                        <td>
-                            <span [class]="badgeClass(node.connectivityStatus)">{{ node.connectivityStatus | titlecase }}</span>
-                            <div class="text-muted small" *ngIf="node.status && node.status !== 'active'">{{ node.status | titlecase }}</div>
-                        </td>
-                        <td class="text-capitalize">
-                            <div class="fw-semibold">{{ getTelemetryMode(node) }}</div>
-                            <div class="text-muted small">{{ node.telemetryIntervalSec }}s interval</div>
-                        </td>
-                        <td class="text-end text-muted">{{ node.lastSeenAt ? (node.lastSeenAt | date:'short') : 'Never' }}</td>
-                    </tr>
+                            </td>
+                            <td>
+                                <div class="fw-semibold" *ngIf="node.city">{{ node.city }}</div>
+                                <div class="fw-semibold" *ngIf="!node.city">-</div>
+                                <div class="text-muted small" *ngIf="node.address">{{ node.address | slice:0:30 }}{{ node.address && node.address.length > 30 ? '...' : '' }}</div>
+                            </td>
+                            <td *ngIf="!embedded">
+                                <div class="fw-semibold">{{ getOwnerName(node) }}</div>
+                                <div class="text-muted small">{{ getProjectName(node) }}</div>
+                            </td>
+                            <td>
+                                <span [class]="badgeClass(node.connectivityStatus)">{{ node.connectivityStatus | titlecase }}</span>
+                                <div class="text-muted small" *ngIf="node.status && node.status !== 'active'">{{ node.status | titlecase }}</div>
+                            </td>
+                            <td class="text-capitalize">
+                                <div class="fw-semibold">{{ getTelemetryMode(node) }}</div>
+                                <div class="text-muted small">{{ node.telemetryIntervalSec }}s interval</div>
+                            </td>
+                            <td class="text-end text-muted">{{ node.lastSeenAt ? (node.lastSeenAt | date:'short') : 'Never' }}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-link text-muted p-0" (click)="toggleExpand(node.idNode)" [title]="expandedNodeId === node.idNode ? 'Collapse' : 'Expand'">
+                                    <i class="fa" [class.fa-chevron-down]="expandedNodeId !== node.idNode" [class.fa-chevron-up]="expandedNodeId === node.idNode"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <!-- Expanded detail row -->
+                        <tr *ngIf="expandedNodeId === node.idNode" class="expanded-row">
+                            <td [attr.colspan]="embedded ? 7 : 8" class="p-0 border-0">
+                                <div class="bg-body-tertiary p-4 mx-2 mb-2 rounded-3">
+                                    <div class="row g-4">
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted text-uppercase small mb-2">
+                                                <i class="fa fa-info-circle me-1"></i> General
+                                            </h6>
+                                            <div class="mb-1"><strong>Name:</strong> {{ node.name || '-' }}</div>
+                                            <div class="mb-1"><strong>Code:</strong> {{ node.code }}</div>
+                                            <div class="mb-1"><strong>Model:</strong> {{ $any(node.nodeModel)?.name || '-' }}</div>
+                                            <div class="mb-1"><strong>Status:</strong> {{ node.status | titlecase }}</div>
+                                            <div class="mb-1"><strong>Firmware:</strong> {{ node.firmwareVersion || '-' }}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted text-uppercase small mb-2">
+                                                <i class="fa fa-map-marker-alt me-1"></i> Location
+                                            </h6>
+                                            <div class="mb-1"><strong>City:</strong> {{ node.city || '-' }}</div>
+                                            <div class="mb-1"><strong>Address:</strong> {{ node.address || '-' }}</div>
+                                            <div class="mb-1"><strong>Lat:</strong> {{ node.latitude || '-' }}</div>
+                                            <div class="mb-1"><strong>Lng:</strong> {{ node.longitude || '-' }}</div>
+                                            <div class="mb-1"><strong>Elevation:</strong> {{ node.elevationM || '-' }}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted text-uppercase small mb-2">
+                                                <i class="fa fa-broadcast-tower me-1"></i> Telemetry
+                                            </h6>
+                                            <div class="mb-1"><strong>Mode:</strong> {{ getTelemetryMode(node) }}</div>
+                                            <div class="mb-1"><strong>Interval:</strong> {{ node.telemetryIntervalSec }}s</div>
+                                            <div class="mb-1"><strong>Last Seen:</strong> {{ node.lastSeenAt ? (node.lastSeenAt | date:'medium') : 'Never' }}</div>
+                                            <div class="mb-1"><strong>Connectivity:</strong>
+                                                <span [class]="badgeClass(node.connectivityStatus)">{{ node.connectivityStatus | titlecase }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted text-uppercase small mb-2">
+                                                <i class="fa fa-cogs me-1"></i> Configuration
+                                            </h6>
+                                            <div class="mb-1"><strong>Project:</strong> {{ getProjectName(node) }}</div>
+                                            <div class="mb-1"><strong>Owner:</strong> {{ getOwnerName(node) }}</div>
+                                            <div class="mb-1"><strong>Created:</strong> {{ node.createdAt | date:'mediumDate' }}</div>
+                                            <div class="mb-1"><strong>Updated:</strong> {{ node.updatedAt | date:'mediumDate' }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 pt-3 border-top d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-theme" (click)="navigateToNode(node.idNode)">
+                                            <i class="fa fa-external-link-alt me-1"></i> Open Detail
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </ng-container>
                 </tbody>
             </table>
         </div>

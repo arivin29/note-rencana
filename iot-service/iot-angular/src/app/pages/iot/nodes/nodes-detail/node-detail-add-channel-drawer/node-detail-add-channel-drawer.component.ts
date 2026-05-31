@@ -251,13 +251,21 @@ export class NodeDetailAddChannelDrawerComponent implements OnInit, OnChanges {
 
   /**
    * Handle sensor type selection change
-   * Auto-fill unit and precision based on selected type
+   * Auto-fill metric code, unit and precision based on selected type
    */
   onSensorTypeChange() {
     const selectedType = this.sensorTypeOptions.find(t => t.id === this.formModel.sensorTypeId);
     if (selectedType) {
       this.formModel.unit = selectedType.unit;
       this.formModel.precision = selectedType.precision;
+      // Auto-generate metric code from category label (e.g., "Chlorine 4-20mA" → "chlorine")
+      if (!this.formModel.metricCode || this.mode === 'add') {
+        const code = selectedType.label
+          .split(/[\s\-]+/)[0]  // Take first word
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '');
+        this.formModel.metricCode = code;
+      }
     }
   }
 

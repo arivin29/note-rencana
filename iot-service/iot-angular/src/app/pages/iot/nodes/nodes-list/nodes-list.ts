@@ -35,6 +35,13 @@ export class NodesListPage implements OnInit, OnChanges, OnDestroy {
   pageSize = 10;
   currentPage = 1;
 
+  // Sort
+  sortField: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
+  // Expand
+  expandedNodeId: string | null = null;
+
   nodes: NodeResponseDto[] = [];
   loading = false;
   error: string | null = null;
@@ -317,11 +324,30 @@ export class NodesListPage implements OnInit, OnChanges, OnDestroy {
   }
 
   get filteredNodes() {
-    // Only filter by status (client-side)
-    if (this.filters.status === 'All Status') {
-      return this.nodes;
+    let nodes = this.nodes;
+    // Filter by status (client-side)
+    if (this.filters.status !== 'All Status') {
+      nodes = nodes.filter((node) => node.connectivityStatus === this.filters.status);
     }
-    return this.nodes.filter((node) => node.connectivityStatus === this.filters.status);
+    // Sort
+    if (this.sortField) {
+      nodes = [...nodes].sort((a: any, b: any) => {
+        let valA: any, valB: any;
+        if (this.sortField === 'project') {
+          valA = (a.project as any)?.name || '';
+          valB = (b.project as any)?.name || '';
+        } else {
+          valA = a[this.sortField] ?? '';
+          valB = b[this.sortField] ?? '';
+        }
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return nodes;
   }
 
   get paginatedNodes() {
@@ -388,6 +414,19 @@ export class NodesListPage implements OnInit, OnChanges, OnDestroy {
 
   getTelemetryMode(node: NodeResponseDto): string {
     return node.telemetryIntervalSec > 0 ? 'Push' : 'Pull';
+  }
+
+  sortBy(field: string) {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+  }
+
+  toggleExpand(nodeId: string) {
+    this.expandedNodeId = this.expandedNodeId === nodeId ? null : nodeId;
   }
 
   private computeTotalPages(count: number) {

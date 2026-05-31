@@ -21,13 +21,19 @@
 
         <div *ngIf="nodeConfig.mode === 'existing'" class="existing-nodes-section">
             <h4 class="section-title">Select Inactive Node</h4>
+            <p class="text-muted small" *ngIf="unpairedDevice?.hardwareId">
+                <i class="fa fa-filter me-1"></i>Showing nodes matching: <strong>{{ unpairedDevice?.hardwareId }}</strong>
+            </p>
             <div *ngIf="existingNodesLoading" class="text-center py-4">
                 <div class="spinner-border spinner-border-sm text-primary me-2"></div>
                 Loading unpaired nodes...
             </div>
             <div *ngIf="!existingNodesLoading && existingNodes.length === 0" class="text-center py-4 text-muted">
                 <i class="fa fa-inbox fa-2x mb-2"></i>
-                <p>No unpaired nodes available</p>
+                <p>No matching unpaired nodes available</p>
+                <button class="btn btn-sm btn-outline-primary" (click)="selectMode('new')">
+                    <i class="fa fa-plus me-1"></i>Create New Node Instead
+                </button>
             </div>
             <div class="existing-nodes-list">
                 <div *ngFor="let node of existingNodes" class="existing-node-card"

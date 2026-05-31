@@ -26,7 +26,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   /** Dashboard-level variables from layoutConfig.variables */
   @Input() dashboardVariables: Record<string, string> = {};
   /** Enable debug mode to show container dimensions */
-  @Input() debugMode = true;
+  @Input() debugMode = false;
 
   @Output() edit = new EventEmitter<void>();
   @Output() delete = new EventEmitter<void>();
@@ -69,7 +69,6 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
           this.ngZone.run(() => {
             this.containerWidth = Math.round(width);
             this.containerHeight = Math.round(height);
-            console.log(`[Widget: ${this.widget?.name}] Container Size: ${this.containerWidth}px x ${this.containerHeight}px (cols: ${this.widget?.position?.cols}, rows: ${this.widget?.position?.rows})`);
           });
         }
       });

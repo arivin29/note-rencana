@@ -24,23 +24,23 @@
     <form #addChannelForm="ngForm" (ngSubmit)="handleSubmit(addChannelForm.valid ?? false)" *ngIf="!loading && !loadingChannel">
       <input type="hidden" name="sensorId" [(ngModel)]="formModel.sensorId">
       <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Channel ID</label>
-        <input class="form-control" name="channelId" [(ngModel)]="formModel.channelId" required>
-        <small class="text-muted">Unique identifier for this channel</small>
-      </div>
-      <div class="mb-3">
-        <label class="form-label text-muted text-uppercase small">Metric Code</label>
-        <input class="form-control" name="metricCode" [(ngModel)]="formModel.metricCode" required>
-        <small class="text-muted">e.g., current_1, voltage_2, temperature</small>
-      </div>
-      <div class="mb-3">
         <label class="form-label text-muted text-uppercase small">Sensor Type (Category)</label>
         <select class="form-select" name="sensorTypeId" [(ngModel)]="formModel.sensorTypeId" 
                 (ngModelChange)="onSensorTypeChange()" required>
           <option value="" disabled>Select sensor type</option>
           <option *ngFor="let option of sensorTypeOptions" [ngValue]="option.id">{{ option.label }}</option>
         </select>
-        <small class="text-muted">Unit and precision will be auto-filled based on type</small>
+        <small class="text-muted">Select type first — metric code, unit & precision will be auto-filled</small>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Metric Code</label>
+        <input class="form-control" name="metricCode" [(ngModel)]="formModel.metricCode" required>
+        <small class="text-muted">Auto-generated from type, editable if needed</small>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted text-uppercase small">Channel ID</label>
+        <input class="form-control" name="channelId" [(ngModel)]="formModel.channelId">
+        <small class="text-muted">Optional custom identifier for this channel</small>
       </div>
       <div class="row">
         <div class="col-md-6">

@@ -39,7 +39,18 @@ export class PairingWorkspacePage implements OnInit {
     ];
 
     onNodeChaneged(id_node: string | null) {
-        this.id_node = id_node; 
+        this.id_node = id_node;
+        
+        // If we were waiting for node creation (loading=true from nextStep), 
+        // auto-advance to step 2 now
+        if (this.loading && id_node && this.currentStep === 1) {
+            this.loading = false;
+            this.currentStep = 2;
+        }
+    }
+
+    onNodeCreateFailed(): void {
+        this.loading = false;
     }
 
     onSensorProfileChanged(idSensorProfile: string | null) {
@@ -175,10 +186,10 @@ export class PairingWorkspacePage implements OnInit {
         if (this.canProceedToNextStep()) {
             // If moving from step 1 with new node mode, create the node first
             if (this.currentStep === 1 && this.nodeConfig.mode === 'new' && !this.id_node) {
+                this.loading = true;
                 this.stepNodeConfig.createNewNode();
-                // The node creation will emit the id_node via selectNode event
-                // and then we can proceed to next step automatically
-                // For now, let's just proceed since the event handler will set id_node
+                // Don't advance yet - wait for node creation callback
+                return;
             }
             
             if (this.currentStep < 4) {
