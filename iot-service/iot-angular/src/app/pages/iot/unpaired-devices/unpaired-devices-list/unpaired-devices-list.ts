@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NodeModelResponseDto, UnpairedDeviceResponseDto, UnpairedDeviceStatsDto } from 'src/sdk/core/models';
@@ -16,7 +16,7 @@ type SortOrder = 'asc' | 'desc';
     styleUrls: ['./unpaired-devices-list.scss'],
     standalone: false,
 })
-export class UnpairedDevicesListPage implements OnInit {
+export class UnpairedDevicesListPage implements OnInit, OnDestroy {
     searchTerm = '';
     filters: { nodeModel: string; status: StatusFilter } = {
         nodeModel: 'All Models',
@@ -41,6 +41,19 @@ export class UnpairedDevicesListPage implements OnInit {
 
     sortBy: SortColumn = 'lastSeenAt';
     sortOrder: SortOrder = 'desc';
+
+    // Auto-refresh
+    autoRefreshEnabled = false;
+    autoRefreshInterval = 30;
+    private autoRefreshTimer: any = null;
+    lastRefreshTime: Date | null = null;
+    refreshIntervals = [
+        { value: 10, label: '10s' },
+        { value: 20, label: '20s' },
+        { value: 30, label: '30s' },
+        { value: 60, label: '1m' },
+        { value: 300, label: '5m' }
+    ];
 
     constructor(
         private router: Router,
@@ -87,6 +100,7 @@ export class UnpairedDevicesListPage implements OnInit {
                 this.ensureDeviceModelsInLookup();
                 this.loadStats();
                 this.loading = false;
+                this.lastRefreshTime = new Date();
             },
             error: (err) => {
                 this.error = err?.error?.message || 'Failed to load unpaired devices';
@@ -398,5 +412,47 @@ export class UnpairedDevicesListPage implements OnInit {
 
     private formatModelLabel(model: NodeModelResponseDto): string {
         return [model.vendor, model.modelName].filter(Boolean).join(' - ');
+    }
+
+    // Auto-refresh methods
+    ngOnDestroy() {
+        this.stopAutoRefresh();
+    }
+
+    toggleAutoRefresh() {
+        this.autoRefreshEnabled = !this.autoRefreshEnabled;
+        if (this.autoRefreshEnabled) {
+            this.startAutoRefresh();
+        } else {
+            this.stopAutoRefresh();
+        }
+    }
+
+    setRefreshInterval(seconds: number) {
+        this.autoRefreshInterval = seconds;
+        if (this.autoRefreshEnabled) {
+            this.stopAutoRefresh();
+            this.startAutoRefresh();
+        }
+    }
+
+    get selectedRefreshLabel(): string {
+        const interval = this.refreshIntervals.find(i => i.value === this.autoRefreshInterval);
+        return interval ? interval.label : `${this.autoRefreshInterval}s`;
+    }
+
+    private startAutoRefresh() {
+        this.stopAutoRefresh();
+        this.autoRefreshTimer = setInterval(() => {
+            this.loadDevices();
+            this.loadStats();
+        }, this.autoRefreshInterval * 1000);
+    }
+
+    private stopAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+            this.autoRefreshTimer = null;
+        }
     }
 }

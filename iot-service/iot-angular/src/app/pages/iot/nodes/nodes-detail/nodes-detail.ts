@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
     ApexAxisChartSeries,
@@ -87,7 +87,7 @@ interface SensorDetail {
     styleUrls: ['./nodes-detail.scss'],
     standalone: false
 })
-export class NodesDetailPage implements OnInit, OnChanges {
+export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
     // Input for embedded mode (when used outside nodes module)
     @Input() inputNodeId: string = '';
     @Input() embedded: boolean = false;
@@ -172,6 +172,19 @@ export class NodesDetailPage implements OnInit, OnChanges {
     nodeModelCommands: NodeModelCommandResponseDto[] = [];
     commandsLoading = false;
     commandsError = '';
+
+    // Auto-refresh
+    autoRefreshEnabled = false;
+    autoRefreshInterval = 30;
+    private autoRefreshTimer: any = null;
+    lastRefreshTime: Date | null = null;
+    refreshIntervals = [
+        { value: 10, label: '10s' },
+        { value: 20, label: '20s' },
+        { value: 30, label: '30s' },
+        { value: 60, label: '1m' },
+        { value: 300, label: '5m' }
+    ];
 
     constructor(
         private route: ActivatedRoute,
@@ -357,6 +370,7 @@ export class NodesDetailPage implements OnInit, OnChanges {
                 }));
 
                 this.loading = false;
+                this.lastRefreshTime = new Date();
 
                 // Load telemetry trends after dashboard data is ready
                 if (this.nodeUuid) {
@@ -961,5 +975,46 @@ export class NodesDetailPage implements OnInit, OnChanges {
         }).catch(err => {
             console.error('Failed to copy:', err);
         });
+    }
+
+    // Auto-refresh methods
+    ngOnDestroy() {
+        this.stopAutoRefresh();
+    }
+
+    toggleAutoRefresh() {
+        this.autoRefreshEnabled = !this.autoRefreshEnabled;
+        if (this.autoRefreshEnabled) {
+            this.startAutoRefresh();
+        } else {
+            this.stopAutoRefresh();
+        }
+    }
+
+    setRefreshInterval(seconds: number) {
+        this.autoRefreshInterval = seconds;
+        if (this.autoRefreshEnabled) {
+            this.stopAutoRefresh();
+            this.startAutoRefresh();
+        }
+    }
+
+    get selectedRefreshLabel(): string {
+        const interval = this.refreshIntervals.find(i => i.value === this.autoRefreshInterval);
+        return interval ? interval.label : `${this.autoRefreshInterval}s`;
+    }
+
+    private startAutoRefresh() {
+        this.stopAutoRefresh();
+        this.autoRefreshTimer = setInterval(() => {
+            this.loadNodeDashboard();
+        }, this.autoRefreshInterval * 1000);
+    }
+
+    private stopAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+            this.autoRefreshTimer = null;
+        }
     }
 }

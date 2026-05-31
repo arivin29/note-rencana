@@ -5,19 +5,50 @@
             <li class="breadcrumb-item"><a routerLink="/iot/nodes">Nodes</a></li>
             <li class="breadcrumb-item active">{{ nodeId }}</li>
         </ol>
-        <h1 class="page-header mb-0">Node {{ nodeId }}</h1>
+        <h1 class="page-header mb-0">
+            Node {{ nodeId }}
+            <span *ngIf="autoRefreshEnabled" class="badge bg-success ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-sync fa-spin me-1"></i>Auto
+            </span>
+        </h1>
+        <div class="text-muted small" *ngIf="lastRefreshTime">
+            Last updated: {{ lastRefreshTime | date: 'HH:mm:ss' }}
+        </div>
     </div>
-    <div class="ms-auto d-flex gap-2">
-        <a *ngIf="!embedded" [routerLink]="['/iot/nodes', nodeUuid, 'edit']" class="btn btn-outline-theme">
+    <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+        <!-- Auto-refresh toggle -->
+        <div class="btn-group btn-group-sm">
+            <button class="btn" [class.btn-theme]="autoRefreshEnabled" [class.btn-outline-default]="!autoRefreshEnabled"
+                (click)="toggleAutoRefresh()">
+                <i class="fa" [class.fa-pause]="autoRefreshEnabled" [class.fa-play]="!autoRefreshEnabled"></i>
+                <span class="ms-1">{{ autoRefreshEnabled ? 'Stop' : 'Auto' }}</span>
+            </button>
+            <button class="btn dropdown-toggle dropdown-toggle-split" [class.btn-theme]="autoRefreshEnabled"
+                [class.btn-outline-default]="!autoRefreshEnabled" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <span>{{ selectedRefreshLabel }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header">Refresh Interval</h6></li>
+                <li *ngFor="let interval of refreshIntervals">
+                    <button class="dropdown-item" type="button" (click)="setRefreshInterval(interval.value)"
+                        [class.active]="autoRefreshInterval === interval.value">
+                        <i class="fa fa-check fa-fw me-1" *ngIf="autoRefreshInterval === interval.value"></i>
+                        <span [class.ms-4]="autoRefreshInterval !== interval.value">{{ interval.label }}</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <a *ngIf="!embedded" [routerLink]="['/iot/nodes', nodeUuid, 'edit']" class="btn btn-outline-theme btn-sm">
             <i class="fa fa-pen fa-fw me-1"></i>
             Edit Node
         </a>
-        <button class="btn btn-outline-danger" (click)="deleteNode()" [disabled]="sensors.length > 0"
+        <button class="btn btn-outline-danger btn-sm" (click)="deleteNode()" [disabled]="sensors.length > 0"
             [title]="sensors.length > 0 ? 'Cannot delete node with sensors. Delete all sensors first.' : 'Delete node'">
             <i class="fa fa-trash fa-fw me-1"></i>
             Delete Node
         </button>
-        <a *ngIf="!embedded" routerLink="/iot/nodes" class="btn btn-outline-default">Back to Nodes</a>
+        <a *ngIf="!embedded" routerLink="/iot/nodes" class="btn btn-outline-default btn-sm">Back to Nodes</a>
     </div>
 </div>
 

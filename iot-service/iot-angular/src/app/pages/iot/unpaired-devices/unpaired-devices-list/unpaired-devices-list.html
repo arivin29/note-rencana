@@ -7,10 +7,39 @@
         <h1 class="page-header mb-0">
             Unpaired Devices
             <span class="badge bg-warning ms-2">{{ totalUnpaired }}</span>
+            <span *ngIf="autoRefreshEnabled" class="badge bg-success ms-1" style="font-size: 0.5rem; padding: 0.25rem 0.5rem;">
+                <i class="fa fa-sync fa-spin me-1"></i>Auto
+            </span>
         </h1>
+        <div class="text-muted small" *ngIf="lastRefreshTime">
+            Last updated: {{ lastRefreshTime | date: 'HH:mm:ss' }}
+        </div>
     </div>
-    <div class="ms-auto">
-        <a href="javascript:;" class="btn btn-outline-theme" (click)="loadDevices()">
+    <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+        <!-- Auto-refresh toggle -->
+        <div class="btn-group btn-group-sm">
+            <button class="btn" [class.btn-theme]="autoRefreshEnabled" [class.btn-outline-default]="!autoRefreshEnabled"
+                (click)="toggleAutoRefresh()">
+                <i class="fa" [class.fa-pause]="autoRefreshEnabled" [class.fa-play]="!autoRefreshEnabled"></i>
+                <span class="ms-1">{{ autoRefreshEnabled ? 'Stop' : 'Auto' }}</span>
+            </button>
+            <button class="btn dropdown-toggle dropdown-toggle-split" [class.btn-theme]="autoRefreshEnabled"
+                [class.btn-outline-default]="!autoRefreshEnabled" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <span>{{ selectedRefreshLabel }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header">Refresh Interval</h6></li>
+                <li *ngFor="let interval of refreshIntervals">
+                    <button class="dropdown-item" type="button" (click)="setRefreshInterval(interval.value)"
+                        [class.active]="autoRefreshInterval === interval.value">
+                        <i class="fa fa-check fa-fw me-1" *ngIf="autoRefreshInterval === interval.value"></i>
+                        <span [class.ms-4]="autoRefreshInterval !== interval.value">{{ interval.label }}</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <a href="javascript:;" class="btn btn-outline-theme btn-sm" (click)="loadDevices()">
             <i class="fa fa-sync fa-fw me-1"></i>
             Refresh
         </a>

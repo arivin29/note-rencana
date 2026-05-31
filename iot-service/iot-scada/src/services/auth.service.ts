@@ -9,18 +9,35 @@ import type { ScadaAuthUser } from '@/types/scada'
 const STORAGE_KEY = 'scada_token'
 const BASE_URL = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api`
 
+// In-memory fallback for environments where localStorage is blocked (e.g. cross-origin iframes on mobile Chrome)
+let memoryToken: string | null = null
+
 export function getToken(): string | null {
   const devBearer = import.meta.env.VITE_SCADA_DEV_BEARER as string | undefined
   if (devBearer) return devBearer
-  return localStorage.getItem(STORAGE_KEY)
+  try {
+    return localStorage.getItem(STORAGE_KEY) || memoryToken
+  } catch {
+    return memoryToken
+  }
 }
 
 export function setToken(token: string): void {
-  localStorage.setItem(STORAGE_KEY, token)
+  memoryToken = token
+  try {
+    localStorage.setItem(STORAGE_KEY, token)
+  } catch {
+    // localStorage blocked (cross-origin iframe on mobile Chrome) — memory fallback used
+  }
 }
 
 export function clearToken(): void {
-  localStorage.removeItem(STORAGE_KEY)
+  memoryToken = null
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // ignore
+  }
 }
 
 export function isAuthenticated(): boolean {

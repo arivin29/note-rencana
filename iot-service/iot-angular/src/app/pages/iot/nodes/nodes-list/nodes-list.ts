@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { OwnersService } from '../../../../../sdk/core/services/owners.service';
@@ -14,7 +14,7 @@ import { ProjectResponseDto } from '../../../../../sdk/core/models/project-respo
   styleUrls: ['./nodes-list.scss'],
   standalone: false
 })
-export class NodesListPage implements OnInit, OnChanges {
+export class NodesListPage implements OnInit, OnChanges, OnDestroy {
   // Input properties for embedded mode
   @Input() projectId: string | null = null;  // Filter by project when provided
   @Input() embedded = false;  // Hide header/breadcrumb when embedded
@@ -52,6 +52,19 @@ export class NodesListPage implements OnInit, OnChanges {
   // Admin detection
   isAdmin = false;
   currentUserRole = '';
+
+  // Auto-refresh
+  autoRefreshEnabled = false;
+  autoRefreshInterval = 30;
+  private autoRefreshTimer: any = null;
+  lastRefreshTime: Date | null = null;
+  refreshIntervals = [
+    { value: 10, label: '10s' },
+    { value: 20, label: '20s' },
+    { value: 30, label: '30s' },
+    { value: 60, label: '1m' },
+    { value: 300, label: '5m' }
+  ];
 
   constructor(
     private nodesService: NodesService,
@@ -256,6 +269,7 @@ export class NodesListPage implements OnInit, OnChanges {
         
         console.log('Loaded nodes:', this.nodes);
         this.loading = false;
+        this.lastRefreshTime = new Date();
       },
       error: (err) => {
         this.error = err.message || 'Failed to load nodes';
@@ -388,5 +402,47 @@ export class NodesListPage implements OnInit, OnChanges {
       this.currentPage = 1;
     }
     return this.currentPage;
+  }
+
+  // Auto-refresh methods
+  ngOnDestroy() {
+    this.stopAutoRefresh();
+  }
+
+  toggleAutoRefresh() {
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    if (this.autoRefreshEnabled) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+  }
+
+  setRefreshInterval(seconds: number) {
+    this.autoRefreshInterval = seconds;
+    if (this.autoRefreshEnabled) {
+      this.stopAutoRefresh();
+      this.startAutoRefresh();
+    }
+  }
+
+  get selectedRefreshLabel(): string {
+    const interval = this.refreshIntervals.find(i => i.value === this.autoRefreshInterval);
+    return interval ? interval.label : `${this.autoRefreshInterval}s`;
+  }
+
+  private startAutoRefresh() {
+    this.stopAutoRefresh();
+    this.autoRefreshTimer = setInterval(() => {
+      this.loadNodes();
+      this.loadStatistics();
+    }, this.autoRefreshInterval * 1000);
+  }
+
+  private stopAutoRefresh() {
+    if (this.autoRefreshTimer) {
+      clearInterval(this.autoRefreshTimer);
+      this.autoRefreshTimer = null;
+    }
   }
 }

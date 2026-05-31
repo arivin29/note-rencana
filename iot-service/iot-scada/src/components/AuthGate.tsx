@@ -49,6 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     window.addEventListener('message', handler)
+
+    // Notify parent that SCADA app is ready to receive token (fixes mobile Chrome race condition)
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'scada-ready' }, '*')
+    }
+
     return () => window.removeEventListener('message', handler)
   }, [authenticateWithToken])
 

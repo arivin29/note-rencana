@@ -25,6 +25,7 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
   activeDiagramId = '';
   activeDiagramName = '';
   private tokenSent = false;
+  private messageListener: ((event: MessageEvent) => void) | null = null;
 
   // Add diagram modal
   showAddModal = false;
@@ -49,10 +50,22 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
         this.loadDiagrams();
       }
     });
+
+    // Listen for 'scada-ready' from iframe (handshake for mobile Chrome)
+    this.messageListener = (event: MessageEvent) => {
+      if (event.data?.type === 'scada-ready') {
+        this.sendTokenToIframe();
+      }
+    };
+    window.addEventListener('message', this.messageListener);
   }
 
   ngOnDestroy(): void {
     this.embedUrl = null;
+    if (this.messageListener) {
+      window.removeEventListener('message', this.messageListener);
+      this.messageListener = null;
+    }
   }
 
   loadDiagrams(): void {
@@ -83,8 +96,12 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
   }
 
   onIframeLoad(): void {
+    // Send token on load (works on desktop), also retry for mobile
+    this.sendTokenToIframe();
+  }
+
+  private sendTokenToIframe(): void {
     if (this.tokenSent) return;
-    // Send auth token to SCADA app via postMessage
     const token = this.authService.getAccessToken();
     if (token && this.scadaIframe?.nativeElement?.contentWindow) {
       this.scadaIframe.nativeElement.contentWindow.postMessage(
