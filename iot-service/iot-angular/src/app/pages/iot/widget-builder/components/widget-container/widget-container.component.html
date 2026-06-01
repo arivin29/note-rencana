@@ -1,6 +1,5 @@
-<div class="widget-wrapper h-100" #widgetWrapper>
-  <card class="console-panel h-100" [class.fullscreen]="isFullscreen">
-    <card-body>
+<div class="widget-wrapper" #widgetWrapper>
+  <div class="console-panel" [class.fullscreen]="isFullscreen">
       <!-- Debug: Container Pixel Dimensions -->
       <div *ngIf="debugMode" class="debug-size-badge">
         {{ containerWidth }} x {{ containerHeight }} px
@@ -107,6 +106,5 @@
         </app-table-widget>
       </ng-container>
     </div>
-  </card-body>
-</card>
+  </div>
 </div>

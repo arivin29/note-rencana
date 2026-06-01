@@ -66,9 +66,9 @@ export class TelemetryListPage implements OnInit, OnDestroy {
     // Selected filter IDs (for dropdowns)
     selectedOwnerId: string = '';
     selectedProjectId: string = '';
-    selectedNodeId: string = '';
-    selectedSensorId: string = '';
-    selectedChannelId: string = '';
+    selectedNodeIds: string[] = [];
+    selectedSensorIds: string[] = [];
+    selectedChannelIds: string[] = [];
 
     // Query params filter (from URL - for displaying active filter card)
     ownerIdFilter: string | null = null;
@@ -153,15 +153,15 @@ export class TelemetryListPage implements OnInit, OnDestroy {
                 this.loadNodes(this.projectIdFilter);
             }
             if (this.nodeIdFilter) {
-                this.selectedNodeId = this.nodeIdFilter;
-                this.loadSensors(this.nodeIdFilter);
+                this.selectedNodeIds = this.nodeIdFilter.split(',');
+                this.selectedNodeIds.forEach(id => this.loadSensors(id));
             }
             if (this.sensorIdFilter) {
-                this.selectedSensorId = this.sensorIdFilter;
-                this.loadChannels(this.sensorIdFilter);
+                this.selectedSensorIds = this.sensorIdFilter.split(',');
+                this.selectedSensorIds.forEach(id => this.loadChannels(id));
             }
             if (this.sensorChannelIdFilter) {
-                this.selectedChannelId = this.sensorChannelIdFilter;
+                this.selectedChannelIds = this.sensorChannelIdFilter.split(',');
             }
 
             // Log all filters for debugging
@@ -472,7 +472,6 @@ export class TelemetryListPage implements OnInit, OnDestroy {
 
     loadSensors(nodeId: string) {
         if (!nodeId) {
-            this.sensorOptions = [];
             return;
         }
         this.sensorsService.sensorsControllerFindAll$Response({
@@ -486,11 +485,16 @@ export class TelemetryListPage implements OnInit, OnDestroy {
                     body = JSON.parse(body);
                 }
                 const sensors = body.data || [];
-                console.log('Loaded sensors for node', nodeId, ':', sensors.length);
-                this.sensorOptions = sensors.map((s: any) => ({
+                const newOptions = sensors.map((s: any) => ({
                     id: s.idSensor,
                     label: s.label || s.sensorCode
                 }));
+                // Merge without duplicates
+                newOptions.forEach((opt: FilterOption) => {
+                    if (!this.sensorOptions.find(o => o.id === opt.id)) {
+                        this.sensorOptions.push(opt);
+                    }
+                });
             },
             error: (err) => console.error('Failed to load sensors:', err)
         });
@@ -498,7 +502,6 @@ export class TelemetryListPage implements OnInit, OnDestroy {
 
     loadChannels(sensorId: string) {
         if (!sensorId) {
-            this.channelOptions = [];
             return;
         }
         this.sensorChannelsService.sensorChannelsControllerFindAll$Response({
@@ -512,11 +515,16 @@ export class TelemetryListPage implements OnInit, OnDestroy {
                     body = JSON.parse(body);
                 }
                 const channels = body.data || [];
-                console.log('Loaded channels for sensor', sensorId, ':', channels.length);
-                this.channelOptions = channels.map((c: any) => ({
+                const newOptions = channels.map((c: any) => ({
                     id: c.idSensorChannel,
                     label: c.metricCode
                 }));
+                // Merge without duplicates
+                newOptions.forEach((opt: FilterOption) => {
+                    if (!this.channelOptions.find(o => o.id === opt.id)) {
+                        this.channelOptions.push(opt);
+                    }
+                });
             },
             error: (err) => console.error('Failed to load channels:', err)
         });
@@ -524,12 +532,11 @@ export class TelemetryListPage implements OnInit, OnDestroy {
 
     // Cascading filter change handlers
     onOwnerChange(ownerId: string) {
-        console.log('onOwnerChange called with:', ownerId);
         this.selectedOwnerId = ownerId;
         this.selectedProjectId = '';
-        this.selectedNodeId = '';
-        this.selectedSensorId = '';
-        this.selectedChannelId = '';
+        this.selectedNodeIds = [];
+        this.selectedSensorIds = [];
+        this.selectedChannelIds = [];
 
         this.projectOptions = [];
         this.nodeOptions = [];
@@ -537,59 +544,66 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         this.channelOptions = [];
 
         if (ownerId) {
-            console.log('Loading projects for owner:', ownerId);
             this.loadProjects(ownerId);
         }
         this.applyFilters();
     }
 
     onProjectChange(projectId: string) {
-        console.log('onProjectChange called with:', projectId);
         this.selectedProjectId = projectId;
-        this.selectedNodeId = '';
-        this.selectedSensorId = '';
-        this.selectedChannelId = '';
+        this.selectedNodeIds = [];
+        this.selectedSensorIds = [];
+        this.selectedChannelIds = [];
 
         this.nodeOptions = [];
         this.sensorOptions = [];
         this.channelOptions = [];
 
         if (projectId) {
-            console.log('Loading nodes for project:', projectId);
             this.loadNodes(projectId);
         }
         this.applyFilters();
     }
 
-    onNodeChange(nodeId: string) {
-        console.log('onNodeChange called with:', nodeId);
-        this.selectedNodeId = nodeId;
-        this.selectedSensorId = '';
-        this.selectedChannelId = '';
-
+    toggleNodeSelection(nodeId: string) {
+        const idx = this.selectedNodeIds.indexOf(nodeId);
+        if (idx >= 0) {
+            this.selectedNodeIds.splice(idx, 1);
+        } else {
+            this.selectedNodeIds.push(nodeId);
+        }
+        // Reset downstream
+        this.selectedSensorIds = [];
+        this.selectedChannelIds = [];
         this.sensorOptions = [];
         this.channelOptions = [];
-
-        if (nodeId) {
-            this.loadSensors(nodeId);
-        }
+        // Load sensors for all selected nodes
+        this.selectedNodeIds.forEach(id => this.loadSensors(id));
         this.applyFilters();
     }
 
-    onSensorChange(sensorId: string) {
-        this.selectedSensorId = sensorId;
-        this.selectedChannelId = '';
-
+    toggleSensorSelection(sensorId: string) {
+        const idx = this.selectedSensorIds.indexOf(sensorId);
+        if (idx >= 0) {
+            this.selectedSensorIds.splice(idx, 1);
+        } else {
+            this.selectedSensorIds.push(sensorId);
+        }
+        // Reset downstream
+        this.selectedChannelIds = [];
         this.channelOptions = [];
-
-        if (sensorId) {
-            this.loadChannels(sensorId);
-        }
+        // Load channels for all selected sensors
+        this.selectedSensorIds.forEach(id => this.loadChannels(id));
         this.applyFilters();
     }
 
-    onChannelChange(channelId: string) {
-        this.selectedChannelId = channelId;
+    toggleChannelSelection(channelId: string) {
+        const idx = this.selectedChannelIds.indexOf(channelId);
+        if (idx >= 0) {
+            this.selectedChannelIds.splice(idx, 1);
+        } else {
+            this.selectedChannelIds.push(channelId);
+        }
         this.applyFilters();
     }
 
@@ -598,9 +612,9 @@ export class TelemetryListPage implements OnInit, OnDestroy {
 
         if (this.selectedOwnerId) queryParams.idOwner = this.selectedOwnerId;
         if (this.selectedProjectId) queryParams.idProject = this.selectedProjectId;
-        if (this.selectedNodeId) queryParams.idNode = this.selectedNodeId;
-        if (this.selectedSensorId) queryParams.idSensor = this.selectedSensorId;
-        if (this.selectedChannelId) queryParams.idSensorChannel = this.selectedChannelId;
+        if (this.selectedNodeIds.length) queryParams.idNode = this.selectedNodeIds.join(',');
+        if (this.selectedSensorIds.length) queryParams.idSensor = this.selectedSensorIds.join(',');
+        if (this.selectedChannelIds.length) queryParams.idSensorChannel = this.selectedChannelIds.join(',');
 
         this.router.navigate([], {
             relativeTo: this.route,
@@ -612,9 +626,9 @@ export class TelemetryListPage implements OnInit, OnDestroy {
     clearAllFilters() {
         this.selectedOwnerId = '';
         this.selectedProjectId = '';
-        this.selectedNodeId = '';
-        this.selectedSensorId = '';
-        this.selectedChannelId = '';
+        this.selectedNodeIds = [];
+        this.selectedSensorIds = [];
+        this.selectedChannelIds = [];
 
         this.projectOptions = [];
         this.nodeOptions = [];

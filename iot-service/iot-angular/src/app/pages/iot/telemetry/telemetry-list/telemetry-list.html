@@ -122,36 +122,75 @@
                 <label class="text-muted text-uppercase small d-block mb-1">
                     <i class="fa fa-server me-1"></i>Node
                 </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedNodeId"
-                    (change)="onNodeChange(selectedNodeId)" 
-                    [disabled]="!selectedProjectId">
-                    <option value="">All Nodes</option>
-                    <option *ngFor="let opt of nodeOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
+                <div class="dropdown" [class.disabled]="!selectedProjectId">
+                    <button class="btn btn-sm btn-outline-default w-100 text-start d-flex align-items-center"
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                        [disabled]="!selectedProjectId">
+                        <span class="text-truncate flex-grow-1">
+                            {{ selectedNodeIds.length ? selectedNodeIds.length + ' selected' : 'All Nodes' }}
+                        </span>
+                        <i class="fa fa-chevron-down ms-1 small"></i>
+                    </button>
+                    <div class="dropdown-menu w-100 p-2" style="max-height: 200px; overflow-y: auto;">
+                        <div class="form-check mb-1" *ngFor="let opt of nodeOptions">
+                            <input class="form-check-input" type="checkbox" [id]="'node-' + opt.id"
+                                [checked]="selectedNodeIds.includes(opt.id)"
+                                (change)="toggleNodeSelection(opt.id)">
+                            <label class="form-check-label small" [for]="'node-' + opt.id">{{ opt.label }}</label>
+                        </div>
+                        <div *ngIf="!nodeOptions.length" class="text-muted small text-center py-1">No nodes</div>
+                    </div>
+                </div>
             </div>
 
             <div class="col-lg-2 col-md-6">
                 <label class="text-muted text-uppercase small d-block mb-1">
                     <i class="fa fa-microchip me-1"></i>Sensor
                 </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedSensorId"
-                    (change)="onSensorChange(selectedSensorId)"
-                    [disabled]="!selectedNodeId">
-                    <option value="">All Sensors</option>
-                    <option *ngFor="let opt of sensorOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
+                <div class="dropdown" [class.disabled]="!selectedNodeIds.length">
+                    <button class="btn btn-sm btn-outline-default w-100 text-start d-flex align-items-center"
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                        [disabled]="!selectedNodeIds.length">
+                        <span class="text-truncate flex-grow-1">
+                            {{ selectedSensorIds.length ? selectedSensorIds.length + ' selected' : 'All Sensors' }}
+                        </span>
+                        <i class="fa fa-chevron-down ms-1 small"></i>
+                    </button>
+                    <div class="dropdown-menu w-100 p-2" style="max-height: 200px; overflow-y: auto;">
+                        <div class="form-check mb-1" *ngFor="let opt of sensorOptions">
+                            <input class="form-check-input" type="checkbox" [id]="'sensor-' + opt.id"
+                                [checked]="selectedSensorIds.includes(opt.id)"
+                                (change)="toggleSensorSelection(opt.id)">
+                            <label class="form-check-label small" [for]="'sensor-' + opt.id">{{ opt.label }}</label>
+                        </div>
+                        <div *ngIf="!sensorOptions.length" class="text-muted small text-center py-1">No sensors</div>
+                    </div>
+                </div>
             </div>
 
             <div class="col-lg-2 col-md-6">
                 <label class="text-muted text-uppercase small d-block mb-1">
                     <i class="fa fa-signal me-1"></i>Channel
                 </label>
-                <select class="form-select form-select-sm" [(ngModel)]="selectedChannelId"
-                    (change)="onChannelChange(selectedChannelId)"
-                    [disabled]="!selectedSensorId">
-                    <option value="">All Channels</option>
-                    <option *ngFor="let opt of channelOptions" [value]="opt.id">{{ opt.label }}</option>
-                </select>
+                <div class="dropdown" [class.disabled]="!selectedSensorIds.length">
+                    <button class="btn btn-sm btn-outline-default w-100 text-start d-flex align-items-center"
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                        [disabled]="!selectedSensorIds.length">
+                        <span class="text-truncate flex-grow-1">
+                            {{ selectedChannelIds.length ? selectedChannelIds.length + ' selected' : 'All Channels' }}
+                        </span>
+                        <i class="fa fa-chevron-down ms-1 small"></i>
+                    </button>
+                    <div class="dropdown-menu w-100 p-2" style="max-height: 200px; overflow-y: auto;">
+                        <div class="form-check mb-1" *ngFor="let opt of channelOptions">
+                            <input class="form-check-input" type="checkbox" [id]="'channel-' + opt.id"
+                                [checked]="selectedChannelIds.includes(opt.id)"
+                                (change)="toggleChannelSelection(opt.id)">
+                            <label class="form-check-label small" [for]="'channel-' + opt.id">{{ opt.label }}</label>
+                        </div>
+                        <div *ngIf="!channelOptions.length" class="text-muted small text-center py-1">No channels</div>
+                    </div>
+                </div>
             </div>
 
             <div class="col-lg-2 col-md-12">

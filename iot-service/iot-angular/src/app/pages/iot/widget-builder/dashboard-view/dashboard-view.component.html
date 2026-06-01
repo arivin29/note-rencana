@@ -290,10 +290,13 @@
 
     <gridster [options]="gridsterOptions" class="dashboard-gridster">
         <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
-            <!-- DEBUG: Simple static content to test resize -->
-            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 8px; height: 100%; pointer-events: none;">
-                <span style="color: #fff; font-size: 12px; pointer-events: none;">{{ getWidgetById(item['id'])?.name || 'Widget' }}</span>
-            </div>
+            <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
+                [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
+                [dashboardVariables]="dashboardVariables"
+                (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
+                (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
+                (duplicate)="duplicateWidget(item['id'])">
+            </app-widget-container>
         </gridster-item>
     </gridster> 
 
