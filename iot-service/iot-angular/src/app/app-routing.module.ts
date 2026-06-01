@@ -198,6 +198,12 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         data: { title: 'Global Search' }
     },
+    {
+        path: 'developer',
+        loadChildren: () => import('./pages/developer/developer.module').then((m) => m.DeveloperModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Developer Portal' }
+    },
     { path: 'iot/widgets-showcase', component: WidgetsShowcasePage, data: { title: 'Widget Showcase' } },
 
     // { path: 'email/inbox', component: EmailInboxPage, data: { title: 'Email Inbox' } },

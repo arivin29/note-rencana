@@ -258,7 +258,7 @@ export class WidgetWizardComponent implements OnInit {
   // ============================================
   
   // Available data for dropdowns
-  nodesList: { id: string; label: string; code: string }[] = [];
+  nodesList: { id: string; label: string; code: string; address: string }[] = [];
   sensorsList: { id: string; label: string; nodeId: string }[] = [];
   channelsList: { id: string; label: string; metricCode: string; sensorId: string; unit: string }[] = [];
   
@@ -800,7 +800,8 @@ ORDER BY day_of_week, hour`
           this.nodesList = data.map((n: any) => ({
             id: n.id_node || n.idNode || n.id,
             label: n.name || n.label || n.code || n.serialNumber || 'Unnamed Node',
-            code: n.code || n.node_code || n.nodeCode || n.serialNumber || ''
+            code: n.code || n.node_code || n.nodeCode || n.serialNumber || '',
+            address: n.address || n.city || n.province || ''
           }));
           console.log('Loaded nodes:', this.nodesList.length);
         } catch (e) {

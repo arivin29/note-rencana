@@ -1,14 +1,194 @@
-// Widget Template Wizard - Minimal custom styles
-// Most styling comes from existing card component and Bootstrap utilities
+// Widget Template Wizard - Dark theme matching dashboard-view (Grafana-like)
+
+:host {
+  display: block;
+  background: #11131a;
+  min-height: 100%;
+  margin: -20px;
+  padding: 0;
+}
+
+// Override container padding
+.container-fluid {
+  max-width: 1400px;
+  padding: 16px 24px;
+}
+
+// Header compact
+.page-header {
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+// ============================
+// Progress Steps - compact bar
+// ============================
+.wizard-steps-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 6px;
+}
+
+// ============================
+// Cards - dark, subtle borders
+// ============================
+card,
+.card {
+  background: #181b1f !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 6px !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+card-header,
+.card-header {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 10px 14px !important;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+card-body,
+.card-body {
+  padding: 14px !important;
+}
+
+card-footer,
+.card-footer {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+// ============================
+// Category list (left panel)
+// ============================
+.list-group {
+  background: transparent;
+}
+
+.list-group-item {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 10px 14px !important;
+  transition: all 0.15s;
+  font-size: 13px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #fff;
+  }
+
+  &.active {
+    background: rgba(var(--bs-theme-rgb), 0.12) !important;
+    border-color: transparent !important;
+    border-left: 3px solid var(--bs-theme) !important;
+    color: #fff;
+  }
+}
+
+// ============================
+// Template cards - grid & sizing
+// ============================
+.wizard-content card card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #1e2228 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+
+  &:hover {
+    background: #252930 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    transform: translateY(-1px);
+  }
+
+  &.border-theme {
+    border: 2px solid var(--bs-theme) !important;
+    background: rgba(var(--bs-theme-rgb), 0.05) !important;
+    box-shadow: 0 0 0 2px rgba(var(--bs-theme-rgb), 0.1);
+  }
+}
+
+// SVG preview inside template cards — constrain size
+.template-svg-preview {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  ::ng-deep svg {
+    max-width: 100% !important;
+    max-height: 60px !important;
+    height: auto !important;
+    width: auto !important;
+  }
+}
+
+.wizard-content card card card-body [innerHTML],
+.wizard-content card card .card-body [innerHTML] {
+  max-width: 100%;
+  overflow: hidden;
+
+  svg {
+    max-width: 100% !important;
+    max-height: 70px !important;
+    height: auto !important;
+    width: auto !important;
+  }
+}
+
+// Step circles
+.rounded-circle {
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.bg-secondary {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+// ============================
+// Navigation footer
+// ============================
+.wizard-footer {
+  position: sticky;
+  bottom: 0;
+  background: rgba(17, 19, 26, 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 0;
+  margin-top: 20px;
+}
+
+// Buttons
+.btn-outline-default {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+}
+
+.btn-outline-secondary {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-// List group active state override
-.list-group-item.active {
-  background-color: var(--bs-theme);
-  border-color: var(--bs-theme);
 }
 
 // Code preview
@@ -20,4 +200,69 @@ pre code {
 // Border theme for selected cards
 .border-theme {
   border: 2px solid var(--bs-theme) !important;
+}
+
+// ============================
+// Text colors for dark bg
+// ============================
+h6, .fw-semibold, .fw-bold {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.text-muted {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+// Badge
+.badge.bg-theme {
+  font-size: 11px;
+}
+
+// ============================
+// Form controls dark
+// ============================
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--bs-theme);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(var(--bs-theme-rgb), 0.15);
+  }
+}
+
+// Btn group for data source selection
+.btn-group .btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  
+  &.btn-outline-secondary {
+    background: transparent;
+  }
+}
+
+// ============================
+// Chart preview container
+// ============================
+.chart-preview-container {
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+// ============================
+// Responsive
+// ============================
+@media (max-width: 767.98px) {
+  .container-fluid {
+    padding: 12px;
+  }
 }

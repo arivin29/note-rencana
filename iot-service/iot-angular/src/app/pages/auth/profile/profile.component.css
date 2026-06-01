@@ -1,52 +1,32 @@
-/* Profile Component Styles */
+/* Profile Page - Enterprise Styles */
 
-.page-header {
-  font-size: 1.75rem;
-  font-weight: 600;
+:host {
+    display: block;
 }
 
-.card {
-  /* box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.15);
-  border-radius: 0.5rem;
-  background-color: var(--bs-body-bg);
-  border: 1px solid rgba(255, 255, 255, 0.05) !important; */
+.list-group-item {
+    border: none;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
 }
 
-.card-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1rem 1.25rem;
+.list-group-item.active {
+    background-color: rgba(var(--bs-theme-rgb), 0.08);
+    color: var(--bs-theme);
+    border-left: 3px solid var(--bs-theme);
+    font-weight: 600;
 }
 
-.card-body {
-  padding: 1.5rem;
+.list-group-item:not(.active):hover {
+    background-color: rgba(0, 0, 0, 0.03);
 }
 
-.badge {
-  padding: 0.35rem 0.75rem;
+card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.form-control-plaintext {
-  padding: 0.5rem 0;
+.progress {
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-/* Avatar styling */
-.rounded-circle {
-  box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.2);
-}
-
-/* Form styling */
-.form-control {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--bs-body-color);
-}
-
-.form-control:focus {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: var(--bs-theme-rgb);
-  box-shadow: 0 0 0 0.2rem rgba(var(--bs-theme-rgb), 0.25);
-}
-
-.form-control:disabled {
-  opacity: 0.6;
-}

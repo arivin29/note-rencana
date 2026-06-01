@@ -161,13 +161,14 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     this.gridsterOptions = {
       gridType: GridType.ScrollVertical,
       compactType: CompactType.None,
-      displayGrid: DisplayGrid.None,
+      displayGrid: DisplayGrid.Always,
       pushItems: true,
       draggable: {
         enabled: false,
       },
       resizable: {
-        enabled: false,
+        enabled: true,
+        handles: { s: true, e: true, n: true, w: true, se: true, ne: true, sw: true, nw: true },
       },
       minCols: 12,
       maxCols: 12,
@@ -272,8 +273,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   toggleEditMode(): void {
     this.editMode = !this.editMode;
     
+    // Disable drag, only resize
     if (this.gridsterOptions.draggable) {
-      this.gridsterOptions.draggable.enabled = this.editMode;
+      this.gridsterOptions.draggable.enabled = false;
     }
     if (this.gridsterOptions.resizable) {
       this.gridsterOptions.resizable.enabled = this.editMode;

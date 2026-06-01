@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { EChartsOption } from 'echarts';
 import { SensorLogsService } from '../../../../../sdk/core/services/sensor-logs.service';
 import { OwnersService } from '../../../../../sdk/core/services/owners.service';
 import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
@@ -112,6 +113,11 @@ export class TelemetryListPage implements OnInit, OnDestroy {
 
     telemetry: TelemetryRow[] = [];
 
+    // Chart
+    chartOption: EChartsOption = {};
+    chartLoading = false;
+    chartVisible = true;
+
     constructor(
         private sensorLogsService: SensorLogsService,
         private route: ActivatedRoute,
@@ -170,6 +176,7 @@ export class TelemetryListPage implements OnInit, OnDestroy {
             }
 
             this.loadTelemetryData();
+            this.loadChartData();
         });
     }
 
@@ -186,6 +193,7 @@ export class TelemetryListPage implements OnInit, OnDestroy {
 
         // Reload data with new time range based on aggregation
         this.loadTelemetryData();
+        this.loadChartData();
     }
 
     loadTelemetryData() {
@@ -223,6 +231,108 @@ export class TelemetryListPage implements OnInit, OnDestroy {
         console.log('Syncing aggregation data...');
         this.currentPage = 1; // Reset to first page
         this.loadTelemetryData();
+        this.loadChartData();
+    }
+
+    toggleChart() {
+        this.chartVisible = !this.chartVisible;
+    }
+
+    loadChartData() {
+        // Need at least one filter for chart endpoint
+        if (!this.ownerIdFilter && !this.projectIdFilter && !this.nodeIdFilter && !this.sensorIdFilter && !this.sensorChannelIdFilter) {
+            this.chartOption = {};
+            return;
+        }
+
+        this.chartLoading = true;
+        const hours = this.getChartHours();
+        let params = `hours=${hours}&maxPoints=200`;
+        if (this.ownerIdFilter) params += `&idOwner=${this.ownerIdFilter}`;
+        if (this.projectIdFilter) params += `&idProject=${this.projectIdFilter}`;
+        if (this.nodeIdFilter) params += `&idNode=${this.nodeIdFilter}`;
+        if (this.sensorIdFilter) params += `&idSensor=${this.sensorIdFilter}`;
+        if (this.sensorChannelIdFilter) params += `&idSensorChannel=${this.sensorChannelIdFilter}`;
+
+        const url = `${environment.apiUrl}/api/sensor-logs/telemetry/chart?${params}`;
+        this.http.get<any>(url).subscribe({
+            next: (res) => {
+                const data = res?.data || res;
+                this.buildChart(data.series || []);
+                this.chartLoading = false;
+            },
+            error: (err) => {
+                console.error('Chart data error:', err);
+                this.chartLoading = false;
+            }
+        });
+    }
+
+    private getChartHours(): number {
+        switch (this.selectedAggregation) {
+            case '5m': return 1;
+            case '15m': return 3;
+            case '1h': return 6;
+            case '1d': return 24;
+            case '1M': return 168; // 7 days
+            default: return 6;
+        }
+    }
+
+    private buildChart(series: any[]) {
+        if (!series || series.length === 0) {
+            this.chartOption = {};
+            return;
+        }
+
+        const legend: string[] = [];
+        const seriesData: any[] = [];
+        const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4'];
+
+        series.forEach((s: any, index: number) => {
+            const name = `${s.metricCode}${s.unit ? ' (' + s.unit + ')' : ''}`;
+            legend.push(name);
+            seriesData.push({
+                name,
+                type: 'line',
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { width: 2 },
+                data: (s.data || []).map((p: any) => [p.ts, p.v])
+            });
+        });
+
+        this.chartOption = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'cross' }
+            },
+            legend: {
+                data: legend,
+                bottom: 0,
+                textStyle: { color: '#aaa', fontSize: 11 }
+            },
+            grid: {
+                left: 50,
+                right: 20,
+                top: 10,
+                bottom: legend.length > 3 ? 50 : 30
+            },
+            xAxis: {
+                type: 'time',
+                axisLabel: { color: '#888', fontSize: 10 },
+                axisLine: { lineStyle: { color: '#555' } },
+                splitLine: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: '#888', fontSize: 10 },
+                axisLine: { show: false },
+                splitLine: { lineStyle: { color: '#333' } }
+            },
+            color: colors,
+            series: seriesData
+        };
     }
 
     // Auto-refresh controls

@@ -22,23 +22,23 @@ export interface TenantApiKeyResponse {
 }
 
 export interface CreateApiKeyResult {
-  success: boolean;
-  message: string;
-  data: TenantApiKeyResponse & { apiKey: string };
-  warning: string;
+  idApiKey: string;
+  label: string;
+  apiKeyPrefix: string;
+  key: string;
+  rateLimitPlan: string;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
 }
 
-export interface TenantApiKeyListResponse {
-  data: TenantApiKeyResponse[];
-  total: number;
-}
+export type TenantApiKeyListResponse = TenantApiKeyResponse[];
 
 export interface CreateTenantApiKeyRequest {
   label: string;
   description?: string;
-  expiresInDays?: number;
+  expiresAt?: string | null;
   rateLimitPlan?: RateLimitPlan;
-  ipWhitelist?: string[];
   idOwner?: string;
 }
 

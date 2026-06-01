@@ -493,9 +493,10 @@
                                    placeholder="e.g. Production, Development">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label text-muted small text-uppercase">Expires In (Days)</label>
-                            <input type="number" class="form-control" [(ngModel)]="newApiKey.expiresInDays"
-                                   name="apiKeyExpires" min="1" max="730">
+                            <label class="form-label text-muted small text-uppercase">Expires At (optional)</label>
+                            <input type="date" class="form-control" [(ngModel)]="newApiKey.expiresAt"
+                                   name="apiKeyExpires">
+                            <small class="text-muted">Leave empty for no expiry</small>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label text-muted small text-uppercase">Rate Limit Plan</label>

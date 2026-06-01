@@ -1,47 +1,41 @@
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="d-flex align-items-center mb-4">
-        <button class="btn btn-outline-default me-3" (click)="goBack()">
+<div class="container-fluid py-3">
+    <!-- Compact Header -->
+    <div class="d-flex align-items-center mb-3">
+        <button class="btn btn-outline-default btn-sm me-3" (click)="goBack()">
             <i class="fa fa-arrow-left"></i>
         </button>
         <div>
             <h1 class="page-header mb-0">
                 {{ isEditMode ? 'Edit Widget' : 'Create Widget from Template' }}
             </h1>
-            <p class="text-muted mb-0">
-                Step {{ currentStep }} of {{ totalSteps }}
-            </p>
+            <small class="text-muted">Step {{ currentStep }} of {{ totalSteps }}</small>
         </div>
         <div class="ms-auto">
-            <button class="btn btn-outline-secondary" (click)="cancel()">Cancel</button>
+            <button class="btn btn-outline-secondary btn-sm" (click)="cancel()">Cancel</button>
         </div>
     </div>
 
-    <!-- Progress Steps -->
-    <card class="mb-4">
-        <card-body class="py-3">
-            <div class="d-flex justify-content-between">
-                <div class="text-center flex-fill" *ngFor="let step of steps; let i = index">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center"
-                             [class.bg-theme]="currentStep >= i + 1"
-                             [class.bg-secondary]="currentStep < i + 1"
-                             [class.bg-opacity-25]="currentStep < i + 1"
-                             style="width: 40px; height: 40px; cursor: pointer;"
-                             (click)="goToStep(i + 1)">
-                            <i class="fa" 
-                               [class.fa-check]="currentStep > i + 1" 
-                               [class.text-white]="currentStep >= i + 1"
-                               [ngClass]="currentStep <= i + 1 ? step.icon : ''"></i>
-                        </div>
-                    </div>
-                    <div [class.text-theme]="currentStep === i + 1" 
-                         [class.fw-semibold]="currentStep === i + 1"
-                         class="small">{{ step.label }}</div>
+    <!-- Compact Progress Steps -->
+    <div class="d-flex justify-content-between align-items-center mb-3 px-4 py-2 wizard-steps-card">
+        <div class="text-center flex-fill" *ngFor="let step of steps; let i = index">
+            <div class="d-flex align-items-center justify-content-center mb-1">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     [class.bg-theme]="currentStep >= i + 1"
+                     [class.bg-secondary]="currentStep < i + 1"
+                     [class.bg-opacity-25]="currentStep < i + 1"
+                     style="width: 36px; height: 36px; cursor: pointer;"
+                     (click)="goToStep(i + 1)">
+                    <i class="fa" 
+                       [class.fa-check]="currentStep > i + 1" 
+                       [class.text-white]="currentStep >= i + 1"
+                       [ngClass]="currentStep <= i + 1 ? step.icon : ''"></i>
                 </div>
             </div>
-        </card-body>
-    </card>
+            <div [class.text-theme]="currentStep === i + 1" 
+                 [class.fw-semibold]="currentStep === i + 1"
+                 class="small">{{ step.label }}</div>
+        </div>
+    </div>
 
     <!-- Step Content -->
     <div class="wizard-content">
@@ -88,24 +82,24 @@
                         </card-header>
                         <card-body>
                             <div class="row g-3" *ngIf="selectedCategoryId">
-                                <div class="col-md-4" *ngFor="let template of availableTemplates">
+                                <div class="col-md-4 col-lg-3" *ngFor="let template of availableTemplates">
                                     <card class="h-100 cursor-pointer" 
                                           [class.border-theme]="selectedTemplate?.id === template.id"
                                           (click)="selectTemplate(template)">
                                         <card-body class="text-center p-3">
                                             <!-- SVG Preview (sanitized) -->
-                                            <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;"
+                                            <div class="mb-2 template-svg-preview"
                                                  [innerHTML]="getSafeHtml(template.previewSvg)"
                                                  *ngIf="template.previewSvg">
                                             </div>
-                                            <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;" *ngIf="!template.previewSvg">
-                                                <i class="fa {{ template.icon }} fa-3x text-muted"></i>
+                                            <div class="mb-2" style="height: 64px; display: flex; align-items: center; justify-content: center;" *ngIf="!template.previewSvg">
+                                                <i class="fa {{ template.icon }} fa-2x text-muted"></i>
                                             </div>
                                             
-                                            <h6 class="mb-1">{{ template.name }}</h6>
-                                            <p class="text-muted small mb-0">{{ template.description }}</p>
+                                            <h6 class="mb-1" style="font-size: 12px;">{{ template.name }}</h6>
+                                            <p class="text-muted mb-0" style="font-size: 11px;">{{ template.description }}</p>
                                         </card-body>
-                                        <card-footer class="bg-none text-center py-2" *ngIf="selectedTemplate?.id === template.id">
+                                        <card-footer class="bg-none text-center py-1" *ngIf="selectedTemplate?.id === template.id">
                                             <i class="fa fa-check-circle text-success me-1"></i>
                                             <span class="text-success small">Selected</span>
                                         </card-footer>
@@ -163,7 +157,7 @@
                                 <select class="form-select" [(ngModel)]="selectedNodeId" (ngModelChange)="onNodeChange()">
                                     <option value="">-- Select Node --</option>
                                     <option *ngFor="let node of nodes" [value]="node.idNode">
-                                        {{ node.code }}
+                                        {{ node.code }}{{ node.name ? ' — ' + node.name : '' }}{{ node.address ? ' (' + node.address + ')' : (node.city ? ' (' + node.city + ')' : '') }}
                                     </option>
                                 </select>
                             </div>
@@ -472,26 +466,24 @@
         </div>
     </div>
 
-    <!-- Footer Navigation -->
-    <card class="mt-4">
-        <card-body class="d-flex justify-content-between py-3">
-            <button class="btn btn-outline-secondary" (click)="prevStep()" [disabled]="currentStep === 1">
-                <i class="fa fa-arrow-left me-2"></i>
-                Previous
+    <!-- Footer Navigation - sticky -->
+    <div class="wizard-footer d-flex justify-content-between">
+        <button class="btn btn-outline-secondary btn-sm" (click)="prevStep()" [disabled]="currentStep === 1">
+            <i class="fa fa-arrow-left me-2"></i>
+            Previous
+        </button>
+        
+        <div>
+            <button class="btn btn-theme btn-sm" (click)="nextStep()" *ngIf="currentStep < totalSteps" [disabled]="!canProceed">
+                Next
+                <i class="fa fa-arrow-right ms-2"></i>
             </button>
             
-            <div>
-                <button class="btn btn-theme" (click)="nextStep()" *ngIf="currentStep < totalSteps" [disabled]="!canProceed">
-                    Next
-                    <i class="fa fa-arrow-right ms-2"></i>
-                </button>
-                
-                <button class="btn btn-success" (click)="saveWidget()" *ngIf="currentStep === totalSteps" 
-                        [disabled]="!canProceed || saving">
-                    <i class="fa me-2" [class.fa-save]="!saving" [class.fa-spinner]="saving" [class.fa-spin]="saving"></i>
-                    {{ saving ? 'Saving...' : 'Save Widget' }}
-                </button>
-            </div>
-        </card-body>
-    </card>
+            <button class="btn btn-success btn-sm" (click)="saveWidget()" *ngIf="currentStep === totalSteps" 
+                    [disabled]="!canProceed || saving">
+                <i class="fa me-2" [class.fa-save]="!saving" [class.fa-spinner]="saving" [class.fa-spin]="saving"></i>
+                {{ saving ? 'Saving...' : 'Save Widget' }}
+            </button>
+        </div>
+    </div>
 </div>

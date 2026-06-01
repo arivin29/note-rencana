@@ -2,6 +2,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 16px;
   
   // Embedded dashboard takes full space
   app-dashboard-view {

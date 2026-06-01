@@ -1,0 +1,387 @@
+<div class="d-flex align-items-center mb-4">
+    <div>
+        <ul class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a routerLink="/iot/dashboard">Home</a></li>
+            <li class="breadcrumb-item active">Developer Portal</li>
+        </ul>
+        <h1 class="page-header mb-0">API Developer Portal</h1>
+    </div>
+</div>
+
+<!-- API Key Selector Bar -->
+<div class="api-key-bar mb-4">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <label class="fw-bold small text-nowrap mb-0">
+                <i class="bi bi-key me-1"></i> API Key:
+            </label>
+            <input type="text" class="form-control form-control-sm" style="max-width: 400px;"
+                   [(ngModel)]="selectedApiKey"
+                   placeholder="Paste your API key here or select from My Keys tab">
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-dark">
+                <i class="bi bi-server me-1"></i> {{ baseUrl }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'explorer'" (click)="activeTab = 'explorer'" href="javascript:;">
+            <i class="bi bi-braces me-1"></i> API Explorer
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'keys'" (click)="activeTab = 'keys'" href="javascript:;">
+            <i class="bi bi-shield-lock me-1"></i> My API Keys
+            <span *ngIf="apiKeys.length" class="badge bg-theme ms-1">{{ apiKeys.length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'guide'" (click)="activeTab = 'guide'" href="javascript:;">
+            <i class="bi bi-book me-1"></i> Guide
+        </a>
+    </li>
+</ul>
+
+<!-- Tab: API Explorer (Swagger-like) -->
+<div *ngIf="activeTab === 'explorer'">
+    <div *ngFor="let section of apiSections" class="api-section mb-3">
+        <div class="section-header" (click)="section.expanded = !section.expanded">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi" [ngClass]="section.icon"></i>
+                <h6 class="mb-0 fw-bold">{{ section.title }}</h6>
+                <small class="text-muted">— {{ section.description }}</small>
+                <span class="badge bg-secondary bg-opacity-25 ms-2">{{ section.endpoints.length }}</span>
+            </div>
+            <i class="bi" [ngClass]="section.expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </div>
+
+        <div *ngIf="section.expanded" class="section-body">
+            <div *ngFor="let ep of section.endpoints" class="endpoint-card" [class.endpoint-expanded]="ep.expanded">
+                <!-- Endpoint Header -->
+                <div class="endpoint-header" (click)="toggleEndpoint(ep)">
+                    <span class="method-badge" [ngClass]="getMethodClass(ep.method)">{{ ep.method }}</span>
+                    <code class="endpoint-path">{{ ep.path }}</code>
+                    <span class="endpoint-summary">{{ ep.summary }}</span>
+                    <i class="bi ms-auto" [ngClass]="ep.expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                </div>
+
+                <!-- Expanded Content -->
+                <div *ngIf="ep.expanded" class="endpoint-body">
+                    <p class="text-muted small mb-3">{{ ep.description }}</p>
+
+                    <!-- Parameters -->
+                    <div *ngIf="ep.params.length > 0" class="mb-3">
+                        <h6 class="small fw-bold text-uppercase mb-2">Parameters</h6>
+                        <div class="params-grid">
+                            <div *ngFor="let p of ep.params" class="param-row">
+                                <div class="param-info">
+                                    <code class="param-name">{{ p.name }}</code>
+                                    <span class="badge bg-light text-dark">{{ p.type }}</span>
+                                    <span *ngIf="p.required" class="badge bg-danger bg-opacity-15 text-danger">required</span>
+                                    <span *ngIf="!p.required" class="badge bg-secondary bg-opacity-10 text-muted">optional</span>
+                                    <span class="param-in">({{ p.in }})</span>
+                                </div>
+                                <div class="param-desc small text-muted">{{ p.description }}</div>
+                                <input type="text" class="form-control form-control-sm param-input"
+                                       [(ngModel)]="p.value"
+                                       [placeholder]="p.description">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Try It -->
+                    <div class="try-it-section">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <button class="btn btn-sm btn-theme" (click)="executeRequest(ep)" [disabled]="ep.testing">
+                                <span *ngIf="ep.testing" class="spinner-border spinner-border-sm me-1"></span>
+                                <i *ngIf="!ep.testing" class="bi bi-play-fill me-1"></i>
+                                {{ ep.testing ? 'Sending...' : 'Execute' }}
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="copyToClipboard(getCurlCommand(ep), ep.path)">
+                                <i class="bi" [ngClass]="copiedText === ep.path ? 'bi-check' : 'bi-clipboard'"></i> cURL
+                            </button>
+                            <span class="small text-muted ms-auto">
+                                {{ buildRequestUrl(ep) }}
+                            </span>
+                        </div>
+
+                        <!-- Response -->
+                        <div *ngIf="ep.testResponse || ep.responseExample" class="response-section">
+                            <div class="response-header d-flex align-items-center gap-2 mb-1">
+                                <span class="small fw-bold">
+                                    {{ ep.testResponse ? 'Response' : 'Example Response' }}
+                                </span>
+                                <span *ngIf="ep.testStatus" class="badge" [ngClass]="getStatusClass(ep.testStatus)">
+                                    {{ ep.testStatus }}
+                                </span>
+                                <span *ngIf="ep.testTime" class="small text-muted">
+                                    {{ ep.testTime }}ms
+                                </span>
+                            </div>
+                            <pre class="response-body"><code>{{ ep.testResponse || ep.responseExample }}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab: My API Keys -->
+<div *ngIf="activeTab === 'keys'">
+    <card>
+        <card-header class="d-flex align-items-center py-3">
+            <div>
+                <h5 class="mb-0">API Keys</h5>
+                <small class="text-muted">Create and manage keys to access the External API</small>
+            </div>
+            <button *ngIf="!showCreateKey" class="btn btn-sm btn-theme ms-auto" (click)="showCreateKey = true">
+                <i class="bi bi-plus-circle me-1"></i> Create New Key
+            </button>
+        </card-header>
+        <card-body>
+            <!-- Create Key Form -->
+            <div *ngIf="showCreateKey" class="create-key-form mb-4">
+                <div *ngIf="createdKeyResult" class="alert alert-success">
+                    <h6 class="alert-heading"><i class="bi bi-check-circle me-1"></i> Key Created Successfully!</h6>
+                    <p class="mb-2 small">Copy this key now — it will not be shown again:</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <code class="flex-grow-1 bg-dark text-success p-2 rounded d-block" style="word-break: break-all;">{{ createdKeyResult }}</code>
+                        <button class="btn btn-sm btn-outline-success" (click)="copyToClipboard(createdKeyResult!, 'newkey')">
+                            <i class="bi" [ngClass]="copiedText === 'newkey' ? 'bi-check' : 'bi-clipboard'"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-success" (click)="selectedApiKey = createdKeyResult!; resetCreateForm()">
+                            Use This Key
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" (click)="resetCreateForm()">Close</button>
+                    </div>
+                </div>
+
+                <div *ngIf="!createdKeyResult" class="border rounded p-3">
+                    <h6 class="fw-bold mb-3">Create New API Key</h6>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold">Label <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" [(ngModel)]="newKeyForm.label"
+                                   placeholder="e.g., Production Backend">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold">Rate Limit Plan</label>
+                            <select class="form-select form-select-sm" [(ngModel)]="newKeyForm.rateLimitPlan">
+                                <option value="basic">Basic (30 req/min)</option>
+                                <option value="standard">Standard (60 req/min)</option>
+                                <option value="premium">Premium (120 req/min)</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold">Expires At (optional)</label>
+                            <input type="date" class="form-control form-control-sm" [(ngModel)]="newKeyForm.expiresAt"
+                                   placeholder="Leave empty for no expiry">
+                            <small class="text-muted">Leave empty for no expiration</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold">Description</label>
+                            <input type="text" class="form-control form-control-sm" [(ngModel)]="newKeyForm.description"
+                                   placeholder="Optional note">
+                        </div>
+                        <div class="col-12 d-flex gap-2">
+                            <button class="btn btn-sm btn-theme" (click)="createApiKey()" [disabled]="!newKeyForm.label || creatingKey">
+                                <span *ngIf="creatingKey" class="spinner-border spinner-border-sm me-1"></span>
+                                {{ creatingKey ? 'Creating...' : 'Create Key' }}
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="resetCreateForm()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keys List -->
+            <div *ngIf="loadingKeys" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-theme"></div>
+                <span class="ms-2 text-muted">Loading keys...</span>
+            </div>
+
+            <div *ngIf="!loadingKeys && apiKeys.length === 0 && !showCreateKey" class="text-center py-4 text-muted">
+                <i class="bi bi-key fs-1 d-block mb-2 text-muted"></i>
+                <p class="mb-2">No API keys yet</p>
+                <button class="btn btn-theme btn-sm" (click)="showCreateKey = true">Create Your First Key</button>
+            </div>
+
+            <div *ngIf="!loadingKeys && apiKeys.length > 0" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>Key</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Usage Today</th>
+                            <th>Expires</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let key of apiKeys">
+                            <td>
+                                <span class="fw-medium">{{ key.label }}</span>
+                                <br *ngIf="key.description">
+                                <small *ngIf="key.description" class="text-muted">{{ key.description }}</small>
+                            </td>
+                            <td><code class="small">{{ key.apiKeyPrefix }}•••••••</code></td>
+                            <td>
+                                <span class="badge" [ngClass]="{
+                                    'bg-secondary bg-opacity-15 text-secondary': key.rateLimitPlan === 'basic',
+                                    'bg-primary bg-opacity-15 text-primary': key.rateLimitPlan === 'standard',
+                                    'bg-warning bg-opacity-15 text-warning': key.rateLimitPlan === 'premium'
+                                }">{{ key.rateLimitPlan }}</span>
+                            </td>
+                            <td>
+                                <span class="badge" [ngClass]="key.isActive ? 'bg-success bg-opacity-15 text-success' : 'bg-danger bg-opacity-15 text-danger'">
+                                    {{ key.isActive ? 'Active' : 'Revoked' }}
+                                </span>
+                            </td>
+                            <td>{{ key.requestsToday | number }}</td>
+                            <td class="small">{{ key.expiresAt ? (key.expiresAt | date:'mediumDate') : 'Never' }}</td>
+                            <td>
+                                <button *ngIf="key.isActive" class="btn btn-sm btn-outline-danger" (click)="revokeKey(key.idApiKey)">
+                                    Revoke
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </card-body>
+    </card>
+</div>
+
+<!-- Tab: Guide -->
+<div *ngIf="activeTab === 'guide'">
+    <div class="row">
+        <div class="col-lg-8">
+            <card class="mb-4">
+                <card-body>
+                    <h4 class="mb-3"><i class="bi bi-rocket-takeoff text-theme me-2"></i>Quick Start</h4>
+                    <div class="steps-list">
+                        <div class="step-item">
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong>Create an API Key</strong>
+                                <p class="text-muted mb-0 small">Go to "My API Keys" tab and create a new key.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-number">2</span>
+                            <div>
+                                <strong>Add the header to every request</strong>
+                                <code class="d-block mt-1">X-API-Key: iot_live_xxxxxxxxxx</code>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong>Call any endpoint</strong>
+                                <code class="d-block mt-1">GET {{ baseUrl }}/external-api/v1/info</code>
+                            </div>
+                        </div>
+                    </div>
+                </card-body>
+            </card>
+
+            <card class="mb-4">
+                <card-body>
+                    <h5 class="mb-3"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Rate Limits &amp; Errors</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-3">
+                            <thead><tr><th>Plan</th><th>Req/Min</th><th>Req/Day</th></tr></thead>
+                            <tbody>
+                                <tr><td>Basic</td><td>30</td><td>5,000</td></tr>
+                                <tr><td>Standard</td><td>60</td><td>20,000</td></tr>
+                                <tr><td>Premium</td><td>120</td><td>100,000</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h6 class="fw-bold mt-4 mb-2">Error Codes</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
+                                <tr><td><code>403</code></td><td>Key revoked, expired, or IP blocked</td></tr>
+                                <tr><td><code>429</code></td><td>Rate limit exceeded — wait and retry</td></tr>
+                                <tr><td><code>500</code></td><td>Server error — contact support</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </card-body>
+            </card>
+
+            <card>
+                <card-body>
+                    <h5 class="mb-3"><i class="bi bi-terminal text-theme me-2"></i>Code Examples</h5>
+                    <h6 class="fw-bold mb-2">cURL</h6>
+                    <pre class="bg-dark text-light rounded p-3 small mb-4"><code>curl -H "X-API-Key: YOUR_KEY" \
+  {{ baseUrl }}/external-api/v1/nodes?status=active&amp;limit=10</code></pre>
+
+                    <h6 class="fw-bold mb-2">Python</h6>
+                    <pre class="bg-dark text-light rounded p-3 small mb-4"><code>import requests
+
+API_KEY = "your_key"
+BASE = "{{ baseUrl }}/external-api/v1"
+headers = {{ '{' }}"X-API-Key": API_KEY{{ '}' }}
+
+nodes = requests.get(f"{{ '{' }}BASE{{ '}' }}/nodes", headers=headers).json()
+print(f"Found {{ '{' }}nodes['total']{{ '}' }} nodes")</code></pre>
+
+                    <h6 class="fw-bold mb-2">JavaScript (fetch)</h6>
+                    <pre class="bg-dark text-light rounded p-3 small mb-0"><code>const API_KEY = 'your_key';
+const BASE = '{{ baseUrl }}/external-api/v1';
+const headers = {{ '{' }} 'X-API-Key': API_KEY {{ '}' }};
+
+const res = await fetch(`${{ '{' }}BASE{{ '}' }}/sensor-data/latest?sensorIds=uuid1`, {{ '{' }} headers {{ '}' }});
+const data = await res.json();
+console.log(data);</code></pre>
+                </card-body>
+            </card>
+        </div>
+
+        <div class="col-lg-4">
+            <card class="mb-4">
+                <card-body>
+                    <h5 class="mb-3"><i class="bi bi-server text-theme me-2"></i>Base URL</h5>
+                    <div class="bg-dark text-light rounded p-3">
+                        <code class="text-success">{{ baseUrl }}/external-api/v1</code>
+                    </div>
+                </card-body>
+            </card>
+            <card class="mb-4">
+                <card-body>
+                    <h5 class="mb-3"><i class="bi bi-shield text-theme me-2"></i>Authentication</h5>
+                    <p class="small text-muted mb-2">Include in every request header:</p>
+                    <div class="bg-dark text-light rounded p-3">
+                        <code class="text-info">X-API-Key: your_key_here</code>
+                    </div>
+                </card-body>
+            </card>
+            <card>
+                <card-body>
+                    <h5 class="mb-3"><i class="bi bi-list-check text-theme me-2"></i>Resources</h5>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Info</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Projects</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Nodes</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Sensors</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Sensor Data (time-series)</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Alerts</li>
+                    </ul>
+                </card-body>
+            </card>
+        </div>
+    </div>
+</div>

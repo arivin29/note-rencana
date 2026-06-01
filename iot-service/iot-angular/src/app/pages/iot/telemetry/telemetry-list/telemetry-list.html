@@ -193,6 +193,34 @@
             </div>
         </div>
 
+        <!-- Chart Section -->
+        <div class="mb-3" *ngIf="chartVisible && (ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter)">
+            <div class="d-flex align-items-center mb-2">
+                <span class="text-muted small fw-semibold">
+                    <i class="fa fa-chart-area me-1"></i>Trend Chart
+                </span>
+                <button class="btn btn-sm btn-outline-default ms-auto py-0 px-2" (click)="toggleChart()">
+                    <i class="fa fa-eye-slash"></i>
+                </button>
+            </div>
+            <div class="border rounded-3 p-2 bg-body bg-opacity-10" style="height: 220px;">
+                <div *ngIf="chartLoading" class="d-flex align-items-center justify-content-center h-100">
+                    <div class="spinner-border spinner-border-sm text-theme"></div>
+                    <span class="ms-2 text-muted small">Loading chart...</span>
+                </div>
+                <div echarts [options]="chartOption" *ngIf="!chartLoading && chartOption.series"
+                    style="width: 100%; height: 100%;"></div>
+                <div *ngIf="!chartLoading && !chartOption.series" class="d-flex align-items-center justify-content-center h-100 text-muted small">
+                    No chart data available
+                </div>
+            </div>
+        </div>
+        <div class="mb-2" *ngIf="!chartVisible && (ownerIdFilter || projectIdFilter || nodeIdFilter || sensorIdFilter || sensorChannelIdFilter)">
+            <button class="btn btn-sm btn-outline-default py-0 px-2" (click)="toggleChart()">
+                <i class="fa fa-chart-area me-1"></i>Show Chart
+            </button>
+        </div>
+
         <div class="table-responsive">
             <!-- Loading State -->
             <div *ngIf="loading" class="text-center py-5">

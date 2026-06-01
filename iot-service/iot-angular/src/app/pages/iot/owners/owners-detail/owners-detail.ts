@@ -220,7 +220,7 @@ export class OwnersDetailPage implements OnInit {
   apiKeysError = '';
   apiKeysMessage = '';
   showCreateApiKeyForm = false;
-  newApiKey: CreateTenantApiKeyRequest = { label: '', description: '', expiresInDays: 365, rateLimitPlan: 'basic' };
+  newApiKey: CreateTenantApiKeyRequest = { label: '', description: '', expiresAt: null, rateLimitPlan: 'basic' };
   generatedApiKey = '';
   showGeneratedKey = false;
 
@@ -729,7 +729,7 @@ export class OwnersDetailPage implements OnInit {
       })
       .subscribe({
         next: (response) => {
-          this.ownerUsers = response.data || [];
+          this.ownerUsers = Array.isArray(response) ? response : [];
           this.loadingUsers = false;
         },
         error: (err) => {
@@ -822,7 +822,7 @@ export class OwnersDetailPage implements OnInit {
 
     this.tenantApiKeysService.findAll(this.ownerId).subscribe({
       next: (response) => {
-        this.apiKeys = response.data || [];
+        this.apiKeys = Array.isArray(response) ? response : [];
         this.loadingApiKeys = false;
       },
       error: (err) => {
@@ -836,7 +836,7 @@ export class OwnersDetailPage implements OnInit {
   toggleCreateApiKeyForm(): void {
     this.showCreateApiKeyForm = !this.showCreateApiKeyForm;
     if (this.showCreateApiKeyForm) {
-      this.newApiKey = { label: '', description: '', expiresInDays: 365, rateLimitPlan: 'basic' };
+      this.newApiKey = { label: '', description: '', expiresAt: null, rateLimitPlan: 'basic' };
       this.generatedApiKey = '';
       this.showGeneratedKey = false;
     }
@@ -852,9 +852,9 @@ export class OwnersDetailPage implements OnInit {
 
     this.tenantApiKeysService.create({ ...this.newApiKey, idOwner: this.ownerId }).subscribe({
       next: (result) => {
-        this.generatedApiKey = result.data.apiKey;
+        this.generatedApiKey = result.key;
         this.showGeneratedKey = true;
-        this.apiKeysMessage = result.warning || 'API Key generated! Copy it now — it won\'t be shown again.';
+        this.apiKeysMessage = 'API Key generated! Copy it now — it won\'t be shown again.';
         this.loadApiKeys();
       },
       error: (err: any) => {
@@ -907,9 +907,9 @@ export class OwnersDetailPage implements OnInit {
 
     this.tenantApiKeysService.regenerate(key.idApiKey).subscribe({
       next: (result) => {
-        this.generatedApiKey = result.data.apiKey;
+        this.generatedApiKey = result.key;
         this.showGeneratedKey = true;
-        this.apiKeysMessage = result.warning || 'New API Key generated! Copy it now.';
+        this.apiKeysMessage = 'New API Key generated! Copy it now.';
         this.loadApiKeys();
       },
       error: (err: any) => {

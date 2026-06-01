@@ -3,6 +3,8 @@ import { Router } from '@angular/router';
 import { NgForm } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { User } from '../../../models/auth.model';
+import { OwnersService } from '../../../../sdk/core/services/owners.service';
+import { OwnerDetailResponseDto } from '../../../../sdk/core/models/owner-detail-response-dto';
 
 @Component({
   selector: 'app-profile',
@@ -12,34 +14,36 @@ import { User } from '../../../models/auth.model';
 })
 export class ProfileComponent implements OnInit {
   user: User | null = null;
-  loading: boolean = false;
-  saving: boolean = false;
-  
-  // Edit mode flags
-  editingProfile: boolean = false;
-  editingPassword: boolean = false;
-  
-  // Profile edit form
-  editForm = {
-    name: '',
-    email: ''
-  };
-  
-  // Password change form
-  passwordForm = {
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  };
-  
+  ownerDetail: OwnerDetailResponseDto | null = null;
+  loading = true;
+  saving = false;
+  activeTab: 'profile' | 'security' | 'sessions' | 'organization' = 'profile';
+
+  // Edit states
+  editingProfile = false;
+  editForm = { name: '', email: '' };
+
+  // Password
+  editingPassword = false;
+  passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' };
+  showCurrentPassword = false;
+  showNewPassword = false;
+
   // Messages
-  successMessage: string = '';
-  errorMessage: string = '';
-  passwordSuccessMessage: string = '';
-  passwordErrorMessage: string = '';
+  successMessage = '';
+  errorMessage = '';
+  passwordSuccessMessage = '';
+  passwordErrorMessage = '';
+
+  // Sessions mock
+  activeSessions = [
+    { device: 'Chrome on macOS', ip: '192.168.1.100', location: 'Jakarta, ID', lastActive: 'Now', current: true },
+    { device: 'Mobile App (iOS)', ip: '103.28.12.45', location: 'Jambi, ID', lastActive: '2 hours ago', current: false }
+  ];
 
   constructor(
     private authService: AuthService,
+    private ownersService: OwnersService,
     private router: Router
   ) {}
 
@@ -47,9 +51,6 @@ export class ProfileComponent implements OnInit {
     this.loadUserProfile();
   }
 
-  /**
-   * Load current user profile
-   */
   loadUserProfile(): void {
     this.loading = true;
     this.authService.getCurrentUser().subscribe({
@@ -58,86 +59,65 @@ export class ProfileComponent implements OnInit {
         this.editForm.name = user.name;
         this.editForm.email = user.email;
         this.loading = false;
+        if (user.idOwner) {
+          this.loadOwnerDetail(user.idOwner);
+        }
       },
-      error: (error) => {
-        console.error('Error loading profile:', error);
+      error: () => {
         this.errorMessage = 'Failed to load profile';
         this.loading = false;
       }
     });
   }
 
-  /**
-   * Toggle edit profile mode
-   */
-  toggleEditProfile(): void {
-    if (this.editingProfile) {
-      // Cancel editing
-      if (this.user) {
-        this.editForm.name = this.user.name;
-        this.editForm.email = this.user.email;
-      }
-    }
-    this.editingProfile = !this.editingProfile;
-    this.successMessage = '';
-    this.errorMessage = '';
+  loadOwnerDetail(ownerId: string): void {
+    this.ownersService.ownersControllerFindOneDetailed({ id: ownerId }).subscribe({
+      next: (detail: any) => {
+        this.ownerDetail = typeof detail === 'string' ? JSON.parse(detail) : detail;
+      },
+      error: () => {}
+    });
   }
 
-  /**
-   * Toggle edit password mode
-   */
+  toggleEditProfile(): void {
+    if (this.editingProfile && this.user) {
+      this.editForm.name = this.user.name;
+      this.editForm.email = this.user.email;
+    }
+    this.editingProfile = !this.editingProfile;
+    this.clearMessages();
+  }
+
   toggleEditPassword(): void {
     if (this.editingPassword) {
-      // Cancel editing
-      this.passwordForm = {
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      };
+      this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' };
     }
     this.editingPassword = !this.editingPassword;
     this.passwordSuccessMessage = '';
     this.passwordErrorMessage = '';
   }
 
-  /**
-   * Save profile changes
-   */
   saveProfile(form: NgForm): void {
-    if (form.invalid) {
-      return;
-    }
-
+    if (form.invalid) return;
     this.saving = true;
-    this.successMessage = '';
-    this.errorMessage = '';
+    this.clearMessages();
 
-    // TODO: Implement update profile API call
-    // For now, just simulate success
-    setTimeout(() => {
-      if (this.user) {
-        this.user.name = this.editForm.name;
-        this.user.email = this.editForm.email;
+    this.authService.updateProfile(this.editForm).subscribe({
+      next: (user) => {
+        this.user = user;
+        this.successMessage = 'Profile updated successfully';
+        this.editingProfile = false;
+        this.saving = false;
+      },
+      error: (err) => {
+        this.errorMessage = err.message || 'Failed to update profile';
+        this.saving = false;
       }
-      this.successMessage = 'Profile updated successfully!';
-      this.editingProfile = false;
-      this.saving = false;
-    }, 1000);
+    });
   }
 
-  /**
-   * Change password
-   */
   changePassword(form: NgForm): void {
-    if (form.invalid) {
-      return;
-    }
-
-    if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
-      this.passwordErrorMessage = 'Passwords do not match';
-      return;
-    }
-
+    if (form.invalid || this.passwordForm.newPassword !== this.passwordForm.confirmPassword) return;
     this.saving = true;
     this.passwordSuccessMessage = '';
     this.passwordErrorMessage = '';
@@ -147,47 +127,56 @@ export class ProfileComponent implements OnInit {
       newPassword: this.passwordForm.newPassword
     }).subscribe({
       next: () => {
-        this.passwordSuccessMessage = 'Password changed successfully!';
-        this.passwordForm = {
-          oldPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        };
+        this.passwordSuccessMessage = 'Password updated successfully';
+        this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' };
         this.editingPassword = false;
         this.saving = false;
       },
-      error: (error) => {
-        this.passwordErrorMessage = error.message || 'Failed to change password';
+      error: (err) => {
+        this.passwordErrorMessage = err.message || 'Failed to change password. Check your current password.';
         this.saving = false;
       }
     });
   }
 
-  /**
-   * Get role badge class
-   */
-  getRoleBadgeClass(): string {
-    if (!this.user) return 'badge-secondary';
-    return this.user.role === 'admin' ? 'badge-danger' : 'badge-primary';
+  get passwordStrength(): { label: string; class: string; percent: number } {
+    const pw = this.passwordForm.newPassword;
+    if (!pw) return { label: '', class: '', percent: 0 };
+    let score = 0;
+    if (pw.length >= 6) score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    if (score <= 2) return { label: 'Weak', class: 'bg-danger', percent: 33 };
+    if (score <= 3) return { label: 'Medium', class: 'bg-warning', percent: 66 };
+    return { label: 'Strong', class: 'bg-success', percent: 100 };
   }
 
-  /**
-   * Get status badge class
-   */
-  getStatusBadgeClass(): string {
-    if (!this.user) return 'badge-secondary';
-    return this.user.isActive ? 'badge-success' : 'badge-warning';
+  get accountAge(): string {
+    if (!this.user?.createdAt) return '-';
+    const days = Math.floor((Date.now() - new Date(this.user.createdAt).getTime()) / 86400000);
+    if (days < 30) return `${days} days`;
+    if (days < 365) return `${Math.floor(days / 30)} months`;
+    return `${Math.floor(days / 365)} year(s)`;
   }
 
-  /**
-   * Format date
-   */
-  formatDate(date: Date | undefined): string {
+  get roleLabel(): string {
+    if (!this.user) return '-';
+    return this.user.role === 'admin' ? 'Super Administrator' : 'Tenant User';
+  }
+
+  formatDate(date: Date | string | undefined): string {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      year: 'numeric', month: 'short', day: 'numeric'
     });
   }
+
+  private clearMessages(): void {
+    this.successMessage = '';
+    this.errorMessage = '';
+  }
 }
+

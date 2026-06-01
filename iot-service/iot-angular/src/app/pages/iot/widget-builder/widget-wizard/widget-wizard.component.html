@@ -534,7 +534,7 @@
                             <select class="form-select form-select-sm" [(ngModel)]="selectedNodeId" (ngModelChange)="onNodeChange()">
                                 <option value="">All Nodes</option>
                                 <option *ngFor="let node of nodesList" [value]="node.id">
-                                    {{ node.label }} <span *ngIf="node.code">({{ node.code }})</span>
+                                    {{ node.label }}{{ node.code ? ' (' + node.code + ')' : '' }}{{ node.address ? ' — ' + node.address : '' }}
                                 </option>
                             </select>
                         </div>

@@ -180,6 +180,18 @@ export class AuthService {
   }
 
   /**
+   * Update current user profile
+   */
+  updateProfile(data: { name?: string; email?: string }): Observable<User> {
+    return this.http.patch<User>(`${this.API_URL}/profile`, data).pipe(
+      tap(user => {
+        this.setUser(user);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
    * Get current user's role
    * @returns 'admin' | 'tenant' | 'unknown'
    */

@@ -34,6 +34,7 @@ export class AppMenuService {
 			{ 'is_divider': true },
 			{ 'text': 'Help & Support', 'is_header': true },
 			{ 'path': '/iot/document', 'icon': 'bi bi-book', 'text': 'Documentation', 'badge': 'NEW', 'badge_bg': 'bg-primary' },
+			{ 'path': '/developer', 'icon': 'bi bi-braces', 'text': 'API Developer Portal', 'badge': 'NEW', 'badge_bg': 'bg-info' },
 			// { 'icon': 'bi bi-envelope', 'text': 'Email', 'children': [
 			// 		{ 'path': '/template/email/inbox', 'action': 'Inbox', 'text': 'Inbox' },
 			// 		{ 'path': '/template/email/compose', 'action': 'Compose', 'text': 'Compose' },
