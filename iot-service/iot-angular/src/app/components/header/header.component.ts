@@ -3,13 +3,16 @@ import { Router } from '@angular/router';
 import { AppSettings } from '../../service/app-settings.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/auth.model';
+import { NotificationsService } from '../../../sdk/core/services/notifications.service';
 
 declare var slideToggle: any;
 
 interface NotificationData {
+  id: string;
   icon: string;
   title: string;
   time: string;
+  isRead: boolean;
 }
 
 @Component({
@@ -25,38 +28,24 @@ export class HeaderComponent implements OnInit {
 	isAuthenticated: boolean = false;
 	searchQuery: string = '';
 	
-	notificationData : NotificationData[] = [{
-		icon: 'bi bi-bag text-theme',
-		title: 'NEW ORDER RECEIVED ($1,299)',
-		time: 'JUST NOW'
-	},{
-		icon: 'bi bi-person-circle text-theme',
-		title: '3 NEW ACCOUNT CREATED',
-		time: '2 MINUTES AGO'
-	},{
-		icon: 'bi bi-gear text-theme',
-		title: 'SETUP COMPLETED',
-		time: '3 MINUTES AGO'
-	},{
-		icon: 'bi bi-grid text-theme',
-		title: 'WIDGET INSTALLATION DONE',
-		time: '5 MINUTES AGO'
-	},{
-		icon: 'bi bi-credit-card text-theme',
-		title: 'PAYMENT METHOD ENABLED',
-		time: '10 MINUTES AGO'
-	}];
+	notificationData: NotificationData[] = [];
+	unreadCount: number = 0;
 	
 	constructor(
 		public appSettings: AppSettings,
 		private authService: AuthService,
-		private router: Router
+		private router: Router,
+		private notificationsService: NotificationsService
 	) { }
 	
 	ngOnInit(): void {
 		// Subscribe to auth state
 		this.authService.currentUser$.subscribe(user => {
 			this.currentUser = user;
+			if (user) {
+				this.loadNotifications();
+				this.loadUnreadCount();
+			}
 		});
 		
 		this.authService.isAuthenticated$.subscribe(isAuth => {
@@ -68,6 +57,102 @@ export class HeaderComponent implements OnInit {
 		if (savedMinified === 'true') {
 			this.appSettings.appSidebarMinified = true;
 		}
+	}
+
+	/**
+	 * Load notifications from API
+	 */
+	loadNotifications(): void {
+		this.notificationsService.notificationsControllerFindAll$Response({ limit: 5, isRead: false }).subscribe({
+			next: (httpResponse) => {
+				let response: any = httpResponse.body;
+				if (typeof response === 'string') {
+					response = JSON.parse(response);
+				}
+				this.notificationData = (response.data || []).map((item: any) => this.mapNotification(item));
+			},
+			error: (err) => {
+				console.error('Error loading notifications:', err);
+				this.notificationData = [];
+			}
+		});
+	}
+
+	/**
+	 * Load unread notification count
+	 */
+	loadUnreadCount(): void {
+		this.notificationsService.notificationsControllerGetUnreadCount$Response().subscribe({
+			next: (httpResponse) => {
+				let response: any = httpResponse.body;
+				if (typeof response === 'string') {
+					response = JSON.parse(response);
+				}
+				this.unreadCount = response.count || response.unreadCount || 0;
+			},
+			error: (err) => {
+				console.error('Error loading unread count:', err);
+				this.unreadCount = 0;
+			}
+		});
+	}
+
+	/**
+	 * Mark all notifications as read
+	 */
+	markAllAsRead(): void {
+		this.notificationsService.notificationsControllerMarkAllAsRead$Response().subscribe({
+			next: () => {
+				this.unreadCount = 0;
+				this.notificationData.forEach(n => n.isRead = true);
+			},
+			error: (err) => console.error('Error marking all as read:', err)
+		});
+	}
+
+	/**
+	 * Map API response to NotificationData
+	 */
+	private mapNotification(item: any): NotificationData {
+		return {
+			id: item.id || item._id,
+			icon: this.getNotificationIcon(item.type),
+			title: item.title || 'Notification',
+			time: this.getRelativeTime(item.createdAt || item.created_at),
+			isRead: item.isRead || false
+		};
+	}
+
+	/**
+	 * Get icon class based on notification type
+	 */
+	private getNotificationIcon(type: string): string {
+		switch (type) {
+			case 'alert': return 'bi bi-exclamation-triangle text-warning';
+			case 'error': return 'bi bi-x-circle text-danger';
+			case 'warning': return 'bi bi-exclamation-circle text-warning';
+			case 'success': return 'bi bi-check-circle text-success';
+			case 'info':
+			default: return 'bi bi-info-circle text-theme';
+		}
+	}
+
+	/**
+	 * Convert timestamp to relative time string
+	 */
+	private getRelativeTime(dateStr: string): string {
+		if (!dateStr) return '';
+		const now = new Date();
+		const date = new Date(dateStr);
+		const diffMs = now.getTime() - date.getTime();
+		const diffMin = Math.floor(diffMs / 60000);
+		
+		if (diffMin < 1) return 'JUST NOW';
+		if (diffMin < 60) return `${diffMin} MINUTE${diffMin > 1 ? 'S' : ''} AGO`;
+		const diffHours = Math.floor(diffMin / 60);
+		if (diffHours < 24) return `${diffHours} HOUR${diffHours > 1 ? 'S' : ''} AGO`;
+		const diffDays = Math.floor(diffHours / 24);
+		return `${diffDays} DAY${diffDays > 1 ? 'S' : ''} AGO`;
 	}
 	
 	/**

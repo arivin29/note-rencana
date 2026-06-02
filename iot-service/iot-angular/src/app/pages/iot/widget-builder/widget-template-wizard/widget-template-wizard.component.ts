@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { 
@@ -23,7 +23,7 @@ import { SensorChannelResponseDto } from '../../../../../sdk/core/models/sensor-
   templateUrl: './widget-template-wizard.component.html',
   styleUrls: ['./widget-template-wizard.component.scss']
 })
-export class WidgetTemplateWizardComponent implements OnInit {
+export class WidgetTemplateWizardComponent implements OnInit, OnDestroy {
   // Route params
   dashboardId: string = '';
   widgetId: string | null = null;
@@ -68,6 +68,17 @@ export class WidgetTemplateWizardComponent implements OnInit {
   previewData: any[] = [];
   previewLoading = false;
   previewOptions: any = null; // ECharts options for preview
+  previewError: string = '';
+  
+  // Time range for preview
+  previewTimeRange: string = '24h';
+  previewTimeRangeOptions = [
+    { label: 'Last 1 Hour', value: '1h' },
+    { label: 'Last 6 Hours', value: '6h' },
+    { label: 'Last 24 Hours', value: '24h' },
+    { label: 'Last 7 Days', value: '7d' },
+    { label: 'Last 30 Days', value: '30d' },
+  ];
   
   // Data source selection
   selectedDataSource: 'postgresql' | 'clickhouse' = 'postgresql';
@@ -98,6 +109,9 @@ export class WidgetTemplateWizardComponent implements OnInit {
       this.selectedCategoryId = categoryParam;
     }
     
+    // Restore wizard state from localStorage
+    this.restoreWizardState();
+    
     // Load nodes for data source selection
     this.loadNodes();
     
@@ -105,6 +119,129 @@ export class WidgetTemplateWizardComponent implements OnInit {
     if (this.isEditMode && this.widgetId) {
       this.loadExistingWidget();
     }
+  }
+  
+  ngOnDestroy(): void {
+    // Save state on destroy (navigation away)
+    this.saveWizardState();
+  }
+  
+  // ============================================
+  // LOCALSTORAGE PERSISTENCE
+  // ============================================
+  
+  private get storageKey(): string {
+    return `widget-wizard-${this.dashboardId}`;
+  }
+  
+  private saveWizardState(): void {
+    const state = {
+      currentStep: this.currentStep,
+      selectedCategoryId: this.selectedCategoryId,
+      selectedTemplateId: this.selectedTemplate?.id || '',
+      selectedDataSource: this.selectedDataSource,
+      selectedNodeId: this.selectedNodeId,
+      selectedSensorId: this.selectedSensorId,
+      selectedChannelId: this.selectedChannelId,
+      selectedChannelIds: this.selectedChannelIds,
+      templateSettings: this.templateSettings,
+      widgetName: this.widgetName,
+      widgetDescription: this.widgetDescription,
+      previewTimeRange: this.previewTimeRange,
+      savedAt: Date.now()
+    };
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(state));
+    } catch (e) {
+      // Ignore storage errors
+    }
+  }
+  
+  private restoreWizardState(): void {
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      if (!saved) return;
+      
+      const state = JSON.parse(saved);
+      
+      // Only restore if saved less than 24 hours ago
+      if (Date.now() - state.savedAt > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(this.storageKey);
+        return;
+      }
+      
+      // Restore template selection
+      if (state.selectedCategoryId) {
+        this.selectedCategoryId = state.selectedCategoryId;
+      }
+      if (state.selectedTemplateId) {
+        const template = getTemplateById(state.selectedTemplateId);
+        if (template) {
+          this.selectedTemplate = template;
+        }
+      }
+      
+      // Restore data source selections
+      if (state.selectedDataSource) this.selectedDataSource = state.selectedDataSource;
+      if (state.selectedNodeId) this.selectedNodeId = state.selectedNodeId;
+      if (state.selectedSensorId) this.selectedSensorId = state.selectedSensorId;
+      if (state.selectedChannelId) this.selectedChannelId = state.selectedChannelId;
+      if (state.selectedChannelIds) this.selectedChannelIds = state.selectedChannelIds;
+      if (state.templateSettings) this.templateSettings = state.templateSettings;
+      if (state.widgetName) this.widgetName = state.widgetName;
+      if (state.widgetDescription) this.widgetDescription = state.widgetDescription;
+      if (state.previewTimeRange) this.previewTimeRange = state.previewTimeRange;
+      
+      // Restore step (but only advance forward, not back to start)
+      if (state.currentStep > 1) {
+        this.currentStep = state.currentStep;
+      }
+      
+      // Reload dependent data if node/sensor were selected
+      if (this.selectedNodeId) {
+        this.loadSensorsForRestore();
+      }
+    } catch (e) {
+      // If corrupted, just clear it
+      localStorage.removeItem(this.storageKey);
+    }
+  }
+  
+  private loadSensorsForRestore(): void {
+    this.sensorsService.sensorsControllerFindAll$Response({
+      page: 1,
+      limit: 1000,
+      idNode: this.selectedNodeId
+    }).subscribe({
+      next: (response) => {
+        let body: any = response.body;
+        if (typeof body === 'string') body = JSON.parse(body);
+        this.sensors = body?.data || [];
+        
+        // Now load channels if sensor was selected
+        if (this.selectedSensorId) {
+          this.loadChannelsForRestore();
+        }
+      }
+    });
+  }
+  
+  private loadChannelsForRestore(): void {
+    this.sensorChannelsService.sensorChannelsControllerFindAll$Response({
+      page: 1,
+      limit: 1000,
+      idSensor: this.selectedSensorId
+    }).subscribe({
+      next: (response) => {
+        let body: any = response.body;
+        if (typeof body === 'string') body = JSON.parse(body);
+        this.channels = body?.data || [];
+      }
+    });
+  }
+  
+  clearWizardState(): void {
+    localStorage.removeItem(this.storageKey);
   }
   
   // ============================================
@@ -134,12 +271,15 @@ export class WidgetTemplateWizardComponent implements OnInit {
       if (this.currentStep === 4) {
         this.generateSqlPreview();
       }
+      
+      this.saveWizardState();
     }
   }
   
   prevStep(): void {
     if (this.currentStep > 1) {
       this.currentStep--;
+      this.saveWizardState();
     }
   }
   
@@ -178,6 +318,7 @@ export class WidgetTemplateWizardComponent implements OnInit {
     
     // Auto-generate widget name
     this.widgetName = template.name;
+    this.saveWizardState();
   }
   
   // ============================================
@@ -368,20 +509,61 @@ export class WidgetTemplateWizardComponent implements OnInit {
     sql = sql.replace(/\$\{sensorId\}/g, this.selectedSensorId || '');
     sql = sql.replace(/\$\{nodeId\}/g, this.selectedNodeId || '');
     
-    // Handle multi-channel
-    if (this.selectedChannelIds.length > 0) {
-      const channelIdList = this.selectedChannelIds.map(id => `'${id}'`).join(', ');
-      sql = sql.replace(/\$\{channelIds\}/g, channelIdList);
+    // Handle multi-channel: build list from selectedChannelIds or fallback to single
+    const channelIdList = this.selectedChannelIds.length > 0
+      ? this.selectedChannelIds.map(id => `'${id}'`).join(', ')
+      : this.selectedChannelId
+        ? `'${this.selectedChannelId}'`
+        : '';
+    if (sql.includes('${channelIds}') && !channelIdList) {
+      this.previewError = 'Please select at least one channel before running preview.';
+      this.generatedSql = sql;
+      return;
     }
+    sql = sql.replace(/\$\{channelIds\}/g, channelIdList);
     
-    // Replace time placeholders with reasonable defaults for preview
+    // Replace time placeholders based on selected time range
     const now = new Date();
-    const fromTime = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(); // 24 hours ago
-    const toTime = now.toISOString();
+    const rangeMs: Record<string, number> = {
+      '1h': 60 * 60 * 1000,
+      '6h': 6 * 60 * 60 * 1000,
+      '24h': 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000,
+    };
+    const fromDate = new Date(now.getTime() - (rangeMs[this.previewTimeRange] || rangeMs['24h']));
+    
+    // Format time based on data source (ClickHouse needs 'YYYY-MM-DD HH:MM:SS.mmm')
+    let fromTime: string;
+    let toTime: string;
+    if (this.selectedDataSource === 'clickhouse') {
+      fromTime = fromDate.toISOString().replace('T', ' ').replace('Z', '');
+      toTime = now.toISOString().replace('T', ' ').replace('Z', '');
+    } else {
+      fromTime = fromDate.toISOString();
+      toTime = now.toISOString();
+    }
     sql = sql.replace(/\$\{fromTime\}/g, fromTime);
     sql = sql.replace(/\$\{toTime\}/g, toTime);
     
+    // Final safety: warn if any unreplaced placeholders remain
+    const unreplaced = sql.match(/\$\{(\w+)\}/g);
+    if (unreplaced) {
+      this.previewError = `Missing values for: ${unreplaced.join(', ')}. Please check your data source selection.`;
+      this.generatedSql = sql;
+      return;
+    }
+    
+    this.previewError = '';
     this.generatedSql = sql;
+  }
+  
+  resetSql(): void {
+    this.generateSqlPreview();
+  }
+  
+  onTimeRangeChange(): void {
+    this.generateSqlPreview();
   }
   
   /**
@@ -401,10 +583,12 @@ export class WidgetTemplateWizardComponent implements OnInit {
     sql = sql.replace(/\$\{nodeId\}/g, this.selectedNodeId || '');
     
     // Handle multi-channel
-    if (this.selectedChannelIds.length > 0) {
-      const channelIdList = this.selectedChannelIds.map(id => `'${id}'`).join(', ');
-      sql = sql.replace(/\$\{channelIds\}/g, channelIdList);
-    }
+    const channelIdList = this.selectedChannelIds.length > 0
+      ? this.selectedChannelIds.map(id => `'${id}'`).join(', ')
+      : this.selectedChannelId
+        ? `'${this.selectedChannelId}'`
+        : '';
+    sql = sql.replace(/\$\{channelIds\}/g, channelIdList);
     
     // Keep ${fromTime}, ${toTime} for backend to replace at runtime
     return sql;
@@ -413,9 +597,13 @@ export class WidgetTemplateWizardComponent implements OnInit {
   async runPreview(): Promise<void> {
     if (!this.generatedSql) return;
     
+    // Block if there are unreplaced placeholders
+    if (this.previewError) return;
+    
     this.previewLoading = true;
     this.previewData = [];
     this.previewOptions = null;
+    this.previewError = '';
     
     try {
       const response: any = await this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
@@ -435,8 +623,9 @@ export class WidgetTemplateWizardComponent implements OnInit {
       if (this.previewData.length > 0) {
         this.previewOptions = this.buildChartOptions(this.previewData);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Preview error:', error);
+      this.previewError = error?.error?.message || error?.message || 'Query execution failed';
     } finally {
       this.previewLoading = false;
     }
@@ -515,6 +704,7 @@ export class WidgetTemplateWizardComponent implements OnInit {
             name: this.widgetName,
             widgetType: this.selectedTemplate.widgetType,
             sqlQuery: sqlForSave,
+            dataSource: this.selectedDataSource,
             config: widgetConfig
           }
         }).toPromise();
@@ -526,6 +716,7 @@ export class WidgetTemplateWizardComponent implements OnInit {
             name: this.widgetName,
             widgetType: this.selectedTemplate.widgetType,
             sqlQuery: sqlForSave,
+            dataSource: this.selectedDataSource,
             config: widgetConfig,
             positionX: 0,
             positionY: 0,
@@ -534,6 +725,9 @@ export class WidgetTemplateWizardComponent implements OnInit {
           }
         }).toPromise();
       }
+      
+      // Clear wizard state from localStorage on successful save
+      this.clearWizardState();
       
       // Navigate back to dashboard
       this.router.navigate(['/iot/widget-builder', this.dashboardId]);

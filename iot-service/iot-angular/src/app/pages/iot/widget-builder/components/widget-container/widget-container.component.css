@@ -60,9 +60,17 @@
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 8px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 4px;
+  min-height: 0;
+}
+
+/* Ensure child widget components fill the content area */
+.widget-content > * {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 
 /* Chart Wrapper - centered */

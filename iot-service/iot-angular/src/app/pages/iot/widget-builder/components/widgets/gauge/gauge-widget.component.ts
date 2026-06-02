@@ -184,8 +184,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         // Background arc (track)
         {
           type: 'gauge',
-          radius: '105%',
-          center: ['50%', '68%'],
+          radius: '88%',
+          center: ['50%', '58%'],
           startAngle: 210,
           endAngle: -30,
           min: min,
@@ -210,8 +210,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         // Foreground progress arc (value)
         {
           type: 'gauge',
-          radius: '105%',
-          center: ['50%', '68%'],
+          radius: '88%',
+          center: ['50%', '58%'],
           startAngle: 210,
           endAngle: -30,
           min: min,
@@ -237,8 +237,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
         // Tick marks + labels (thin overlay)
         {
           type: 'gauge',
-          radius: '105%',
-          center: ['50%', '68%'],
+          radius: '88%',
+          center: ['50%', '58%'],
           startAngle: 210,
           endAngle: -30,
           min: min,
@@ -266,8 +266,8 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
           title: { show: false },
           detail: {
             valueAnimation: true,
-            offsetCenter: [0, '-15%'],
-            fontSize: 28,
+            offsetCenter: [0, '-10%'],
+            fontSize: 24,
             fontWeight: 'bold',
             fontFamily: "'JetBrains Mono', 'SF Mono', 'Consolas', monospace",
             formatter: (val: number) => val.toFixed(decimals),

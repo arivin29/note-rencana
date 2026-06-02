@@ -6,8 +6,8 @@
 .scada-embed-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 56px); // full height minus Angular top nav
-  margin: -1rem; // bleed into parent padding
+  height: calc(100vh - 64px); // full height minus Angular top nav
+//   margin: -1rem; // bleed into parent padding
 
   .scada-iframe {
     flex: 1;

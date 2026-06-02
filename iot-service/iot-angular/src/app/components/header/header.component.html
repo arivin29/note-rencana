@@ -89,10 +89,10 @@
 	<div class="menu-item dropdown dropdown-mobile-full">
 		<a href="javascript:;" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 			<div class="menu-icon"><i class="bi bi-bell nav-icon"></i></div>
-			<div class="menu-badge bg-theme" *ngIf="notificationData.length > 0"></div>
+			<div class="menu-badge bg-theme" *ngIf="unreadCount > 0"></div>
 		</a>
 		<div class="dropdown-menu dropdown-menu-end mt-1 w-300px fs-11px pt-1">
-			<h6 class="dropdown-header fs-10px mb-1">NOTIFICATIONS</h6>
+			<h6 class="dropdown-header fs-10px mb-1">NOTIFICATIONS ({{ unreadCount }})</h6>
 			<div class="dropdown-divider mt-1"></div>
 			<ng-container *ngIf="notificationData.length > 0">
 				<a href="javascript:;" class="d-flex align-items-center py-10px dropdown-item text-wrap fw-semibold" *ngFor="let notification of notificationData">
@@ -114,8 +114,9 @@
 				</div>
 			</ng-container>
 			<hr class="my-0 mt-2">
-			<div class="py-10px mb-n2 text-center">
-				<a href="javascript:;" class="text-decoration-none fw-bold">SEE ALL</a>
+			<div class="py-10px mb-n2 text-center d-flex justify-content-around">
+				<a href="javascript:;" (click)="markAllAsRead()" class="text-decoration-none fw-bold" *ngIf="unreadCount > 0">MARK ALL READ</a>
+				<a routerLink="/iot/alerts" class="text-decoration-none fw-bold">SEE ALL</a>
 			</div>
 		</div>
 	</div>

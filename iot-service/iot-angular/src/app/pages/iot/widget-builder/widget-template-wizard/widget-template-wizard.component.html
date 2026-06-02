@@ -336,10 +336,16 @@
                         <card-header class="bg-inverse bg-opacity-10 d-flex align-items-center fw-semibold">
                             <i class="fa fa-eye me-2"></i>
                             Preview
-                            <button class="btn btn-sm btn-outline-theme ms-auto" (click)="runPreview()" [disabled]="previewLoading">
-                                <i class="fa me-1" [class.fa-play]="!previewLoading" [class.fa-spinner]="previewLoading" [class.fa-spin]="previewLoading"></i>
-                                Run Preview
-                            </button>
+                            <div class="ms-auto d-flex align-items-center gap-2">
+                                <select class="form-select form-select-sm" style="width: auto;" 
+                                        [(ngModel)]="previewTimeRange" (ngModelChange)="onTimeRangeChange()">
+                                    <option *ngFor="let opt of previewTimeRangeOptions" [value]="opt.value">{{ opt.label }}</option>
+                                </select>
+                                <button class="btn btn-sm btn-outline-theme" (click)="runPreview()" [disabled]="previewLoading">
+                                    <i class="fa me-1" [class.fa-play]="!previewLoading" [class.fa-spinner]="previewLoading" [class.fa-spin]="previewLoading"></i>
+                                    Run
+                                </button>
+                            </div>
                         </card-header>
                         <card-body>
                             <!-- Loading -->
@@ -348,8 +354,19 @@
                                 <p class="mt-2">Running query...</p>
                             </div>
                             
+                            <!-- Error message -->
+                            <div class="alert alert-danger mx-2 mt-2" *ngIf="!previewLoading && previewError">
+                                <div class="d-flex align-items-start">
+                                    <i class="fa fa-exclamation-triangle me-2 mt-1"></i>
+                                    <div>
+                                        <strong>Query Error</strong>
+                                        <p class="mb-0 mt-1 small" style="white-space: pre-wrap;">{{ previewError }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- No data -->
-                            <div class="text-center py-4 text-muted" *ngIf="!previewLoading && previewData.length === 0">
+                            <div class="text-center py-4 text-muted" *ngIf="!previewLoading && !previewError && previewData.length === 0">
                                 <i class="fa fa-chart-bar fa-3x mb-3"></i>
                                 <p>Click "Run Preview" to see sample data</p>
                             </div>
@@ -446,8 +463,13 @@
                                     <i class="fa fa-code me-2"></i>
                                     Generated SQL
                                     <span class="badge bg-secondary ms-2">Auto-generated</span>
+                                    <button class="btn btn-sm btn-outline-secondary ms-auto" (click)="resetSql()" title="Reset to default SQL">
+                                        <i class="fa fa-undo me-1"></i> Reset
+                                    </button>
                                 </label>
-                                <pre class="bg-dark text-light p-3 rounded small overflow-auto" style="max-height: 200px;"><code>{{ generatedSql }}</code></pre>
+                                <textarea class="form-control bg-dark text-light font-monospace small" 
+                                          rows="6" [(ngModel)]="generatedSql"
+                                          style="max-height: 200px; resize: vertical;"></textarea>
                             </div>
                             
                             <!-- Summary -->

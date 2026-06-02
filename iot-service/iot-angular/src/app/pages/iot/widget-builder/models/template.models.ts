@@ -102,10 +102,10 @@ WHERE sl.id_sensor_channel = '\${channelId}'
 ORDER BY sl.ts DESC
 LIMIT 1`,
       clickhouse: `SELECT 
-  value_engineered as value,
-  ts as timestamp
+  eng_value as value,
+  last_update as timestamp
 FROM iot.sensor_channel_latest
-WHERE id_sensor_channel = '\${channelId}'
+WHERE channel_id = '\${channelId}'
 LIMIT 1`
     },
     options: [
@@ -131,7 +131,7 @@ LIMIT 1`
     },
     sqlTemplate: {
       postgresql: `SELECT sl.value_engineered as value, sl.ts as timestamp FROM sensor_logs sl WHERE sl.id_sensor_channel = '\${channelId}' ORDER BY sl.ts DESC LIMIT 1`,
-      clickhouse: `SELECT value_engineered as value, ts as timestamp FROM iot.sensor_channel_latest WHERE id_sensor_channel = '\${channelId}' LIMIT 1`
+      clickhouse: `SELECT eng_value as value, last_update as timestamp FROM iot.sensor_channel_latest WHERE channel_id = '\${channelId}' LIMIT 1`
     },
     options: [
       { key: 'minValue', label: 'Min Value', type: 'number', defaultValue: 0, autoFrom: 'channel.minValue' },
@@ -155,7 +155,7 @@ LIMIT 1`
     },
     sqlTemplate: {
       postgresql: `SELECT sl.value_engineered as value, sl.ts as timestamp FROM sensor_logs sl WHERE sl.id_sensor_channel = '\${channelId}' ORDER BY sl.ts DESC LIMIT 1`,
-      clickhouse: `SELECT value_engineered as value, ts as timestamp FROM iot.sensor_channel_latest WHERE id_sensor_channel = '\${channelId}' LIMIT 1`
+      clickhouse: `SELECT eng_value as value, last_update as timestamp FROM iot.sensor_channel_latest WHERE channel_id = '\${channelId}' LIMIT 1`
     },
     options: [
       { key: 'minValue', label: 'Min Value', type: 'number', defaultValue: 0 },
@@ -178,7 +178,7 @@ LIMIT 1`
     },
     sqlTemplate: {
       postgresql: `SELECT sl.value_engineered as value, sl.ts as timestamp FROM sensor_logs sl WHERE sl.id_sensor_channel = '\${channelId}' ORDER BY sl.ts DESC LIMIT 1`,
-      clickhouse: `SELECT value_engineered as value, ts as timestamp FROM iot.sensor_channel_latest WHERE id_sensor_channel = '\${channelId}' LIMIT 1`
+      clickhouse: `SELECT eng_value as value, last_update as timestamp FROM iot.sensor_channel_latest WHERE channel_id = '\${channelId}' LIMIT 1`
     },
     options: [
       { key: 'unit', label: 'Unit', type: 'string', defaultValue: '', autoFrom: 'channel.unit' },
@@ -202,7 +202,7 @@ const TIMESERIES_TEMPLATES: WidgetTemplate[] = [
     description: 'Standard line chart for time series data',
     icon: 'fa-chart-line',
     previewSvg: `<svg viewBox="0 0 100 50"><polyline points="5,40 25,30 45,35 65,15 85,25 95,10" fill="none" stroke="#3b82f6" stroke-width="2"/></svg>`,
-    requiredFilters: ['node'],
+    requiredFilters: ['node', 'sensor', 'channel'],
     defaultConfig: {
       refreshInterval: 60,
     },
@@ -217,13 +217,13 @@ WHERE sl.id_sensor_channel IN (\${channelIds})
   AND sl.ts BETWEEN '\${fromTime}' AND '\${toTime}'
 ORDER BY sl.ts ASC`,
       clickhouse: `SELECT 
-  ts as time,
-  metric,
-  value_engineered as value
+  event_time as time,
+  metric_code as metric,
+  eng_value as value
 FROM iot.sensor_telemetry
-WHERE id_sensor_channel IN (\${channelIds})
-  AND ts BETWEEN '\${fromTime}' AND '\${toTime}'
-ORDER BY ts ASC`
+WHERE channel_id IN (\${channelIds})
+  AND event_time BETWEEN '\${fromTime}' AND '\${toTime}'
+ORDER BY event_time ASC`
     },
     options: [
       { key: 'timeRange', label: 'Time Range', type: 'select', defaultValue: '24h', options: [
@@ -252,13 +252,13 @@ ORDER BY ts ASC`
     description: 'Line chart with filled area',
     icon: 'fa-chart-area',
     previewSvg: `<svg viewBox="0 0 100 50"><polygon points="5,45 25,30 45,35 65,15 85,25 95,10 95,45" fill="#3b82f6" fill-opacity="0.3"/><polyline points="5,45 25,30 45,35 65,15 85,25 95,10" fill="none" stroke="#3b82f6" stroke-width="2"/></svg>`,
-    requiredFilters: ['node'],
+    requiredFilters: ['node', 'sensor', 'channel'],
     defaultConfig: {
       refreshInterval: 60,
     },
     sqlTemplate: {
       postgresql: `SELECT sl.ts as time, sc.metric_code as metric, sl.value_engineered as value FROM sensor_logs sl JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel WHERE sl.id_sensor_channel IN (\${channelIds}) AND sl.ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY sl.ts ASC`,
-      clickhouse: `SELECT ts as time, metric, value_engineered as value FROM iot.sensor_telemetry WHERE id_sensor_channel IN (\${channelIds}) AND ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY ts ASC`
+      clickhouse: `SELECT event_time as time, metric_code as metric, eng_value as value FROM iot.sensor_telemetry WHERE channel_id IN (\${channelIds}) AND event_time BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY event_time ASC`
     },
     options: [
       { key: 'timeRange', label: 'Time Range', type: 'select', defaultValue: '24h', options: [
@@ -279,13 +279,13 @@ ORDER BY ts ASC`
     description: 'Vertical bar chart for comparison',
     icon: 'fa-chart-bar',
     previewSvg: `<svg viewBox="0 0 100 50"><rect x="10" y="20" width="12" height="25" fill="#3b82f6"/><rect x="30" y="10" width="12" height="35" fill="#3b82f6"/><rect x="50" y="25" width="12" height="20" fill="#3b82f6"/><rect x="70" y="5" width="12" height="40" fill="#3b82f6"/></svg>`,
-    requiredFilters: ['node'],
+    requiredFilters: ['node', 'sensor', 'channel'],
     defaultConfig: {
       refreshInterval: 60,
     },
     sqlTemplate: {
       postgresql: `SELECT sl.ts as time, sc.metric_code as metric, sl.value_engineered as value FROM sensor_logs sl JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel WHERE sl.id_sensor_channel IN (\${channelIds}) AND sl.ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY sl.ts ASC`,
-      clickhouse: `SELECT ts as time, metric, value_engineered as value FROM iot.sensor_telemetry WHERE id_sensor_channel IN (\${channelIds}) AND ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY ts ASC`
+      clickhouse: `SELECT event_time as time, metric_code as metric, eng_value as value FROM iot.sensor_telemetry WHERE channel_id IN (\${channelIds}) AND event_time BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY event_time ASC`
     },
     options: [
       { key: 'timeRange', label: 'Time Range', type: 'select', defaultValue: '24h', options: [
@@ -307,13 +307,13 @@ ORDER BY ts ASC`
     description: 'Compare multiple sensors/channels',
     icon: 'fa-project-diagram',
     previewSvg: `<svg viewBox="0 0 100 50"><polyline points="5,35 25,25 45,30 65,20 95,15" fill="none" stroke="#3b82f6" stroke-width="2"/><polyline points="5,40 25,35 45,25 65,30 95,20" fill="none" stroke="#10b981" stroke-width="2"/><polyline points="5,30 25,40 45,35 65,40 95,35" fill="none" stroke="#f59e0b" stroke-width="2"/></svg>`,
-    requiredFilters: ['node'],
+    requiredFilters: ['node', 'sensor', 'channel'],
     defaultConfig: {
       refreshInterval: 60,
     },
     sqlTemplate: {
       postgresql: `SELECT sl.ts as time, sc.metric_code as metric, sl.value_engineered as value FROM sensor_logs sl JOIN sensor_channels sc ON sl.id_sensor_channel = sc.id_sensor_channel WHERE sl.id_sensor_channel IN (\${channelIds}) AND sl.ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY sl.ts, metric ASC`,
-      clickhouse: `SELECT ts as time, metric, value_engineered as value FROM iot.sensor_telemetry WHERE id_sensor_channel IN (\${channelIds}) AND ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY ts, metric ASC`
+      clickhouse: `SELECT event_time as time, metric_code as metric, eng_value as value FROM iot.sensor_telemetry WHERE channel_id IN (\${channelIds}) AND event_time BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY event_time, metric_code ASC`
     },
     options: [
       { key: 'timeRange', label: 'Time Range', type: 'select', defaultValue: '24h', options: [
@@ -363,11 +363,11 @@ ORDER BY sc.metric_code`,
       clickhouse: `SELECT 
   metric_code as channel,
   metric_code as metric,
-  unit,
-  value_engineered as latest_value,
-  ts as last_update
+  metric_unit as unit,
+  eng_value as latest_value,
+  last_update
 FROM iot.sensor_channel_latest
-WHERE id_sensor = '\${sensorId}'
+WHERE sensor_id = '\${sensorId}'
 ORDER BY metric_code`
     },
     options: [
@@ -389,7 +389,7 @@ ORDER BY metric_code`
     },
     sqlTemplate: {
       postgresql: `SELECT ts as timestamp, value_engineered as value FROM sensor_logs WHERE id_sensor_channel = '\${channelId}' AND ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY ts DESC LIMIT 100`,
-      clickhouse: `SELECT ts as timestamp, value_engineered as value FROM iot.sensor_telemetry WHERE id_sensor_channel = '\${channelId}' AND ts BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY ts DESC LIMIT 100`
+      clickhouse: `SELECT event_time as timestamp, eng_value as value FROM iot.sensor_telemetry WHERE channel_id = '\${channelId}' AND event_time BETWEEN '\${fromTime}' AND '\${toTime}' ORDER BY event_time DESC LIMIT 100`
     },
     options: [
       { key: 'timeRange', label: 'Time Range', type: 'select', defaultValue: '24h', options: [
@@ -432,7 +432,7 @@ previous_val AS (
 SELECT c.value, c.timestamp, p.value as prev_value,
   CASE WHEN c.value > p.value THEN 'up' WHEN c.value < p.value THEN 'down' ELSE 'stable' END as trend
 FROM current_val c, previous_val p`,
-      clickhouse: `SELECT value_engineered as value, ts as timestamp FROM iot.sensor_channel_latest WHERE id_sensor_channel = '\${channelId}' LIMIT 1`
+      clickhouse: `SELECT eng_value as value, last_update as timestamp FROM iot.sensor_channel_latest WHERE channel_id = '\${channelId}' LIMIT 1`
     },
     options: [
       { key: 'unit', label: 'Unit', type: 'string', defaultValue: '', autoFrom: 'channel.unit' },
@@ -454,7 +454,7 @@ FROM current_val c, previous_val p`,
     },
     sqlTemplate: {
       postgresql: `SELECT value_engineered as value, ts as timestamp FROM sensor_logs WHERE id_sensor_channel = '\${channelId}' ORDER BY ts DESC LIMIT 20`,
-      clickhouse: `SELECT value_engineered as value, ts as timestamp FROM iot.sensor_telemetry WHERE id_sensor_channel = '\${channelId}' ORDER BY ts DESC LIMIT 20`
+      clickhouse: `SELECT eng_value as value, event_time as timestamp FROM iot.sensor_telemetry WHERE channel_id = '\${channelId}' ORDER BY event_time DESC LIMIT 20`
     },
     options: [
       { key: 'unit', label: 'Unit', type: 'string', defaultValue: '', autoFrom: 'channel.unit' },

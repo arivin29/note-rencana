@@ -122,7 +122,7 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     // Helper: bucket timestamp to nearest minute for alignment
     const bucketTimestamp = (val: any): string => {
       if (!val) return '';
-      const date = new Date(val);
+      const date = this.parseDate(val);
       if (isNaN(date.getTime())) return String(val);
       // Round to nearest minute
       date.setSeconds(0, 0);
@@ -350,25 +350,24 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
    */
   private smartFormatXValue(value: any): string {
     if (!value) return '';
-    const date = new Date(value);
+    const date = this.parseDate(value);
     if (isNaN(date.getTime())) return String(value);
 
     // Detect time span from data to choose format
     const span = this.getDataTimeSpanHours();
-    const isNarrow = this.containerWidth > 0 && this.containerWidth < 500;
 
-    if (span <= 24) {
-      // Within 1 day: show HH:mm (or just HH for very narrow)
-      if (isNarrow) {
-        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      }
+    if (span <= 6) {
+      // Within 6 hours: show HH:mm
+      return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else if (span <= 24) {
+      // Within 1 day: show HH:mm
       return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     } else if (span <= 168) {
-      // Within 1 week: show DD/MM HH:mm or just HH:mm for narrow
-      if (isNarrow) {
-        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      }
-      return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })} ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+      // Within 1 week: show DD MMM HH:mm
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = date.toLocaleDateString('id-ID', { month: 'short' });
+      const time = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      return `${day} ${month}\n${time}`;
     } else if (span <= 2160) {
       // Within ~3 months: show DD/MM
       return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
@@ -382,10 +381,22 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
   private getDataTimeSpanHours(): number {
     if (!this.data || this.data.length < 2) return 1;
     const xField = (this.widget?.config as any)?.mapping?.xField || 'timestamp';
-    const first = new Date(this.data[0]?.[xField]);
-    const last = new Date(this.data[this.data.length - 1]?.[xField]);
+    const first = this.parseDate(this.data[0]?.[xField]);
+    const last = this.parseDate(this.data[this.data.length - 1]?.[xField]);
     if (isNaN(first.getTime()) || isNaN(last.getTime())) return 1;
     return Math.abs(last.getTime() - first.getTime()) / (1000 * 60 * 60);
+  }
+
+  /** Parse date string robustly (handles both ISO and ClickHouse space-separated formats) */
+  private parseDate(value: any): Date {
+    if (!value) return new Date(NaN);
+    if (value instanceof Date) return value;
+    // ClickHouse format: '2026-05-29 13:18:30.000' → add T for ISO compliance
+    const str = String(value);
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) {
+      return new Date(str.replace(' ', 'T') + (str.includes('+') || str.includes('Z') ? '' : 'Z'));
+    }
+    return new Date(value);
   }
 
   /**

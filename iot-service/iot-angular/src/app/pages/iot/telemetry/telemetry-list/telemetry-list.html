@@ -69,20 +69,11 @@
             <i class="fa fa-sync fa-fw me-1" [class.fa-spin]="loading"></i>
             Sync Aggregation
         </button>
-        <button class="btn btn-outline-default btn-sm">
-            <i class="fa fa-bell fa-fw me-1"></i>
-            Configure Alerts
-        </button>
-        <button class="btn btn-theme btn-sm" (click)="exportCsv()" [disabled]="exporting || loading">
-            <i class="fa fa-fw me-1" [class.fa-file-export]="!exporting" [class.fa-spinner]="exporting" [class.fa-spin]="exporting"></i>
-            <span *ngIf="!exporting">Export CSV</span>
-            <span *ngIf="exporting">Exporting...</span>
-        </button>
     </div>
 </div>
 
 <card class="shadow-sm">
-    <div class="px-4 pt-3 pb-2">
+    <div class="px-4 pt-3 pb-2 d-flex align-items-center justify-content-between">
         <div class="btn-group btn-group-sm" role="group">
             <button *ngFor="let agg of aggregations" type="button"
                 class="btn" [class.btn-theme]="selectedAggregation === agg"
@@ -91,6 +82,11 @@
                 {{ agg }}
             </button>
         </div>
+        <button class="btn btn-theme btn-sm" (click)="exportCsv()" [disabled]="exporting || loading">
+            <i class="fa fa-fw me-1" [class.fa-file-export]="!exporting" [class.fa-spinner]="exporting" [class.fa-spin]="exporting"></i>
+            <span *ngIf="!exporting">Export CSV</span>
+            <span *ngIf="exporting">Exporting...</span>
+        </button>
     </div>
     <div class="px-4 pb-4 pt-2">
         <!-- Cascading Filters -->
