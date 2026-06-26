@@ -1,0 +1,53 @@
+<div class="m-search">
+  <i class="fa fa-magnifying-glass"></i>
+  <input placeholder="Cari perangkat…" [(ngModel)]="search" (ngModelChange)="onSearch()">
+</div>
+
+<div class="m-chips" *ngIf="statusFilter" style="margin-top:-4px">
+  <div class="m-chip active" (click)="clearStatus()">
+    {{ statusFilter === 'online' ? 'Online' : 'Offline' }} <i class="fa fa-xmark" style="margin-left:6px"></i>
+  </div>
+</div>
+
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
+  <div class="m-skel" style="width:60%"></div>
+  <div class="m-skel" style="width:42%"></div>
+  <div class="m-skel" style="width:55%"></div>
+  <div class="m-skel" style="width:38%"></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && error">
+  <i class="fa fa-triangle-exclamation"></i>
+  {{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && !error && nodes.length === 0">
+  <i class="fa fa-microchip"></i>
+  Tidak ada perangkat
+</div>
+
+<div class="m-card" *ngIf="!loading && !error && nodes.length > 0">
+  <div class="m-list__item" *ngFor="let n of nodes" (click)="open(n.id)" style="align-items:flex-start">
+    <div class="m-list__body">
+      <div class="m-list__title">{{ n.code }}</div>
+      <div class="m-node-meta">
+        <div *ngIf="n.location"><i class="fa fa-location-dot"></i><span>{{ n.location }}</span></div>
+        <div *ngIf="n.picName || n.picPhone">
+          <i class="fa fa-user"></i>
+          <span>
+            {{ n.picName }}<ng-container *ngIf="n.picName && n.picPhone"> · </ng-container><a *ngIf="n.picPhone" [href]="'tel:' + n.picPhone" (click)="$event.stopPropagation()">{{ n.picPhone }}</a>
+          </span>
+        </div>
+        <div><i class="fa fa-clock"></i><span>terakhir kirim {{ n.lastSeen }}</span></div>
+      </div>
+    </div>
+    <span class="m-pill" style="margin-top:2px" [ngClass]="{
+      'm-pill--ok': n.status === 'online',
+      'm-pill--off': n.status === 'offline',
+      'm-pill--warn': n.status === 'degraded'
+    }">
+      <span class="dot"></span>{{ n.status === 'online' ? 'Online' : n.status === 'degraded' ? 'Degraded' : 'Offline' }}
+    </span>
+  </div>
+</div>

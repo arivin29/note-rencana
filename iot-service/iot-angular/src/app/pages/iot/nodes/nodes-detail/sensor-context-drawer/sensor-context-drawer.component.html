@@ -1,0 +1,109 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="onClose()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">Installation Context</div>
+      <h5 class="mb-0">{{ sensorLabel || 'Sensor' }}</h5>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="onClose()"><i class="fa fa-times"></i></button>
+  </div>
+
+  <div class="config-drawer-body">
+    <!-- Installation profile (assigned to this sensor; decides which fields apply) -->
+    <div class="mb-3 p-2 border rounded-3 bg-body-tertiary d-flex align-items-center gap-2">
+      <label class="form-label small text-muted mb-0 text-nowrap"><i class="fa fa-sliders me-1"></i> Installation Profile</label>
+      <select class="form-select form-select-sm" [ngModel]="sensorProfileId" (ngModelChange)="onSensorProfileChange($event)" [disabled]="profileSaving">
+        <option value="">— auto (from channel types) —</option>
+        <option *ngFor="let p of profiles" [value]="p.idProfile">{{ p.name }}</option>
+      </select>
+      <i class="fa fa-spinner fa-spin text-muted" *ngIf="profileSaving"></i>
+    </div>
+
+    <div class="d-flex align-items-center mb-2">
+      <p class="text-muted small mb-0 me-auto">
+        Effective-dated installation/asset parameters. Each release applies from its date until the next one.
+      </p>
+      <button class="btn btn-theme btn-sm" *ngIf="!showForm" (click)="startNew()">
+        <i class="fa fa-plus me-1"></i> New Release
+      </button>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger py-2 small">{{ error }}</div>
+
+    <div *ngIf="!showForm && !flatFields.length && !loading" class="alert alert-warning py-2 small">
+      No installation fields apply to this sensor. Map its channel types to a profile in
+      <strong>Config → Sensor Types</strong>, and define fields in <strong>Config → Installation Profiles</strong>.
+    </div>
+
+    <!-- New / edit release form -->
+    <div class="border rounded-3 p-3 bg-body-tertiary mb-3" *ngIf="showForm">
+      <div class="fw-semibold mb-2">{{ editingId ? 'Edit release' : 'New release' }}</div>
+      <div class="mb-3">
+        <label class="form-label small text-muted">Effective from *</label>
+        <input type="datetime-local" class="form-control form-control-sm" [(ngModel)]="effectiveFrom">
+        <div class="form-text">Real-world time this configuration became true (can be backdated).</div>
+      </div>
+
+      <div *ngFor="let g of profileGroups" class="mb-3">
+        <div class="text-uppercase small fw-semibold text-theme border-bottom pb-1 mb-2">{{ g.name }}</div>
+        <div class="row g-2">
+          <div class="col-md-6" *ngFor="let f of g.fields">
+            <label class="form-label small text-muted">
+              {{ f.label }}<span *ngIf="f.required" class="text-danger"> *</span>
+              <span *ngIf="f.unit" class="text-muted">({{ f.unit }})</span>
+            </label>
+
+            <input *ngIf="f.dataType === 'number'" type="number" class="form-control form-control-sm" [(ngModel)]="values[f.fieldKey]">
+            <input *ngIf="f.dataType === 'text'" type="text" class="form-control form-control-sm" [(ngModel)]="values[f.fieldKey]">
+            <input *ngIf="f.dataType === 'date'" type="date" class="form-control form-control-sm" [(ngModel)]="values[f.fieldKey]">
+            <select *ngIf="f.dataType === 'enum'" class="form-select form-select-sm" [(ngModel)]="values[f.fieldKey]">
+              <option [ngValue]="undefined">—</option>
+              <option *ngFor="let o of f.options" [ngValue]="o">{{ o }}</option>
+            </select>
+            <div *ngIf="f.dataType === 'boolean'" class="form-check mt-1">
+              <input class="form-check-input" type="checkbox" [id]="'cb_' + f.fieldKey" [(ngModel)]="values[f.fieldKey]">
+              <label class="form-check-label small" [for]="'cb_' + f.fieldKey">Yes</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-2">
+        <label class="form-label small text-muted">Note</label>
+        <input type="text" class="form-control form-control-sm" [(ngModel)]="note" placeholder="e.g. moved to DMA-2, pipe replaced">
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelForm()">Cancel</button>
+        <button type="button" class="btn btn-theme btn-sm ms-auto" [disabled]="saving" (click)="save()">
+          <i class="fa" [class.fa-save]="editingId" [class.fa-paper-plane]="!editingId"></i>
+          {{ editingId ? 'Update release' : 'Publish release' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div *ngIf="loading" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-1"></i> Loading…</div>
+
+    <div class="timeline" *ngIf="!loading">
+      <div class="text-muted small text-uppercase mb-2">Release history</div>
+      <div *ngFor="let r of releases" class="context-release border rounded-3 p-3 mb-2"
+           [class.border-theme]="!r.effectiveTo">
+        <div class="d-flex align-items-center mb-1">
+          <span class="badge" [class.bg-theme]="!r.effectiveTo" [class.bg-secondary]="r.effectiveTo">
+            {{ r.effectiveTo ? 'Superseded' : 'Active' }}
+          </span>
+          <span class="ms-2 fw-semibold">{{ r.effectiveFrom | date:'medium' }}</span>
+          <span class="text-muted small ms-2">→ {{ r.effectiveTo ? (r.effectiveTo | date:'medium') : 'now' }}</span>
+          <div class="btn-group btn-group-sm ms-auto">
+            <button class="btn btn-outline-primary" (click)="startEdit(r)" title="Edit"><i class="fa fa-edit"></i></button>
+            <button class="btn btn-outline-danger" (click)="remove(r)" title="Delete"><i class="fa fa-trash"></i></button>
+          </div>
+        </div>
+        <div class="small">{{ paramSummary(r) }}</div>
+        <div class="text-muted small mt-1" *ngIf="r.note"><i class="fa fa-sticky-note me-1"></i>{{ r.note }}</div>
+      </div>
+      <div *ngIf="!releases.length" class="text-center text-muted py-3 border rounded-3">No releases yet.</div>
+    </div>
+  </div>
+</div>

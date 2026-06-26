@@ -1,0 +1,35 @@
+<!-- LIST -->
+<ng-container *ngIf="!embedUrl">
+  <div class="m-card" *ngIf="loading" style="padding:var(--m-3)"><div class="m-skel"></div><div class="m-skel" style="width:60%"></div></div>
+
+  <div class="m-empty" *ngIf="!loading && error">
+    <i class="fa fa-triangle-exclamation"></i>{{ error }}
+    <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load()">Coba lagi</button></div>
+  </div>
+
+  <div class="m-empty" *ngIf="!loading && !error && diagrams.length === 0">
+    <i class="fa fa-diagram-project"></i>Belum ada diagram SCADA untuk project ini
+  </div>
+
+  <div class="m-card" *ngIf="!loading && !error && diagrams.length > 0">
+    <div class="m-list__item" *ngFor="let d of diagrams" (click)="open(d)">
+      <div class="m-scada-ic"><i class="fa fa-diagram-project"></i></div>
+      <div class="m-list__body">
+        <div class="m-list__title">{{ d.name }}</div>
+        <div class="m-list__sub">{{ d.nodeCount || 0 }} node · {{ d.status }}</div>
+      </div>
+      <i class="fa fa-chevron-right m-list__chev"></i>
+    </div>
+  </div>
+</ng-container>
+
+<!-- EMBED VIEWER -->
+<div class="m-scada-embed" *ngIf="embedUrl">
+  <div class="m-scada-embed__bar">
+    <button class="m-btn m-btn--ghost m-btn--sm" (click)="back()"><i class="fa fa-chevron-left"></i> Daftar</button>
+    <span class="m-scada-embed__name">{{ activeName }}</span>
+    <span class="m-cmd__ch" style="margin-left:auto">VIEW</span>
+  </div>
+  <iframe #scadaIframe [src]="embedUrl" (load)="onIframeLoad()" class="m-scada-embed__frame"
+    frameborder="0" allow="fullscreen"></iframe>
+</div>

@@ -1,0 +1,18 @@
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--bs-theme) !important;
+  }
+}
+
+.expanded-row td {
+  background: transparent;
+}
+
+tr.cursor-pointer {
+  cursor: pointer;
+}
+

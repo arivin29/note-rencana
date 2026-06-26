@@ -1,0 +1,67 @@
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
+  <div class="m-skel" style="width:50%"></div>
+  <div class="m-skel" style="width:70%"></div>
+</div>
+
+<ng-container *ngIf="!loading">
+  <div class="m-empty" *ngIf="error">
+    <i class="fa fa-triangle-exclamation"></i>{{ error }}
+    <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+  </div>
+
+  <ng-container *ngIf="!error">
+    <div class="m-stats">
+      <div class="m-stat m-stat--accent" (click)="goNodes('online')">
+        <div class="m-stat__top">
+          <span class="m-stat__ic m-stat__ic--ok"><i class="fa fa-wifi"></i></span>
+          <span class="m-link">Lihat <i class="fa fa-chevron-right" style="font-size:9px"></i></span>
+        </div>
+        <div class="m-stat__value" style="color:var(--m-success)">{{ counts.online }}</div>
+        <div class="m-stat__label">Node online</div>
+      </div>
+      <div class="m-stat" (click)="goNodes('offline')">
+        <div class="m-stat__top">
+          <span class="m-stat__ic m-stat__ic--muted"><i class="fa fa-plug-circle-xmark"></i></span>
+          <span class="m-link">Lihat <i class="fa fa-chevron-right" style="font-size:9px"></i></span>
+        </div>
+        <div class="m-stat__value" style="color:var(--m-text-muted)">{{ counts.offline }}</div>
+        <div class="m-stat__label">Node offline</div>
+      </div>
+      <div class="m-stat" [class.m-stat--accent]="counts.alerts > 0" (click)="goAlerts()">
+        <div class="m-stat__top">
+          <span class="m-stat__ic" [ngClass]="counts.alerts > 0 ? 'm-stat__ic--danger' : 'm-stat__ic--muted'"><i class="fa fa-triangle-exclamation"></i></span>
+          <span class="m-link">Lihat <i class="fa fa-chevron-right" style="font-size:9px"></i></span>
+        </div>
+        <div class="m-stat__value" [style.color]="counts.alerts > 0 ? 'var(--m-danger)' : ''">{{ counts.alerts }}</div>
+        <div class="m-stat__label">Alert aktif</div>
+      </div>
+      <div class="m-stat" (click)="goNodes()">
+        <div class="m-stat__top">
+          <span class="m-stat__ic"><i class="fa fa-microchip"></i></span>
+          <span class="m-link">Semua <i class="fa fa-chevron-right" style="font-size:9px"></i></span>
+        </div>
+        <div class="m-stat__value">{{ counts.total }}</div>
+        <div class="m-stat__label">Total perangkat</div>
+      </div>
+    </div>
+
+    <div class="m-section">Perlu perhatian</div>
+    <div class="m-card" *ngIf="attention.length > 0">
+      <div class="m-list__item" *ngFor="let a of attention" (click)="openNode(a.nodeId)">
+        <div class="m-list__body">
+          <div class="m-list__title">{{ a.node }}</div>
+          <div class="m-list__sub">{{ a.message }} · {{ a.time }}</div>
+        </div>
+        <span class="m-pill" [ngClass]="{
+          'm-pill--danger': a.sev === 'danger',
+          'm-pill--warn': a.sev === 'warn',
+          'm-pill--off': a.sev === 'info'
+        }"><span class="dot"></span>Alert</span>
+      </div>
+    </div>
+    <div class="m-empty" *ngIf="attention.length === 0" style="padding:28px">
+      <i class="fa fa-circle-check" style="color:var(--m-success)"></i>
+      Semua aman — tidak ada alert aktif
+    </div>
+  </ng-container>
+</ng-container>

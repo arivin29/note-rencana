@@ -15,6 +15,8 @@ import { SensorsService } from '../../../../../sdk/core/services/sensors.service
 import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
 import { IoTLogsService } from '../../../../../sdk/core/services/io-t-logs.service';
 import { NodeModelCommandsService } from '../../../../../sdk/core/services/node-model-commands.service';
+import { NodeCommandService } from '../../../../../sdk/core/services/node-command.service';
+import { SensorContextService } from '../../../../../sdk/core/services/sensor-context.service';
 import { NodeModelCommandResponseDto } from '../../../../../sdk/core/models/node-model-command-response-dto';
 
 interface IoTLogItem {
@@ -174,6 +176,15 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
     commandsLoading = false;
     commandsError = '';
 
+    // device command modal + history
+    cmdModalOpen = false;
+    activeCmd: any = null;
+    cmdParamValues: Record<string, string> = {};
+    cmdDestination = '';
+    cmdConfirmed = false;
+    sendingCmd = false;
+    commandLog: any[] = [];
+
     // Auto-refresh
     autoRefreshEnabled = false;
     autoRefreshInterval = 30;
@@ -195,7 +206,9 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
         private sensorsService: SensorsService,
         private sensorChannelsService: SensorChannelsService,
         private iotLogsService: IoTLogsService,
-        private commandsService: NodeModelCommandsService
+        private commandsService: NodeModelCommandsService,
+        private nodeCommandService: NodeCommandService,
+        private sensorContextService: SensorContextService
     ) {
         // Only subscribe to route params if not in embedded mode
         this.route.paramMap.subscribe((params) => {
@@ -445,7 +458,9 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
                     
                     // Calculate decimal places from precision (e.g., 0.01 = 2 decimals, 0.1 = 1 decimal)
                     const precision = channel.precision || 0.01;
-                    const decimalPlaces = precision < 1 ? Math.abs(Math.floor(Math.log10(precision))) : 0;
+                    let decimalPlaces = precision < 1 ? Math.abs(Math.floor(Math.log10(precision))) : 0;
+                    // guard against Infinity/NaN (e.g. precision <= 0) — toFixed() requires 0..100
+                    decimalPlaces = Number.isFinite(decimalPlaces) ? Math.min(Math.max(decimalPlaces, 0), 20) : 2;
                     
                     // Format values with proper precision
                     const values = dataPoints.map((dp: any) => {
@@ -531,6 +546,46 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
             isOpen: true,
             sensorId: '' // Empty = add mode
         };
+    }
+
+    // Installation Context drawer (per-sensor effective-dated params)
+    contextDrawerOpen = false;
+    contextDrawerSensorId = '';
+    contextDrawerSensorLabel = '';
+
+    openContextDrawer(sensor: SensorDetail) {
+        this.contextDrawerSensorId = sensor.id;
+        this.contextDrawerSensorLabel = sensor.label;
+        this.contextDrawerOpen = true;
+    }
+
+    closeContextDrawer() {
+        this.contextDrawerOpen = false;
+        this.contextDrawerSensorId = '';
+    }
+
+    // Download node telemetry enriched with as-of installation-context params
+    exportingContext = false;
+    exportTelemetryWithContext() {
+        if (!this.nodeUuid) return;
+        this.exportingContext = true;
+        this.sensorContextService.exportNode$Response({ id: this.nodeUuid }).subscribe({
+            next: (res) => {
+                const csv = (res.body as string) || '';
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `node-${this.nodeId || 'telemetry'}-context.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.exportingContext = false;
+            },
+            error: (e) => {
+                alert('Export failed: ' + (e?.error?.message || e?.message || 'Unknown error'));
+                this.exportingContext = false;
+            }
+        });
     }
 
     openEditSensorDrawer(sensor: SensorDetail) {
@@ -724,8 +779,11 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
     }
 
     formatChannelValue(channel: SensorChannelRow): string {
-        if (channel.latest === 0 && !channel.unit) return '—';
-        return channel.latest.toFixed(channel.decimalPlaces);
+        const v = channel?.latest;
+        if (v == null || isNaN(v)) return '—';
+        if (v === 0 && !channel.unit) return '—';
+        const dp = Math.min(Math.max(channel?.decimalPlaces ?? 2, 0), 20);
+        return v.toFixed(dp);
     }
 
     sensorHealthBadge(health: SensorHealth) {
@@ -860,6 +918,7 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
                 this.nodeModelCommands = Array.isArray(data) ? data : (data?.data || []);
                 this.commandsLoading = false;
+                this.loadCommandLog();
             },
             error: (err) => {
                 console.error('Error loading commands:', err);
@@ -870,32 +929,72 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
         });
     }
 
-    /**
-     * Execute a command - generates the command string with placeholders replaced
-     */
-    executeCommand(cmd: NodeModelCommandResponseDto): void {
-        const template = cmd.template || '';
-        const resolvedCmd = template
+    // ---------- device command center ----------
+
+    get activeCmdParams(): any[] { return this.activeCmd?.config?.params || []; }
+    get activeCmdIsDanger(): boolean { return !!this.activeCmd?.config?.danger; }
+    get cmdPreview(): string { return this.activeCmd ? this.renderCommand(this.activeCmd, this.cmdParamValues) : ''; }
+
+    // render template: {device_id}/{serial}/{cmd} + {{param}} placeholders, keep SMS prefix spaces
+    renderCommand(cmd: any, params: Record<string, string>): string {
+        let t = (cmd.template || '')
             .replace(/\{device_id\}/g, this.nodeUuid)
             .replace(/\{serial\}/g, this.nodeId)
-            .replace(/\{cmd\}/g, cmd.code);
-
-        if (cmd.channel === 'sms' && this.nodeMeta.picPhone) {
-            // Open SMS app with pre-filled message
-            const smsUrl = `sms:${this.nodeMeta.picPhone}?body=${encodeURIComponent(resolvedCmd)}`;
-            window.open(smsUrl, '_blank');
-        } else if (cmd.channel === 'call' && this.nodeMeta.picPhone) {
-            // Open phone dialer
-            window.open(`tel:${this.nodeMeta.picPhone}`, '_blank');
-        } else if (cmd.channel === 'telegram') {
-            // Copy command to clipboard for telegram
-            navigator.clipboard.writeText(resolvedCmd).then(() => {
-                alert(`Command copied to clipboard:\n\n${resolvedCmd}`);
-            });
-        } else {
-            // For MQTT/HTTP, just show the resolved command
-            alert(`Command Template:\n\n${resolvedCmd}\n\nChannel: ${cmd.channel.toUpperCase()}`);
+            .replace(/\{cmd\}/g, cmd.code || '');
+        for (const [k, v] of Object.entries(params || {})) {
+            t = t.replace(new RegExp('\\{\\{\\s*' + k + '\\s*\\}\\}', 'g'), (v ?? '').trim());
         }
+        t = t.replace(/\{\{[^}]*\}\}/g, ''); // drop unfilled optional placeholders
+        const prefix = (t.match(/^(\s*)/) || ['', ''])[1]; // preserve leading SMS prefix
+        return prefix + t.slice(prefix.length).replace(/\s+/g, ' ').trimEnd();
+    }
+
+    openCommand(cmd: any): void {
+        this.activeCmd = cmd;
+        this.cmdParamValues = {};
+        for (const p of (cmd.config?.params || [])) this.cmdParamValues[p.key] = p.default || '';
+        this.cmdDestination = this.nodeMeta.picPhone || '';
+        this.cmdConfirmed = false;
+        this.cmdModalOpen = true;
+    }
+    closeCmdModal(): void { this.cmdModalOpen = false; this.activeCmd = null; }
+
+    sendActiveCommand(): void {
+        const cmd = this.activeCmd;
+        if (!cmd) return;
+        if (this.activeCmdIsDanger && !this.cmdConfirmed) { alert('Centang konfirmasi dulu untuk command berbahaya.'); return; }
+        const channel = (cmd.channel || '').toLowerCase();
+        const text = this.cmdPreview;
+
+        // SMS: open the phone's SMS app prefilled (user taps send)
+        if (channel === 'sms') {
+            if (this.cmdDestination) window.open(`sms:${this.cmdDestination}?body=${encodeURIComponent(text)}`, '_blank');
+            else if (navigator.clipboard) navigator.clipboard.writeText(text);
+        }
+
+        // log (and for MQTT the backend also publishes to the broker)
+        this.sendingCmd = true;
+        const body = {
+            idCommand: cmd.idCommand, code: cmd.code, label: cmd.label, channel,
+            renderedText: text, destination: this.cmdDestination, params: this.cmdParamValues,
+            isRelay: !!cmd.isRelay, hasReturn: !!cmd.hasReturn
+        };
+        this.nodeCommandService.commandSend$Response({ id: this.nodeUuid, body }).subscribe({
+            next: () => { this.sendingCmd = false; this.cmdModalOpen = false; this.loadCommandLog(); },
+            error: (e) => { this.sendingCmd = false; alert('Gagal kirim: ' + (e?.error?.message || e?.message || 'Unknown error')); }
+        });
+    }
+
+    copyCmdText(): void {
+        if (navigator.clipboard) navigator.clipboard.writeText(this.cmdPreview);
+    }
+
+    loadCommandLog(): void {
+        if (!this.nodeUuid) return;
+        this.nodeCommandService.commandLogList$Response({ id: this.nodeUuid }).subscribe({
+            next: (r) => { let b: any = r.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = []; } } this.commandLog = b || []; },
+            error: () => {}
+        });
     }
 
     /**

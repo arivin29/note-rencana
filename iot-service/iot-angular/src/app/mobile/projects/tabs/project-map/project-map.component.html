@@ -1,0 +1,24 @@
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)"><div class="m-skel" style="height:200px;margin:0"></div></div>
+
+<div class="m-empty" *ngIf="!loading && error"><i class="fa fa-triangle-exclamation"></i>{{ error }}</div>
+
+<div class="m-empty" *ngIf="!loading && !error && count === 0">
+  <i class="fa fa-map-location-dot"></i>Belum ada node ber-koordinat di project ini
+</div>
+
+<ng-container *ngIf="!loading && !error && count > 0">
+  <div class="m-olmap-wrap">
+    <div #mapEl class="m-olmap"></div>
+
+    <!-- popup overlay -->
+    <div #popupEl class="m-ol-popup" [class.open]="popup.open">
+      <div class="m-ol-popup__code">{{ popup.code }}</div>
+      <div class="m-ol-popup__row">
+        <span class="m-dot" [ngClass]="{'m-dot--ok':popup.status==='online','m-dot--warn':popup.status==='degraded','m-dot--danger':popup.status!=='online' && popup.status!=='degraded'}"></span>
+        <span class="m-subtle">{{ popup.status }}</span>
+      </div>
+      <button class="m-btn m-btn--primary m-btn--sm" style="width:100%;margin-top:8px" (click)="openNode()">Buka node</button>
+    </div>
+  </div>
+  <div class="m-subtle" style="padding:8px 4px">{{ count }} node · tap marker untuk detail · warna = status.</div>
+</ng-container>

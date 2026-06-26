@@ -1,0 +1,65 @@
+<header class="m-appbar">
+  <button *ngIf="showBack" class="m-appbar__back" type="button" (click)="back()" aria-label="Kembali">
+    <i class="fa fa-chevron-left"></i>
+  </button>
+
+  <div class="m-brand" *ngIf="!showBack">
+    <span class="m-brand__mark"><i class="fa fa-droplet"></i></span>
+    <span class="m-brand__name">Helio<span class="accent">s</span></span>
+  </div>
+
+  <button *ngIf="!showBack" class="m-appbar__chip" type="button" (click)="openSheet()" title="Pilih project">
+    <i class="fa fa-folder-open ic"></i>
+    <span>{{ (active$ | async)?.name }}</span>
+    <i class="fa fa-chevron-down caret"></i>
+  </button>
+
+  <div class="m-appbar__title" *ngIf="showBack">{{ title }}</div>
+  <div class="m-appbar__spacer"></div>
+
+  <button class="m-iconbtn" type="button" (click)="goDesktop()" title="Tampilan Desktop" aria-label="Tampilan Desktop">
+    <i class="fa fa-desktop"></i>
+  </button>
+</header>
+
+<!-- Sheet: pilih project -->
+<div class="m-scrim" [class.open]="sheetOpen" (click)="closeSheet()"></div>
+<div class="m-sheet" [class.open]="sheetOpen">
+  <div class="m-sheet__grip"></div>
+  <div class="m-sheet__head">Pilih Project</div>
+  <div class="m-subtle" style="padding:0 var(--m-4) 10px">Ketuk nama untuk memilih · tombol <b>Detail</b> untuk lihat tab project (Peta, Channel, SCADA)</div>
+  <div class="m-sheet__body">
+    <div class="m-card">
+      <div class="m-list__item" (click)="selectAll()">
+        <div class="m-list__body">
+          <div class="m-list__title">Semua Project</div>
+          <div class="m-list__sub">Lihat seluruh perangkat</div>
+        </div>
+        <span class="m-radio" [class.on]="activeId === null"></span>
+      </div>
+    </div>
+
+    <div class="m-card" *ngIf="loadingProjects" style="padding:var(--m-3);margin-top:8px">
+      <div class="m-skel" style="width:60%"></div><div class="m-skel" style="width:45%"></div>
+    </div>
+
+    <div class="m-card" *ngIf="!loadingProjects && projects.length > 0" style="margin-top:8px">
+      <div class="m-list__item" *ngFor="let p of projects">
+        <span class="m-radio" [class.on]="activeId === p.id" (click)="select(p)" style="margin-right:4px"></span>
+        <div class="m-list__body" (click)="select(p)">
+          <div class="m-list__title">{{ p.name }}</div>
+          <div class="m-list__sub" *ngIf="p.sub">{{ p.sub }}</div>
+        </div>
+        <button class="m-iconbtn" type="button" (click)="openDetail(p, $event)" title="Detail project"
+          style="width:auto; gap:6px; padding:0 12px; color:var(--m-primary)">
+          <span style="font-size:var(--m-xs); font-weight:700">Detail</span>
+          <i class="fa fa-chevron-right" style="font-size:11px"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="m-empty" *ngIf="!loadingProjects && projects.length === 0" style="padding:24px">
+      Tidak ada project
+    </div>
+  </div>
+</div>

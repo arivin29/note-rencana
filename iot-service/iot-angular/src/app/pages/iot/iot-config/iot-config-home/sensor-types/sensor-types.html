@@ -42,6 +42,7 @@
                         <th>Unit</th>
                         <th>Precision</th>
                         <th>Conversion Formula</th>
+                        <th>Installation Profile</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -64,6 +65,13 @@
                                 {{ type.conversionFormula }}
                             </code>
                             <span *ngIf="!type.conversionFormula" class="text-muted small">Linear (default)</span>
+                        </td>
+                        <td style="min-width: 180px;">
+                            <select class="form-select form-select-sm" [ngModel]="typeProfile[type.idSensorType] || ''"
+                                (ngModelChange)="onProfileChange(type, $event)">
+                                <option value="">— none —</option>
+                                <option *ngFor="let p of profiles" [value]="p.idProfile">{{ p.name }}</option>
+                            </select>
                         </td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm" role="group">

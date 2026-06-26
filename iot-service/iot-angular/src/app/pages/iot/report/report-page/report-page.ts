@@ -3,10 +3,12 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ChartComponent, ApexAxisChartSeries, ApexChart, ApexXAxis, ApexYAxis, ApexTooltip, ApexStroke, ApexLegend } from 'ng-apexcharts';
 import { ProjectsService, NodesService, SensorChannelsService, ReportsService } from 'src/sdk/core/services';
+import { SensorContextService } from 'src/sdk/core/services/sensor-context.service';
 import { AuthService } from '../../../../services/auth.service';
 import { environment } from 'src/environments/environment';
 import { Workbook } from 'exceljs';
 import { saveAs } from 'file-saver';
+import { firstValueFrom } from 'rxjs';
 
 // Aggregation modes
 const AggregationModes = [
@@ -131,6 +133,7 @@ export class ReportPage implements OnInit {
     private projectsService: ProjectsService,
     private nodesService: NodesService,
     private sensorChannelsService: SensorChannelsService,
+    private sensorContextService: SensorContextService,
     private reportsService: ReportsService,
     private authService: AuthService,
   ) {}
@@ -531,7 +534,8 @@ export class ReportPage implements OnInit {
       // Summary data
       for (const item of this.previewSummary) {
         const row = sheet.getRow(currentRow);
-        row.getCell(1).value = item.label;
+        const letter = this.getSummaryLetter(item);
+        row.getCell(1).value = `${letter ? letter + ' — ' : ''}${this.getSummaryLabel(item)}`;
         row.getCell(2).value = item.unit || '-';
         row.getCell(3).value = item.min;
         row.getCell(4).value = item.avg;
@@ -575,6 +579,9 @@ export class ReportPage implements OnInit {
         col.width = i === 0 ? 22 : 15;
       });
 
+      // One extra sheet per sensor: its telemetry + installation-context params (as-of each row)
+      await this.appendContextSheets(workbook, sensorCols);
+
       // Generate and download
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -586,6 +593,121 @@ export class ReportPage implements OnInit {
       console.error('Export error:', error);
       alert(error.message || 'Gagal export');
       this.exporting = false;
+    }
+  }
+
+  // ---------- per-sensor installation-context sheets ----------
+
+  private parseAny(body: any): any {
+    if (typeof body === 'string') { try { return JSON.parse(body); } catch { return null; } }
+    return body;
+  }
+
+  // last " - segment" of the column label is the metric; the rest is node·sensor
+  private metricPart(label: string): string {
+    const parts = (label || '').split(' - ');
+    return parts.length ? parts[parts.length - 1] : (label || '');
+  }
+  private sensorTitle(label: string): string {
+    const parts = (label || '').split(' - ');
+    return parts.length > 1 ? parts.slice(0, -1).join(' - ') : (label || '');
+  }
+  private sanitizeSheetName(name: string): string {
+    let n = (name || '').replace(/[:\\/?*\[\]]/g, '-').trim();
+    if (n.length > 31) n = n.slice(0, 31);
+    return n || 'Sensor';
+  }
+
+  // active release for a timestamp: latest release whose effectiveFrom <= ts
+  private activeRelease(releases: any[], ts: any): any {
+    const t = new Date(ts).getTime();
+    for (const r of releases) {
+      if (new Date(r.effectiveFrom).getTime() <= t) return r;
+    }
+    return null;
+  }
+
+  private async appendContextSheets(workbook: Workbook, sensorCols: ReportColumn[]): Promise<void> {
+    if (!sensorCols.length || !this.previewRows.length) return;
+
+    // 1) resolve each report channel -> its sensor
+    const resolved = await Promise.all(sensorCols.map(async (col, idx) => {
+      let idSensor = '';
+      try {
+        const res = await firstValueFrom(this.sensorChannelsService.sensorChannelsControllerFindOne$Response({ id: col.key! } as any));
+        idSensor = this.parseAny(res.body)?.idSensor || '';
+      } catch { /* ignore */ }
+      return { col, channelId: col.key!, letter: String.fromCharCode(65 + idx), idSensor };
+    }));
+
+    // 2) group channels by sensor
+    const groups = new Map<string, { idSensor: string; channels: typeof resolved }>();
+    for (const r of resolved) {
+      if (!r.idSensor) continue;
+      if (!groups.has(r.idSensor)) groups.set(r.idSensor, { idSensor: r.idSensor, channels: [] });
+      groups.get(r.idSensor)!.channels.push(r);
+    }
+
+    const usedNames = new Set<string>();
+    for (const g of groups.values()) {
+      // 3) fetch profile fields (column headers) + releases (as-of values)
+      let fields: any[] = [];
+      let releases: any[] = [];
+      try { fields = this.parseAny((await firstValueFrom(this.sensorContextService.sensorContextFields$Response({ id: g.idSensor }))).body) || []; } catch { /* ignore */ }
+      try { releases = this.parseAny((await firstValueFrom(this.sensorContextService.sensorContextReleasesList$Response({ id: g.idSensor }))).body) || []; } catch { /* ignore */ }
+
+      const seen = new Set<string>();
+      const paramFields: any[] = [];
+      for (const f of fields) { if (!seen.has(f.fieldKey)) { seen.add(f.fieldKey); paramFields.push(f); } }
+      releases.sort((a, b) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime());
+
+      // sheet name (unique, <=31 chars)
+      const letters = g.channels.map((c) => c.letter).join('');
+      let name = this.sanitizeSheetName(`${letters} ${this.sensorTitle(g.channels[0].col.label)}`);
+      let suffix = 2;
+      while (usedNames.has(name)) { name = this.sanitizeSheetName(`${name.slice(0, 28)} ${suffix++}`); }
+      usedNames.add(name);
+      const ws = workbook.addWorksheet(name);
+
+      let row = 1;
+      const profileName = paramFields[0]?.profileName || '—';
+      ws.getCell(`A${row}`).value = `${this.sensorTitle(g.channels[0].col.label)}  |  Profil: ${profileName}`;
+      ws.getCell(`A${row}`).font = { bold: true, size: 12 };
+      row += 2;
+
+      // header: Timestamp | channel value(s) | param columns
+      const headers = ['Timestamp',
+        ...g.channels.map((c) => `${this.metricPart(c.col.label)}${c.col.unit ? ' (' + c.col.unit + ')' : ''} [${c.letter}]`),
+        ...paramFields.map((f) => `${f.label}${f.unit ? ' (' + f.unit + ')' : ''}`)
+      ];
+      const hr = ws.getRow(row);
+      headers.forEach((h, i) => {
+        const cell = hr.getCell(i + 1);
+        cell.value = h;
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+        cell.alignment = { horizontal: 'center' };
+      });
+      row++;
+
+      // data rows (param values are as-of the row timestamp)
+      for (const pr of this.previewRows) {
+        const values = (pr['values'] as Record<string, any>) || {};
+        const active = this.activeRelease(releases, pr.timestamp);
+        const er = ws.getRow(row);
+        let ci = 1;
+        er.getCell(ci++).value = pr.timestamp;
+        for (const c of g.channels) {
+          const v = values[c.channelId];
+          er.getCell(ci++).value = (v !== null && v !== undefined) ? Number(Number(v).toFixed(3)) : null;
+        }
+        for (const f of paramFields) {
+          const pv = active?.params ? active.params[f.fieldKey] : undefined;
+          er.getCell(ci++).value = (pv !== undefined && pv !== null) ? pv : null;
+        }
+        row++;
+      }
+      ws.columns.forEach((col, i) => { col.width = i === 0 ? 22 : 16; });
     }
   }
 
@@ -773,6 +895,24 @@ export class ReportPage implements OnInit {
   getColumnLetter(index: number): string {
     // Convert index to letter: 0->A, 1->B, 2->C, etc.
     return String.fromCharCode(65 + index);
+  }
+
+  // backend summary item carries `channelId` (interface name differs); read robustly
+  private summaryChannelId(item: SensorSummary): string {
+    return (item as any).channelId || item.sensorChannelId || '';
+  }
+
+  // map a summary row to its Preview-Data column letter (A, B, C...) by channel id
+  getSummaryLetter(item: SensorSummary): string {
+    const id = this.summaryChannelId(item);
+    const idx = this.getDataColumns().findIndex((c) => (c.key || c.field) === id);
+    return idx >= 0 ? this.getColumnLetter(idx) : '';
+  }
+
+  getSummaryLabel(item: SensorSummary): string {
+    const id = this.summaryChannelId(item);
+    const col = this.getDataColumns().find((c) => (c.key || c.field) === id);
+    return col?.label || (item as any).metricCode || item.label || '-';
   }
 
   getRowValue(row: any, col: ReportColumn): string {

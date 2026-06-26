@@ -1,0 +1,89 @@
+<div class="config-drawer-backdrop" *ngIf="isOpen" (click)="onClose()"></div>
+<div class="config-drawer" [class.open]="isOpen">
+  <div class="config-drawer-header d-flex align-items-center justify-content-between">
+    <div>
+      <div class="text-muted text-uppercase small">Profile Fields</div>
+      <h5 class="mb-0">{{ profile?.name || 'Installation Profile' }}</h5>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" (click)="onClose()"><i class="fa fa-times"></i></button>
+  </div>
+
+  <div class="config-drawer-body">
+    <p class="text-muted small">{{ profile?.description || 'Installation/asset fields for this profile.' }}</p>
+
+    <div *ngIf="error" class="alert alert-danger py-2 small">{{ error }}</div>
+    <div *ngIf="loading" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-1"></i> Loading…</div>
+
+    <div class="table-responsive mb-3" *ngIf="!loading">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="text-uppercase text-muted small">
+          <tr><th>Field</th><th>Type</th><th>Unit</th><th class="text-center">Req</th><th class="text-end">Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of fields">
+            <td>
+              <div class="fw-semibold">{{ f.label }}</div>
+              <div class="text-muted small font-monospace">{{ f.fieldKey }}</div>
+              <div class="text-muted small" *ngIf="f.dataType === 'enum' && f.options?.length">{{ f.options?.join(', ') }}</div>
+            </td>
+            <td><span class="badge bg-secondary bg-opacity-25 text-secondary">{{ f.dataType }}</span></td>
+            <td class="text-muted small">{{ f.unit || '—' }}</td>
+            <td class="text-center"><i class="fa" [class.fa-check]="f.required" [class.text-success]="f.required"></i></td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" (click)="editField(f)" title="Edit"><i class="fa fa-edit"></i></button>
+                <button class="btn btn-outline-danger" (click)="remove(f)" title="Delete"><i class="fa fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!fields.length"><td colspan="5" class="text-center text-muted py-3">No fields yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="border rounded-3 p-3 bg-body-tertiary">
+      <div class="fw-semibold mb-2">{{ form.id ? 'Edit field' : 'Add field' }}</div>
+      <div class="row g-2">
+        <div class="col-6">
+          <label class="form-label small text-muted">Field key *</label>
+          <input type="text" class="form-control form-control-sm font-monospace" [(ngModel)]="form.fieldKey" placeholder="pipe_diameter_inch">
+        </div>
+        <div class="col-6">
+          <label class="form-label small text-muted">Label *</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="form.label" placeholder="Diameter Pipa">
+        </div>
+        <div class="col-6">
+          <label class="form-label small text-muted">Data type</label>
+          <select class="form-select form-select-sm" [(ngModel)]="form.dataType">
+            <option *ngFor="let t of dataTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="col-3">
+          <label class="form-label small text-muted">Unit</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="form.unit" placeholder="inch">
+        </div>
+        <div class="col-3">
+          <label class="form-label small text-muted">Order</label>
+          <input type="number" class="form-control form-control-sm" [(ngModel)]="form.sortOrder">
+        </div>
+        <div class="col-12" *ngIf="form.dataType === 'enum'">
+          <label class="form-label small text-muted">Options (comma separated)</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="form.optionsText" placeholder="HDPE, PVC, Steel">
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="pReqChk" [(ngModel)]="form.required">
+            <label class="form-check-label small" for="pReqChk">Required</label>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button *ngIf="form.id" type="button" class="btn btn-outline-secondary btn-sm" (click)="resetForm()">Cancel edit</button>
+        <button type="button" class="btn btn-theme btn-sm ms-auto" [disabled]="saving" (click)="save()">
+          <i class="fa" [class.fa-save]="form.id" [class.fa-plus]="!form.id"></i>
+          {{ form.id ? 'Update field' : 'Add field' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

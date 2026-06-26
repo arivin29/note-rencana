@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, Renderer2, OnDestroy, OnInit, H
 import { Router } from '@angular/router';
 import { AppSettings } from '../../service/app-settings.service';
 import { AuthService } from '../../services/auth.service';
+import { ViewModeService } from '../../services/view-mode.service';
 import { User } from '../../models/auth.model';
 import { NotificationsService } from '../../../sdk/core/services/notifications.service';
 
@@ -35,8 +36,14 @@ export class HeaderComponent implements OnInit {
 		public appSettings: AppSettings,
 		private authService: AuthService,
 		private router: Router,
-		private notificationsService: NotificationsService
+		private notificationsService: NotificationsService,
+		private viewMode: ViewModeService
 	) { }
+
+	goMobile(): void {
+		this.viewMode.set('mobile');
+		this.router.navigateByUrl('/mobile/dashboard');
+	}
 	
 	ngOnInit(): void {
 		// Subscribe to auth state

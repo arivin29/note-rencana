@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 // Auth Components & Guards
 import { AuthGuard } from './services/auth.guard';
 import { GuestGuard } from './services/guest.guard';
+import { rootRedirectGuard } from './services/root-redirect.guard';
 import { ProfileComponent } from './pages/auth/profile/profile.component';
 import { LoginPage } from './template/page/login/page-login';
 import { RegisterPage } from './template/page/register/page-register';
@@ -79,8 +80,15 @@ import { WidgetsShowcasePage } from './pages/iot/widgets-showcase/widgets-showca
 // import { LandingPage } from './pages/landing/landing';
 
 const routes: Routes = [
-    // Default redirect to dashboard
-    { path: '', redirectTo: '/iot/dashboard', pathMatch: 'full' },
+    // Default: redirect ke mobile/desktop sesuai mode (ViewModeService)
+    { path: '', pathMatch: 'full', canActivate: [rootRedirectGuard], children: [] },
+
+    // Mobile module (lite, read-only) — guard ada di dalam module
+    {
+        path: 'mobile',
+        loadChildren: () => import('./mobile/mobile.module').then((m) => m.MobileModule),
+        data: { title: 'Mobile' }
+    },
 
     // Auth Routes (Guest Only - no login required)
     { 
@@ -135,6 +143,10 @@ const routes: Routes = [
     {
         path: 'iot/nodes',
         loadChildren: () => import('./pages/iot/nodes/nodes.module').then((m) => m.NodesModule)
+    },
+    {
+        path: 'iot/telemetry-channels',
+        loadChildren: () => import('./pages/iot/telemetry-channels/telemetry-channels.module').then((m) => m.TelemetryChannelsModule)
     },
     {
         path: 'admin/users',

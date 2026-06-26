@@ -17,6 +17,8 @@ import { sensorChannelsControllerCreate } from '../fn/sensor-channels/sensor-cha
 import { SensorChannelsControllerCreate$Params } from '../fn/sensor-channels/sensor-channels-controller-create';
 import { sensorChannelsControllerFindAll } from '../fn/sensor-channels/sensor-channels-controller-find-all';
 import { SensorChannelsControllerFindAll$Params } from '../fn/sensor-channels/sensor-channels-controller-find-all';
+import { sensorChannelsControllerOverview } from '../fn/sensor-channels/sensor-channels-controller-overview';
+import { SensorChannelsControllerOverview$Params } from '../fn/sensor-channels/sensor-channels-controller-overview';
 import { sensorChannelsControllerFindOne } from '../fn/sensor-channels/sensor-channels-controller-find-one';
 import { SensorChannelsControllerFindOne$Params } from '../fn/sensor-channels/sensor-channels-controller-find-one';
 import { sensorChannelsControllerFindOneDetailed } from '../fn/sensor-channels/sensor-channels-controller-find-one-detailed';
@@ -65,6 +67,35 @@ export class SensorChannelsService extends BaseService {
    */
   sensorChannelsControllerFindAll(params?: SensorChannelsControllerFindAll$Params, context?: HttpContext): Observable<void> {
     return this.sensorChannelsControllerFindAll$Response(params, context).pipe(
+      map((r: StrictHttpResponse<void>): void => r.body)
+    );
+  }
+
+  /** Path part for operation `sensorChannelsControllerOverview()` */
+  static readonly SensorChannelsControllerOverviewPath = '/api/sensor-channels/overview';
+
+  /**
+   * Telemetry channels overview (latest reading + status).
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `sensorChannelsControllerOverview()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  sensorChannelsControllerOverview$Response(params?: SensorChannelsControllerOverview$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return sensorChannelsControllerOverview(this.http, this.rootUrl, params, context);
+  }
+
+  /**
+   * Telemetry channels overview (latest reading + status).
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `sensorChannelsControllerOverview$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  sensorChannelsControllerOverview(params?: SensorChannelsControllerOverview$Params, context?: HttpContext): Observable<void> {
+    return this.sensorChannelsControllerOverview$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
   }

@@ -31,6 +31,8 @@
             "styles": [
               "src/styles.css",
               "src/scss/styles.scss",
+              "src/scss/mobile/mobile.scss",
+              "node_modules/ol/ol.css",
               "node_modules/highlight.js/styles/github.css",
               "node_modules/codemirror/lib/codemirror.css",
               "node_modules/codemirror/theme/dracula.css"
@@ -43,7 +45,8 @@
             	"node_modules/codemirror/mode/sql/sql.js"
             ],
             "allowedCommonJsDependencies": [
-            	"lodash", "lity", "jquery", "quill", "quill-delta", "bezier-easing", "ev-emitter", "moment", "apexcharts", "jsvectormap"
+            	"lodash", "lity", "jquery", "quill", "quill-delta", "bezier-easing", "ev-emitter", "moment", "apexcharts", "jsvectormap",
+            	"codemirror", "rbush", "exceljs", "file-saver"
             ]
           },
           "configurations": {

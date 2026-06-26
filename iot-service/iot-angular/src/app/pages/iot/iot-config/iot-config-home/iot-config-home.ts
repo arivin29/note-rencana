@@ -10,6 +10,7 @@ export class IotConfigHomePage {
   tabs = [
     { path: 'node-models', label: 'Node Models', icon: 'bi bi-cpu' },
     { path: 'sensor-types', label: 'Sensor Types', icon: 'bi bi-grid' },
-    { path: 'sensor-catalogs', label: 'Sensor Catalogs', icon: 'bi bi-box' } 
+    { path: 'installation-profiles', label: 'Installation Profiles', icon: 'bi bi-sliders' },
+    { path: 'sensor-catalogs', label: 'Sensor Catalogs', icon: 'bi bi-box' }
   ];
 }

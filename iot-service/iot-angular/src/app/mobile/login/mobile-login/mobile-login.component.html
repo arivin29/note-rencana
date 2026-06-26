@@ -1,0 +1,25 @@
+<div class="m-app">
+  <form class="m-login" #f="ngForm" (ngSubmit)="submit(f)">
+    <div class="m-login__logo">
+      <div class="m-login__mark"><i class="fa fa-droplet"></i></div>
+      <div class="name">Helio<span class="accent">s</span></div>
+      <div class="sub">Smart Water IoT</div>
+    </div>
+
+    <div class="m-login__err" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <div class="m-field">
+      <i class="fa fa-envelope"></i>
+      <input name="email" type="email" [(ngModel)]="email" placeholder="Email" required autocomplete="username">
+    </div>
+    <div class="m-field">
+      <i class="fa fa-lock"></i>
+      <input name="password" type="password" [(ngModel)]="password" placeholder="Kata sandi" required autocomplete="current-password">
+    </div>
+
+    <button class="m-btn m-btn--primary" type="submit" [disabled]="loading">
+      <span *ngIf="!loading">Masuk</span>
+      <span *ngIf="loading"><i class="fa fa-spinner fa-spin"></i> Memproses…</span>
+    </button>
+  </form>
+</div>

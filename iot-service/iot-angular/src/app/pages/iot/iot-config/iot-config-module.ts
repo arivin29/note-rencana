@@ -11,7 +11,9 @@ import { NodeModelDetailPage } from './iot-config-home/node-models/node-model-de
 import { NodeModelsPage } from './iot-config-home/node-models/node-models';
 import { SensorTypesPage } from './iot-config-home/sensor-types/sensor-types';
 import { SensorTypeDrawerComponent } from './iot-config-home/sensor-types/sensor-type-drawer/sensor-type-drawer.component';
-import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-catalogs'; 
+import { InstallationProfilesPage } from './iot-config-home/installation-profiles/installation-profiles';
+import { ProfileFieldsDrawerComponent } from './iot-config-home/installation-profiles/profile-fields-drawer/profile-fields-drawer.component';
+import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-catalogs';
 import { SensorCatalogDrawerComponent } from './iot-config-home/sensor-catalogs/sensor-catalog-drawer/sensor-catalog-drawer.component';
 import { SensorCatalogDetailPage } from './iot-config-home/sensor-catalogs/sensor-catalog-detail/sensor-catalog-detail';
 import { ChannelsConfigEditorComponent } from './iot-config-home/sensor-catalogs/sensor-catalog-detail/channels-config-editor/channels-config-editor.component';
@@ -25,7 +27,9 @@ import { ChannelsConfigEditorComponent } from './iot-config-home/sensor-catalogs
         NodeModelsPage,
         SensorTypesPage,
         SensorTypeDrawerComponent,
-        SensorCatalogsPage, 
+        InstallationProfilesPage,
+        ProfileFieldsDrawerComponent,
+        SensorCatalogsPage,
         SensorCatalogDrawerComponent,
         SensorCatalogDetailPage,
         NodeModelDetailPage,

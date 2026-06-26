@@ -1,0 +1,61 @@
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)"><div class="m-skel"></div><div class="m-skel" style="width:60%"></div></div>
+
+<div class="m-empty" *ngIf="!loading && error">
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="loadCommands()">Coba lagi</button></div>
+</div>
+
+<ng-container *ngIf="!loading && !error">
+  <div class="m-empty" *ngIf="commands.length === 0"><i class="fa fa-terminal"></i>Tidak ada command untuk model ini</div>
+
+  <div class="m-cmdgrid" *ngIf="commands.length > 0">
+    <div class="m-cmd" *ngFor="let c of commands" (click)="open(c)" [style.borderColor]="tint(c.color)">
+      <i class="fa {{ c.icon || 'fa-terminal' }} m-cmd__ic" [style.color]="tint(c.color)"></i>
+      <div class="m-cmd__label" [style.color]="tint(c.color)">{{ c.label }}</div>
+      <span class="m-cmd__ch" [ngClass]="{'m-cmd__ch--mqtt': (c.channel || '').toLowerCase() === 'mqtt'}">{{ c.channel }}</span>
+    </div>
+  </div>
+
+  <div class="m-subtle" style="display:flex;align-items:center;gap:8px;padding:14px 4px" *ngIf="picPhone">
+    <i class="fa fa-user"></i> PIC <a [href]="'tel:' + picPhone" style="color:var(--m-aqua);text-decoration:none"><i class="fa fa-phone"></i> {{ picPhone }}</a>
+  </div>
+  <div *ngIf="result && !sheetOpen" class="m-subtle" style="padding:0 4px 12px" [style.color]="resultOk ? 'var(--m-success)' : 'var(--m-danger)'">
+    <i class="fa" [ngClass]="resultOk ? 'fa-circle-check' : 'fa-circle-xmark'"></i> {{ result }}
+  </div>
+</ng-container>
+
+<!-- Sheet kirim command -->
+<div class="m-scrim" [class.open]="sheetOpen" (click)="close()"></div>
+<div class="m-sheet" [class.open]="sheetOpen">
+  <div class="m-sheet__grip"></div>
+  <div class="m-sheet__head" *ngIf="active">
+    <i class="fa {{ active.icon || 'fa-terminal' }}" [style.color]="tint(active.color)"></i> {{ active.label }}
+    <span class="m-cmd__ch" style="margin-left:6px">{{ active.channel }}</span>
+  </div>
+  <div class="m-sheet__body" *ngIf="active">
+
+    <div *ngFor="let p of activeParams" style="margin-bottom:var(--m-3)">
+      <div class="m-subtle" style="margin-bottom:5px">{{ p.label || p.key }}</div>
+      <div class="m-field" style="margin:0"><input [(ngModel)]="paramValues[p.key]" [placeholder]="p.default || ''"></div>
+    </div>
+
+    <div class="m-subtle" style="margin-bottom:5px">Tujuan (nomor PIC)</div>
+    <div class="m-field" style="margin:0 0 var(--m-3)"><i class="fa fa-phone"></i><input [(ngModel)]="destination" placeholder="Nomor tujuan SMS"></div>
+
+    <div class="m-subtle" style="margin-bottom:5px">Preview</div>
+    <div class="m-log__p" style="margin:0 0 var(--m-3)">{{ preview || '—' }}</div>
+
+    <label *ngIf="activeDanger" style="display:flex;align-items:center;gap:9px;margin-bottom:var(--m-3);color:var(--m-danger);font-size:var(--m-sm)">
+      <input type="checkbox" [(ngModel)]="confirmed"> Saya paham command ini berisiko / berbahaya.
+    </label>
+
+    <div style="display:flex;gap:8px">
+      <button class="m-btn m-btn--ghost m-btn--sm" style="flex:0 0 auto" (click)="copy()"><i class="fa fa-copy"></i></button>
+      <button class="m-btn m-btn--primary" style="flex:1" [disabled]="sending" (click)="send()">
+        <span *ngIf="!sending"><i class="fa fa-paper-plane"></i> Kirim</span>
+        <span *ngIf="sending"><i class="fa fa-spinner fa-spin"></i> Mengirim…</span>
+      </button>
+    </div>
+    <div class="m-subtle" style="padding-top:10px;line-height:1.5">SMS akan membuka aplikasi pesan HP terisi otomatis; Anda yang menekan kirim.</div>
+  </div>
+</div>

@@ -3,7 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { IotConfigHomePage } from './iot-config-home/iot-config-home';
 import { NodeModelsPage } from './iot-config-home/node-models/node-models';
 import { SensorTypesPage } from './iot-config-home/sensor-types/sensor-types';
-import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-catalogs'; 
+import { InstallationProfilesPage } from './iot-config-home/installation-profiles/installation-profiles';
+import { SensorCatalogsPage } from './iot-config-home/sensor-catalogs/sensor-catalogs';
 import { NodeModelDetailPage } from './iot-config-home/node-models/node-model-detail/node-model-detail';
 import { SensorCatalogDetailPage } from './iot-config-home/sensor-catalogs/sensor-catalog-detail/sensor-catalog-detail';
 
@@ -16,6 +17,7 @@ const routes: Routes = [
       { path: 'node-models', component: NodeModelsPage, data: { title: 'Node Models' } },
       { path: 'node-models/:id', component: NodeModelDetailPage, data: { title: 'Node Model Detail' } },
       { path: 'sensor-types', component: SensorTypesPage, data: { title: 'Sensor Types' } },
+      { path: 'installation-profiles', component: InstallationProfilesPage, data: { title: 'Installation Profiles' } },
       { path: 'sensor-catalogs', component: SensorCatalogsPage, data: { title: 'Sensor Catalogs' } },
       { path: 'sensor-catalogs/:id', component: SensorCatalogDetailPage, data: { title: 'Sensor Catalog Detail' } },
     ]

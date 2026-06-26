@@ -1,0 +1,58 @@
+<div class="m-card" *ngIf="channels.length > 0">
+  <div class="m-chrow" *ngFor="let c of channels" [class.open]="expandedId === c.id">
+
+    <div class="m-chrow__head" (click)="toggle(c)">
+      <div class="m-chrow__top">
+        <span class="m-chrow__metric">{{ c.metric }}</span>
+        <span class="m-chrow__valwrap">
+          <span class="m-chrow__valstack">
+            <span class="m-chrow__val">{{ c.value }}</span>
+            <span class="m-chrow__unit" *ngIf="c.unit">{{ c.unit }}</span>
+          </span>
+          <span class="m-dot" [ngClass]="{'m-dot--ok':c.status==='ok','m-dot--off':c.status==='off','m-dot--warn':c.status==='warn','m-dot--danger':c.status==='danger'}"></span>
+          <i class="fa fa-chevron-down m-chrow__caret"></i>
+        </span>
+      </div>
+      <div class="m-chrow__sub" *ngIf="c.subtitle">
+        <i class="fa fa-microchip"></i><span>{{ c.subtitle }}</span>
+      </div>
+      <div class="m-chrow__sub2">
+        <i class="fa fa-clock"></i>
+        <span>update {{ c.updated }}<ng-container *ngIf="c.range"> · {{ c.range }}</ng-container></span>
+      </div>
+    </div>
+
+    <div class="m-chrow__panel" *ngIf="expandedId === c.id">
+      <div class="m-skel" *ngIf="chart.loading" style="height:130px;margin:0"></div>
+
+      <div class="m-subtle" *ngIf="!chart.loading && chart.error" style="text-align:center;padding:24px 0">
+        <i class="fa fa-triangle-exclamation"></i> {{ chart.error }}
+      </div>
+      <div class="m-subtle" *ngIf="!chart.loading && !chart.error && chart.empty" style="text-align:center;padding:24px 0">
+        <i class="fa fa-chart-line"></i> Belum ada data 24 jam terakhir
+      </div>
+
+      <div class="m-chrow__chart" *ngIf="!chart.loading && !chart.error && !chart.empty">
+        <svg viewBox="0 0 320 130" preserveAspectRatio="none">
+          <line class="m-chart__grid" x1="0" y1="33" x2="320" y2="33"></line>
+          <line class="m-chart__grid" x1="0" y1="65" x2="320" y2="65"></line>
+          <line class="m-chart__grid" x1="0" y1="97" x2="320" y2="97"></line>
+          <path class="m-chart__area" [attr.d]="chart.area"></path>
+          <path class="m-chart__line" [attr.d]="chart.path"></path>
+        </svg>
+        <div class="m-subtle" style="text-align:right;padding-top:4px">24 jam terakhir · {{ c.unit }}</div>
+      </div>
+
+      <div class="m-chrow__actions">
+        <button class="m-btn m-btn--ghost m-btn--sm" style="flex:1" (click)="openChannel(c)">
+          <i class="fa fa-chart-line"></i> Grafik penuh
+        </button>
+        <button class="m-btn m-btn--ghost m-btn--sm" style="flex:1" (click)="openNode(c.nodeId)">
+          <i class="fa fa-microchip"></i> Buka node
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="m-empty" *ngIf="channels.length === 0"><i class="fa fa-wave-square"></i>Tidak ada channel</div>

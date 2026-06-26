@@ -1,0 +1,86 @@
+<div class="m-scrim" [class.open]="open" (click)="onClose()"></div>
+
+<div class="m-sheet m-ctx-sheet" [class.open]="open">
+  <div class="m-sheet__grip"></div>
+
+  <div class="m-sheet__head m-ctx-head">
+    <div>
+      <div class="m-ctx-title">Installation Context</div>
+      <div class="m-ctx-subtitle">{{ sensorLabel || 'Sensor' }}</div>
+    </div>
+    <button class="m-iconbtn" (click)="onClose()"><i class="fa fa-xmark"></i></button>
+  </div>
+
+  <div class="m-sheet__body" *ngIf="open" style="max-height:72vh">
+    <div class="m-ctx-alert" *ngIf="error"><i class="fa fa-triangle-exclamation"></i> {{ error }}</div>
+
+    <!-- profile selector -->
+    <label class="m-lbl">Profil Instalasi</label>
+    <select class="m-select" style="width:100%;margin-bottom:var(--m-3)"
+            [ngModel]="sensorProfileId" (ngModelChange)="onProfileChange($event)" [disabled]="profileSaving">
+      <option value="">— pilih profil —</option>
+      <option *ngFor="let p of profiles" [value]="p.idProfile">{{ p.name }}</option>
+    </select>
+
+    <!-- ===== release timeline ===== -->
+    <ng-container *ngIf="!showForm">
+      <div class="m-ctx-sechead">
+        <span>Riwayat Release</span>
+        <button class="m-btn m-btn--primary m-btn--sm" (click)="startNew()" [disabled]="!sensorProfileId">
+          <i class="fa fa-plus"></i> Release Baru
+        </button>
+      </div>
+
+      <div class="m-empty" *ngIf="loading" style="padding:18px"><i class="fa fa-spinner fa-spin"></i>Memuat…</div>
+      <div class="m-empty" *ngIf="!loading && releases.length === 0" style="padding:20px">
+        <i class="fa fa-clock-rotate-left"></i>Belum ada release. Tap "Release Baru".
+      </div>
+
+      <div class="m-ctx-rel" *ngFor="let r of releases">
+        <div class="m-ctx-rel__top">
+          <span class="m-ctx-rel__date"><i class="fa fa-calendar-day"></i> {{ r.effectiveFrom | date:'d MMM yyyy HH:mm' }}</span>
+          <span class="m-pill m-pill--ok" *ngIf="!r.effectiveTo"><span class="dot"></span>aktif</span>
+        </div>
+        <div class="m-ctx-rel__sum">{{ paramSummary(r) }}</div>
+        <div class="m-ctx-rel__note" *ngIf="r.note"><i class="fa fa-note-sticky"></i> {{ r.note }}</div>
+        <div class="m-ctx-rel__actions">
+          <button class="m-btn m-btn--ghost m-btn--sm" (click)="startEdit(r)"><i class="fa fa-pen"></i> Edit</button>
+          <button class="m-btn m-btn--ghost m-btn--sm" (click)="remove(r)"><i class="fa fa-trash"></i></button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ===== new/edit release form ===== -->
+    <ng-container *ngIf="showForm">
+      <div class="m-ctx-sechead"><span>{{ editingId ? 'Edit Release' : 'Release Baru' }}</span></div>
+
+      <label class="m-lbl">Efektif Sejak</label>
+      <input type="datetime-local" class="m-input-box" [(ngModel)]="effectiveFrom" style="margin-bottom:var(--m-3)">
+
+      <div *ngFor="let g of profileGroups" class="m-ctx-group">
+        <div class="m-ctx-group__name">{{ g.name }}</div>
+        <div *ngFor="let f of g.fields" class="m-ctx-fieldrow">
+          <label class="m-lbl">
+            {{ f.label }}<span class="m-req" *ngIf="f.required">*</span><span class="m-unit" *ngIf="f.unit"> ({{ f.unit }})</span>
+          </label>
+          <select *ngIf="f.options?.length" class="m-select" style="width:100%" [(ngModel)]="values[f.fieldKey]">
+            <option [ngValue]="undefined">—</option>
+            <option *ngFor="let o of f.options" [ngValue]="o">{{ o }}</option>
+          </select>
+          <input *ngIf="!f.options?.length" class="m-input-box"
+                 [type]="f.dataType === 'number' ? 'number' : 'text'" [(ngModel)]="values[f.fieldKey]">
+        </div>
+      </div>
+
+      <label class="m-lbl">Catatan</label>
+      <input class="m-input-box" [(ngModel)]="note" placeholder="opsional" style="margin-bottom:var(--m-3)">
+
+      <div class="m-ctx-form__actions">
+        <button class="m-btn m-btn--ghost" (click)="cancelForm()">Batal</button>
+        <button class="m-btn m-btn--primary" (click)="save()" [disabled]="saving">
+          <i class="fa fa-floppy-disk"></i> {{ saving ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>

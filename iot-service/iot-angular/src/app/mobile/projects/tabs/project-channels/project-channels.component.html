@@ -1,0 +1,44 @@
+<!-- Filters (mirror desktop /iot/telemetry-channels) -->
+<div class="m-filterbar" *ngIf="!loading && !error && raw.length">
+  <div class="m-search">
+    <i class="fa fa-search"></i>
+    <input type="text" placeholder="Cari channel / node / sensor..." [ngModel]="search" (ngModelChange)="onSearch($event)">
+    <i class="fa fa-xmark" *ngIf="hasActiveFilter" (click)="resetFilters()" style="cursor:pointer"></i>
+  </div>
+
+  <div class="m-chips">
+    <button class="m-chip" *ngFor="let s of statusOptions" [class.active]="filters.status === s" (click)="setStatus(s)">
+      {{ statusLabel(s) }}<span class="m-chip__n">{{ counts[s] || 0 }}</span>
+    </button>
+  </div>
+
+  <div class="m-selects" *ngIf="nodeTypes.length > 1 || channelTypes.length > 1">
+    <select class="m-select" *ngIf="nodeTypes.length > 1" [(ngModel)]="filters.nodeModelId" (ngModelChange)="onFilter()">
+      <option value="">Semua Tipe Node</option>
+      <option *ngFor="let o of nodeTypes" [value]="o.id">{{ o.label }}</option>
+    </select>
+    <select class="m-select" *ngIf="channelTypes.length > 1" [(ngModel)]="filters.sensorTypeId" (ngModelChange)="onFilter()">
+      <option value="">Semua Tipe Channel</option>
+      <option *ngFor="let o of channelTypes" [value]="o.id">{{ o.label }}</option>
+    </select>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
+  <div class="m-skel"></div>
+  <div class="m-skel" style="width:55%"></div>
+</div>
+
+<!-- Error -->
+<div class="m-empty" *ngIf="!loading && error">
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+</div>
+
+<!-- Result count -->
+<div *ngIf="!loading && !error && raw.length" class="m-result-count">
+  {{ viewChannels.length }} channel<span *ngIf="hasActiveFilter"> · dari {{ raw.length }}</span>
+</div>
+
+<!-- List -->
+<mobile-channel-list *ngIf="!loading && !error" [channels]="viewChannels"></mobile-channel-list>

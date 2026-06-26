@@ -16,18 +16,20 @@ import { NodeDetailAddSensorDrawerComponent } from './nodes-detail/node-detail-a
 import { NodeDetailAddChannelDrawerComponent } from './nodes-detail/node-detail-add-channel-drawer/node-detail-add-channel-drawer.component';
 import { NodeRelayControlComponent } from './nodes-detail/node-relay-control/node-relay-control.component';
 import { NodeMappingUpdateComponent } from './nodes-detail/node-mapping-update/node-mapping-update.component';
+import { SensorContextDrawerComponent } from './nodes-detail/sensor-context-drawer/sensor-context-drawer.component';
 
 @NgModule({
   declarations: [
-    NodesListPage, 
-    NodesAddPage, 
-    NodesEditPage, 
+    NodesListPage,
+    NodesAddPage,
+    NodesEditPage,
     NodesDetailPage,
     SensorChanelDetail,
     NodeDetailAddSensorDrawerComponent,
     NodeDetailAddChannelDrawerComponent,
     NodeRelayControlComponent,
-    NodeMappingUpdateComponent
+    NodeMappingUpdateComponent,
+    SensorContextDrawerComponent
   ],
   imports: [
     CommonModule, 

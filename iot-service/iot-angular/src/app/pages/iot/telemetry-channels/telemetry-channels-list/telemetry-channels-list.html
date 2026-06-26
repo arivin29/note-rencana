@@ -1,0 +1,222 @@
+<!-- Header -->
+<div class="d-flex align-items-center mb-3" *ngIf="!embedded">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+      <li class="breadcrumb-item active">Telemetry Channels</li>
+    </ul>
+    <h1 class="page-header mb-0">Telemetry Channels</h1>
+  </div>
+  <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+    <button class="btn btn-outline-default btn-sm" (click)="loadChannels()" [disabled]="loading">
+      <i class="fa fa-rotate-right fa-fw me-1" [class.fa-spin]="loading"></i> Refresh
+    </button>
+  </div>
+</div>
+
+<card class="shadow-sm">
+  <!-- Status tabs -->
+  <ul class="nav nav-tabs nav-tabs-v2 px-4">
+    <li class="nav-item me-3" *ngFor="let option of statusOptions">
+      <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+         [class.active]="filters.status === option" (click)="setStatusFilter(option)">
+        <span>{{ option === 'All Status' ? 'All' : statusLabel(option) }}</span>
+        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">{{ statusCount(option) }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <div class="p-4">
+    <!-- Filters -->
+    <div class="row g-3 mb-4" *ngIf="!embedded">
+      <div class="col-lg-3 col-md-6" *ngIf="isAdmin">
+        <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
+        <select class="form-select" [(ngModel)]="filters.ownerId" (ngModelChange)="onOwnerChange($event)">
+          <option value="">All Owners</option>
+          <option *ngFor="let o of ownerOptions" [value]="o.id">{{ o.label }}</option>
+        </select>
+      </div>
+      <div class="col-lg-3 col-md-6" *ngIf="projectOptions.length > 1">
+        <label class="text-muted text-uppercase small d-block mb-1">Project</label>
+        <select class="form-select" [(ngModel)]="filters.projectId" (ngModelChange)="onClientFilterChange()">
+          <option value="">All Projects ({{ projectOptions.length }})</option>
+          <option *ngFor="let p of projectOptions" [value]="p.id">{{ p.label }}</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-6" *ngIf="nodeModelOptions.length > 1">
+        <label class="text-muted text-uppercase small d-block mb-1">Node Type</label>
+        <select class="form-select" [(ngModel)]="filters.nodeModelId" (ngModelChange)="onClientFilterChange()">
+          <option value="">All Models ({{ nodeModelOptions.length }})</option>
+          <option *ngFor="let m of nodeModelOptions" [value]="m.id">{{ m.label }}</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-6" *ngIf="sensorTypeOptions.length > 1">
+        <label class="text-muted text-uppercase small d-block mb-1">Channel Type</label>
+        <select class="form-select" [(ngModel)]="filters.sensorTypeId" (ngModelChange)="onClientFilterChange()">
+          <option value="">All Types ({{ sensorTypeOptions.length }})</option>
+          <option *ngFor="let t of sensorTypeOptions" [value]="t.id">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="col-lg-2 col-md-6">
+        <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search opacity-50"></i></span>
+          <input type="text" class="form-control border-start-0 ps-0" placeholder="Metric code"
+                 [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center text-muted py-5">
+      <i class="fa fa-spinner fa-spin fa-2x mb-2 d-block"></i> Loading channels…
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loading" class="alert alert-warning">{{ error }}</div>
+
+    <!-- Table -->
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover text-nowrap align-middle">
+        <thead class="text-uppercase text-muted small">
+          <tr>
+            <th class="pt-0 pb-2 w-10px"></th>
+            <th class="pt-0 pb-2 sortable" (click)="sortBy('metric')">Channel <i class="fa ms-1" [ngClass]="sortIcon('metric')"></i></th>
+            <th class="pt-0 pb-2 sortable" (click)="sortBy('type')">Type <i class="fa ms-1" [ngClass]="sortIcon('type')"></i></th>
+            <th class="pt-0 pb-2 sortable text-end" (click)="sortBy('value')">Latest Value <i class="fa ms-1" [ngClass]="sortIcon('value')"></i></th>
+            <th class="pt-0 pb-2 sortable" (click)="sortBy('status')">Status <i class="fa ms-1" [ngClass]="sortIcon('status')"></i></th>
+            <th class="pt-0 pb-2 sortable" *ngIf="!nodeId" (click)="sortBy('node')">Node <i class="fa ms-1" [ngClass]="sortIcon('node')"></i></th>
+            <th class="pt-0 pb-2 sortable text-end" (click)="sortBy('lastSeen')">Last Reading <i class="fa ms-1" [ngClass]="sortIcon('lastSeen')"></i></th>
+            <th class="pt-0 pb-2 text-end">Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let c of paginatedChannels">
+            <tr class="cursor-pointer" [class.table-active]="expandedId === c.idSensorChannel"
+                (click)="toggleExpand(c.idSensorChannel)">
+              <!-- Expand toggle (first column) -->
+              <td class="w-10px align-middle text-center">
+                <button class="btn btn-sm btn-link text-muted p-0" (click)="$event.stopPropagation(); toggleExpand(c.idSensorChannel)"
+                        [attr.aria-expanded]="expandedId === c.idSensorChannel" title="Toggle details">
+                  <i class="fa" [class.fa-chevron-right]="expandedId !== c.idSensorChannel" [class.fa-chevron-down]="expandedId === c.idSensorChannel"></i>
+                </button>
+              </td>
+              <!-- Channel (2 lines) -->
+              <td>
+                <div class="fw-semibold text-inverse text-opacity-75">{{ c.metricCode }}</div>
+                <div class="text-muted small">{{ c.sensor.label || '—' }}</div>
+              </td>
+              <!-- Type -->
+              <td><span class="text-muted">{{ c.sensorType.category || '—' }}</span></td>
+              <!-- Latest value (2 lines) -->
+              <td class="text-end">
+                <div class="fw-semibold">{{ formatValue(c) }}</div>
+                <div class="text-muted small">{{ ageLabel(c) }}</div>
+              </td>
+              <!-- Status -->
+              <td><span [class]="statusBadge(c.status)">{{ statusLabel(c.status) }}</span></td>
+              <!-- Node (2 lines, clickable link) -->
+              <td *ngIf="!nodeId">
+                <a [routerLink]="c.node.idNode ? ['/iot/nodes', c.node.idNode] : null" (click)="$event.stopPropagation()"
+                   class="fw-semibold text-decoration-none" [class.text-theme]="c.node.idNode" [class.text-inverse]="!c.node.idNode">
+                  {{ c.node.name || c.node.code || '—' }}
+                </a>
+                <div class="small">
+                  <i class="fa fa-circle fa-2xs me-1" [class]="connectivityBadge(c.node.connectivityStatus)"></i>
+                  <span class="text-muted">{{ (c.node.connectivityStatus || 'unknown') | titlecase }} · {{ c.node.modelName || '—' }}</span>
+                </div>
+              </td>
+              <!-- Last reading -->
+              <td class="text-end text-muted">
+                {{ c.latest?.ts ? (c.latest?.ts | date:'short') : 'Never' }}
+              </td>
+              <!-- Related links (real anchors → right-click / ctrl-click opens new tab) -->
+              <td class="text-end text-nowrap">
+                <a *ngIf="c.node.idNode" [routerLink]="['/iot/nodes', c.node.idNode]" (click)="$event.stopPropagation()"
+                   class="text-muted text-decoration-none px-1" title="Open node">
+                  <i class="fa fa-microchip"></i>
+                </a>
+                <a *ngIf="c.node.idNode && c.sensor.idSensor" [routerLink]="['/iot/nodes', c.node.idNode, 'sensor', c.sensor.idSensor]" (click)="$event.stopPropagation()"
+                   class="text-muted text-decoration-none px-1" title="Open sensor / channel">
+                  <i class="fa fa-wave-square"></i>
+                </a>
+                <a *ngIf="c.project.idProject" [routerLink]="['/iot/projects', c.project.idProject]" (click)="$event.stopPropagation()"
+                   class="text-muted text-decoration-none px-1" title="Open project">
+                  <i class="fa fa-diagram-3"></i>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Expanded detail row -->
+            <tr *ngIf="expandedId === c.idSensorChannel" class="expanded-row">
+              <td [attr.colspan]="nodeId ? 7 : 8" class="p-0 border-0">
+                <div class="bg-body-tertiary p-4 mx-2 mb-2 rounded-3">
+                  <div class="row g-4">
+                    <div class="col-md-3">
+                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-gauge me-1"></i> Reading</h6>
+                      <div class="mb-1"><strong>Value:</strong> {{ formatValue(c) }}</div>
+                      <div class="mb-1"><strong>Raw:</strong> {{ c.latest?.valueRaw ?? '—' }}</div>
+                      <div class="mb-1"><strong>Quality:</strong> {{ c.latest?.qualityFlag || '—' }}</div>
+                      <div class="mb-1"><strong>Updated:</strong> {{ c.latest?.ts ? (c.latest?.ts | date:'medium') : 'Never' }}</div>
+                    </div>
+                    <div class="col-md-3">
+                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-sliders me-1"></i> Channel</h6>
+                      <div class="mb-1"><strong>Unit:</strong> {{ c.unit || '—' }}</div>
+                      <div class="mb-1"><strong>Thresholds:</strong> {{ thresholdLabel(c) }}</div>
+                      <div class="mb-1"><strong>Register:</strong> {{ c.registerAddress ?? '—' }}</div>
+                      <div class="mb-1"><strong>Mult / Offset:</strong> {{ c.multiplier ?? 1 }} / {{ c.offsetValue ?? 0 }}</div>
+                      <div class="mb-1"><strong>Aggregation:</strong> {{ c.aggregation || '—' }}</div>
+                    </div>
+                    <div class="col-md-3">
+                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-microchip me-1"></i> Node</h6>
+                      <div class="mb-1"><strong>Code:</strong> {{ c.node.code || '—' }}</div>
+                      <div class="mb-1"><strong>Model:</strong> {{ c.node.modelVendor || '' }} {{ c.node.modelName || '' }}</div>
+                      <div class="mb-1"><strong>Connectivity:</strong> {{ (c.node.connectivityStatus || 'unknown') | titlecase }}</div>
+                      <div class="mb-1"><strong>Last seen:</strong> {{ c.node.lastSeenAt ? (c.node.lastSeenAt | date:'short') : 'Never' }}</div>
+                      <div class="mb-1"><strong>Interval:</strong> {{ c.node.telemetryIntervalSec ?? '—' }}s</div>
+                    </div>
+                    <div class="col-md-3">
+                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-diagram-3 me-1"></i> Context</h6>
+                      <div class="mb-1"><strong>Sensor:</strong> {{ c.sensor.label || '—' }}</div>
+                      <div class="mb-1"><strong>Type:</strong> {{ c.sensorType.category || '—' }}</div>
+                      <div class="mb-1"><strong>Project:</strong> {{ c.project.name || '—' }}</div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!loading && !filteredChannels.length" class="text-center text-muted py-5 border-top">
+      No telemetry channels match the filter.
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-md-flex align-items-center mt-3" *ngIf="!loading && totalEntries">
+      <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+        Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalEntries }} channels
+      </div>
+      <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
+        <span class="text-muted small me-2 text-uppercase">Rows</span>
+        <select class="form-select form-select-sm w-auto" [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
+      <ul class="pagination mb-0 justify-content-center">
+        <li class="page-item" [class.disabled]="currentPage === 1">
+          <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
+        </li>
+        <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+          <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === totalPages">
+          <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</card>

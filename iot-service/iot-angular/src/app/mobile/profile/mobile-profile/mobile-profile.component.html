@@ -1,0 +1,52 @@
+<div class="m-card" style="padding:var(--m-4);display:flex;align-items:center;gap:14px">
+  <div style="width:48px;height:48px;border-radius:var(--m-radius-sm);background:var(--m-grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px">
+    {{ initials }}
+  </div>
+  <div style="min-width:0">
+    <div style="font-weight:700">{{ user?.name || 'Pengguna' }}</div>
+    <div style="font-size:var(--m-xs);color:var(--m-text-muted)">{{ user?.email }} · {{ user?.role }}</div>
+  </div>
+</div>
+
+<div class="m-section">Preferensi</div>
+<div class="m-card">
+  <div class="m-list__item"><div class="m-list__body"><div class="m-list__title">Satuan</div></div><span class="m-list__sub">Metrik</span></div>
+  <div class="m-list__item"><div class="m-list__body"><div class="m-list__title">Bahasa</div></div><span class="m-list__sub">Indonesia</span></div>
+  <div class="m-list__item" (click)="openRefreshSheet()">
+    <div class="m-list__body"><div class="m-list__title">Auto-reload</div></div>
+    <span class="m-list__sub" style="margin-right:8px">{{ refreshLabel }}</span>
+    <i class="fa fa-chevron-right m-list__chev"></i>
+  </div>
+</div>
+
+<div class="m-section">Tampilan</div>
+<div class="m-card">
+  <div class="m-list__item" (click)="goDesktop()">
+    <div class="m-list__body"><div class="m-list__title">Tampilan Desktop</div></div>
+    <i class="fa fa-desktop m-list__chev"></i>
+  </div>
+</div>
+
+<div class="m-section">Akun</div>
+<div class="m-card">
+  <div class="m-list__item" (click)="logout()">
+    <div class="m-list__body"><div class="m-list__title" style="color:var(--m-danger)">Keluar</div></div>
+    <i class="fa fa-arrow-right-from-bracket m-list__chev" style="color:var(--m-danger)"></i>
+  </div>
+</div>
+
+<!-- Sheet: pilih interval auto-reload -->
+<div class="m-scrim" [class.open]="refreshSheetOpen" (click)="closeRefreshSheet()"></div>
+<div class="m-sheet" [class.open]="refreshSheetOpen">
+  <div class="m-sheet__grip"></div>
+  <div class="m-sheet__head">Auto-reload</div>
+  <div class="m-subtle" style="padding:0 var(--m-4) 10px">Seberapa sering halaman memuat ulang data. Berlaku untuk semua halaman mobile.</div>
+  <div class="m-sheet__body">
+    <div class="m-card">
+      <div class="m-list__item" *ngFor="let o of refreshOptions" (click)="selectRefresh(o.value)">
+        <div class="m-list__body"><div class="m-list__title">{{ o.label }}</div></div>
+        <span class="m-radio" [class.on]="refreshValue === o.value"></span>
+      </div>
+    </div>
+  </div>
+</div>

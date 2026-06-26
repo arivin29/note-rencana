@@ -19,6 +19,7 @@ export class AppMenuService {
 				{ 'path': '/iot/owners#delivery', 'text': 'Data Delivery Config' }
 			]},
 			{ 'path': '/iot/nodes', 'icon': 'bi bi-hdd-stack', 'text': 'Nodes' },
+			{ 'path': '/iot/telemetry-channels', 'icon': 'bi bi-broadcast-pin', 'text': 'Telemetry Channels', 'roles': ['admin','tenant'] },
             { 'path': '/iot/unpaired-devices', 'icon': 'bi bi-hdd-network', 'text': 'Unpaired Devices', 'roles': ['admin', 'tenant'], 'badge': '3', 'badge_bg': 'bg-warning' },
 			{ 'path': '/iot/alerts', 'icon': 'bi bi-bell', 'text': 'Alerts' },
 			{ 'path': '/iot/telemetry', 'icon': 'bi bi-activity', 'text': 'Telemetry Logs' },

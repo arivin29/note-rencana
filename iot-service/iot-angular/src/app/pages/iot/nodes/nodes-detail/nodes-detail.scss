@@ -13,8 +13,37 @@
 // Offcanvas drawer styles
 .offcanvas {
   width: 500px;
-  
+
   @media (max-width: 576px) {
     width: 100%;
   }
+}
+
+// Channel "Actions" dropdown was clipped by the table's horizontal-scroll wrapper
+// (Bootstrap .table-responsive uses overflow-x:auto, which forces overflow-y to auto).
+// When a dropdown inside it is open, let the wrapper overflow so the menu shows fully.
+.table-responsive:has(.dropdown-menu.show) {
+  overflow: visible;
+}
+
+// Make sure the open channel action menu stacks above sibling cards.
+.table-responsive .dropdown-menu.show {
+  z-index: 1060;
+}
+
+.cmd-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1050;
+}
+
+.cmd-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  max-width: 94vw;
+  z-index: 1060;
 }

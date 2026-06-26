@@ -1,0 +1,42 @@
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+  <div style="font-size:var(--m-lg);font-weight:700">{{ title || 'Channel' }}</div>
+  <div class="m-subtle">{{ unit }}<span *ngIf="min != null && max != null"> · batas {{ min }}–{{ max }}</span></div>
+</div>
+
+<div class="m-chips" style="margin-top:12px">
+  <div class="m-chip" [class.active]="range === '1h'" (click)="setRange('1h')">1 jam</div>
+  <div class="m-chip" [class.active]="range === '24h'" (click)="setRange('24h')">24 jam</div>
+  <div class="m-chip" [class.active]="range === '7d'" (click)="setRange('7d')">7 hari</div>
+</div>
+
+<div class="m-empty" *ngIf="loading && rows.length === 0"><i class="fa fa-chart-line"></i>Memuat…</div>
+
+<div class="m-empty" *ngIf="error && rows.length === 0">
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && !error && rows.length === 0">
+  <i class="fa fa-chart-line"></i>Belum ada data pada rentang ini
+</div>
+
+<ng-container *ngIf="!error && rows.length > 0">
+  <div class="m-card m-chart">
+    <svg viewBox="0 0 340 150" preserveAspectRatio="none">
+      <line class="m-chart__grid" x1="0" y1="38" x2="340" y2="38"></line>
+      <line class="m-chart__grid" x1="0" y1="75" x2="340" y2="75"></line>
+      <line class="m-chart__grid" x1="0" y1="112" x2="340" y2="112"></line>
+      <path class="m-chart__area" [attr.d]="areaPath"></path>
+      <path class="m-chart__line" [attr.d]="path"></path>
+    </svg>
+  </div>
+
+  <div class="m-section">Data terakhir</div>
+  <div class="m-card">
+    <div class="m-row" *ngFor="let r of rows">
+      <span class="m-row__t">{{ r.ts }}</span>
+      <span class="m-row__v">{{ fmt(r.value) }} {{ unit }}</span>
+    </div>
+  </div>
+  <div style="height:12px"></div>
+</ng-container>

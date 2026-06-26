@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { SensorTypeFormValue } from './sensor-type-drawer/sensor-type-drawer.component';
 import { SensorTypesService } from 'src/sdk/core/services';
+import { SensorContextService } from 'src/sdk/core/services/sensor-context.service';
 import { SensorTypeResponseDto, CreateSensorTypeDto } from 'src/sdk/core/models';
 
 @Component({
@@ -18,10 +19,54 @@ export class SensorTypesPage implements OnInit {
 
   sensorTypes: SensorTypeResponseDto[] = [];
 
-  constructor(private sensorTypesService: SensorTypesService) {}
+  // installation profile mapping (per sensor_type)
+  profiles: Array<{ idProfile: string; code: string; name: string }> = [];
+  typeProfile: Record<string, string> = {}; // idSensorType -> idProfile
+
+  constructor(
+    private sensorTypesService: SensorTypesService,
+    private sensorContextService: SensorContextService
+  ) {}
 
   ngOnInit(): void {
     this.loadSensorTypes();
+    this.loadProfiles();
+    this.loadTypeProfiles();
+  }
+
+  private parseBody(b: any): any {
+    if (typeof b === 'string') { try { return JSON.parse(b); } catch { return null; } }
+    return b;
+  }
+
+  loadProfiles() {
+    this.sensorContextService.profilesList$Response().subscribe({
+      next: (r) => { this.profiles = this.parseBody(r.body) || []; },
+      error: () => {}
+    });
+  }
+
+  loadTypeProfiles() {
+    this.sensorContextService.sensorTypeProfilesList$Response().subscribe({
+      next: (r) => {
+        const rows = this.parseBody(r.body) || [];
+        const map: Record<string, string> = {};
+        for (const m of rows) map[m.idSensorType] = m.idProfile;
+        this.typeProfile = map;
+      },
+      error: () => {}
+    });
+  }
+
+  onProfileChange(type: SensorTypeResponseDto, idProfile: string) {
+    this.typeProfile[type.idSensorType] = idProfile;
+    this.sensorContextService.setSensorTypeProfile$Response({
+      id: type.idSensorType,
+      body: { idProfile: idProfile || '' }
+    }).subscribe({
+      next: () => {},
+      error: (err) => alert('Failed to set profile: ' + (err.error?.message || 'Unknown error'))
+    });
   }
 
   loadSensorTypes() {
@@ -58,6 +103,7 @@ export class SensorTypesPage implements OnInit {
     this.isDrawerOpen = false;
     this.editingType = null;
   }
+
 
   handleDrawerSave(formValue: SensorTypeFormValue) {
     if (formValue.id && this.editingType) {

@@ -1,0 +1,70 @@
+<div class="m-card" *ngIf="loading && channels.length === 0" style="padding:var(--m-4)">
+  <div class="m-skel" style="width:45%"></div>
+  <div class="m-skel" style="width:70%"></div>
+</div>
+
+<div class="m-empty" *ngIf="error && channels.length === 0">
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+</div>
+
+<ng-container *ngIf="!error && (channels.length > 0 || !loading)">
+
+  <div class="m-card m-statushead">
+    <div class="m-statushead__top">
+      <div class="m-statushead__code">{{ head.code }}</div>
+      <span class="m-pill" [ngClass]="{
+        'm-pill--ok': head.status === 'online',
+        'm-pill--off': head.status === 'offline',
+        'm-pill--warn': head.status === 'degraded'
+      }"><span class="dot"></span>{{ head.status === 'online' ? 'Online' : head.status === 'degraded' ? 'Degraded' : 'Offline' }}</span>
+    </div>
+    <div class="m-statushead__meta"><i class="fa fa-clock fa-fw"></i> terakhir kirim {{ head.lastSeen }}</div>
+  </div>
+
+  <ng-container *ngIf="hasLocContact">
+    <div class="m-section">Lokasi & Kontak</div>
+    <div class="m-card" style="padding:var(--m-3)">
+      <div class="m-node-meta" style="gap:9px">
+        <div *ngIf="loc.text"><i class="fa fa-location-dot"></i><span>{{ loc.text }}</span></div>
+        <div *ngIf="loc.coords"><i class="fa fa-map-pin"></i><span>{{ loc.coords }}</span></div>
+        <div *ngIf="pic.name || pic.phone">
+          <i class="fa fa-user"></i>
+          <span>{{ pic.name }}<ng-container *ngIf="pic.name && pic.phone"> · </ng-container><a *ngIf="pic.phone" [href]="'tel:' + pic.phone">{{ pic.phone }}</a></span>
+        </div>
+        <div *ngIf="pic.email"><i class="fa fa-envelope"></i><a [href]="'mailto:' + pic.email">{{ pic.email }}</a></div>
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="m-section">Channel · nilai terbaru</div>
+  <mobile-channel-list [channels]="channels"></mobile-channel-list>
+
+  <ng-container *ngIf="sensors.length">
+    <div class="m-section">Installation Context</div>
+    <div class="m-card">
+      <div class="m-list__item" *ngFor="let s of sensors" (click)="openCtx(s)">
+        <span class="m-ctxbtn__ic"><i class="fa fa-sliders"></i></span>
+        <div class="m-list__body">
+          <div class="m-list__title">{{ s.label }}</div>
+          <div class="m-list__sub">Parameter pemasangan · atur release</div>
+        </div>
+        <i class="fa fa-chevron-right" style="color:var(--m-text-dim);font-size:13px"></i>
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="m-section">Info perangkat</div>
+  <div class="m-card m-meta">
+    <div class="m-meta__r" *ngFor="let r of info"><span class="m-meta__k">{{ r.k }}</span><span class="m-meta__v">{{ r.v }}</span></div>
+  </div>
+
+  <div class="m-section">Kesehatan</div>
+  <div class="m-card m-meta">
+    <div class="m-meta__r" *ngFor="let r of health"><span class="m-meta__k">{{ r.k }}</span><span class="m-meta__v">{{ r.v }}</span></div>
+  </div>
+
+  <div style="height:12px"></div>
+</ng-container>
+
+<mobile-sensor-context [open]="ctxOpen" [idSensor]="ctxSensorId" [sensorLabel]="ctxSensorLabel" (closed)="closeCtx()"></mobile-sensor-context>

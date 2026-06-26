@@ -1,0 +1,7 @@
+<div class="m-app">
+  <mobile-header [title]="title" [showBack]="showBack"></mobile-header>
+  <main class="m-content" mPull (mPull)="onPull()">
+    <router-outlet></router-outlet>
+  </main>
+  <mobile-bottom-nav></mobile-bottom-nav>
+</div>

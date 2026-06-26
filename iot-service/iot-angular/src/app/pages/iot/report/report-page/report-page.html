@@ -193,7 +193,12 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of previewSummary">
-                <td>{{ item.label }}</td>
+                <td>
+                  <span class="badge bg-light text-dark me-2" *ngIf="getSummaryLetter(item)">
+                    <strong>{{ getSummaryLetter(item) }}</strong>
+                  </span>
+                  {{ getSummaryLabel(item) }}
+                </td>
                 <td>{{ item.unit || '-' }}</td>
                 <td class="text-end">{{ formatNumber(item.min) }}</td>
                 <td class="text-end">{{ formatNumber(item.avg) }}</td>

@@ -1,0 +1,35 @@
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
+  <div class="m-skel"></div><div class="m-skel" style="width:70%"></div><div class="m-skel" style="width:50%"></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && error">
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && !error && logs.length === 0">
+  <i class="fa fa-file-lines"></i>Belum ada log
+</div>
+
+<div class="m-card" *ngIf="!loading && !error && logs.length > 0">
+  <div class="m-list__item" *ngFor="let l of logs" (click)="open(l)" style="align-items:flex-start">
+    <div class="m-list__body" style="min-width:0">
+      <div class="m-list__sub" style="margin:0"><i class="fa fa-clock fa-fw"></i> {{ l.time }}</div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:var(--m-xs);color:var(--m-text-muted);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ l.preview }}</div>
+    </div>
+    <i class="fa fa-chevron-right m-list__chev" style="margin-top:3px"></i>
+  </div>
+</div>
+
+<!-- Drawer JSON -->
+<div class="m-scrim" [class.open]="sheetOpen" (click)="close()"></div>
+<div class="m-sheet" [class.open]="sheetOpen">
+  <div class="m-sheet__grip"></div>
+  <div class="m-sheet__head" *ngIf="selected">
+    <i class="fa fa-file-code"></i> Detail Log
+    <span class="m-subtle" style="font-weight:400;margin-left:6px">{{ selected.time }}</span>
+  </div>
+  <div class="m-sheet__body" *ngIf="selected">
+    <pre class="m-json">{{ selected.pretty }}</pre>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)"><div class="m-skel" style="width:50%"></div><div class="m-skel" style="width:70%"></div></div>
+<div class="m-empty" *ngIf="error"><i class="fa fa-triangle-exclamation"></i>{{ error }}</div>
+
+<ng-container *ngIf="!loading && !error">
+  <div style="font-size:var(--m-lg);font-weight:700">{{ d.name }}</div>
+  <div class="m-subtle" style="margin:4px 0 12px">{{ d.status }} · {{ d.area }}</div>
+  <div class="m-stats" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="m-stat"><div class="m-stat__value">{{ d.total }}</div><div class="m-stat__label">Node</div></div>
+    <div class="m-stat"><div class="m-stat__value" style="color:var(--m-success)">{{ d.online }}</div><div class="m-stat__label">Online</div></div>
+    <div class="m-stat"><div class="m-stat__value" style="color:var(--m-text-muted)">{{ d.offline }}</div><div class="m-stat__label">Offline</div></div>
+  </div>
+  <div class="m-section">Informasi</div>
+  <div class="m-card m-meta">
+    <div class="m-meta__r"><span class="m-meta__k">Owner</span><span class="m-meta__v">{{ d.owner }}</span></div>
+    <div class="m-meta__r"><span class="m-meta__k">Area</span><span class="m-meta__v">{{ d.area }}</span></div>
+    <div class="m-meta__r"><span class="m-meta__k">Status</span><span class="m-meta__v">{{ d.status }}</span></div>
+  </div>
+</ng-container>
