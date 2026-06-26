@@ -21,6 +21,7 @@ export interface TeltonikaStandardPayload {
     temperature?: number;
     voltage?: number;
     adc1?: number;
+    adc2?: number;
   };
   metadata?: {
     source: string;

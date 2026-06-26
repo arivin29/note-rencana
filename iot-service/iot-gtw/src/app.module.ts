@@ -30,7 +30,7 @@ import { HealthModule } from './modules/health/health.module';
 import { SchedulerAppModule } from './modules/scheduler/scheduler.module';
 import { TeltonikaModule } from './modules/teltonika/teltonika.module';
 import { ClickhouseModule } from './modules/clickhouse/clickhouse.module';
-import { MlModule } from './modules/ml/ml.module';
+// import { MlModule } from './modules/ml/ml.module'; // disabled — OpenSearch/ML not needed yet
 import { ForwardingModule } from './modules/forwarding/forwarding.module';
 
 @Module({
@@ -84,7 +84,8 @@ import { ForwardingModule } from './modules/forwarding/forwarding.module';
         ClickhouseModule, // ClickHouse for time-series telemetry
         SchedulerAppModule, // Auto-process telemetry every 30 seconds
         TeltonikaModule, // Teltonika FM125 TCP Gateway
-        MlModule, // ML/AI Anomaly Detection & Forecasting
+        // MlModule disabled — OpenSearch/ML not needed yet (re-enable when OpenSearch is back).
+        // MlModule, // ML/AI Anomaly Detection & Forecasting
         ForwardingModule, // Data forwarding to client databases
     ],
 })

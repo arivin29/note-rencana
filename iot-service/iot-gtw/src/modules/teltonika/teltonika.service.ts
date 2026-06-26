@@ -86,10 +86,15 @@ export class TeltonikaService {
       const tempRaw = reported[72] ?? reported[67] ?? null;
       const temperature = tempRaw !== null ? tempRaw / 10 : null;
 
-      // Extract voltage (AVL ID 9 or 66)
-      // Voltage is in millivolts (divide by 1000)
+      // Extract voltage / ADC1 = Analog Input 1 (AVL ID 9, fallback External Voltage 66)
+      // Millivolts → divide by 1000
       const voltageRaw = reported[9] ?? reported[66] ?? null;
       const voltage = voltageRaw !== null ? voltageRaw / 1000 : null;
+
+      // Extract ADC2 = Analog Input 2 (AVL ID 6, per FMB130/FMC130 datasheet)
+      // Millivolts → divide by 1000
+      const adc2Raw = reported[6] ?? null;
+      const adc2 = adc2Raw !== null ? adc2Raw / 1000 : null;
 
       // Convert Unix timestamp (ms) to ISO 8601 UTC string
       const timestampMs = typeof reported.ts === 'number' ? reported.ts : parseInt(reported.ts, 10);
@@ -120,11 +125,14 @@ export class TeltonikaService {
         standardPayload.sensors.voltage = voltage;
         standardPayload.sensors.adc1 = voltage; // Keep compatibility
       }
+      if (adc2 !== null) {
+        standardPayload.sensors.adc2 = adc2;
+      }
 
       // Add other AVL IDs if present (extensible)
       Object.keys(reported).forEach((key) => {
         const numKey = parseInt(key, 10);
-        if (!isNaN(numKey) && ![9, 66, 67, 72].includes(numKey)) {
+        if (!isNaN(numKey) && ![6, 9, 66, 67, 72].includes(numKey)) {
           // Store other AVL IDs in metadata
           if (!standardPayload.metadata) {
             standardPayload.metadata = { source: 'teltonika', model: 'FM125' };
