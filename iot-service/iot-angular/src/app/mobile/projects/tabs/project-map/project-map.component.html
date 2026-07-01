@@ -7,18 +7,49 @@
 </div>
 
 <ng-container *ngIf="!loading && !error && count > 0">
+  <!-- Toggle Node / Sensor -->
+  <div class="m-seg" style="display:flex;gap:4px;background:var(--m-surface-2,#eef1f5);padding:4px;border-radius:10px;margin-bottom:8px">
+    <button type="button" class="m-btn m-btn--sm" style="flex:1"
+      [ngClass]="mode==='node' ? 'm-btn--primary' : 'm-btn--ghost'" (click)="setMode('node')">
+      <i class="fa fa-microchip"></i> Node
+    </button>
+    <button type="button" class="m-btn m-btn--sm" style="flex:1"
+      [ngClass]="mode==='sensor' ? 'm-btn--primary' : 'm-btn--ghost'" (click)="setMode('sensor')">
+      <i class="fa fa-gauge"></i> Sensor
+    </button>
+  </div>
+
   <div class="m-olmap-wrap">
     <div #mapEl class="m-olmap"></div>
 
     <!-- popup overlay -->
     <div #popupEl class="m-ol-popup" [class.open]="popup.open">
-      <div class="m-ol-popup__code">{{ popup.code }}</div>
-      <div class="m-ol-popup__row">
-        <span class="m-dot" [ngClass]="{'m-dot--ok':popup.status==='online','m-dot--warn':popup.status==='degraded','m-dot--danger':popup.status!=='online' && popup.status!=='degraded'}"></span>
-        <span class="m-subtle">{{ popup.status }}</span>
-      </div>
-      <button class="m-btn m-btn--primary m-btn--sm" style="width:100%;margin-top:8px" (click)="openNode()">Buka node</button>
+      <!-- NODE -->
+      <ng-container *ngIf="popup.kind==='node'">
+        <div class="m-ol-popup__code">{{ popup.code }}</div>
+        <div class="m-ol-popup__row">
+          <span class="m-dot" [ngClass]="{'m-dot--ok':popup.status==='online','m-dot--warn':popup.status==='degraded','m-dot--danger':popup.status!=='online' && popup.status!=='degraded'}"></span>
+          <span class="m-subtle">{{ popup.status }}</span>
+        </div>
+        <div class="m-subtle" style="margin-top:4px"><i class="fa fa-location-dot me-1"></i>{{ popup.address || 'Alamat belum diisi' }}</div>
+        <div class="m-subtle" style="margin-top:2px"><i class="fa fa-clock me-1"></i>{{ popup.lastSeen }}</div>
+        <button class="m-btn m-btn--primary m-btn--sm" style="width:100%;margin-top:8px" (click)="openNode()">Buka node</button>
+      </ng-container>
+
+      <!-- SENSOR -->
+      <ng-container *ngIf="popup.kind==='sensor'">
+        <div class="m-ol-popup__code">{{ popup.code }}</div>
+        <div *ngFor="let c of popup.channels" class="m-ol-popup__row" style="justify-content:space-between;gap:8px">
+          <span class="m-subtle" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.label }}</span>
+          <span style="font-weight:600">{{ fmtVal(c.value) }} <span class="m-subtle">{{ c.unit }}</span></span>
+        </div>
+        <div class="m-subtle" style="margin-top:4px"><i class="fa fa-location-dot me-1"></i>{{ popup.address || 'Alamat belum diisi' }}</div>
+        <div class="m-subtle" style="margin-top:2px"><i class="fa fa-clock me-1"></i>{{ popup.lastSeen }}</div>
+        <button class="m-btn m-btn--primary m-btn--sm" style="width:100%;margin-top:8px" (click)="openNode()">Buka node</button>
+      </ng-container>
     </div>
   </div>
-  <div class="m-subtle" style="padding:8px 4px">{{ count }} node · tap marker untuk detail · warna = status.</div>
+  <div class="m-subtle" style="padding:8px 4px">
+    {{ mode==='node' ? (count + ' node') : 'Nilai sensor terbaru' }} · tap marker untuk detail.
+  </div>
 </ng-container>

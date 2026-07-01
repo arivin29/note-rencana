@@ -15,6 +15,19 @@
     </div>
 </div>
 
+<!-- Group (Kelompok) filter chips -->
+<div class="d-flex flex-wrap gap-2 mb-3" *ngIf="!isLoading && !error && groups.length">
+    <button type="button" class="btn btn-sm" [class.btn-theme]="!groupFilter"
+        [class.btn-outline-secondary]="groupFilter" (click)="setGroupFilter('')">
+        Semua <span class="badge bg-light text-dark ms-1">{{ sensorTypes.length }}</span>
+    </button>
+    <button type="button" class="btn btn-sm" *ngFor="let g of groups"
+        [class.btn-theme]="groupFilter === g" [class.btn-outline-secondary]="groupFilter !== g"
+        (click)="setGroupFilter(g)">
+        {{ g }} <span class="badge bg-light text-dark ms-1">{{ groupCount(g) }}</span>
+    </button>
+</div>
+
 <!-- Loading State -->
 <div *ngIf="isLoading" class="text-center py-5">
     <div class="spinner-border text-theme" role="status">
@@ -37,7 +50,8 @@
         <div class="table-responsive">
             <table class="table table-hover text-nowrap align-middle mb-0">
                 <thead class="text-uppercase text-muted small">
-                    <tr> 
+                    <tr>
+                        <th>Kelompok</th>
                         <th>Category</th>
                         <th>Unit</th>
                         <th>Precision</th>
@@ -51,6 +65,10 @@
                         <!-- <td class="fw-semibold text-muted small font-monospace">
                             {{ type.idSensorType.substring(0, 8) }}...
                         </td> -->
+                        <td>
+                            <span *ngIf="$any(type).groupName" class="badge bg-theme bg-opacity-25 text-theme">{{ $any(type).groupName }}</span>
+                            <span *ngIf="!$any(type).groupName" class="text-muted small">—</span>
+                        </td>
                         <td>
                             <span class="badge bg-primary bg-opacity-25 text-primary">{{ type.category }}</span>
                         </td>
@@ -95,6 +113,6 @@
     </div>
 </card>
 
-<app-sensor-type-drawer [isOpen]="isDrawerOpen" [editData]="editingType" (close)="handleDrawerClose()"
-    (save)="handleDrawerSave($event)">
+<app-sensor-type-drawer [isOpen]="isDrawerOpen" [editData]="editingType" [groups]="groups"
+    (close)="handleDrawerClose()" (save)="handleDrawerSave($event)">
 </app-sensor-type-drawer>

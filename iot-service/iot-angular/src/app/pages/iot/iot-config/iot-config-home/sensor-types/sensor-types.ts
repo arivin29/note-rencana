@@ -18,6 +18,8 @@ export class SensorTypesPage implements OnInit {
   editingType: SensorTypeResponseDto | null = null; // For edit mode
 
   sensorTypes: SensorTypeResponseDto[] = [];
+  groups: string[] = []; // distinct "kelompok" for the drawer dropdown + filters
+  groupFilter = ''; // active kelompok filter ('' = semua)
 
   // installation profile mapping (per sensor_type)
   profiles: Array<{ idProfile: string; code: string; name: string }> = [];
@@ -76,6 +78,7 @@ export class SensorTypesPage implements OnInit {
     this.sensorTypesService.sensorTypesControllerFindAll().subscribe({
       next: (data) => {
         this.sensorTypes = data;
+        this.recomputeGroups();
         this.isLoading = false;
       },
       error: (err) => {
@@ -89,6 +92,15 @@ export class SensorTypesPage implements OnInit {
   }
 
   
+  private recomputeGroups() {
+    const set = new Set<string>();
+    for (const t of this.sensorTypes) {
+      const g = (t as any).groupName as string | undefined;
+      if (g && g.trim()) set.add(g.trim());
+    }
+    this.groups = Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
   openCreateDrawer() {
     this.editingType = null; // Clear edit mode
     this.isDrawerOpen = true;
@@ -118,10 +130,11 @@ export class SensorTypesPage implements OnInit {
   private createSensorType(formValue: SensorTypeFormValue) {
     const payload: CreateSensorTypeDto = {
       category: formValue.category,
+      groupName: formValue.groupName?.trim() || undefined,
       defaultUnit: formValue.unit,
       precision: parseInt(formValue.precision, 10),
       conversionFormula: formValue.conversionFormula?.trim() || undefined
-    };
+    } as any;
 
     this.isLoading = true;
     
@@ -145,10 +158,11 @@ export class SensorTypesPage implements OnInit {
 
     const payload = {
       category: formValue.category,
+      groupName: formValue.groupName?.trim() || undefined,
       defaultUnit: formValue.unit,
       precision: parseInt(formValue.precision, 10),
       conversionFormula: formValue.conversionFormula?.trim() || undefined
-    };
+    } as any;
 
     this.isLoading = true;
     
@@ -191,15 +205,29 @@ export class SensorTypesPage implements OnInit {
     });
   }
 
+  setGroupFilter(group: string) {
+    this.groupFilter = group;
+  }
+
+  groupCount(group: string): number {
+    return this.sensorTypes.filter((t) => ((t as any).groupName || '') === group).length;
+  }
+
   get filteredSensorTypes() {
     const term = this.search.trim().toLowerCase();
-    if (!term) {
-      return this.sensorTypes;
-    }
-    return this.sensorTypes.filter((type) =>
-      type.category.toLowerCase().includes(term) ||
-      type.defaultUnit?.toLowerCase().includes(term) ||
-      type.conversionFormula?.toLowerCase().includes(term)
-    );
+    return this.sensorTypes.filter((type) => {
+      if (this.groupFilter && ((type as any).groupName || '') !== this.groupFilter) {
+        return false;
+      }
+      if (!term) {
+        return true;
+      }
+      return (
+        type.category.toLowerCase().includes(term) ||
+        ((type as any).groupName || '').toLowerCase().includes(term) ||
+        type.defaultUnit?.toLowerCase().includes(term) ||
+        type.conversionFormula?.toLowerCase().includes(term)
+      );
+    });
   }
 }

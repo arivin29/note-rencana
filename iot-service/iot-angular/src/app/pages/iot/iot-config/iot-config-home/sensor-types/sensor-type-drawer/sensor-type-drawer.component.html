@@ -13,8 +13,18 @@
         <form #sensorTypeForm="ngForm" (ngSubmit)="handleSubmit(sensorTypeForm.valid ?? false)">
              
             <div class="mb-3">
+                <label class="form-label text-muted text-uppercase small">Kelompok</label>
+                <input type="text" class="form-control" name="groupName" list="sensorTypeGroups"
+                    [(ngModel)]="formModel.groupName" placeholder="Pilih atau ketik baru, mis. Tekanan" autocomplete="off">
+                <datalist id="sensorTypeGroups">
+                    <option *ngFor="let g of groups" [value]="g"></option>
+                </datalist>
+                <small class="form-text text-muted">Kelompok yang dilihat pengguna (mis. Tekanan, Debit/Aliran). Pilih dari daftar atau ketik baru.</small>
+            </div>
+            <div class="mb-3">
                 <label class="form-label text-muted text-uppercase small">Category</label>
                 <input type="text" class="form-control" name="category" [(ngModel)]="formModel.category" required>
+                <small class="form-text text-muted">Nama teknis varian (mis. Tekanan 4-20mA 0-10 bar).</small>
             </div>
             <div class="row">
                 <div class="col-md-6">

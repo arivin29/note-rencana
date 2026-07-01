@@ -25,7 +25,7 @@ interface OverviewChannel {
     modelVendor: string | null; modelName: string | null;
   };
   sensor: { idSensor: string | null; label: string | null; status: string | null };
-  sensorType: { idSensorType: string | null; category: string | null; defaultUnit: string | null };
+  sensorType: { idSensorType: string | null; category: string | null; groupName: string | null; defaultUnit: string | null };
   project: { idProject: string | null; name: string | null; idOwner: string | null };
   latest: { ts: string | null; value: number | null; valueRaw: number | null; qualityFlag: string | null; ageSeconds: number | null } | null;
 }
@@ -50,7 +50,7 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
 
   // Owner filter is server-side (scopes the fetch). The rest are client-side and
   // their dropdown options are derived from the loaded data, so empty options never show.
-  filters = { ownerId: '', projectId: '', nodeModelId: '', sensorTypeId: '', status: 'All Status' as 'All Status' | ChannelStatus };
+  filters = { ownerId: '', projectId: '', nodeModelId: '', sensorTypeGroup: '', sensorTypeId: '', status: 'All Status' as 'All Status' | ChannelStatus };
   searchTerm = '';
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
@@ -138,9 +138,20 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
     }
     return this.sortOptions(map);
   }
+  // Kelompok (group) options — the simple, user-facing buckets.
+  get sensorTypeGroupOptions(): Option[] {
+    const map = new Map<string, string>();
+    for (const c of this.channels) {
+      const g = c.sensorType?.groupName;
+      if (g) map.set(g, g);
+    }
+    return this.sortOptions(map);
+  }
+  // Variant options, cascaded by the selected kelompok (if any).
   get sensorTypeOptions(): Option[] {
     const map = new Map<string, string>();
     for (const c of this.channels) {
+      if (this.filters.sensorTypeGroup && (c.sensorType?.groupName || '') !== this.filters.sensorTypeGroup) continue;
       if (c.sensorType?.idSensorType) map.set(c.sensorType.idSensorType, c.sensorType.category || c.sensorType.idSensorType);
     }
     return this.sortOptions(map);
@@ -153,7 +164,16 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
   private pruneStaleFilters(): void {
     if (this.filters.projectId && !this.projectOptions.some(o => o.id === this.filters.projectId)) this.filters.projectId = '';
     if (this.filters.nodeModelId && !this.nodeModelOptions.some(o => o.id === this.filters.nodeModelId)) this.filters.nodeModelId = '';
+    if (this.filters.sensorTypeGroup && !this.sensorTypeGroupOptions.some(o => o.id === this.filters.sensorTypeGroup)) this.filters.sensorTypeGroup = '';
     if (this.filters.sensorTypeId && !this.sensorTypeOptions.some(o => o.id === this.filters.sensorTypeId)) this.filters.sensorTypeId = '';
+  }
+
+  // When kelompok changes, drop a now-incompatible variant selection.
+  onGroupChange(): void {
+    if (this.filters.sensorTypeId && !this.sensorTypeOptions.some(o => o.id === this.filters.sensorTypeId)) {
+      this.filters.sensorTypeId = '';
+    }
+    this.currentPage = 1;
   }
 
   // ---------- filter handlers ----------
@@ -179,6 +199,7 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
     return this.channels.filter((c) => {
       if (this.filters.projectId && c.project?.idProject !== this.filters.projectId) return false;
       if (this.filters.nodeModelId && c.node?.idNodeModel !== this.filters.nodeModelId) return false;
+      if (this.filters.sensorTypeGroup && (c.sensorType?.groupName || '') !== this.filters.sensorTypeGroup) return false;
       if (this.filters.sensorTypeId && c.sensorType?.idSensorType !== this.filters.sensorTypeId) return false;
       if (term) {
         const hay = `${c.metricCode || ''} ${c.sensor?.label || ''} ${c.node?.code || ''} ${c.node?.name || ''}`.toLowerCase();

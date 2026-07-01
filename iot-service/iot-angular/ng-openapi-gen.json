@@ -3,7 +3,7 @@
   "input": "http://localhost:3000/api-json",
   "output": "src/sdk/core",
   "ignoreUnusedModels": false,
-  "removeStaleFiles": true,
+  "removeStaleFiles": false,
   "servicePrefix": "",
   "serviceSuffix": "Service",
   "modelPrefix": "",

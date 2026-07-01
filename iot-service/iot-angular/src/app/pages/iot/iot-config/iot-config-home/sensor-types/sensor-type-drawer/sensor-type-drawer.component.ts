@@ -4,6 +4,7 @@ import { SensorTypeResponseDto } from 'src/sdk/core/models';
 export interface SensorTypeFormValue {
   id?: string; // For edit mode
   code: string;
+  groupName: string; // user-facing "kelompok" (e.g. "Tekanan")
   category: string;
   unit: string;
   precision: string;
@@ -20,6 +21,7 @@ export interface SensorTypeFormValue {
 export class SensorTypeDrawerComponent implements OnChanges {
   @Input() isOpen = false;
   @Input() editData: SensorTypeResponseDto | null = null; // For edit mode
+  @Input() groups: string[] = []; // existing "kelompok" suggestions for the dropdown
   @Output() save = new EventEmitter<SensorTypeFormValue>();
   @Output() close = new EventEmitter<void>();
 
@@ -44,6 +46,7 @@ export class SensorTypeDrawerComponent implements OnChanges {
         this.formModel = {
           id: this.editData.idSensorType,
           code: this.editData.idSensorType.substring(0, 8) + '...', // Display short ID
+          groupName: (this.editData as any).groupName || '',
           category: this.editData.category,
           unit: this.editData.defaultUnit || '',
           precision: this.editData.precision?.toString() || '',
@@ -135,6 +138,7 @@ export class SensorTypeDrawerComponent implements OnChanges {
   private createEmptyForm(): SensorTypeFormValue {
     return {
       code: '',
+      groupName: '',
       category: '',
       unit: '',
       precision: '',

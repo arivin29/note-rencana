@@ -50,6 +50,13 @@
           <option *ngFor="let m of nodeModelOptions" [value]="m.id">{{ m.label }}</option>
         </select>
       </div>
+      <div class="col-lg-2 col-md-6" *ngIf="sensorTypeGroupOptions.length > 1">
+        <label class="text-muted text-uppercase small d-block mb-1">Kelompok</label>
+        <select class="form-select" [(ngModel)]="filters.sensorTypeGroup" (ngModelChange)="onGroupChange()">
+          <option value="">Semua Kelompok ({{ sensorTypeGroupOptions.length }})</option>
+          <option *ngFor="let g of sensorTypeGroupOptions" [value]="g.id">{{ g.label }}</option>
+        </select>
+      </div>
       <div class="col-lg-2 col-md-6" *ngIf="sensorTypeOptions.length > 1">
         <label class="text-muted text-uppercase small d-block mb-1">Channel Type</label>
         <select class="form-select" [(ngModel)]="filters.sensorTypeId" (ngModelChange)="onClientFilterChange()">
@@ -107,7 +114,10 @@
                 <div class="text-muted small">{{ c.sensor.label || '—' }}</div>
               </td>
               <!-- Type -->
-              <td><span class="text-muted">{{ c.sensorType.category || '—' }}</span></td>
+              <td>
+                <span *ngIf="c.sensorType.groupName" class="badge bg-theme bg-opacity-25 text-theme me-1">{{ c.sensorType.groupName }}</span>
+                <span class="text-muted small">{{ c.sensorType.category || '—' }}</span>
+              </td>
               <!-- Latest value (2 lines) -->
               <td class="text-end">
                 <div class="fw-semibold">{{ formatValue(c) }}</div>
