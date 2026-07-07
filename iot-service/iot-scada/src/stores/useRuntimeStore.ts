@@ -4,7 +4,7 @@
 // ============================================================
 
 import { create } from 'zustand'
-import type { ScadaRuntimeResponse, NodeRuntimeState, RuntimeStatus } from '@/types/scada'
+import type { ScadaRuntimeResponse, ScadaRuntimeBindingDto, NodeRuntimeState, RuntimeStatus } from '@/types/scada'
 
 export interface RuntimeState {
   // Data
@@ -23,37 +23,49 @@ export interface RuntimeState {
   setIsPolling: (v: boolean) => void
 }
 
+// Pilih binding utama sebuah node (G-4). Prioritas:
+//   1. isPrimary === true  (tie-break: priorityOrder terkecil)
+//   2. bindingKey === 'value'
+//   3. priorityOrder terkecil
+//   4. binding pertama
+function pickPrimaryBinding(
+  bindings: ScadaRuntimeBindingDto[],
+): ScadaRuntimeBindingDto | null {
+  if (bindings.length === 0) return null
+  const po = (b: ScadaRuntimeBindingDto) => b.priorityOrder ?? Number.MAX_SAFE_INTEGER
+
+  const primaries = bindings.filter((b) => b.isPrimary)
+  if (primaries.length > 0) {
+    return primaries.reduce((best, b) => (po(b) < po(best) ? b : best))
+  }
+
+  const valueKey = bindings.find((b) => b.bindingKey === 'value')
+  if (valueKey) return valueKey
+
+  return bindings.reduce((best, b) => (po(b) < po(best) ? b : best))
+}
+
 function buildNodeRuntimeMap(
   data: ScadaRuntimeResponse,
 ): Record<string, NodeRuntimeState> {
-  const map: Record<string, NodeRuntimeState> = {}
-
+  // Pass 1 — kelompokkan semua binding per node
+  const byNode: Record<string, ScadaRuntimeBindingDto[]> = {}
   for (const binding of data.bindings) {
-    const nodeId = binding.nodeId
-    if (!map[nodeId]) {
-      map[nodeId] = {
-        primaryValue: null,
-        primaryUnit: null,
-        primaryPrecision: null,
-        primaryStatus: 'unknown' as RuntimeStatus,
-        primaryTimestamp: null,
-        primaryDisplayLabel: null,
-        allBindings: [],
-      }
-    }
+    ;(byNode[binding.nodeId] ??= []).push(binding)
+  }
 
-    map[nodeId].allBindings.push(binding)
-
-    // Primary binding — isPrimary tidak tersedia di runtime response
-    // Gunakan priorityOrder=0 atau bindingKey='value' atau yang pertama muncul sebagai primary
-    const isPrimary = (binding as unknown as { isPrimary?: boolean }).isPrimary
-    if (map[nodeId].primaryStatus === 'unknown' || binding.bindingKey === 'value' || isPrimary) {
-      map[nodeId].primaryValue     = binding.value ?? null
-      map[nodeId].primaryUnit      = binding.unitOverride ?? binding.unit ?? null
-      map[nodeId].primaryPrecision = binding.precision ?? null
-      map[nodeId].primaryStatus    = binding.status
-      map[nodeId].primaryTimestamp = binding.timestamp ?? null
-      map[nodeId].primaryDisplayLabel = binding.displayLabel ?? null
+  // Pass 2 — tentukan primary dari isPrimary/priorityOrder, bukan urutan kedatangan
+  const map: Record<string, NodeRuntimeState> = {}
+  for (const [nodeId, bindings] of Object.entries(byNode)) {
+    const primary = pickPrimaryBinding(bindings)
+    map[nodeId] = {
+      primaryValue:        primary?.value ?? null,
+      primaryUnit:         primary?.unitOverride ?? primary?.unit ?? null,
+      primaryPrecision:    primary?.precision ?? null,
+      primaryStatus:       primary?.status ?? ('unknown' as RuntimeStatus),
+      primaryTimestamp:    primary?.timestamp ?? null,
+      primaryDisplayLabel: primary?.displayLabel ?? null,
+      allBindings:         bindings,
     }
   }
 

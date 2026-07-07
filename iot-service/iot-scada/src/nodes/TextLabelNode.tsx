@@ -28,6 +28,10 @@ interface TextStyleConfig {
   opacity?: number
 }
 
+// Stable fallbacks — zustand v5 selectors must not return fresh refs each render
+const DEFAULT_TEXT_SIZE = { width: 140, height: 40 }
+const EMPTY_TEXT_STYLE: TextStyleConfig = {}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TextLabelNode({ id, data, selected }: NodeProps<any>) {
   const d = data as TextLabelData
@@ -35,15 +39,10 @@ export function TextLabelNode({ id, data, selected }: NodeProps<any>) {
   const mode = useUiStore((s) => s.mode)
   const isEditMode = mode === 'edit'
 
-  const nodeSize = useDiagramStore((s) => {
-    const n = s.nodes.find((nd) => nd.id === id)
-    return n?.size ?? { width: 140, height: 40 }
-  })
+  const nodeSize = useDiagramStore((s) => s.nodes.find((nd) => nd.id === id)?.size) ?? DEFAULT_TEXT_SIZE
 
-  const styleConfig: TextStyleConfig = useDiagramStore((s) => {
-    const n = s.nodes.find((nd) => nd.id === id)
-    return (n?.style as TextStyleConfig) ?? {}
-  })
+  const styleRaw = useDiagramStore((s) => s.nodes.find((nd) => nd.id === id)?.style)
+  const styleConfig: TextStyleConfig = (styleRaw as TextStyleConfig | undefined) ?? EMPTY_TEXT_STYLE
 
   const fontSize = styleConfig.fontSize ?? 14
   const fontColor = styleConfig.fontColor ?? 'var(--text-primary)'

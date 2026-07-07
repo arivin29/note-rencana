@@ -12,8 +12,10 @@ import { useDiagramStore } from '@/stores/useDiagramStore'
 import { useUiStore } from '@/stores/useUiStore'
 import { useTrendStore } from '@/stores/useTrendStore'
 import { TrendCard } from '@/components/TrendCard'
-import type { NodeRuntimeState, RuntimeStatus, NodeStyleConfig, NodeRenderMode, ScadaNodeBinding } from '@/types/scada'
+import { Gauge } from '@/components/Gauge'
+import type { NodeRuntimeState, RuntimeStatus, NodeStyleConfig, NodeRenderMode, ScadaNodeBinding, ScadaRuntimeBindingDto } from '@/types/scada'
 import { getSensorCategory } from './sensorCategories'
+import { SCHEMATIC_VARIANTS } from './schematicVariants'
 
 // ── Status helpers ────────────────────────────────────────────
 
@@ -1336,6 +1338,239 @@ function InlineEditLabel({
 
 // ── Component ─────────────────────────────────────────────────
 
+// ── Live equipment helpers (data-driven symbols) ──────────────
+
+const PUMP_TYPES = new Set(['pump', 'motor', 'booster_station', 'blower', 'compressor'])
+const TANK_TYPES = new Set(['reservoir', 'ground_tank', 'elevated_tank', 'tank', 'water_tower', 'break_tank'])
+// Instrument types that can render an inline live analog dial (needle sweeps with value)
+const DIAL_TYPES = new Set(['pressure', 'flowmeter', 'ph_sensor', 'turbidity_sensor', 'chlorine_sensor', 'do_sensor', 'conductivity_sensor', 'temperature_sensor'])
+
+// Stable empty fallbacks — never return a fresh {} / [] from a zustand v5
+// selector (a new reference each render triggers "Maximum update depth exceeded")
+const EMPTY_CONFIG: Record<string, unknown> = {}
+const EMPTY_STYLE: NodeStyleConfig = {}
+const EMPTY_BINDINGS: ScadaNodeBinding[] = []
+
+// Body bounds (viewBox 0..64) per tank glyph, for the water-fill overlay
+const TANK_BODY: Record<string, { x: number; w: number; top: number; bottom: number; bowl?: boolean }> = {
+  reservoir:     { x: 8,  w: 48, top: 8,  bottom: 56 },
+  ground_tank:   { x: 8,  w: 48, top: 12, bottom: 52 },
+  elevated_tank: { x: 12, w: 40, top: 15, bottom: 35, bowl: true },
+  tank:          { x: 8,  w: 48, top: 10, bottom: 54 },
+  water_tower:   { x: 12, w: 40, top: 15, bottom: 35, bowl: true },
+  break_tank:    { x: 8,  w: 48, top: 12, bottom: 52 },
+}
+
+function toNum(v?: number | null): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+function fmtBinding(b?: ScadaRuntimeBindingDto | null, fallbackPrec = 0): string | null {
+  const v = toNum(b?.value)
+  if (v == null) return null
+  return v.toFixed(b?.precision ?? fallbackPrec)
+}
+
+interface PumpLive {
+  running: boolean | null   // null = unknown (offline/stale/no data)
+  fault: boolean
+  rpmB?: ScadaRuntimeBindingDto
+  headB?: ScadaRuntimeBindingDto
+}
+
+function resolvePumpLive(bindings: ScadaRuntimeBindingDto[], primaryStatus: RuntimeStatus): PumpLive {
+  const statusB = bindings.find(
+    (b) => b.category === 'pump_status' || /(^|[_-])(status|run|running|state|onoff|on_off)([_-]|$)/i.test(b.bindingKey),
+  )
+  const rpmB = bindings.find(
+    (b) => b.category === 'rpm' || b.category === 'pump_speed' || /rpm|speed/i.test(b.bindingKey),
+  )
+  const headB = bindings.find(
+    (b) => b.category === 'head' || b.category === 'head_loss' || /head/i.test(b.bindingKey),
+  )
+  const fault = primaryStatus === 'alert'
+  let running: boolean | null = null
+  const sv = toNum(statusB?.value)
+  if (statusB && sv != null) running = sv !== 0
+  else if (primaryStatus === 'off') running = false
+  else if (primaryStatus === 'ok' || primaryStatus === 'warn' || primaryStatus === 'alert') running = true
+  return { running, fault, rpmB, headB }
+}
+
+// Resolve tank fill percentage (0..100) from a level binding + optional geometry config
+function resolveTankFillPct(
+  bindings: ScadaRuntimeBindingDto[],
+  primaryValue: number | null | undefined,
+  config: Record<string, unknown>,
+  preferChannelId?: string | null,
+): number | null {
+  // A binding explicitly set to chartType 'inline' wins; otherwise auto-detect a level binding
+  const levelB = (preferChannelId ? bindings.find((b) => b.sensorChannelId === preferChannelId) : undefined)
+    ?? bindings.find((b) => b.category === 'level' || /level/i.test(b.bindingKey))
+  const value = toNum(levelB?.value) ?? toNum(primaryValue)
+  if (value == null) return null
+  const unit = (levelB?.unitOverride ?? levelB?.unit ?? '').trim()
+  const min = toNum(config.levelMin as number) ?? 0
+  const max = toNum(config.levelMax as number)
+  let pct: number | null = null
+  if (unit === '%') pct = value
+  else if (max != null && max > min) pct = ((value - min) / (max - min)) * 100
+  else if (unit === '' && value >= 0 && value <= 100) pct = value
+  if (pct == null) return null
+  return Math.max(0, Math.min(100, pct))
+}
+
+// Fraction 0..1 for an inline instrument dial, from the value + optional min/max scale
+function resolveDialPct(
+  bindings: ScadaRuntimeBindingDto[],
+  channelId: string | null,
+  min: number | null,
+  max: number | null,
+  primaryValue: number | null | undefined,
+): number | null {
+  const b = channelId ? bindings.find((x) => x.sensorChannelId === channelId) : undefined
+  const v = toNum(b?.value) ?? toNum(primaryValue)
+  if (v == null) return null
+  const lo = min ?? 0
+  const hi = (max != null && max > lo) ? max : Math.max(lo + 1, v * 1.4) // auto-scale when max unset
+  return Math.max(0, Math.min(1, (v - lo) / (hi - lo)))
+}
+
+// Live analog dial — a 270° gauge whose needle + colored arc track the value (SCADA-style)
+function PressureDialLive({ pct, color, uid, value }: { pct: number; color: string; uid: string; value?: string | null }) {
+  const CX = 32, CY = 31, R = 17, START = 135, SWEEP = 270
+  const p = Math.max(0, Math.min(1, pct))
+  const NEEDLE = '#f1f5f9' // bright, contrasts with the status-colored arc
+  const gid = `dialglow-${uid}`
+  const polar = (deg: number, rad = R) => {
+    const r = (deg * Math.PI) / 180
+    return { x: CX + rad * Math.cos(r), y: CY + rad * Math.sin(r) }
+  }
+  const arc = (from: number, to: number) => {
+    const a0 = START + SWEEP * from
+    const a1 = START + SWEEP * to
+    const s = polar(a0), e = polar(a1)
+    const large = a1 - a0 > 180 ? 1 : 0
+    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${large} 1 ${e.x} ${e.y}`
+  }
+  // Minor tick marks around the scale
+  const ticks = Array.from({ length: 9 }, (_, i) => {
+    const a = START + (SWEEP * i) / 8
+    const o = polar(a, R + 3.5)
+    const inn = polar(a, R + 1)
+    const major = i % 2 === 0
+    return { x1: inn.x, y1: inn.y, x2: o.x, y2: o.y, major }
+  })
+  const needleDeg = START + SWEEP * p
+  return (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full">
+      <defs>
+        <filter id={gid} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.4" />
+        </filter>
+      </defs>
+      {/* connection stubs */}
+      <line x1="32" y1="49" x2="32" y2="64" stroke="currentColor" strokeWidth={3} opacity={0.4} />
+      <line x1="0"  y1="31" x2="12" y2="31" stroke="currentColor" strokeWidth={3} opacity={0.4} />
+      <line x1="52" y1="31" x2="64" y2="31" stroke="currentColor" strokeWidth={3} opacity={0.4} />
+      {/* dial face — subtle filled disc for depth */}
+      <circle cx={CX} cy={CY} r={R + 4} fill="#0b1220" fillOpacity={0.55} stroke="currentColor" strokeOpacity={0.22} strokeWidth={1} />
+      {/* tick marks */}
+      {ticks.map((t, i) => (
+        <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="currentColor" strokeWidth={t.major ? 1.4 : 0.8} opacity={t.major ? 0.5 : 0.28} strokeLinecap="round" />
+      ))}
+      {/* track */}
+      <path d={arc(0, 1)} stroke="currentColor" strokeOpacity={0.16} strokeWidth={4.5} strokeLinecap="round" />
+      {/* value arc — soft glow behind + crisp arc on top */}
+      <path d={arc(0, Math.max(0.001, p))} stroke={color} strokeWidth={7} strokeLinecap="round" opacity={0.35} filter={`url(#${gid})`} />
+      <path d={arc(0, Math.max(0.001, p))} stroke={color} strokeWidth={4.5} strokeLinecap="round" />
+      {/* needle — tapered, bright, with counterweight tail; rotated to value */}
+      <g transform={`translate(${CX} ${CY}) rotate(${needleDeg})`}>
+        <polygon points={`${R - 3},0 0,-1.9 -5.5,0 0,1.9`} fill={NEEDLE} />
+        <polygon points={`${R - 3},0 0,-0.9 0,0.9`} fill={color} opacity={0.9} />
+      </g>
+      {/* hub — layered: status ring + dark core + bright center */}
+      <circle cx={CX} cy={CY} r={4.2} fill="#0b1220" stroke={color} strokeWidth={1.6} />
+      <circle cx={CX} cy={CY} r={1.5} fill={NEEDLE} />
+      {/* live value — digital readout in the lower opening of the dial */}
+      {value != null && (
+        <text
+          x={CX} y={CY + 11}
+          textAnchor="middle"
+          fontSize={6.5}
+          fontWeight={700}
+          fill={NEEDLE}
+          stroke="#0b1220"
+          strokeWidth={0.4}
+          paintOrder="stroke"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {value}
+        </text>
+      )}
+    </svg>
+  )
+}
+
+// Animated pump symbol — impeller spins while running (SMIL, no CSS dependency)
+function PumpGlyphLive({ running }: { running: boolean }) {
+  return (
+    <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" stroke="currentColor" strokeWidth={2}>
+      <line x1="0" y1="32" x2="12" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="52" y1="32" x2="64" y2="32" strokeWidth={3} opacity={0.5} />
+      <line x1="32" y1="0" x2="32" y2="12" strokeWidth={3} opacity={0.5} />
+      <line x1="32" y1="52" x2="32" y2="64" strokeWidth={3} opacity={0.5} />
+      <circle cx="32" cy="32" r="20" strokeWidth={2.5} />
+      <g>
+        <polygon points="32,16 46,38 18,38" fill="currentColor" opacity={0.18} stroke="currentColor" strokeWidth={2} />
+        {running && (
+          <animateTransform
+            attributeName="transform"
+            attributeType="XML"
+            type="rotate"
+            from="0 32 32"
+            to="360 32 32"
+            dur="1.6s"
+            repeatCount="indefinite"
+          />
+        )}
+      </g>
+    </svg>
+  )
+}
+
+// Water-fill overlay drawn on top of a static tank glyph (aligned via shared viewBox)
+function TankWaterOverlay({ nodeType, fillPct, color, uid }: { nodeType: string; fillPct: number; color: string; uid: string }) {
+  const b = TANK_BODY[nodeType] ?? TANK_BODY.reservoir
+  const h = ((b.bottom - b.top) * fillPct) / 100
+  const y = b.bottom - h
+  const clipId = `tankwater-${uid}`
+  return (
+    <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full pointer-events-none" style={{ color }} aria-hidden>
+      <defs>
+        <clipPath id={clipId}>
+          {b.bowl ? (
+            <path d="M10 14h44v12c0 6-8 10-22 10S10 32 10 26z" />
+          ) : (
+            <rect x={b.x} y={b.top} width={b.w} height={b.bottom - b.top} rx={2} />
+          )}
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <rect x={b.x - 3} y={y} width={b.w + 6} height={h + 3} fill="currentColor" opacity={0.42} />
+        {/* surface wave */}
+        <path
+          d={`M${b.x - 3} ${y} q 5 -2.5 10 0 t 10 0 t 10 0 t 10 0 t 10 0`}
+          stroke="currentColor"
+          strokeWidth={1.2}
+          fill="none"
+          opacity={0.6}
+        />
+      </g>
+    </svg>
+  )
+}
+
 interface ScadaNodeFrameProps {
   id: string
   nodeType: string
@@ -1417,21 +1652,59 @@ export function ScadaNodeFrame({
     useUiStore.getState().openNodeConfig(id)
   }
 
-  // Read custom style config from store
-  const styleConfig: NodeStyleConfig = useDiagramStore(
-    (s) => {
-      const n = s.nodes.find((nd) => nd.id === id)
-      return (n?.style as NodeStyleConfig) ?? {}
-    }
+  // Read custom style config from store (raw ref → stable empty fallback)
+  const styleRaw = useDiagramStore(
+    (s) => s.nodes.find((nd) => nd.id === id)?.style
   )
+  const styleConfig: NodeStyleConfig = (styleRaw as NodeStyleConfig | undefined) ?? EMPTY_STYLE
+  // Displayed symbol is decoupled from the node's type: `glyphKey` overrides the icon
+  // for presentation only. Behavior (tank fill, pump animation, category badge) always
+  // follows the real nodeType, never glyphKey.
+  const glyphType = styleConfig.glyphKey ?? nodeType
+  const cardGlyph = catDef?.icon ?? NodeGlyph[glyphType] ?? NodeGlyph.junction
 
   // Read bindings from store (for showTrend flag)
-  const nodeBindings: ScadaNodeBinding[] = useDiagramStore(
-    (s) => {
-      const n = s.nodes.find((nd) => nd.id === id)
-      return n?.bindings ?? []
-    }
+  const bindingsRaw = useDiagramStore(
+    (s) => s.nodes.find((nd) => nd.id === id)?.bindings
   )
+  const nodeBindings: ScadaNodeBinding[] = bindingsRaw ?? EMPTY_BINDINGS
+
+  // Read freeform node config (tank geometry etc.) — select the RAW ref
+  // (stable across renders); coalesce to a shared empty object outside the selector
+  const nodeConfigRaw = useDiagramStore(
+    (s) => s.nodes.find((nd) => nd.id === id)?.config
+  )
+  const nodeConfig = (nodeConfigRaw as Record<string, unknown> | undefined) ?? EMPTY_CONFIG
+
+  // ── Live equipment state (data-driven pump / tank symbols) ──
+  const allBindings = runtime?.allBindings ?? []
+  const isPumpType = PUMP_TYPES.has(nodeType)
+  const isTankType = TANK_TYPES.has(nodeType)
+  const isDialType = DIAL_TYPES.has(nodeType)
+  const pumpLive = isPumpType ? resolvePumpLive(allBindings, status) : null
+  // Binding explicitly set to 'inline' drives the tank fill / live dial
+  const inlineBinding = nodeBindings.find((b) => b.chartType === 'inline')
+  const inlineChannelId = inlineBinding?.sensorChannelId ?? null
+  const tankPct  = isTankType ? resolveTankFillPct(allBindings, runtime?.primaryValue, nodeConfig, inlineChannelId) : null
+  // Live analog dial (pressure/flow/instruments) — needle position 0..1
+  const dialPct = (isDialType && inlineBinding)
+    ? resolveDialPct(allBindings, inlineChannelId, inlineBinding.gaugeMin ?? null, inlineBinding.gaugeMax ?? null, runtime?.primaryValue)
+    : null
+  // Numeric value shown inside the dial (digital manometer look)
+  const dialRt = inlineChannelId ? allBindings.find((b) => b.sensorChannelId === inlineChannelId) : undefined
+  const dialValueNum = toNum(dialRt?.value) ?? toNum(runtime?.primaryValue)
+  const dialValueText = dialValueNum != null
+    ? dialValueNum.toFixed(dialRt?.precision ?? runtime?.primaryPrecision ?? 1)
+    : null
+  // Is the inline live dial actually shown for this node?
+  const dialActive = isDialType && dialPct != null && glyphType === nodeType
+  // Show/hide the live value text under the icon. When the dial is active the value is
+  // already inside the dial, so the bottom label defaults to hidden (toggle to re-enable).
+  const showValue = dialActive
+    ? (inlineBinding?.dialShowLabel === true)
+    : (styleConfig.showValue !== false)
+  const pumpRpmText  = pumpLive?.rpmB ? fmtBinding(pumpLive.rpmB, 0) : null
+  const pumpHeadText = pumpLive?.headB ? fmtBinding(pumpLive.headB, 1) : null
 
   // Find primary binding with showTrend enabled
   const trendBinding = nodeBindings.find((b) => b.showTrend && (b.isPrimary || nodeBindings.length === 1))
@@ -1441,6 +1714,23 @@ export function ScadaNodeFrame({
 
   const trendActive = !!(trendPoints && trendPoints.length >= 2)
   const trendChartH = 70
+
+  // Chart type per binding: 'line' (needs history) or 'gauge' (instantaneous)
+  const chartType = trendBinding?.chartType ?? 'line'
+  const chartRuntime = trendChannelId
+    ? allBindings.find((b) => b.sensorChannelId === trendChannelId)
+    : undefined
+  const lineActive  = chartType === 'line' && trendActive
+  const gaugeActive = chartType === 'gauge' && !!trendBinding
+  const chartActive = lineActive || gaugeActive
+  const chartTransparent = trendBinding?.chartTransparent === true
+  const gaugeValue  = chartRuntime?.value ?? runtime?.primaryValue ?? null
+  const gaugeUnit   = chartRuntime?.unitOverride ?? chartRuntime?.unit ?? runtime?.primaryUnit ?? ''
+  const gaugeStatusColor =
+    (chartRuntime?.status ?? status) === 'alert' ? 'var(--status-alert)'
+    : (chartRuntime?.status ?? status) === 'warn' ? 'var(--status-warn)'
+    : (chartRuntime?.status ?? status) === 'ok' ? 'var(--status-ok)'
+    : '#64748b'
 
   const renderMode: NodeRenderMode = styleConfig.renderMode ?? 'card'
   const hasCustomSvg = styleConfig.iconMode === 'custom' && !!styleConfig.customSvg
@@ -1468,21 +1758,42 @@ export function ScadaNodeFrame({
   // SVG fills 100% of node — NO gap between symbol and edge handles.
   // Label and value are positioned BELOW the node (overflow visible).
   if (renderMode === 'schematic') {
-    const schematicGlyph = catDef?.icon ?? SchematicGlyph[nodeType] ?? SchematicGlyph.junction ?? glyph
+    // Symbol variant (user-selectable per node); follows glyphType (icon override), not the data type
+    const variantList = SCHEMATIC_VARIANTS[glyphType]
+    const variantGlyph = variantList
+      ? (variantList[styleConfig.glyphVariant ?? 0] ?? variantList[0])
+      : undefined
+    const baseSchematicGlyph = catDef?.icon ?? variantGlyph ?? SchematicGlyph[glyphType] ?? SchematicGlyph.junction ?? cardGlyph
+    // Inline live dial for instruments (needle sweeps with value) — behavior follows type
+    const schematicGlyph = (isDialType && dialPct != null && glyphType === nodeType)
+      ? <PressureDialLive pct={dialPct} color={gaugeStatusColor} uid={id} value={dialValueText} />
+      // Animated impeller for the default pump style; other picked styles render static
+      : (nodeType === 'pump' && glyphType === 'pump' && !catDef && (styleConfig.glyphVariant ?? 0) === 0)
+        ? <PumpGlyphLive running={pumpLive?.running === true} />
+        : baseSchematicGlyph
     const schemLabelFs = styleConfig.labelFontSize ?? Math.max(9, Math.min(12, width * 0.1))
     const schemValueFs = styleConfig.valueFontSize ?? Math.max(12, Math.min(20, width * 0.16))
     const labelPlacement = styleConfig.labelPlacement ?? 'bottom'
+    // Pump/motor accent reflects run state: green=run, gray=stop, red=fault
+    const pumpAccent = isPumpType
+      ? (pumpLive?.fault ? 'var(--status-alert)'
+        : pumpLive?.running === true ? 'var(--status-ok)'
+        : pumpLive?.running === false ? '#6b7280'
+        : undefined)
+      : undefined
     const accentColor = styleConfig.accentColor
       || (catDef ? catDef.color : undefined)
+      || pumpAccent
       || (status === 'alert' ? 'var(--status-alert)' : undefined)
       || (status === 'ok' ? 'var(--status-ok)' : undefined)
       || '#94a3b8'
+    const tankWaterColor = styleConfig.accentColor || '#38bdf8'
 
     // ── Label/Value info block (reused in different positions) ──
     const infoBlock = (
       <>
         {/* Live value */}
-        {displayValue !== null && (
+        {displayValue !== null && showValue && (
           <div className="whitespace-nowrap">
             <span
               className="value-display text-[var(--text-primary)] font-bold tabular-nums"
@@ -1497,6 +1808,21 @@ export function ScadaNodeFrame({
               >
                 {displayUnit}
               </span>
+            )}
+          </div>
+        )}
+
+        {/* Pump sub-values: RPM + head */}
+        {(pumpRpmText || pumpHeadText) && (
+          <div
+            className="whitespace-nowrap text-[var(--text-muted)] tabular-nums leading-tight"
+            style={{ fontSize: Math.max(8, schemLabelFs - 1) }}
+          >
+            {pumpRpmText && (
+              <span className="mr-1.5">{pumpRpmText} {pumpLive?.rpmB?.unitOverride ?? pumpLive?.rpmB?.unit ?? 'RPM'}</span>
+            )}
+            {pumpHeadText && (
+              <span>H {pumpHeadText} {pumpLive?.headB?.unitOverride ?? pumpLive?.headB?.unit ?? 'm'}</span>
             )}
           </div>
         )}
@@ -1601,8 +1927,8 @@ export function ScadaNodeFrame({
           />
         )}
 
-        {/* Unified trend chart above the node (schematic mode) */}
-        {trendActive && (
+        {/* Chart above the node (schematic mode): line trend OR gauge */}
+        {chartActive && (
           <div
             className="absolute overflow-hidden"
             style={{
@@ -1611,26 +1937,38 @@ export function ScadaNodeFrame({
               transform: 'translateX(-50%)',
               width: Math.max(140, width * 1.2),
               height: trendChartH,
-              backgroundColor: 'rgba(15,23,42,0.85)',
-              border: '1px solid rgba(51,65,85,0.5)',
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8,
+              backgroundColor: chartTransparent ? 'transparent' : 'rgba(15,23,42,0.85)',
+              border: chartTransparent ? 'none' : '1px solid rgba(51,65,85,0.5)',
+              borderTopLeftRadius: chartTransparent ? 0 : 8,
+              borderTopRightRadius: chartTransparent ? 0 : 8,
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
-              borderBottom: 'none',
               zIndex: 1,
             }}
           >
-            <TrendCard
-              data={trendPoints!}
-              hours={trendBinding?.trendHours ?? 1}
-              color={accentColor}
-              width={Math.max(140, width * 1.2) - 2}
-              height={trendChartH - 1}
-              hideHeader
-              transparent
-              compact
-            />
+            {chartType === 'gauge' ? (
+              <Gauge
+                value={gaugeValue}
+                min={trendBinding?.gaugeMin ?? 0}
+                max={trendBinding?.gaugeMax ?? undefined}
+                unit={gaugeUnit}
+                precision={chartRuntime?.precision ?? runtime?.primaryPrecision ?? 1}
+                color={gaugeStatusColor}
+                width={Math.max(140, width * 1.2) - 2}
+                height={trendChartH - 1}
+              />
+            ) : (
+              <TrendCard
+                data={trendPoints!}
+                hours={trendBinding?.trendHours ?? 1}
+                color={accentColor}
+                width={Math.max(140, width * 1.2) - 2}
+                height={trendChartH - 1}
+                hideHeader
+                transparent
+                compact
+              />
+            )}
           </div>
         )}
 
@@ -1665,6 +2003,25 @@ export function ScadaNodeFrame({
               schematicGlyph
             )}
           </div>
+
+          {/* Tank water fill overlay (data-driven level %) */}
+          {isTankType && tankPct != null && !hasCustomSvg && (
+            <TankWaterOverlay nodeType={nodeType} fillPct={tankPct} color={tankWaterColor} uid={id} />
+          )}
+          {isTankType && tankPct != null && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span
+                className="value-display font-bold tabular-nums"
+                style={{
+                  fontSize: Math.max(10, Math.min(22, width * 0.16)),
+                  color: '#ffffff',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+                }}
+              >
+                {Math.round(tankPct)}%
+              </span>
+            </div>
+          )}
 
           {/* Status dot — top-right corner */}
           <div className="absolute -top-1 -right-1 z-10">
@@ -1743,8 +2100,8 @@ export function ScadaNodeFrame({
         />
       )}
 
-      {/* Unified trend chart above the node (card mode) */}
-      {trendActive && (
+      {/* Chart above the node (card mode): line trend OR gauge */}
+      {chartActive && (
         <div
           className="absolute overflow-hidden"
           style={{
@@ -1752,27 +2109,40 @@ export function ScadaNodeFrame({
             bottom: height - borderW,
             width,
             height: trendChartH,
-            backgroundColor: hasBgImage ? 'rgba(15,23,42,0.85)' : (styleConfig.bgColor || 'var(--surface-bg)'),
+            backgroundColor: chartTransparent ? 'transparent' : (hasBgImage ? 'rgba(15,23,42,0.85)' : (styleConfig.bgColor || 'var(--surface-bg)')),
             borderStyle: 'solid',
-            borderWidth: borderW,
-            borderColor: showBorder ? (styleConfig.borderColor || 'var(--surface-border)') : 'transparent',
-            borderTopLeftRadius: styleConfig.borderRadius ?? 12,
-            borderTopRightRadius: styleConfig.borderRadius ?? 12,
+            borderWidth: chartTransparent ? 0 : borderW,
+            borderColor: chartTransparent ? 'transparent' : (showBorder ? (styleConfig.borderColor || 'var(--surface-border)') : 'transparent'),
+            borderTopLeftRadius: chartTransparent ? 0 : (styleConfig.borderRadius ?? 12),
+            borderTopRightRadius: chartTransparent ? 0 : (styleConfig.borderRadius ?? 12),
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
-            borderBottom: 'none',
+            borderBottomWidth: 0,
           }}
         >
-          <TrendCard
-            data={trendPoints!}
-            hours={trendBinding?.trendHours ?? 1}
-            color={styleConfig.accentColor || (catDef ? catDef.color : '#22d3ee')}
-            width={width - borderW * 2}
-            height={trendChartH - borderW}
-            hideHeader
-            transparent
-            compact
-          />
+          {chartType === 'gauge' ? (
+            <Gauge
+              value={gaugeValue}
+              min={trendBinding?.gaugeMin ?? 0}
+              max={trendBinding?.gaugeMax ?? 100}
+              unit={gaugeUnit}
+              precision={chartRuntime?.precision ?? runtime?.primaryPrecision ?? 1}
+              color={gaugeStatusColor}
+              width={width - borderW * 2}
+              height={trendChartH - borderW}
+            />
+          ) : (
+            <TrendCard
+              data={trendPoints!}
+              hours={trendBinding?.trendHours ?? 1}
+              color={styleConfig.accentColor || (catDef ? catDef.color : '#22d3ee')}
+              width={width - borderW * 2}
+              height={trendChartH - borderW}
+              hideHeader
+              transparent
+              compact
+            />
+          )}
         </div>
       )}
 
@@ -1798,8 +2168,8 @@ export function ScadaNodeFrame({
           borderStyle: 'solid',
           borderWidth: borderW,
           borderColor: showBorder ? (styleConfig.borderColor || 'var(--surface-border)') : 'transparent',
-          borderTopLeftRadius: trendActive ? 0 : (styleConfig.borderRadius ?? 12),
-          borderTopRightRadius: trendActive ? 0 : (styleConfig.borderRadius ?? 12),
+          borderTopLeftRadius: chartActive ? 0 : (styleConfig.borderRadius ?? 12),
+          borderTopRightRadius: chartActive ? 0 : (styleConfig.borderRadius ?? 12),
           borderBottomLeftRadius: styleConfig.borderRadius ?? 12,
           borderBottomRightRadius: styleConfig.borderRadius ?? 12,
           opacity: styleConfig.opacity ?? 1,
@@ -1861,7 +2231,7 @@ export function ScadaNodeFrame({
               {hasCustomSvg ? (
                 <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: styleConfig.customSvg! }} />
               ) : (
-                glyph
+                cardGlyph
               )}
             </div>
           )}
@@ -1876,7 +2246,7 @@ export function ScadaNodeFrame({
             ].join(' ')}
           >
             {/* Live value */}
-            {displayValue !== null && (
+            {displayValue !== null && showValue && (
               <div className={['mt-1 px-1', isHorizontalLayout ? 'text-left' : 'text-center'].join(' ')}>
                 <span
                   className="value-display text-[var(--text-primary)] font-semibold"
@@ -1939,7 +2309,7 @@ export function ScadaNodeFrame({
               {hasCustomSvg ? (
                 <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: styleConfig.customSvg! }} />
               ) : (
-                glyph
+                cardGlyph
               )}
             </div>
           )}

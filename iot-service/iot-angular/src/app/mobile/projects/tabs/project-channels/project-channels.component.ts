@@ -20,7 +20,8 @@ export class MobileProjectChannelsComponent implements OnInit, OnDestroy {
   error = '';
 
   // filters (client-side, mirrors desktop /iot/telemetry-channels)
-  statusOptions = ['all', 'ok', 'out_of_range', 'stale', 'offline'];
+  // "stale" (Basi) sengaja tidak ditampilkan sbg chip — datanya tetap ikut di "Semua".
+  statusOptions = ['all', 'ok', 'out_of_range', 'offline'];
   filters = { nodeModelId: '', sensorTypeId: '', status: 'all' };
   search = '';
 
@@ -124,13 +125,13 @@ export class MobileProjectChannelsComponent implements OnInit, OnDestroy {
   }
 
   statusLabel(s: string): string {
-    return ({ all: 'Semua', ok: 'Normal', out_of_range: 'Luar batas', stale: 'Basi', offline: 'Offline' } as Record<string, string>)[s] || s;
+    return ({ all: 'Semua', ok: 'Normal', out_of_range: 'Warning', offline: 'Offline' } as Record<string, string>)[s] || s;
   }
 
   private mapCh(s: string): ChStatus {
     if (s === 'ok') { return 'ok'; }
     if (s === 'offline' || s === 'stale') { return 'off'; }
-    if (s === 'out_of_range') { return 'danger'; }
+    if (s === 'out_of_range') { return 'warn'; }
     return 'warn';
   }
 

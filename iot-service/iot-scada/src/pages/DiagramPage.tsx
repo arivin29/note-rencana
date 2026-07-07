@@ -79,6 +79,18 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
         e.preventDefault()
         if (mode === 'edit') save()
       }
+      // Ctrl/Cmd + Z → undo, Ctrl/Cmd + Shift + Z (or Ctrl+Y) → redo (edit mode)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault()
+        if (mode === 'edit') {
+          if (e.shiftKey) useDiagramStore.getState().redo()
+          else useDiagramStore.getState().undo()
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault()
+        if (mode === 'edit') useDiagramStore.getState().redo()
+      }
       // Shift + F → fit view
       if (e.shiftKey && e.key === 'F') {
         useUiStore.getState().triggerFitView()

@@ -10,6 +10,8 @@ import type {
   ScadaEdgeDto,
 } from '@/types/scada'
 
+interface HistorySnapshot { nodes: ScadaNodeDto[]; edges: ScadaEdgeDto[] }
+
 export interface DiagramState {
   // Metadata & snapshot
   meta: ScadaDiagramMeta | null
@@ -19,6 +21,13 @@ export interface DiagramState {
   // Saved snapshot (last persisted to server)
   savedNodes: ScadaNodeDto[]
   savedEdges: ScadaEdgeDto[]
+
+  // Undo/redo history (nodes+edges only)
+  past: HistorySnapshot[]
+  future: HistorySnapshot[]
+  lastPushAt: number
+  undo: () => void
+  redo: () => void
 
   // State flags
   isDirty: boolean
@@ -57,17 +66,65 @@ export interface DiagramState {
   clearDiagram: () => void
 }
 
+// History config
+const HISTORY_LIMIT = 60
+const COALESCE_MS = 400
+
+// Wrap a nodes/edges mutation so the PRE-change state is pushed to the undo stack.
+// Rapid successive mutations (e.g. a resize/drag firing many updates) coalesce into a
+// single undo step via a sliding time window.
+function withHistory(
+  s: DiagramState,
+  next: Partial<Pick<DiagramState, 'nodes' | 'edges'>>,
+): Partial<DiagramState> {
+  const now = Date.now()
+  const coalesce = s.past.length > 0 && now - s.lastPushAt < COALESCE_MS
+  const past = coalesce
+    ? s.past
+    : [...s.past, { nodes: s.nodes, edges: s.edges }].slice(-HISTORY_LIMIT)
+  return { ...next, past, future: [], lastPushAt: now, isDirty: true }
+}
+
 export const useDiagramStore = create<DiagramState>((set, get) => ({
   meta: null,
   nodes: [],
   edges: [],
   savedNodes: [],
   savedEdges: [],
+  past: [],
+  future: [],
+  lastPushAt: 0,
   isDirty: false,
   isLoading: false,
   isSaving: false,
   loadError: null,
   saveError: null,
+
+  undo: () => set((s) => {
+    if (s.past.length === 0) return {}
+    const prev = s.past[s.past.length - 1]
+    return {
+      nodes: prev.nodes,
+      edges: prev.edges,
+      past: s.past.slice(0, -1),
+      future: [{ nodes: s.nodes, edges: s.edges }, ...s.future].slice(0, HISTORY_LIMIT),
+      isDirty: true,
+      lastPushAt: 0,
+    }
+  }),
+
+  redo: () => set((s) => {
+    if (s.future.length === 0) return {}
+    const nextSnap = s.future[0]
+    return {
+      nodes: nextSnap.nodes,
+      edges: nextSnap.edges,
+      future: s.future.slice(1),
+      past: [...s.past, { nodes: s.nodes, edges: s.edges }].slice(-HISTORY_LIMIT),
+      isDirty: true,
+      lastPushAt: 0,
+    }
+  }),
 
   setLoading: (v) => set({ isLoading: v }),
   setLoadError: (err) => set({ loadError: err, isLoading: false }),
@@ -78,6 +135,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     edges: [...edges],
     savedNodes: [...nodes],
     savedEdges: [...edges],
+    past: [],
+    future: [],
+    lastPushAt: 0,
     isDirty: false,
     isLoading: false,
     loadError: null,
@@ -99,40 +159,30 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   }),
 
   // Nodes
-  setNodes: (nodes) => set({ nodes, isDirty: true }),
+  setNodes: (nodes) => set((s) => withHistory(s, { nodes })),
 
-  addNode: (node) => set((s) => ({
-    nodes: [...s.nodes, node],
-    isDirty: true,
-  })),
+  addNode: (node) => set((s) => withHistory(s, { nodes: [...s.nodes, node] })),
 
-  updateNode: (id, patch) => set((s) => ({
+  updateNode: (id, patch) => set((s) => withHistory(s, {
     nodes: s.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
-    isDirty: true,
   })),
 
-  removeNode: (id) => set((s) => ({
+  removeNode: (id) => set((s) => withHistory(s, {
     nodes: s.nodes.filter((n) => n.id !== id),
     edges: s.edges.filter((e) => e.source !== id && e.target !== id),
-    isDirty: true,
   })),
 
   // Edges
-  setEdges: (edges) => set({ edges, isDirty: true }),
+  setEdges: (edges) => set((s) => withHistory(s, { edges })),
 
-  addEdge: (edge) => set((s) => ({
-    edges: [...s.edges, edge],
-    isDirty: true,
-  })),
+  addEdge: (edge) => set((s) => withHistory(s, { edges: [...s.edges, edge] })),
 
-  updateEdge: (id, patch) => set((s) => ({
+  updateEdge: (id, patch) => set((s) => withHistory(s, {
     edges: s.edges.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-    isDirty: true,
   })),
 
-  removeEdge: (id) => set((s) => ({
+  removeEdge: (id) => set((s) => withHistory(s, {
     edges: s.edges.filter((e) => e.id !== id),
-    isDirty: true,
   })),
 
   // Meta
@@ -145,6 +195,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   resetToSaved: () => set((s) => ({
     nodes: [...s.savedNodes],
     edges: [...s.savedEdges],
+    past: [],
+    future: [],
+    lastPushAt: 0,
     isDirty: false,
     saveError: null,
   })),
@@ -155,6 +208,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     edges: [],
     savedNodes: [],
     savedEdges: [],
+    past: [],
+    future: [],
+    lastPushAt: 0,
     isDirty: false,
     isLoading: false,
     isSaving: false,

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-/** Bottom navigation 4 tab (docs/mobile/05 §0). */
+/** Bottom navigation 5 tab: Dashboard · Project · Perangkat · Peringatan · Profil. */
 @Component({
   selector: 'mobile-bottom-nav',
   templateUrl: './mobile-bottom-nav.component.html',

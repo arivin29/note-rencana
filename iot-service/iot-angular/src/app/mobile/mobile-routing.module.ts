@@ -13,6 +13,7 @@ import { MobileChannelDetailComponent } from './nodes/mobile-channel-detail/mobi
 import { MobileNodeInfoComponent } from './nodes/node-info/mobile-node-info.component';
 import { MobileNodeCommandComponent } from './nodes/node-command/mobile-node-command.component';
 import { MobileNodeLogsComponent } from './nodes/node-logs/mobile-node-logs.component';
+import { MobileProjectsListComponent } from './projects/mobile-projects-list/mobile-projects-list.component';
 import { MobileProjectDetailComponent } from './projects/mobile-project-detail/mobile-project-detail.component';
 import { MobileProjectInfoComponent } from './projects/tabs/project-info/project-info.component';
 import { MobileProjectMapComponent } from './projects/tabs/project-map/project-map.component';
@@ -44,6 +45,7 @@ const routes: Routes = [
           { path: 'logs', component: MobileNodeLogsComponent }
         ]
       },
+      { path: 'projects', component: MobileProjectsListComponent, data: { title: 'Project' } },
       {
         path: 'projects/:id', component: MobileProjectDetailComponent, data: { title: 'Detail Project', back: true },
         children: [

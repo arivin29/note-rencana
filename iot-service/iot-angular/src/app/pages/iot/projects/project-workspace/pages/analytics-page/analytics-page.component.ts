@@ -51,10 +51,12 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Listen for 'scada-ready' from iframe (handshake for mobile Chrome)
+    // Listen for 'scada-ready' from iframe — the child explicitly asks for the token
+    // once its message listener is attached. ALWAYS (re)send here (force), because the
+    // initial onIframeLoad send can race ahead of the child listener and be lost.
     this.messageListener = (event: MessageEvent) => {
       if (event.data?.type === 'scada-ready') {
-        this.sendTokenToIframe();
+        this.sendTokenToIframe(true, event.source as Window | null);
       }
     };
     window.addEventListener('message', this.messageListener);
@@ -100,14 +102,12 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
     this.sendTokenToIframe();
   }
 
-  private sendTokenToIframe(): void {
-    if (this.tokenSent) return;
+  private sendTokenToIframe(force = false, target?: Window | null): void {
+    if (this.tokenSent && !force) return;
     const token = this.authService.getAccessToken();
-    if (token && this.scadaIframe?.nativeElement?.contentWindow) {
-      this.scadaIframe.nativeElement.contentWindow.postMessage(
-        { type: 'scada-auth', token },
-        environment.scadaUrl
-      );
+    const win = target ?? this.scadaIframe?.nativeElement?.contentWindow;
+    if (token && win) {
+      win.postMessage({ type: 'scada-auth', token }, environment.scadaUrl);
       this.tokenSent = true;
     }
   }

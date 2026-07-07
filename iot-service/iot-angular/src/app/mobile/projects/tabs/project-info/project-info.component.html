@@ -1,18 +1,101 @@
-<div class="m-card" *ngIf="loading" style="padding:var(--m-3)"><div class="m-skel" style="width:50%"></div><div class="m-skel" style="width:70%"></div></div>
-<div class="m-empty" *ngIf="error"><i class="fa fa-triangle-exclamation"></i>{{ error }}</div>
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
+  <div class="m-skel" style="width:50%"></div>
+  <div class="m-skel" style="width:70%"></div>
+  <div class="m-skel" style="width:40%"></div>
+</div>
+
+<div class="m-empty" *ngIf="error && !loading">
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+</div>
 
 <ng-container *ngIf="!loading && !error">
-  <div style="font-size:var(--m-lg);font-weight:700">{{ d.name }}</div>
-  <div class="m-subtle" style="margin:4px 0 12px">{{ d.status }} · {{ d.area }}</div>
-  <div class="m-stats" style="grid-template-columns:1fr 1fr 1fr">
-    <div class="m-stat"><div class="m-stat__value">{{ d.total }}</div><div class="m-stat__label">Node</div></div>
-    <div class="m-stat"><div class="m-stat__value" style="color:var(--m-success)">{{ d.online }}</div><div class="m-stat__label">Online</div></div>
-    <div class="m-stat"><div class="m-stat__value" style="color:var(--m-text-muted)">{{ d.offline }}</div><div class="m-stat__label">Offline</div></div>
+
+  <!-- Header -->
+  <div class="m-card m-statushead">
+    <div class="m-statushead__top">
+      <div class="m-statushead__code">{{ d.name }}</div>
+      <span class="m-pill" [ngClass]="{
+        'm-pill--ok': d.statusKind === 'ok',
+        'm-pill--warn': d.statusKind === 'warn',
+        'm-pill--off': d.statusKind === 'off'
+      }"><span class="dot"></span>{{ d.status }}</span>
+    </div>
+    <div class="m-statushead__meta"><i class="fa fa-map fa-fw"></i> {{ d.area }} · sinkron {{ d.lastSync }}</div>
+
+    <!-- Health bar -->
+    <div class="m-hbar" style="margin-top:12px">
+      <div class="m-hbar__track">
+        <div class="m-hbar__fill" [ngClass]="{
+          'is-ok': d.healthPct >= 80, 'is-warn': d.healthPct >= 50 && d.healthPct < 80, 'is-bad': d.healthPct < 50
+        }" [style.width.%]="d.healthPct"></div>
+      </div>
+      <div class="m-hbar__label">{{ d.online }}/{{ d.total }} perangkat online · {{ d.healthPct }}%</div>
+    </div>
   </div>
+
+  <!-- KPI stat grid (tap → tab terkait) -->
+  <div class="m-stats" style="margin-top:var(--m-3)">
+    <a class="m-stat m-stat--accent m-stat--tap" [routerLink]="['/mobile/projects', pid, 'nodes']">
+      <div class="m-stat__top"><span class="m-stat__ic"><i class="fa fa-microchip"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value">{{ d.total }}</div><div class="m-stat__label">Perangkat</div>
+    </a>
+    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/projects', pid, 'nodes']" [queryParams]="{ status: 'online' }">
+      <div class="m-stat__top"><span class="m-stat__ic m-stat__ic--ok"><i class="fa fa-circle-check"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value" style="color:var(--m-success)">{{ d.online }}</div><div class="m-stat__label">Online</div>
+    </a>
+    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/projects', pid, 'nodes']" [queryParams]="{ status: 'offline' }">
+      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="d.offline ? 'm-stat__ic--danger' : 'm-stat__ic--muted'"><i class="fa fa-triangle-exclamation"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value" [style.color]="d.offline ? 'var(--m-danger)' : 'var(--m-text-muted)'">{{ d.offline }}</div><div class="m-stat__label">Bermasalah</div>
+    </a>
+    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/projects', pid, 'channels']">
+      <div class="m-stat__top"><span class="m-stat__ic m-stat__ic--warn"><i class="fa fa-wave-square"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value">{{ d.sensors }}</div><div class="m-stat__label">Sensor</div>
+    </a>
+  </div>
+
+  <!-- Aksi cepat: lompat ke tab lain -->
+  <div class="m-quickgrid">
+    <a class="m-quick" [routerLink]="['/mobile/projects', pid, 'map']"><i class="fa fa-map-location-dot"></i><span>Peta</span></a>
+    <a class="m-quick" [routerLink]="['/mobile/projects', pid, 'nodes']"><i class="fa fa-microchip"></i><span>Node</span></a>
+    <a class="m-quick" [routerLink]="['/mobile/projects', pid, 'channels']"><i class="fa fa-wave-square"></i><span>Channel</span></a>
+    <a class="m-quick" [routerLink]="['/mobile/projects', pid, 'scada']"><i class="fa fa-diagram-project"></i><span>SCADA</span></a>
+  </div>
+
+  <!-- Perangkat bermasalah -->
+  <ng-container *ngIf="offlineNodes.length">
+    <div class="m-section">Perlu perhatian <span class="m-tag m-tag--active">{{ d.offline }}</span></div>
+    <div class="m-card">
+      <a class="m-list__item" *ngFor="let n of offlineNodes" [routerLink]="['/mobile/nodes', n.id]" style="align-items:flex-start">
+        <span class="m-ctxbtn__ic" style="color:var(--m-danger)"><i class="fa fa-triangle-exclamation"></i></span>
+        <div class="m-list__body">
+          <div class="m-list__title">{{ n.code }}</div>
+          <div class="m-list__sub">
+            <ng-container *ngIf="n.location">{{ n.location }} · </ng-container>terakhir kirim {{ n.lastSeen }}
+          </div>
+        </div>
+        <i class="fa fa-chevron-right" style="color:var(--m-text-dim);font-size:13px;margin-top:3px"></i>
+      </a>
+    </div>
+  </ng-container>
+
+  <!-- Owner / kontak -->
+  <ng-container *ngIf="d.owner !== '-' || d.ownerPhone || d.ownerEmail">
+    <div class="m-section">Owner</div>
+    <div class="m-card" style="padding:var(--m-3)">
+      <div class="m-node-meta" style="gap:9px">
+        <div><i class="fa fa-building"></i><span>{{ d.owner }}<ng-container *ngIf="d.ownerIndustry"> · {{ d.ownerIndustry }}</ng-container></span></div>
+        <div *ngIf="d.ownerPhone"><i class="fa fa-phone"></i><a [href]="'tel:' + d.ownerPhone">{{ d.ownerPhone }}</a></div>
+        <div *ngIf="d.ownerEmail"><i class="fa fa-envelope"></i><a [href]="'mailto:' + d.ownerEmail">{{ d.ownerEmail }}</a></div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Info -->
   <div class="m-section">Informasi</div>
   <div class="m-card m-meta">
-    <div class="m-meta__r"><span class="m-meta__k">Owner</span><span class="m-meta__v">{{ d.owner }}</span></div>
-    <div class="m-meta__r"><span class="m-meta__k">Area</span><span class="m-meta__v">{{ d.area }}</span></div>
-    <div class="m-meta__r"><span class="m-meta__k">Status</span><span class="m-meta__v">{{ d.status }}</span></div>
+    <div class="m-meta__r" *ngFor="let r of info"><span class="m-meta__k">{{ r.k }}</span><span class="m-meta__v">{{ r.v }}</span></div>
   </div>
+
+  <div style="height:12px"></div>
 </ng-container>

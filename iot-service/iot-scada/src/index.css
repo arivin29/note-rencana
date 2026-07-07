@@ -18,6 +18,10 @@
     --text-muted: #6e7681;
     --accent: #0ea5e9;
     --accent-hover: #38bdf8;
+    /* Runtime status colors (used by gauge/dial arcs, needles, accents) */
+    --status-ok: #22c55e;
+    --status-warn: #f59e0b;
+    --status-alert: #ef4444;
   }
 
   * {

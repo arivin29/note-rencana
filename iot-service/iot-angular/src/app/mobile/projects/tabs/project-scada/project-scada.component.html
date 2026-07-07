@@ -24,8 +24,8 @@
 </ng-container>
 
 <!-- EMBED VIEWER -->
-<div class="m-scada-embed" *ngIf="embedUrl">
-  <div class="m-scada-embed__bar">
+<div class="m-scada-embed" [class.m-scada-embed--full]="embedFullscreen" *ngIf="embedUrl">
+  <div class="m-scada-embed__bar" *ngIf="!embedFullscreen">
     <button class="m-btn m-btn--ghost m-btn--sm" (click)="back()"><i class="fa fa-chevron-left"></i> Daftar</button>
     <span class="m-scada-embed__name">{{ activeName }}</span>
     <span class="m-cmd__ch" style="margin-left:auto">VIEW</span>

@@ -1,0 +1,43 @@
+<div class="m-search">
+  <i class="fa fa-magnifying-glass"></i>
+  <input placeholder="Cari project…" [(ngModel)]="search" (ngModelChange)="onSearch()">
+</div>
+
+<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
+  <div class="m-skel" style="width:58%"></div>
+  <div class="m-skel" style="width:40%"></div>
+  <div class="m-skel" style="width:52%"></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && error">
+  <i class="fa fa-triangle-exclamation"></i>
+  {{ error }}
+  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+</div>
+
+<div class="m-empty" *ngIf="!loading && !error && projects.length === 0">
+  <i class="fa fa-folder-open"></i>
+  Tidak ada project
+</div>
+
+<div class="m-card" *ngIf="!loading && !error && projects.length > 0">
+  <div class="m-list__item" *ngFor="let p of projects" (click)="open(p)" style="align-items:flex-start">
+    <div class="m-list__body">
+      <div class="m-list__title">
+        {{ p.name }}
+        <span *ngIf="p.id === activeId" class="m-tag m-tag--active" style="margin-left:6px">Aktif</span>
+      </div>
+      <div class="m-node-meta">
+        <div *ngIf="p.area"><i class="fa fa-map"></i><span>{{ p.area }}</span></div>
+        <div><i class="fa fa-microchip"></i><span>{{ p.nodes }} perangkat<ng-container *ngIf="p.nodes"> · {{ p.online }} online</ng-container></span></div>
+      </div>
+    </div>
+    <span class="m-pill" style="margin-top:2px" [ngClass]="{
+      'm-pill--ok': p.status === 'ok',
+      'm-pill--off': p.status === 'off',
+      'm-pill--warn': p.status === 'warn'
+    }">
+      <span class="dot"></span>{{ p.statusLabel }}
+    </span>
+  </div>
+</div>

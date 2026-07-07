@@ -47,6 +47,8 @@ export const PIPE_COLORS: Record<PipeType, { fill: string; wall: string; glow: s
   chemical:   { fill: '#f59e0b', wall: '#78350f', glow: '#fbbf24' },
   electrical: { fill: '#ef4444', wall: '#7f1d1d', glow: '#f87171' },
   generic:    { fill: '#6b7280', wall: '#374151', glow: '#9ca3af' },
+  // Signal / sensor link — muted cyan-slate, not a process medium
+  signal:     { fill: '#7c93a8', wall: '#334155', glow: '#94a3b8' },
 }
 
 export const PIPE_LABELS: Record<PipeType, string> = {
@@ -56,6 +58,7 @@ export const PIPE_LABELS: Record<PipeType, string> = {
   chemical:   'Chemical',
   electrical: 'Electrical',
   generic:    'Generic',
+  signal:     'Sinyal',
 }
 
 export const PATH_MODE_LABELS: Record<PathMode, string> = {
@@ -145,6 +148,9 @@ export function PipeEdge({
   const borderRadius  = d?.borderRadius ?? 12
 
   const colors = PIPE_COLORS[pipeType] ?? PIPE_COLORS.generic
+  const isSignal = pipeType === 'signal'
+  // A sensor link carries data, not flow — never show a directional arrow
+  const effectiveFlow: FlowDirection = isSignal ? 'none' : flowDirection
   const isEditMode = useUiStore((s) => s.mode) === 'edit'
 
   const [edgePath, labelX, labelY] = getEdgePath(
@@ -186,8 +192,28 @@ export function PipeEdge({
         />
       )}
 
+      {/* Signal / sensor link — thin dashed line + tap dot (no process-pipe layers) */}
+      {isSignal && (
+        <>
+          <path
+            d={edgePath}
+            stroke={colors.fill}
+            strokeWidth={Math.max(1.25, strokeWidth * 0.4)}
+            fill="none"
+            strokeLinecap="butt"
+            strokeLinejoin="round"
+            strokeDasharray="5 4"
+            opacity={selected ? 0.95 : 0.7}
+            style={{ pointerEvents: 'none' }}
+          />
+          {/* Instrument tap at the source (measurement point) */}
+          <circle cx={sourceX} cy={sourceY} r={3.5} fill={colors.fill} opacity={selected ? 1 : 0.85} style={{ pointerEvents: 'none' }} />
+          <circle cx={sourceX} cy={sourceY} r={5.5} fill="none" stroke={colors.fill} strokeWidth={1} opacity={0.4} style={{ pointerEvents: 'none' }} />
+        </>
+      )}
+
       {/* L3: Pipe wall (outer — darker, gives 3D depth) */}
-      {showBorder && (
+      {!isSignal && showBorder && (
         <path
           d={edgePath}
           stroke={colors.wall}
@@ -201,19 +227,21 @@ export function PipeEdge({
       )}
 
       {/* L4: Pipe body (inner — main color) */}
-      <path
-        d={edgePath}
-        stroke={colors.fill}
-        strokeWidth={bodyWidth}
-        fill="none"
-        strokeLinecap={lineCap}
-        strokeLinejoin="round"
-        opacity={selected ? 1 : 0.85}
-        style={{ pointerEvents: 'none' }}
-      />
+      {!isSignal && (
+        <path
+          d={edgePath}
+          stroke={colors.fill}
+          strokeWidth={bodyWidth}
+          fill="none"
+          strokeLinecap={lineCap}
+          strokeLinejoin="round"
+          opacity={selected ? 1 : 0.85}
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
 
       {/* L5: Flow animation — bright moving dashes */}
-      {animated && (
+      {!isSignal && animated && (
         <path
           d={edgePath}
           stroke={colors.glow}
@@ -233,19 +261,21 @@ export function PipeEdge({
       )}
 
       {/* L6: Center highlight (subtle shine) */}
-      <path
-        d={edgePath}
-        stroke="white"
-        strokeWidth={Math.max(1, bodyWidth * 0.25)}
-        fill="none"
-        strokeLinecap={lineCap}
-        strokeLinejoin="round"
-        opacity={0.08}
-        style={{ pointerEvents: 'none' }}
-      />
+      {!isSignal && (
+        <path
+          d={edgePath}
+          stroke="white"
+          strokeWidth={Math.max(1, bodyWidth * 0.25)}
+          fill="none"
+          strokeLinecap={lineCap}
+          strokeLinejoin="round"
+          opacity={0.08}
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
 
       {/* L7: Label — small subtle tag at midpoint */}
-      {(label || flowDirection !== 'none') && (
+      {(label || effectiveFlow !== 'none') && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -264,9 +294,9 @@ export function PipeEdge({
                 opacity: selected ? 1 : 0.6,
               }}
             >
-              {flowDirection !== 'none' && (
+              {effectiveFlow !== 'none' && (
                 <span style={{ fontSize: labelFontSize - 1 }}>
-                  {FLOW_ARROW[flowDirection]}
+                  {FLOW_ARROW[effectiveFlow]}
                 </span>
               )}
               {label ? (

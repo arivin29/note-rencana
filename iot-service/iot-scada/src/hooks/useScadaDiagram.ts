@@ -43,11 +43,20 @@ function normalizeNode(n: any): ScadaNodeDto {
     relatedSensorId: n.relatedSensorId ?? null,
     style: n.style ?? {},
     config: n.config ?? {},
-    bindings: (n.bindings ?? []).map((b: any) => ({
-      ...b,
-      id: b.id ?? b.idScadaBinding,
-      sensorChannelId: b.sensorChannelId ?? b.idSensorChannel,
-    })),
+    bindings: (n.bindings ?? []).map((b: any) => {
+      // chart display config is persisted inside transform (jsonb) — unfold it
+      const t = b.transform ?? {}
+      return {
+        ...b,
+        id: b.id ?? b.idScadaBinding,
+        sensorChannelId: b.sensorChannelId ?? b.idSensorChannel,
+        chartType: b.chartType ?? t.chartType ?? undefined,
+        gaugeMin: b.gaugeMin ?? t.gaugeMin ?? null,
+        gaugeMax: b.gaugeMax ?? t.gaugeMax ?? null,
+        chartTransparent: b.chartTransparent ?? t.chartTransparent ?? undefined,
+        dialShowLabel: b.dialShowLabel ?? t.dialShowLabel ?? undefined,
+      }
+    }),
   }
 }
 
@@ -145,7 +154,25 @@ export function useScadaDiagram(diagramId: string | undefined) {
         canvasConfig: (meta.canvasConfig ?? {}) as UpdateScadaDiagramDto['diagram']['canvasConfig'],
         runtimeConfig: (meta.runtimeConfig ?? {}) as UpdateScadaDiagramDto['diagram']['runtimeConfig'],
       },
-      nodes: nodes as unknown as UpdateScadaDiagramDto['nodes'],
+      nodes: nodes.map((nd: any) => ({
+        ...nd,
+        // fold chart display config into transform (jsonb) so it persists
+        // without a backend schema change (chartType/gaugeMin/gaugeMax have no columns)
+        bindings: (nd.bindings ?? []).map((b: any) => {
+          const { chartType, gaugeMin, gaugeMax, chartTransparent, dialShowLabel, ...restB } = b
+          return {
+            ...restB,
+            transform: {
+              ...(b.transform ?? {}),
+              ...(chartType ? { chartType } : {}),
+              ...(gaugeMin != null ? { gaugeMin } : {}),
+              ...(gaugeMax != null ? { gaugeMax } : {}),
+              ...(chartTransparent ? { chartTransparent: true } : {}),
+              ...(dialShowLabel ? { dialShowLabel: true } : {}),
+            },
+          }
+        }),
+      })) as unknown as UpdateScadaDiagramDto['nodes'],
       edges: edges.map(({ sourceHandle, targetHandle, pathMode, strokeWidth, labelFontSize, showBorder, borderWidth, lineCap, borderRadius, ...rest }: any) => ({
         ...rest,
         config: {

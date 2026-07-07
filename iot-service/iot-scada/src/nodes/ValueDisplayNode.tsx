@@ -34,6 +34,12 @@ const STATUS_BORDER: Record<RuntimeStatus, string> = {
   unknown: 'border-surface-border',
 }
 
+// Stable empty fallbacks — zustand v5 selectors must not return fresh refs
+// (a new object/array each render → "Maximum update depth exceeded")
+const EMPTY_SIZE = { width: 120, height: 25 }
+const EMPTY_VALUE_STYLE: ValueStyleConfig = {}
+const EMPTY_BINDINGS: ScadaNodeBinding[] = []
+
 interface ValueDisplayData {
   label?: string
   [key: string]: unknown
@@ -70,21 +76,14 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
   const runtime: NodeRuntimeState | null = useRuntimeStore((s) => s.nodeRuntimeMap[id] ?? null)
   const status: RuntimeStatus = runtime?.primaryStatus ?? 'unknown'
 
-  const nodeSize = useDiagramStore((s) => {
-    const n = s.nodes.find((nd) => nd.id === id)
-    return n?.size ?? { width: 120, height: 25 }
-  })
+  const nodeSize = useDiagramStore((s) => s.nodes.find((nd) => nd.id === id)?.size) ?? EMPTY_SIZE
 
-  const styleConfig: ValueStyleConfig = useDiagramStore((s) => {
-    const n = s.nodes.find((nd) => nd.id === id)
-    return (n?.style as ValueStyleConfig) ?? {}
-  })
+  const styleRaw = useDiagramStore((s) => s.nodes.find((nd) => nd.id === id)?.style)
+  const styleConfig: ValueStyleConfig = (styleRaw as ValueStyleConfig | undefined) ?? EMPTY_VALUE_STYLE
 
   // Read bindings from store for showTrend flag
-  const nodeBindings: ScadaNodeBinding[] = useDiagramStore((s) => {
-    const n = s.nodes.find((nd) => nd.id === id)
-    return n?.bindings ?? []
-  })
+  const bindingsRaw = useDiagramStore((s) => s.nodes.find((nd) => nd.id === id)?.bindings)
+  const nodeBindings: ScadaNodeBinding[] = bindingsRaw ?? EMPTY_BINDINGS
   const trendBinding = nodeBindings.find((b) => b.showTrend && (b.isPrimary || nodeBindings.length === 1))
     || nodeBindings.find((b) => b.showTrend)
   const trendChannelId = trendBinding?.sensorChannelId
@@ -288,7 +287,7 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
             borderTopRightRadius: borderRadius,
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
-            borderBottom: 'none',
+            borderBottomWidth: 0,
             opacity,
           }}
         >

@@ -13,6 +13,7 @@ import { MobileDashboardComponent } from './dashboard/mobile-dashboard/mobile-da
 import { MobileNodesListComponent } from './nodes/mobile-nodes-list/mobile-nodes-list.component';
 import { MobileNodeDetailComponent } from './nodes/mobile-node-detail/mobile-node-detail.component';
 import { MobileChannelDetailComponent } from './nodes/mobile-channel-detail/mobile-channel-detail.component';
+import { MobileProjectsListComponent } from './projects/mobile-projects-list/mobile-projects-list.component';
 import { MobileProjectDetailComponent } from './projects/mobile-project-detail/mobile-project-detail.component';
 import { MobileProjectInfoComponent } from './projects/tabs/project-info/project-info.component';
 import { MobileProjectMapComponent } from './projects/tabs/project-map/project-map.component';
@@ -41,6 +42,7 @@ import { MobileProfileComponent } from './profile/mobile-profile/mobile-profile.
     MobileNodesListComponent,
     MobileNodeDetailComponent,
     MobileChannelDetailComponent,
+    MobileProjectsListComponent,
     MobileProjectDetailComponent,
     MobileProjectInfoComponent,
     MobileProjectMapComponent,

@@ -12,9 +12,11 @@ import type {
   ScadaNodeBinding,
   ScadaNodeType,
   NodeStyleConfig,
+  ChartType,
 } from '@/types/scada'
 import { NODE_LIBRARY } from '@/nodes/registry'
 import { SENSOR_CATEGORY_LIST } from '@/nodes/sensorCategories'
+import { SCHEMATIC_VARIANTS, SCHEMATIC_VARIANT_LABELS } from '@/nodes/schematicVariants'
 
 // ── Tab types ─────────────────────────────────────────────────
 
@@ -212,6 +214,9 @@ function getStyleConfig(style?: Record<string, unknown>): NodeStyleConfig {
     iconSize: (style.iconSize as number) ?? undefined,
     labelFontSize: (style.labelFontSize as number) ?? undefined,
     valueFontSize: (style.valueFontSize as number) ?? undefined,
+    showValue: style.showValue != null ? Boolean(style.showValue) : undefined,
+    glyphVariant: (style.glyphVariant as number) ?? undefined,
+    glyphKey: (style.glyphKey as NodeStyleConfig['glyphKey']) ?? undefined,
   }
 }
 
@@ -297,6 +302,67 @@ function GeneralTab({ nodeId }: { nodeId: string }) {
           <div className="text-[10px] text-[var(--text-muted)] mt-1">
             Determines default icon &amp; accent color for this sensor node
           </div>
+        </div>
+      )}
+
+      {/* Tank geometry — only for tank/reservoir types (drives level fill %) */}
+      {['reservoir', 'ground_tank', 'elevated_tank', 'tank', 'water_tower', 'break_tank'].includes(node.type) && (
+        <div>
+          <SectionTitle>Level / Geometri Tangki</SectionTitle>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="scada-label">Level Min</label>
+              <input
+                className="scada-input"
+                type="number"
+                value={(node.config?.levelMin as number) ?? ''}
+                placeholder="0"
+                onChange={(e) =>
+                  updateNode(nodeId, {
+                    config: {
+                      ...node.config,
+                      levelMin: e.target.value === '' ? undefined : Number(e.target.value),
+                    },
+                  })
+                }
+              />
+            </div>
+            <div>
+              <label className="scada-label">Level Max</label>
+              <input
+                className="scada-input"
+                type="number"
+                value={(node.config?.levelMax as number) ?? ''}
+                placeholder="mis. tinggi tangki (m)"
+                onChange={(e) =>
+                  updateNode(nodeId, {
+                    config: {
+                      ...node.config,
+                      levelMax: e.target.value === '' ? undefined : Number(e.target.value),
+                    },
+                  })
+                }
+              />
+            </div>
+          </div>
+          <div className="text-[10px] text-[var(--text-muted)] mt-1 leading-snug">
+            Isi air dihitung dari binding ber-<code>bindingKey</code>/kategori <code>level</code>.
+            Jika satuan sensor <code>%</code>, isi langsung dipakai. Jika satuan meter, set Min/Max
+            agar dikonversi ke persen.
+          </div>
+        </div>
+      )}
+
+      {/* Pump binding hint — only for pump/motor types */}
+      {['pump', 'motor', 'booster_station', 'blower', 'compressor'].includes(node.type) && (
+        <div className="bg-canvas rounded-lg p-3 border border-surface-border text-[10px] text-[var(--text-muted)] leading-snug">
+          <span className="font-semibold text-[var(--text-secondary)]">Simbol pompa data-driven.</span>{' '}
+          Beri nama binding di tab <span className="text-accent">Bindings</span> agar tampil otomatis:
+          <ul className="list-disc ml-4 mt-1 space-y-0.5">
+            <li><code>status</code> (atau kategori <code>pump_status</code>) → run/stop &amp; warna + impeller berputar</li>
+            <li><code>rpm</code> / <code>speed</code> → nilai RPM</li>
+            <li><code>head</code> → head (m)</li>
+          </ul>
         </div>
       )}
 
@@ -394,6 +460,10 @@ function BindingsTab({ nodeId }: { nodeId: string }) {
   const node = useDiagramStore((s) => s.nodes.find((n) => n.id === nodeId))
   const updateNode = useDiagramStore((s) => s.updateNode)
   const ownerId = useDiagramStore((s) => s.meta?.ownerId)
+  // Tank/reservoir types can render a binding as an inline level-fill inside the symbol
+  const isTankNode = ['reservoir', 'ground_tank', 'elevated_tank', 'tank', 'water_tower', 'break_tank'].includes(node?.type ?? '')
+  // Instrument types can render a binding as an inline live analog dial (needle sweeps with value)
+  const isDialNode = ['pressure', 'flowmeter', 'ph_sensor', 'turbidity_sensor', 'chlorine_sensor', 'do_sensor', 'conductivity_sensor', 'temperature_sensor'].includes(node?.type ?? '')
 
   const [channels, setChannels] = useState<ChannelOption[]>([])
   const [search, setSearch] = useState('')
@@ -469,6 +539,9 @@ function BindingsTab({ nodeId }: { nodeId: string }) {
       isPrimary: bindings.length === 0, // first binding is primary by default
       priorityOrder: bindings.length,
       transform: null,
+      // seed gauge scale from the channel's thresholds (sensible default)
+      gaugeMin: ch.minThreshold ?? null,
+      gaugeMax: ch.maxThreshold ?? null,
     }
     updateNode(nodeId, { bindings: [...bindings, newBinding] })
     setShowSearch(false)
@@ -726,30 +799,159 @@ function BindingsTab({ nodeId }: { nodeId: string }) {
                   Channel: {b.sensorChannelId}
                 </div>
 
-                {/* Show Trend toggle */}
-                <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-surface-border/50">
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Tampilkan sparkline trend chart di node">
-                    <input
-                      type="checkbox"
-                      checked={b.showTrend ?? false}
-                      onChange={(e) => updateBinding(b.id ?? '', { showTrend: e.target.checked })}
-                      className="w-3 h-3 rounded border-gray-600 bg-canvas accent-accent cursor-pointer"
-                    />
-                    <span className="text-[9px] text-[var(--text-secondary)]">Show Trend Chart</span>
-                  </label>
-                  {b.showTrend && (
-                    <select
-                      className="scada-input !text-[9px] !h-5 !px-1 !py-0 !w-16"
-                      value={b.trendHours ?? 1}
-                      onChange={(e) => updateBinding(b.id ?? '', { trendHours: Number(e.target.value) })}
-                      title="Jendela waktu trend"
-                    >
-                      <option value={1}>1 jam</option>
-                      <option value={3}>3 jam</option>
-                      <option value={6}>6 jam</option>
-                      <option value={12}>12 jam</option>
-                      <option value={24}>24 jam</option>
-                    </select>
+                {/* Show Chart toggle + type */}
+                <div className="mt-1.5 pt-1.5 border-t border-surface-border/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Tampilkan chart di node">
+                      <input
+                        type="checkbox"
+                        checked={b.showTrend ?? false}
+                        onChange={(e) => updateBinding(b.id ?? '', { showTrend: e.target.checked })}
+                        className="w-3 h-3 rounded border-gray-600 bg-canvas accent-accent cursor-pointer"
+                      />
+                      <span className="text-[9px] text-[var(--text-secondary)]">Show Chart</span>
+                    </label>
+                    {b.showTrend && (
+                      <select
+                        className="scada-input !text-[9px] !h-5 !px-1 !py-0 !w-20"
+                        value={b.chartType ?? 'line'}
+                        onChange={(e) => updateBinding(b.id ?? '', { chartType: e.target.value as ChartType })}
+                        title="Jenis chart"
+                      >
+                        <option value="line">📈 Line</option>
+                        <option value="gauge">◔ Gauge</option>
+                        {isTankNode && <option value="inline">🛢 Inline (isi tangki)</option>}
+                        {isDialNode && <option value="inline">⏱ Inline (dial hidup)</option>}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Inline (dial): scale for the live analog needle */}
+                  {b.showTrend && b.chartType === 'inline' && isDialNode && (
+                    <div className="space-y-1.5 bg-canvas/50 rounded px-1.5 py-1.5">
+                      <div className="text-[9px] text-[var(--text-muted)] leading-snug">
+                        Simbol jadi <b>dial hidup</b> — jarum bergerak sesuai nilai. Set <b>Skala Min/Max</b> untuk rentang jarum (mis. 0 – 10 bar). Kosong = auto.
+                      </div>
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Nilai sudah tampil di dalam dial. Aktifkan kalau mau tetap muncul juga di label bawah node.">
+                        <input
+                          type="checkbox"
+                          checked={b.dialShowLabel ?? false}
+                          onChange={(e) => updateBinding(b.id ?? '', { dialShowLabel: e.target.checked })}
+                          className="w-3 h-3 rounded border-gray-600 bg-canvas accent-accent cursor-pointer"
+                        />
+                        <span className="text-[9px] text-[var(--text-secondary)]">Tampilkan nilai di label bawah</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <label className="text-[9px] text-[var(--text-muted)] uppercase">Skala Min</label>
+                          <input
+                            className="scada-input !text-xs !h-7 mt-0.5"
+                            type="number"
+                            value={b.gaugeMin ?? ''}
+                            placeholder="0"
+                            onChange={(e) => updateBinding(b.id ?? '', { gaugeMin: e.target.value === '' ? null : Number(e.target.value) })}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-[var(--text-muted)] uppercase">Skala Max</label>
+                          <input
+                            className="scada-input !text-xs !h-7 mt-0.5"
+                            type="number"
+                            value={b.gaugeMax ?? ''}
+                            placeholder="auto"
+                            onChange={(e) => updateBinding(b.id ?? '', { gaugeMax: e.target.value === '' ? null : Number(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Inline (tank): level scale (drives tank fill %) */}
+                  {b.showTrend && b.chartType === 'inline' && isTankNode && (
+                    <div className="space-y-1.5 bg-canvas/50 rounded px-1.5 py-1.5">
+                      <div className="text-[9px] text-[var(--text-muted)] leading-snug">
+                        Nilai sensor ini mengisi badan tangki. Set <b>Min/Max</b> (mis. 0 – tinggi tangki) supaya nilai dikonversi ke %. Jika satuan sensor <code>%</code>, isi langsung dipakai.
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <label className="text-[9px] text-[var(--text-muted)] uppercase">Level Min</label>
+                          <input
+                            className="scada-input !text-xs !h-7 mt-0.5"
+                            type="number"
+                            value={(node?.config?.levelMin as number) ?? ''}
+                            placeholder="0"
+                            onChange={(e) => updateNode(nodeId, { config: { ...node?.config, levelMin: e.target.value === '' ? undefined : Number(e.target.value) } })}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-[var(--text-muted)] uppercase">Level Max</label>
+                          <input
+                            className="scada-input !text-xs !h-7 mt-0.5"
+                            type="number"
+                            value={(node?.config?.levelMax as number) ?? ''}
+                            placeholder="mis. 5"
+                            onChange={(e) => updateNode(nodeId, { config: { ...node?.config, levelMax: e.target.value === '' ? undefined : Number(e.target.value) } })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Transparent background toggle (elegant, no card box) — not for inline */}
+                  {b.showTrend && b.chartType !== 'inline' && (
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Chart tanpa kotak background/border">
+                      <input
+                        type="checkbox"
+                        checked={b.chartTransparent ?? false}
+                        onChange={(e) => updateBinding(b.id ?? '', { chartTransparent: e.target.checked })}
+                        className="w-3 h-3 rounded border-gray-600 bg-canvas accent-accent cursor-pointer"
+                      />
+                      <span className="text-[9px] text-[var(--text-secondary)]">Tanpa background</span>
+                    </label>
+                  )}
+
+                  {/* Line: time window */}
+                  {b.showTrend && (b.chartType ?? 'line') === 'line' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-[var(--text-muted)]">Jendela waktu</span>
+                      <select
+                        className="scada-input !text-[9px] !h-5 !px-1 !py-0 !w-16"
+                        value={b.trendHours ?? 1}
+                        onChange={(e) => updateBinding(b.id ?? '', { trendHours: Number(e.target.value) })}
+                      >
+                        <option value={1}>1 jam</option>
+                        <option value={3}>3 jam</option>
+                        <option value={6}>6 jam</option>
+                        <option value={12}>12 jam</option>
+                        <option value={24}>24 jam</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Gauge: min/max scale */}
+                  {b.showTrend && b.chartType === 'gauge' && (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <label className="text-[9px] text-[var(--text-muted)] uppercase">Gauge Min</label>
+                        <input
+                          className="scada-input !text-xs !h-7 mt-0.5"
+                          type="number"
+                          value={b.gaugeMin ?? ''}
+                          placeholder="0"
+                          onChange={(e) => updateBinding(b.id ?? '', { gaugeMin: e.target.value === '' ? null : Number(e.target.value) })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-[var(--text-muted)] uppercase">Gauge Max</label>
+                        <input
+                          className="scada-input !text-xs !h-7 mt-0.5"
+                          type="number"
+                          value={b.gaugeMax ?? ''}
+                          placeholder="100"
+                          onChange={(e) => updateBinding(b.id ?? '', { gaugeMax: e.target.value === '' ? null : Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -791,6 +993,8 @@ function AppearanceTab({ nodeId }: { nodeId: string }) {
 
   const renderMode = styleConfig.renderMode ?? 'card'
   const labelPlacement = styleConfig.labelPlacement ?? 'bottom'
+  // Effective displayed symbol — glyphKey (icon override) wins over the node's data type
+  const glyphType = (styleConfig.glyphKey as string | undefined) ?? node.type
 
   return (
     <div className="flex flex-col gap-4">
@@ -818,6 +1022,35 @@ function AppearanceTab({ nodeId }: { nodeId: string }) {
                 <span className="text-[8px] text-[var(--text-muted)]">{m.desc}</span>
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Symbol Style variants (schematic mode) ──────────── */}
+      {showIconSections && renderMode === 'schematic' && SCHEMATIC_VARIANTS[glyphType] && (
+        <div>
+          <SectionTitle>Symbol Style</SectionTitle>
+          <div className="grid grid-cols-3 gap-2">
+            {SCHEMATIC_VARIANTS[glyphType].map((glyph, idx) => {
+              const active = (styleConfig.glyphVariant ?? 0) === idx
+              const variantLabel = SCHEMATIC_VARIANT_LABELS[glyphType]?.[idx] ?? `Style ${idx + 1}`
+              return (
+                <button
+                  key={idx}
+                  onClick={() => updateStyle({ glyphVariant: idx })}
+                  title={variantLabel}
+                  className={[
+                    'flex flex-col items-center gap-1 px-2 py-2 rounded-lg border transition-all',
+                    active
+                      ? 'border-accent/50 bg-accent/10 text-accent'
+                      : 'border-surface-border hover:border-accent/30 text-[var(--text-secondary)]',
+                  ].join(' ')}
+                >
+                  <span className="w-9 h-9 block">{glyph}</span>
+                  <span className="text-[8px] leading-tight text-center">{variantLabel}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -1074,6 +1307,12 @@ function AppearanceTab({ nodeId }: { nodeId: string }) {
       {showIconSections && (
       <div>
         <SectionTitle>Icon</SectionTitle>
+        <div className="text-[10px] text-[var(--text-muted)] leading-snug mb-2">
+          Simbol ini tampilan saja — <b>tidak mengubah type</b> node. Type (data & perilaku) diatur di tab <b>Info</b>.
+          {(styleConfig.glyphKey && styleConfig.glyphKey !== node.type) ? (
+            <button onClick={() => updateStyle({ glyphKey: undefined, glyphVariant: undefined })} className="ml-1 text-accent hover:underline">Reset ke default type</button>
+          ) : null}
+        </div>
         <div className="flex gap-1 mb-3">
           <button
             onClick={() => updateStyle({ iconMode: 'builtin', customSvg: undefined })}
@@ -1103,11 +1342,12 @@ function AppearanceTab({ nodeId }: { nodeId: string }) {
           /* Icon gallery grid */
           <div className="grid grid-cols-4 gap-1.5">
             {BUILTIN_ICONS.map((icon) => {
-              const isActive = node.type === icon.key && iconMode === 'builtin'
+              const activeGlyph = (node.style as NodeStyleConfig | undefined)?.glyphKey ?? node.type
+              const isActive = activeGlyph === icon.key && iconMode === 'builtin'
               return (
                 <button
                   key={icon.key}
-                  onClick={() => updateNode(nodeId, { type: icon.key as ScadaNodeType, style: { ...node.style, iconMode: 'builtin', customSvg: undefined } })}
+                  onClick={() => updateStyle({ glyphKey: node.type === icon.key ? undefined : (icon.key as ScadaNodeType), glyphVariant: undefined, iconMode: 'builtin', customSvg: undefined })}
                   className={[
                     'flex flex-col items-center gap-1 p-2 rounded-lg border transition-all group',
                     isActive
@@ -1279,6 +1519,17 @@ function AppearanceTab({ nodeId }: { nodeId: string }) {
               )}
             </div>
           </div>
+
+          {/* Show live value text */}
+          <label className="flex items-center gap-2 cursor-pointer select-none" title="Tampilkan angka nilai (mis. 3.6 bar) di bawah icon">
+            <input
+              type="checkbox"
+              checked={styleConfig.showValue !== false}
+              onChange={(e) => updateStyle({ showValue: e.target.checked })}
+              className="w-3.5 h-3.5 rounded border-gray-600 bg-canvas accent-accent cursor-pointer"
+            />
+            <span className="text-[10px] text-[var(--text-secondary)]">Tampilkan nilai (angka)</span>
+          </label>
 
           {/* Quick presets */}
           <div className="flex gap-1.5">
@@ -1607,6 +1858,117 @@ function AppearanceTab({ nodeId }: { nodeId: string }) {
 // MAIN DRAWER
 // ══════════════════════════════════════════════════════════════
 
+// ── Zone / block dedicated config ─────────────────────────────
+const ZONE_SWATCHES = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4', '#ef4444', '#64748b']
+
+function ZoneTab({ nodeId }: { nodeId: string }) {
+  const node = useDiagramStore((s) => s.nodes.find((n) => n.id === nodeId))
+  const updateNode = useDiagramStore((s) => s.updateNode)
+  if (!node) return null
+  const st = (node.style ?? {}) as Record<string, any>
+  const cfg = (node.config ?? {}) as Record<string, any>
+  const setStyle = (patch: Record<string, unknown>) => updateNode(nodeId, { style: { ...node.style, ...patch } })
+  const setCfg = (patch: Record<string, unknown>) => updateNode(nodeId, { config: { ...node.config, ...patch } })
+
+  const colorMode: 'status' | 'fixed' = st.zoneColorMode === 'fixed' ? 'fixed' : 'status'
+  const fixedColor = st.accentColor ?? '#3b82f6'
+  const fill = st.zoneFill ?? 9
+  const border = st.zoneBorder ?? 'auto'
+  const brackets = st.zoneBrackets !== false
+  const locked = cfg.locked === true
+
+  return (
+    <div className="space-y-4">
+      {/* Name */}
+      <div>
+        <label className="scada-label">Nama Zona</label>
+        <input
+          className="scada-input"
+          value={node.label ?? ''}
+          onChange={(e) => updateNode(nodeId, { label: e.target.value })}
+          placeholder="mis. IPA Sukarame / DMA-01"
+        />
+      </div>
+
+      {/* Color mode */}
+      <div>
+        <label className="scada-label">Warna</label>
+        <div className="flex gap-1.5 mb-2">
+          {([['status', 'Auto (status)'], ['fixed', 'Tetap']] as const).map(([m, lbl]) => (
+            <button
+              key={m}
+              onClick={() => setStyle({ zoneColorMode: m })}
+              className={[
+                'flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                colorMode === m ? 'bg-accent/10 border-accent/40 text-accent' : 'bg-canvas border-surface-border text-[var(--text-muted)] hover:border-accent/20',
+              ].join(' ')}
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
+        {colorMode === 'status'
+          ? <p className="text-[10px] text-[var(--text-muted)] leading-snug">Warna zona mengikuti status agregat isinya (hijau/kuning/merah).</p>
+          : (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {ZONE_SWATCHES.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setStyle({ accentColor: c })}
+                  className="w-6 h-6 rounded-md border transition-transform hover:scale-110"
+                  style={{ background: c, borderColor: fixedColor === c ? '#fff' : 'transparent', boxShadow: fixedColor === c ? `0 0 0 1.5px ${c}` : 'none' }}
+                  title={c}
+                />
+              ))}
+              <input type="color" value={fixedColor} onChange={(e) => setStyle({ accentColor: e.target.value })} className="w-6 h-6 rounded-md bg-transparent border border-surface-border cursor-pointer" title="Warna kustom" />
+            </div>
+          )}
+      </div>
+
+      {/* Fill opacity */}
+      <div>
+        <label className="scada-label">Kepekatan Isian</label>
+        <div className="flex items-center gap-2">
+          <input type="range" min={0} max={30} value={fill} onChange={(e) => setStyle({ zoneFill: Number(e.target.value) })} className="flex-1 accent-accent h-1 bg-canvas rounded" />
+          <span className="text-xs text-[var(--text-secondary)] font-mono w-8 text-right">{fill}%</span>
+        </div>
+      </div>
+
+      {/* Border style */}
+      <div>
+        <label className="scada-label">Border</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {([['auto', 'Auto'], ['solid', 'Solid'], ['dashed', 'Dashed'], ['none', 'None']] as const).map(([b, lbl]) => (
+            <button
+              key={b}
+              onClick={() => setStyle({ zoneBorder: b })}
+              className={[
+                'py-1.5 rounded-lg text-[11px] font-medium border transition-colors',
+                border === b ? 'bg-accent/10 border-accent/40 text-accent' : 'bg-canvas border-surface-border text-[var(--text-muted)] hover:border-accent/20',
+              ].join(' ')}
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-[var(--text-muted)] mt-1">Auto = dashed saat bebas, solid saat terkunci.</p>
+      </div>
+
+      {/* Toggles */}
+      <div className="space-y-2 pt-1 border-t border-surface-border">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={brackets} onChange={(e) => setStyle({ zoneBrackets: e.target.checked })} className="w-3.5 h-3.5 rounded border-gray-600 bg-canvas accent-accent" />
+          <span className="text-xs text-[var(--text-secondary)]">Corner brackets (HUD)</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={locked} onChange={(e) => setCfg({ locked: e.target.checked })} className="w-3.5 h-3.5 rounded border-gray-600 bg-canvas accent-accent" />
+          <span className="text-xs text-[var(--text-secondary)]">Kunci posisi &amp; ukuran</span>
+        </label>
+      </div>
+    </div>
+  )
+}
+
 export function NodeConfigDrawer() {
   const nodeId = useUiStore((s) => s.configDrawerNodeId)
   const close = useUiStore((s) => s.closeNodeConfig)
@@ -1674,30 +2036,38 @@ export function NodeConfigDrawer() {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="px-4 pt-2 flex gap-1 border-b border-surface-border flex-shrink-0">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={[
-                'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-colors -mb-px',
-                activeTab === tab.key
-                  ? 'border-accent text-accent bg-accent/5'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-surface-hover',
-              ].join(' ')}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Tabs — hidden for zone (single dedicated config) */}
+        {node.type !== 'zone' && (
+          <div className="px-4 pt-2 flex gap-1 border-b border-surface-border flex-shrink-0">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-colors -mb-px',
+                  activeTab === tab.key
+                    ? 'border-accent text-accent bg-accent/5'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-surface-hover',
+                ].join(' ')}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          {activeTab === 'general' && <GeneralTab nodeId={nodeId} />}
-          {activeTab === 'bindings' && <BindingsTab nodeId={nodeId} />}
-          {activeTab === 'appearance' && <AppearanceTab nodeId={nodeId} />}
+          {node.type === 'zone' ? (
+            <ZoneTab nodeId={nodeId} />
+          ) : (
+            <>
+              {activeTab === 'general' && <GeneralTab nodeId={nodeId} />}
+              {activeTab === 'bindings' && <BindingsTab nodeId={nodeId} />}
+              {activeTab === 'appearance' && <AppearanceTab nodeId={nodeId} />}
+            </>
+          )}
         </div>
 
         {/* Footer */}

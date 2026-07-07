@@ -23,7 +23,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-const PIPE_TYPES: PipeType[] = ['raw', 'treated', 'waste', 'chemical', 'electrical', 'generic']
+const PIPE_TYPES: PipeType[] = ['raw', 'treated', 'waste', 'chemical', 'electrical', 'generic', 'signal']
 const PATH_MODES: PathMode[] = ['smoothstep', 'bezier', 'straight', 'step']
 const FLOW_DIRS: { key: FlowDirection; label: string; icon: string }[] = [
   { key: 'forward', label: 'Forward', icon: '→' },

@@ -2,13 +2,26 @@
 // App.tsx — Root router
 // ============================================================
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import { AuthProvider, useAuth } from '@/components/AuthGate'
 import { LoginPage }         from '@/pages/LoginPage'
 import { DiagramListPage }   from '@/pages/DiagramListPage'
 import { DiagramPage }       from '@/pages/DiagramPage'
+import { useUiStore }        from '@/stores/useUiStore'
+
+// When embedded (iframe), the native Fullscreen API is unreliable on mobile — instead
+// tell the parent (Angular) to expand the iframe to fill the device screen.
+function EmbedFullscreenBridge() {
+  const isFullscreen = useUiStore((s) => s.isFullscreen)
+  useEffect(() => {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'scada-fullscreen', value: isFullscreen }, '*')
+    }
+  }, [isFullscreen])
+  return null
+}
 
 // ── Protected route wrapper ───────────────────────────────────
 
@@ -101,6 +114,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
+      <EmbedFullscreenBridge />
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>

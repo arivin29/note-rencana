@@ -119,8 +119,9 @@
   position:sticky; bottom:0; z-index:1000;
 }
 .m-bottomnav__item{
-  flex:1; border:0; background:transparent; cursor:pointer; text-decoration:none;
+  flex:1; min-width:0; border:0; background:transparent; cursor:pointer; text-decoration:none;
   color:var(--m-text-dim); font-size:10px; font-weight:600; letter-spacing:.01em;
+  white-space:nowrap;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
 }
 .m-bottomnav__item .ic-wrap{
@@ -136,6 +137,27 @@
   content:''; position:absolute; top:-9px; width:18px; height:3px; border-radius:99px; background:var(--m-aqua); box-shadow:0 0 10px var(--m-aqua);
 }
 .m-bottomnav__item:active .ic-wrap{ transform:scale(.9); }
+.m-tag{ display:inline-block; font-size:9px; font-weight:700; line-height:1; padding:3px 6px; border-radius:99px; vertical-align:middle; letter-spacing:.02em; }
+.m-tag--active{ color:var(--m-aqua); background:var(--m-grad-soft); box-shadow:inset 0 0 0 1px rgba(34,211,238,.25); }
+
+/* ---- health bar ---- */
+.m-hbar__track{ height:8px; border-radius:99px; background:var(--m-surface-2); overflow:hidden; box-shadow:inset 0 0 0 1px var(--m-border); }
+.m-hbar__fill{ height:100%; border-radius:99px; transition:width .4s ease; background:var(--m-grad); }
+.m-hbar__fill.is-ok{ background:linear-gradient(90deg,#34d399,#0d9488); }
+.m-hbar__fill.is-warn{ background:linear-gradient(90deg,#fbbf24,#f97316); }
+.m-hbar__fill.is-bad{ background:linear-gradient(90deg,#fb7185,#e11d48); }
+.m-hbar__label{ margin-top:6px; font-size:var(--m-xs); color:var(--m-text-muted); font-weight:600; }
+
+/* ---- quick action grid (jump to tabs) ---- */
+.m-quickgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--m-2); margin-top:var(--m-3); }
+.m-quick{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  padding:12px 4px; border-radius:var(--m-radius-sm); text-decoration:none;
+  background:var(--m-surface); border:1px solid var(--m-border);
+  color:var(--m-text); font-size:11px; font-weight:600;
+}
+.m-quick i{ font-size:17px; color:var(--m-aqua); }
+.m-quick:active{ background:var(--m-surface-2); transform:scale(.97); }
 
 /* ---- primitives ---- */
 .m-section{ font-size:var(--m-xs); font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--m-text-muted); margin:var(--m-5) var(--m-1) var(--m-2); display:flex; align-items:center; gap:8px; }
@@ -186,6 +208,9 @@
 .m-stat__trend{ font-size:var(--m-xs); font-weight:700; display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:var(--m-pill); }
 .m-stat__trend--up{ color:var(--m-success); background:rgba(45,212,167,.12); }
 .m-stat__trend--down{ color:var(--m-danger); background:rgba(251,91,109,.12); }
+.m-stat--tap{ text-decoration:none; color:inherit; }
+.m-stat--tap:active{ transform:scale(.97); }
+.m-stat__go{ font-size:11px; color:var(--m-text-dim); }
 .m-stat__value{ font-size:var(--m-2xl); font-weight:800; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
 .m-stat__label{ font-size:var(--m-xs); color:var(--m-text-muted); font-weight:600; display:flex; align-items:center; gap:6px; }
 
@@ -382,6 +407,10 @@ body:has(.m-app) .app-theme-panel { display:none !important; }
 .m-scada-embed__bar{ display:flex; align-items:center; gap:10px; margin-bottom:var(--m-2); }
 .m-scada-embed__name{ font-weight:700; font-size:var(--m-sm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .m-scada-embed__frame{ width:100%; height:72vh; border:1px solid var(--m-border); border-radius:var(--m-radius); background:#0a1424; }
+/* Fullscreen: the embedded SCADA asked us to fill the device screen (native FS is
+   unreliable inside an iframe on mobile). Cover the mobile chrome (top bar / bottom nav). */
+.m-scada-embed--full{ position:fixed; inset:0; z-index:1200; margin:0; background:#0a1424; }
+.m-scada-embed--full .m-scada-embed__frame{ width:100%; height:100%; height:100dvh; border:0; border-radius:0; }
 
 /* ---- openlayers map ---- */
 .m-olmap-wrap{ position:relative; }

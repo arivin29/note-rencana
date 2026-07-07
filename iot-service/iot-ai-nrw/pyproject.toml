@@ -1,0 +1,53 @@
+[project]
+name = "iot-ai-nrw"
+version = "0.0.0"
+description = "Worker analitik AI-NRW untuk PDAM — deteksi anomali, forecasting, early-warning (Non-Revenue Water)."
+requires-python = ">=3.11"
+readme = "README.md"
+
+# Core stack (dok 07 §10) — ringan, muat 2 vCPU / 2 GB, menutup A1–A10 + forecast.
+dependencies = [
+  "river>=0.21",            # A10 drift (PageHinkley/ADWIN) + statistik online
+  "statsforecast>=1.7",     # forecast Tier-1 (AutoETS/AutoARIMA), ringan & cepat
+  "statsmodels>=0.14",      # STL (Tier-1), regresi robust (tren malam)
+  "numpy>=1.26",
+  "polars>=1.0",            # olah data hemat memori (pengganti pandas loop)
+  "duckdb>=1.0",            # query lokal / agregasi ad-hoc
+  "clickhouse-connect>=0.7",# baca telemetry ClickHouse
+  "psycopg[binary]>=3.2",   # Postgres (ai_*)
+  "SQLAlchemy>=2.0",        # akses ai_* + dasar Alembic
+  "alembic>=1.13",          # OWNER migrasi skema ai_*
+  "APScheduler>=3.10",      # penjadwalan in-proc (cadence)
+  "pydantic-settings>=2.3", # config via .env
+  "structlog>=24.1",        # logging terstruktur (observability, dok 05 §8)
+]
+
+[project.optional-dependencies]
+# Detektor rule-based siap pakai (opsional — A1–A9 juga bisa hand-code, dok 07 §2)
+detectors-extra = ["adtk>=0.6.2"]
+# Tier-2 (opt-in per channel bernilai tinggi, dok 07 §5) — BERAT, jangan default
+tier2 = ["pyod>=2.0", "stumpy>=1.13", "prophet>=1.1", "neuralforecast>=1.7"]
+# Change-point offline untuk audit histori (dok 07 §5)
+changepoint = ["ruptures>=1.1", "changefinder>=0.03"]
+# Domain air Layer 2–3 (DMA/MNF/FAVAD/EPANET, dok 07 §6) — nanti
+domain = ["wntr>=1.2"]
+# Backtest/benchmark (dev, bukan runtime, dok 07 §8)
+eval = ["darts>=0.30"]
+dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11"]
+
+[project.scripts]
+ai-nrw-worker = "ai_nrw.worker:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

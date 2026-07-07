@@ -7,9 +7,6 @@
             "path": "../iot-angular"
         },
         {
-            "path": "../iot-backend"
-        },
-        {
             "path": "../desain_widget_dinamis"
         },
         {
@@ -20,6 +17,9 @@
         },
         {
             "path": "../../../iot-backend-go"
+        },
+        {
+            "path": "../iot-ai-nrw"
         }
     ],
     "settings": {

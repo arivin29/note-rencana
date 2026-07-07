@@ -15,6 +15,7 @@ Skills in `.claude/skills/`:
 - `ui-card` — standard card / dashboard widget.
 - `ui-form` — standard create/edit form.
 - `backend-module` — standard Goravel CRUD module (for backend work).
+- `scada-view` — how to build/modify the **iot-scada** SCADA diagram view (React + React Flow + zustand v5); read before any SCADA visual-editor change.
 
 Full map: [.claude/PROJECT-MAP.md](.claude/PROJECT-MAP.md).
 

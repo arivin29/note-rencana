@@ -13,6 +13,7 @@ import {
   type Edge,
   type Connection,
   type NodeChange,
+  type NodePositionChange,
   type EdgeChange,
   applyNodeChanges,
   applyEdgeChanges,
@@ -29,9 +30,13 @@ import type { ScadaNodeDto, ScadaEdgeDto } from '@/types/scada'
 // ── Convert store node/edge to React Flow format ──────────────
 
 function toFlowNode(n: ScadaNodeDto): Node {
+  // Any type not registered in nodeTypes would fall back to React Flow's "default"
+  // node (blank box + console warning). Route it to a real component instead —
+  // the frame still draws the correct glyph from data.nodeType.
+  const rfType = (n.type in nodeTypes) ? n.type : 'junction'
   return {
     id: n.id,
-    type: n.type,
+    type: rfType,
     position: n.position,
     data: {
       label:    n.label,
@@ -43,7 +48,10 @@ function toFlowNode(n: ScadaNodeDto): Node {
     // Pass size so React Flow can measure properly
     width:  n.size?.width  ?? 100,
     height: n.size?.height ?? 100,
-    zIndex: n.zIndex ?? 0,
+    // Zone/group blocks render behind everything else
+    zIndex: n.type === 'zone' ? -1 : (n.zIndex ?? 0),
+    // A locked zone can't be dragged (prevents nudging the big background box)
+    draggable: (n.type === 'zone' && (n.config as any)?.locked === true) ? false : undefined,
   }
 }
 
@@ -135,8 +143,42 @@ function CanvasInner() {
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     // Filter out remove changes — they are handled by onDelete callback
     // This prevents double state updates that cause infinite loops
-    const nonRemoveChanges = changes.filter((c) => c.type !== 'remove')
-    
+    let nonRemoveChanges = changes.filter((c) => c.type !== 'remove')
+
+    // ── Move-together: dragging a ZONE drags the nodes inside it ──
+    // Uses the store snapshot (drag-start positions, since the store only updates on
+    // drag end) as a stable reference, so the child set + delta stay consistent per frame
+    // and the zone never "grabs" bystanders it merely passes over.
+    const snapshot = useDiagramStore.getState().nodes
+    // ids already carrying their own position change — don't double-move them
+    const alreadyMoving = new Set(
+      nonRemoveChanges.filter((c) => c.type === 'position').map((c) => (c as NodePositionChange).id),
+    )
+    const childMoves: NodePositionChange[] = []
+    for (const c of nonRemoveChanges) {
+      if (c.type !== 'position' || !('position' in c) || !c.position) continue
+      const zone = snapshot.find((n) => n.id === c.id && n.type === 'zone')
+      if (!zone) continue
+      const dx = c.position.x - zone.position.x
+      const dy = c.position.y - zone.position.y
+      if (dx === 0 && dy === 0) continue
+      const zx = zone.position.x, zy = zone.position.y
+      const zw = zone.size?.width ?? 0, zh = zone.size?.height ?? 0
+      for (const n of snapshot) {
+        if (n.id === zone.id || n.type === 'zone' || alreadyMoving.has(n.id)) continue
+        const cx = n.position.x + (n.size?.width ?? 0) / 2
+        const cy = n.position.y + (n.size?.height ?? 0) / 2
+        if (cx >= zx && cx <= zx + zw && cy >= zy && cy <= zy + zh) {
+          childMoves.push({
+            id: n.id, type: 'position',
+            position: { x: n.position.x + dx, y: n.position.y + dy },
+            dragging: (c as any).dragging,
+          } as NodePositionChange)
+        }
+      }
+    }
+    if (childMoves.length > 0) nonRemoveChanges = [...nonRemoveChanges, ...childMoves]
+
     if (nonRemoveChanges.length > 0) {
       // Apply non-remove changes to local RF state (dimensions, select, position, etc.)
       setRfNodes((nds) => applyNodeChanges(nonRemoveChanges, nds))
@@ -176,6 +218,17 @@ function CanvasInner() {
     )
     if (exists) return
 
+    // A link touching a sensor/readout node is a signal link (data), not a process pipe
+    const SIGNAL_ENDPOINT_TYPES = new Set([
+      'value_display', 'sensor', 'pressure', 'flowmeter', 'meter', 'level_sensor',
+      'ph_sensor', 'turbidity_sensor', 'chlorine_sensor', 'temperature_sensor',
+      'conductivity_sensor', 'do_sensor',
+    ])
+    const nodesNow = useDiagramStore.getState().nodes
+    const srcType = nodesNow.find((n) => n.id === connection.source)?.type
+    const tgtType = nodesNow.find((n) => n.id === connection.target)?.type
+    const isSignalLink = SIGNAL_ENDPOINT_TYPES.has(srcType ?? '') || SIGNAL_ENDPOINT_TYPES.has(tgtType ?? '')
+
     const edgeId = crypto.randomUUID()
     addEdgeStore({
       id:            edgeId,
@@ -184,9 +237,9 @@ function CanvasInner() {
       sourceHandle:  connection.sourceHandle ?? undefined,
       targetHandle:  connection.targetHandle ?? undefined,
       edgeType:      'pipe',
-      pipeType:      'raw',
+      pipeType:      isSignalLink ? 'signal' : 'raw',
       pathMode:      'smoothstep',
-      flowDirection: 'forward',
+      flowDirection: isSignalLink ? 'none' : 'forward',
       animated:      false,
       strokeWidth:   2,
       style:         {},

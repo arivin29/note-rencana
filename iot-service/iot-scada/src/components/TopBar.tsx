@@ -70,6 +70,10 @@ export function TopBar({ onSave }: TopBarProps) {
   const isDirty  = useDiagramStore((s) => s.isDirty)
   const isSaving = useDiagramStore((s) => s.isSaving)
   const saveError= useDiagramStore((s) => s.saveError)
+  const canUndo  = useDiagramStore((s) => s.past.length > 0)
+  const canRedo  = useDiagramStore((s) => s.future.length > 0)
+  const undo     = useDiagramStore((s) => s.undo)
+  const redo     = useDiagramStore((s) => s.redo)
 
   const mode     = useUiStore((s) => s.mode)
   const setMode  = useUiStore((s) => s.setMode)
@@ -138,6 +142,33 @@ export function TopBar({ onSave }: TopBarProps) {
 
       {/* Right: controls */}
       <div className="flex items-center gap-2">
+        {/* Undo / Redo (edit mode only) */}
+        {mode === 'edit' && (
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Undo (Ctrl/Cmd+Z)"
+            >
+              <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 4L3 7l3 3" /><path d="M3 7h6.5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Redo (Ctrl/Cmd+Shift+Z)"
+            >
+              <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 4l3 3-3 3" /><path d="M13 7H6.5a3.5 3.5 0 0 0 0 7H10" />
+              </svg>
+            </button>
+            <div className="w-px h-5 bg-surface-border mx-1" />
+          </div>
+        )}
+
         {/* Save error */}
         {saveError && (
           <span className="text-xs text-status-alert hidden md:inline">

@@ -107,6 +107,12 @@ export interface NodeCategory {
 
 export const NODE_CATALOG: NodeCategory[] = [
   {
+    name: 'Area / Grup',
+    items: [
+      { type: 'zone', abbr: 'ZN', label: 'Zona / Blok', description: 'Kotak grup (IPA, DMA) — status agregat dari isinya', defaultSize: { width: 340, height: 220 } },
+    ],
+  },
+  {
     name: 'Sumber Air',
     items: [
       { type: 'intake',        abbr: 'IN', label: 'Intake',        description: 'Titik pengambilan air baku',           defaultSize: { width: 100, height: 100 } },

@@ -139,6 +139,8 @@ export type ScadaNodeType =
   | 'break_tank'
   | 'sampling_point'
   | 'solar_panel'
+  // Layout / grouping
+  | 'zone'
 
 export interface ScadaNodePosition {
   x: number
@@ -150,6 +152,8 @@ export interface ScadaNodeSize {
   height: number
 }
 
+export type ChartType = 'line' | 'gauge' | 'inline'   // jenis visualisasi: line chart, gauge, atau inline (isi tangki mengikuti nilai — khusus reservoir/tank)
+
 export interface ScadaNodeBinding {
   id?: string
   bindingKey: string
@@ -159,8 +163,13 @@ export interface ScadaNodeBinding {
   transform?: Record<string, unknown> | null
   priorityOrder?: number
   isPrimary?: boolean
-  showTrend?: boolean              // tampilkan sparkline trend chart di node
-  trendHours?: number              // jendela waktu trend (default: 1 jam)
+  showTrend?: boolean              // tampilkan chart di node
+  trendHours?: number              // jendela waktu trend line (default: 1 jam)
+  chartType?: ChartType            // 'line' (default) atau 'gauge'
+  gaugeMin?: number | null         // batas bawah skala gauge (default 0)
+  gaugeMax?: number | null         // batas atas skala gauge (default 100)
+  chartTransparent?: boolean       // render chart tanpa kotak background/border (elegan)
+  dialShowLabel?: boolean          // mode inline dial: tampilkan juga nilai di label bawah node (default: sembunyi, karena dial sudah menampilkan angka)
 }
 
 export interface ScadaNodeDto {
@@ -180,7 +189,7 @@ export interface ScadaNodeDto {
 
 // ── Edge ─────────────────────────────────────────────────────
 
-export type PipeType = 'raw' | 'treated' | 'waste' | 'chemical' | 'electrical' | 'generic'
+export type PipeType = 'raw' | 'treated' | 'waste' | 'chemical' | 'electrical' | 'generic' | 'signal'
 export type FlowDirection = 'forward' | 'reverse' | 'bidirectional' | 'none'
 export type PathMode = 'smoothstep' | 'bezier' | 'straight' | 'step'
 
@@ -243,6 +252,8 @@ export interface ScadaRuntimeBindingDto {
   freshnessState: string
   displayLabel?: string | null
   unitOverride?: string | null
+  priorityOrder?: number         // dari scada_node_bindings.priority_order (G-4)
+  isPrimary?: boolean            // binding utama node (G-4)
 }
 
 export interface ScadaRuntimeResponse {
@@ -297,6 +308,8 @@ export type LabelPlacement = 'center' | 'bottom' | 'top' | 'left' | 'right'  // 
 export interface NodeStyleConfig {
   renderMode?: NodeRenderMode        // visual mode: 'card' (default) or 'schematic' (P&ID style)
   labelPlacement?: LabelPlacement    // label/value position: center (overlay), bottom, top, left, right
+  glyphVariant?: number
+  glyphKey?: ScadaNodeType           // override simbol yang ditampilkan tanpa mengubah type node (presentasi saja)              // index of schematic symbol variant (see schematicVariants), default 0
   iconMode?: 'builtin' | 'custom'    // default: builtin (uses nodeType glyph)
   customSvg?: string                 // raw SVG markup for custom icon
   iconPosition?: IconPosition        // icon placement: top (default), center, left, right, hidden
@@ -312,6 +325,7 @@ export interface NodeStyleConfig {
   bgImageFit?: BgImageFit            // how bg image fits: cover, contain, fill
   labelFontSize?: number             // label text size in px (default: 10)
   valueFontSize?: number             // live value text size in px (default: auto)
+  showValue?: boolean                // show the live value text (e.g. "3.6 bar") under the icon (default: true)
 }
 
 // ── Create / Update DTOs ─────────────────────────────────────

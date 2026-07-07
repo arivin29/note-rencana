@@ -16,7 +16,10 @@ interface ScadaNodeData {
   [key: string]: unknown
 }
 
-function createScadaNode(defaultType: string) {
+// Stable fallback — zustand v5 selectors must not return a fresh object each render
+const DEFAULT_SIZE = { width: 100, height: 100 }
+
+export function createScadaNode(defaultType: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function ScadaNodeComponent({ id, data, selected }: NodeProps<any>) {
     const d = data as ScadaNodeData
@@ -24,11 +27,8 @@ function createScadaNode(defaultType: string) {
     const label    = (d.label as string) ?? defaultType
     const runtime  = useRuntimeStore((s) => s.nodeRuntimeMap[id] ?? null)
     const mode     = useUiStore((s) => s.mode)
-    // Get size from store (source of truth)
-    const nodeSize = useDiagramStore((s) => {
-      const n = s.nodes.find((nd) => nd.id === id)
-      return n?.size ?? { width: 100, height: 100 }
-    })
+    // Get size from store (source of truth) — raw ref + stable fallback
+    const nodeSize = useDiagramStore((s) => s.nodes.find((nd) => nd.id === id)?.size) ?? DEFAULT_SIZE
 
     return (
       <ScadaNodeFrame
@@ -64,6 +64,9 @@ export const BlowerNode         = createScadaNode('blower')
 export const CheckValveNode     = createScadaNode('check_valve')
 export const GroundTankNode     = createScadaNode('ground_tank')
 export const ElevatedTankNode   = createScadaNode('elevated_tank')
+export const TankNode           = createScadaNode('tank')
+export const WaterTowerNode     = createScadaNode('water_tower')
+export const BreakTankNode      = createScadaNode('break_tank')
 export const DistributionNode   = createScadaNode('distribution')
 export const MeterNode          = createScadaNode('meter')
 export const PrvNode            = createScadaNode('prv')
