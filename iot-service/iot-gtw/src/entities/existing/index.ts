@@ -6,6 +6,8 @@ export * from './node-unpaired-device.entity';
 export * from './owner.entity';
 export * from './owner-forwarding-database.entity';
 export * from './owner-forwarding-log.entity';
+export * from './owner-forwarding-mqtt.entity';
+export * from './owner-forwarding-mqtt-log.entity';
 export * from './project.entity';
 export * from './sensor.entity';
 export * from './sensor-catalog.entity';

@@ -1,0 +1,119 @@
+<!-- Header -->
+<div class="d-flex align-items-center mb-3" *ngIf="!embedded">
+  <div>
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a routerLink="/iot/ai/events">AI-NRW</a></li>
+      <li class="breadcrumb-item active">Analytics</li>
+    </ul>
+    <h1 class="page-header mb-0">{{ data?.channelName || 'Channel Analytics' }}</h1>
+    <div class="text-muted small" *ngIf="data?.unit">Satuan: {{ data?.unit }}</div>
+  </div>
+  <div class="ms-auto d-flex gap-2">
+    <a [routerLink]="['/iot/ai/settings']" class="btn btn-outline-default btn-sm"><i class="fa fa-sliders fa-fw me-1"></i> Settings</a>
+    <button class="btn btn-outline-default btn-sm" (click)="back()"><i class="fa fa-arrow-left fa-fw me-1"></i> Kembali</button>
+  </div>
+</div>
+
+<!-- Kontrol rentang + resolusi -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <div class="btn-group btn-group-sm">
+    <button *ngFor="let r of rangeOptions" class="btn" [class.btn-theme]="range === r.key"
+            [class.btn-outline-default]="range !== r.key" (click)="setRange(r.key)">{{ r.label }}</button>
+  </div>
+  <div class="btn-group btn-group-sm">
+    <button *ngFor="let r of resolutionOptions" class="btn" [class.btn-theme]="resolution === r"
+            [class.btn-outline-default]="resolution !== r" (click)="setResolution(r)">{{ r }}</button>
+  </div>
+</div>
+
+<div *ngIf="error" class="alert alert-danger d-flex align-items-center">
+  <i class="fa fa-triangle-exclamation me-2"></i> {{ error }}
+</div>
+
+<div *ngIf="loading" class="text-center text-muted py-5"><div class="spinner-border spinner-border-sm me-2"></div> Memuat analitik…</div>
+
+<ng-container *ngIf="!loading && data">
+  <!-- Chart utama -->
+  <card class="shadow-sm mb-3">
+    <card-header class="border-bottom"><h5 class="mb-0"><i class="fa fa-chart-line fa-fw me-2"></i> Aktual vs Baseline & Forecast</h5></card-header>
+    <card-body class="p-3">
+      <apx-chart
+        [series]="chartSeries"
+        [chart]="chart"
+        [colors]="colors"
+        [stroke]="stroke"
+        [grid]="grid"
+        [xaxis]="xaxis"
+        [yaxis]="yaxis"
+        [legend]="legend"
+        [tooltip]="tooltip"
+        [fill]="fill"
+        [dataLabels]="dataLabels"
+        [annotations]="annotations">
+      </apx-chart>
+      <div class="text-muted small mt-2" *ngIf="!chartSeries.length || !data.series.length">
+        Belum ada data telemetry pada rentang ini.
+      </div>
+      <!-- Penjelasan 3 jenis batas -->
+      <div class="small text-muted mt-2 d-flex flex-wrap gap-3">
+        <span><i class="fa fa-minus" style="color:#00acac"></i> Aktual</span>
+        <span><i class="fa fa-minus" style="color:#8c8c8c"></i> Normal / seharusnya (± batas adaptif) — <b>A9</b> warning bila keluar</span>
+        <span><i class="fa fa-minus" style="color:#dc3545"></i> Min/Max layanan (setting) — <b>A2/A3</b> warning bila lewat</span>
+        <span><i class="fa fa-minus" style="color:#f59c1a"></i> Forecast (prediksi + atas/bawah)</span>
+        <span><i class="fa fa-grip-lines-vertical text-danger"></i> Penanda tegak = event/warning</span>
+      </div>
+    </card-body>
+  </card>
+
+  <div class="row g-3">
+    <!-- Tekanan malam -->
+    <div class="col-lg-6">
+      <card class="h-100">
+        <card-header class="border-bottom d-flex align-items-center">
+          <h6 class="mb-0"><i class="fa fa-moon fa-fw me-2"></i> Tekanan Malam</h6>
+          <span class="ms-auto" *ngIf="night">
+            <span class="text-muted small me-2">{{ night.window }}</span>
+            <span [class]="nightTrendBadge(night.trend)" *ngIf="night.trend">tren: {{ night.trend }}</span>
+          </span>
+        </card-header>
+        <card-body class="p-3">
+          <div *ngIf="!night" class="text-muted small">Belum ada data tekanan malam (butuh night_pressure aktif + beberapa malam).</div>
+          <div class="table-responsive" *ngIf="night && night.pNight.length">
+            <table class="table table-sm mb-0">
+              <thead class="text-muted small text-uppercase"><tr><th>Malam</th><th class="text-end">Nilai</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let p of night.pNight"><td>{{ p.d }}</td><td class="text-end fw-semibold">{{ p.value | number: '1.2-2' }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </card-body>
+      </card>
+    </div>
+
+    <!-- Event pada rentang -->
+    <div class="col-lg-6">
+      <card class="h-100">
+        <card-header class="border-bottom"><h6 class="mb-0"><i class="fa fa-bell fa-fw me-2"></i> Event pada Rentang</h6></card-header>
+        <card-body class="p-3">
+          <div *ngIf="!data.events.length" class="text-muted small">Tak ada event pada rentang ini.</div>
+          <div class="list-group list-group-flush" *ngIf="data.events.length">
+            <a class="list-group-item list-group-item-action px-0" *ngFor="let e of data.events"
+               [routerLink]="['/iot/ai/events', e.id]">
+              <div class="d-flex align-items-center">
+                <span class="badge me-2"
+                      [class.bg-danger-subtle]="e.severity === 'critical'" [class.text-danger]="e.severity === 'critical'"
+                      [class.bg-warning-subtle]="e.severity === 'warning'" [class.text-warning]="e.severity === 'warning'"
+                      [class.bg-info-subtle]="e.severity === 'info'" [class.text-info]="e.severity === 'info'">{{ e.severity }}</span>
+                <div class="flex-1">
+                  <div class="fw-semibold">{{ e.analysisType }}</div>
+                  <div class="small text-muted">{{ e.startedAt | date: 'dd MMM HH:mm' }} · {{ e.status }}</div>
+                </div>
+                <i class="fa fa-chevron-right text-muted"></i>
+              </div>
+            </a>
+          </div>
+        </card-body>
+      </card>
+    </div>
+  </div>
+</ng-container>

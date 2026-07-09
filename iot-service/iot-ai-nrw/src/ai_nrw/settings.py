@@ -13,7 +13,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="AINRW_", extra="ignore")
 
     # --- Postgres (ai_* : config, event, baseline, forecast, recurrence) ---
-    pg_dsn: str = "postgresql+psycopg://postgres:postgres@localhost:5432/iot"
+    # NOTE: pakai psycopg2 (bukan psycopg3) — server via pooler mengembalikan version()
+    # sebagai bytes → psycopg3 crash di deteksi versi SQLAlchemy. client_encoding=utf8
+    # WAJIB (teks makna detektor pakai em-dash). Override via AINRW_PG_DSN di .env.
+    pg_dsn: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/iot?client_encoding=utf8"
 
     # --- ClickHouse (telemetry, read-only) ---
     ch_host: str = "localhost"
@@ -24,6 +27,8 @@ class Settings(BaseSettings):
 
     # --- Cadence default (dok 05 §4) — bisa di-override per target di ai_config ---
     cadence_anomaly_sec: int = 300      # 5 menit (data ingest tetap 2 menit)
+    cadence_jobs_sec: int = 15          # poll antrean job manual (hitung-ulang on-demand)
+    cadence_baseline_cron: str = "30 2 * * *"  # learn grid musiman (A9), harian dini hari
     cadence_forecast_cron: str = "0 2 * * *"   # harian, dini hari
     cadence_recurrence_cron: str = "0 * * * *" # tiap jam
 

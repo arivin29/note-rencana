@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+
+.badge.bg-purple-subtle {
+  background-color: rgba(139, 92, 246, 0.15);
+}
+.text-purple {
+  color: #8b5cf6;
+}
+
+.timeline-list {
+  .fa-robot {
+    color: var(--bs-secondary);
+  }
+  .fa-user {
+    color: var(--bs-theme);
+  }
+}

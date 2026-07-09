@@ -41,6 +41,11 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'realtime'" (click)="onRealtimeTab()" href="javascript:;">
+            <i class="bi bi-broadcast me-1"></i> Realtime (MQTT)
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link" [class.active]="activeTab === 'guide'" (click)="activeTab = 'guide'" href="javascript:;">
             <i class="bi bi-book me-1"></i> Guide
         </a>
@@ -145,6 +150,22 @@
             </button>
         </card-header>
         <card-body>
+            <!-- Regenerated key reveal (only time the full key is visible) -->
+            <div *ngIf="regeneratedKey" class="alert alert-warning mb-4">
+                <h6 class="alert-heading"><i class="bi bi-arrow-repeat me-1"></i> Key Regenerated</h6>
+                <p class="mb-2 small">The previous key is now invalid. Copy the new key — it will not be shown again:</p>
+                <div class="d-flex align-items-center gap-2">
+                    <code class="flex-grow-1 bg-dark text-warning p-2 rounded d-block" style="word-break: break-all;">{{ regeneratedKey }}</code>
+                    <button class="btn btn-sm btn-outline-warning" (click)="copyToClipboard(regeneratedKey!, 'regen')">
+                        <i class="bi" [ngClass]="copiedText === 'regen' ? 'bi-check' : 'bi-clipboard'"></i>
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-warning" (click)="selectedApiKey = regeneratedKey!; dismissRegenerated()">Use This Key</button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" (click)="dismissRegenerated()">Close</button>
+                </div>
+            </div>
+
             <!-- Create Key Form -->
             <div *ngIf="showCreateKey" class="create-key-form mb-4">
                 <div *ngIf="createdKeyResult" class="alert alert-success">
@@ -249,7 +270,13 @@
                             </td>
                             <td>{{ key.requestsToday | number }}</td>
                             <td class="small">{{ key.expiresAt ? (key.expiresAt | date:'mediumDate') : 'Never' }}</td>
-                            <td>
+                            <td class="text-nowrap">
+                                <button *ngIf="key.isActive" class="btn btn-sm btn-outline-theme me-1"
+                                        [disabled]="regeneratingId === key.idApiKey" (click)="regenerateKey(key.idApiKey)"
+                                        title="Generate a new key (shown once). The old key stops working.">
+                                    <span *ngIf="regeneratingId === key.idApiKey" class="spinner-border spinner-border-sm me-1"></span>
+                                    <i *ngIf="regeneratingId !== key.idApiKey" class="bi bi-arrow-repeat me-1"></i>Regenerate
+                                </button>
                                 <button *ngIf="key.isActive" class="btn btn-sm btn-outline-danger" (click)="revokeKey(key.idApiKey)">
                                     Revoke
                                 </button>
@@ -257,6 +284,277 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </card-body>
+    </card>
+</div>
+
+<!-- Tab: Realtime (MQTT Broadcast) -->
+<div *ngIf="activeTab === 'realtime'">
+    <!-- ============ A. Broker Config CRUD ============ -->
+    <card class="mb-4">
+        <card-header class="d-flex align-items-center py-3">
+            <div>
+                <h5 class="mb-0">MQTT Brokers</h5>
+                <small class="text-muted">Push sensor telemetry realtime to your PDAM MQTT broker(s)</small>
+            </div>
+            <button *ngIf="!showConfigForm" class="btn btn-sm btn-theme ms-auto" (click)="openCreateConfig()">
+                <i class="bi bi-plus-circle me-1"></i> Add Broker
+            </button>
+        </card-header>
+        <card-body>
+            <!-- error -->
+            <div *ngIf="configError" class="alert alert-danger py-2 small">{{ configError }}</div>
+
+            <!-- Add / Edit form (inline card) -->
+            <div *ngIf="showConfigForm" class="border rounded p-3 mb-4">
+                <h6 class="fw-bold mb-3">{{ editingConfigId ? 'Edit Broker' : 'Add Broker' }}</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" [(ngModel)]="configForm.label"
+                               placeholder="e.g., PDAM Production Broker">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Broker URL <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" [(ngModel)]="configForm.brokerUrl"
+                               placeholder="mqtts://host:8883">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Username</label>
+                        <input type="text" class="form-control form-control-sm" [(ngModel)]="configForm.username"
+                               autocomplete="off" placeholder="Broker username">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Password</label>
+                        <input type="password" class="form-control form-control-sm" [(ngModel)]="configForm.password"
+                               autocomplete="new-password"
+                               [placeholder]="editingConfigId ? 'Leave empty to keep current' : 'Broker password'">
+                        <small class="text-muted">Write-only. Biarkan kosong jika tidak diganti.</small>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Topic Template</label>
+                        <input type="text" class="form-control form-control-sm font-monospace" [(ngModel)]="configForm.topicTemplate"
+                               placeholder="{ownerCode}/telemetry/{deviceId}/{metricCode}">
+                        <small class="text-muted">Placeholders: <code>{{ '{' }}ownerCode{{ '}' }}</code>, <code>{{ '{' }}deviceId{{ '}' }}</code>, <code>{{ '{' }}metricCode{{ '}' }}</code></small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">QoS</label>
+                        <select class="form-select form-select-sm" [(ngModel)]="configForm.qos">
+                            <option [ngValue]="0">0 — At most once</option>
+                            <option [ngValue]="1">1 — At least once</option>
+                            <option [ngValue]="2">2 — Exactly once</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 d-flex flex-wrap align-items-end gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mqttRetained" [(ngModel)]="configForm.retained">
+                            <label class="form-check-label small" for="mqttRetained">Retained</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mqttTls" [(ngModel)]="configForm.tlsEnabled">
+                            <label class="form-check-label small" for="mqttTls">TLS Enabled</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mqttTlsInsecure" [(ngModel)]="configForm.tlsInsecure">
+                            <label class="form-check-label small" for="mqttTlsInsecure">TLS Insecure (allow self-signed)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mqttActive" [(ngModel)]="configForm.isActive">
+                            <label class="form-check-label small" for="mqttActive">Active</label>
+                        </div>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button class="btn btn-sm btn-theme" (click)="saveConfig()"
+                                [disabled]="!configForm.label || !configForm.brokerUrl || savingConfig">
+                            <span *ngIf="savingConfig" class="spinner-border spinner-border-sm me-1"></span>
+                            {{ savingConfig ? 'Saving...' : (editingConfigId ? 'Update Broker' : 'Create Broker') }}
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" (click)="cancelConfigForm()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="loadingConfigs" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-theme"></div>
+                <span class="ms-2 text-muted">Loading brokers...</span>
+            </div>
+
+            <!-- Empty -->
+            <div *ngIf="!loadingConfigs && !mqttConfigs.length && !showConfigForm" class="text-center py-4 text-muted">
+                <i class="bi bi-broadcast fs-1 d-block mb-2 text-muted"></i>
+                <p class="mb-2">No MQTT broker configured yet</p>
+                <button class="btn btn-theme btn-sm" (click)="openCreateConfig()">Add Your First Broker</button>
+            </div>
+
+            <!-- List -->
+            <div *ngIf="!loadingConfigs && mqttConfigs.length" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="text-uppercase text-muted small">
+                        <tr>
+                            <th>Label</th>
+                            <th>Broker Host</th>
+                            <th>QoS</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let cfg of mqttConfigs"
+                            [class.table-active]="selectedConfig?.idOwnerForwardingMqtt === cfg.idOwnerForwardingMqtt">
+                            <td>
+                                <a href="javascript:;" class="fw-semibold text-inverse text-decoration-none" (click)="selectBroker(cfg)">{{ cfg.label }}</a>
+                            </td>
+                            <td><code class="small">{{ brokerHost(cfg.brokerUrl) }}</code></td>
+                            <td>{{ cfg.qos }}</td>
+                            <td><span [class]="configStatusClass(cfg)">{{ configStatusLabel(cfg) }}</span></td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-outline-secondary me-1"
+                                        [disabled]="togglingId === cfg.idOwnerForwardingMqtt" (click)="toggleConfig(cfg)"
+                                        [title]="cfg.isActive ? 'Nonaktifkan' : 'Aktifkan'">
+                                    <span *ngIf="togglingId === cfg.idOwnerForwardingMqtt" class="spinner-border spinner-border-sm"></span>
+                                    <i *ngIf="togglingId !== cfg.idOwnerForwardingMqtt" class="bi" [ngClass]="cfg.isActive ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+                                    {{ cfg.isActive ? 'Nonaktifkan' : 'Aktifkan' }}
+                                </button>
+                                <button class="btn btn-sm btn-outline-theme me-1" (click)="openEditConfig(cfg)">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" (click)="deleteConfig(cfg)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </card-body>
+    </card>
+
+    <!-- ============ B. Delivery Log ============ -->
+    <card>
+        <card-header class="d-flex align-items-center py-3">
+            <div>
+                <h5 class="mb-0">Delivery Log</h5>
+                <small class="text-muted">
+                    {{ selectedConfig ? ('Broker: ' + selectedConfig.label) : 'Select a broker above to see its delivery activity' }}
+                </small>
+            </div>
+        </card-header>
+        <card-body>
+            <div *ngIf="!selectedConfig" class="text-center py-4 text-muted">
+                <i class="bi bi-list-ul fs-1 d-block mb-2 text-muted"></i>
+                <p class="mb-0">Pick a broker from the list above.</p>
+            </div>
+
+            <div *ngIf="selectedConfig">
+                <!-- Live status summary card (connection feedback, NOT a test button) -->
+                <div class="border rounded p-3 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-activity text-theme"></i>
+                        <span class="fw-bold small text-uppercase">Live Status</span>
+                        <button class="btn btn-sm btn-link ms-auto p-0" (click)="loadStatus()" [disabled]="loadingStatus">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                    <div *ngIf="loadingStatus" class="text-muted small">
+                        <span class="spinner-border spinner-border-sm me-1"></span> Loading status...
+                    </div>
+                    <div *ngIf="!loadingStatus" class="row g-3">
+                        <div class="col-md-3 col-6">
+                            <div class="text-muted small text-uppercase">State</div>
+                            <span [class]="(brokerStatus?.isActive ?? selectedConfig.isActive) ? 'badge bg-success-subtle text-success' : 'badge bg-secondary-subtle text-secondary'">
+                                {{ (brokerStatus?.isActive ?? selectedConfig.isActive) ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="text-muted small text-uppercase">Last Success</div>
+                            <div class="small">{{ brokerStatus?.lastSuccessAt ? (brokerStatus?.lastSuccessAt | date:'short') : '—' }}</div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="text-muted small text-uppercase">Total Published</div>
+                            <div class="small">{{ (brokerStatus?.totalPublished || 0) | number }}</div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="text-muted small text-uppercase">Last Error</div>
+                            <div class="small text-danger">{{ brokerStatus?.lastError || '—' }}</div>
+                        </div>
+                    </div>
+                    <div *ngIf="!loadingStatus && !brokerStatus" class="text-muted small mt-2">
+                        <i class="bi bi-hourglass-split me-1"></i> Aktif · menunggu data / koneksi… (belum ada log)
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3 col-6">
+                        <label class="text-muted text-uppercase small d-block mb-1">Status</label>
+                        <select class="form-select form-select-sm" [(ngModel)]="logFilters.status" (ngModelChange)="applyLogFilters()">
+                            <option *ngFor="let o of logStatusOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <label class="text-muted text-uppercase small d-block mb-1">Date From</label>
+                        <input type="date" class="form-control form-control-sm" [(ngModel)]="logFilters.dateFrom" (ngModelChange)="applyLogFilters()">
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <label class="text-muted text-uppercase small d-block mb-1">Date To</label>
+                        <input type="date" class="form-control form-control-sm" [(ngModel)]="logFilters.dateTo" (ngModelChange)="applyLogFilters()">
+                    </div>
+                    <div class="col-md-3 col-6 d-flex align-items-end">
+                        <button class="btn btn-sm btn-outline-secondary" (click)="loadLogs()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Reload
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="logError" class="alert alert-danger py-2 small">{{ logError }}</div>
+
+                <div *ngIf="loadingLogs" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-theme"></div>
+                    <span class="ms-2 text-muted">Loading logs...</span>
+                </div>
+
+                <div *ngIf="!loadingLogs && !logs.length" class="text-center py-4 text-muted border-top">
+                    No delivery log yet for this broker.
+                </div>
+
+                <div *ngIf="!loadingLogs && logs.length" class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="text-uppercase text-muted small">
+                            <tr>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th class="text-end">Messages</th>
+                                <th class="text-end">Duration</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let log of logs">
+                                <td class="small text-nowrap">{{ log.createdAt | date:'short' }}</td>
+                                <td><span [class]="logStatusClass(log.status)">{{ log.status | titlecase }}</span></td>
+                                <td class="text-end">{{ (log.messagesPublished || 0) | number }}</td>
+                                <td class="text-end text-muted small">{{ log.durationMs != null ? (log.durationMs + ' ms') : '—' }}</td>
+                                <td class="small text-danger">{{ log.errorMessage || '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div *ngIf="!loadingLogs && logTotalPages > 1" class="d-flex align-items-center mt-3">
+                    <div class="me-auto text-muted small">{{ logTotal | number }} entries</div>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" [class.disabled]="logPage === 1">
+                            <a class="page-link" href="javascript:;" (click)="goToLogPage(logPage - 1)">Previous</a>
+                        </li>
+                        <li class="page-item disabled"><span class="page-link">{{ logPage }} / {{ logTotalPages }}</span></li>
+                        <li class="page-item" [class.disabled]="logPage === logTotalPages">
+                            <a class="page-link" href="javascript:;" (click)="goToLogPage(logPage + 1)">Next</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </card-body>
     </card>

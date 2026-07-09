@@ -145,6 +145,12 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/nodes/nodes.module').then((m) => m.NodesModule)
     },
     {
+        path: 'iot/ai',
+        loadChildren: () => import('./pages/iot/ai/ai.module').then((m) => m.AiModule),
+        canActivate: [AuthGuard],
+        data: { title: 'AI-NRW' }
+    },
+    {
         path: 'iot/telemetry-channels',
         loadChildren: () => import('./pages/iot/telemetry-channels/telemetry-channels.module').then((m) => m.TelemetryChannelsModule)
     },
@@ -191,12 +197,6 @@ const routes: Routes = [
         loadChildren: () => import('./pages/iot/report/report.module').then((m) => m.ReportModule),
         canActivate: [AuthGuard],
         data: { title: 'Report & Export' }
-    },
-    {
-        path: 'iot/ml',
-        loadChildren: () => import('./pages/iot/ml-dashboard/ml-dashboard.module').then((m) => m.MlDashboardModule),
-        canActivate: [AuthGuard],
-        data: { title: 'ML Dashboard' }
     },
     {
         path: 'iot/webgis',

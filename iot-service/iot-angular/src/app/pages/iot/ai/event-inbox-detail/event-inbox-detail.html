@@ -1,0 +1,162 @@
+<!-- Loading -->
+<div *ngIf="loading" class="text-center text-muted py-5">
+  <div class="spinner-border spinner-border-sm me-2"></div> Memuat event…
+</div>
+
+<!-- Error -->
+<div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center">
+  <i class="fa fa-triangle-exclamation me-2"></i> {{ error }}
+  <button class="btn btn-sm btn-outline-danger ms-auto" (click)="back()">Kembali</button>
+</div>
+
+<ng-container *ngIf="event && !loading">
+  <!-- Header -->
+  <div class="d-flex align-items-center mb-4">
+    <div>
+      <ul class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a routerLink="/iot/ai/events">Event Inbox</a></li>
+        <li class="breadcrumb-item active">{{ event.channelName }}</li>
+      </ul>
+      <h1 class="page-header mb-0">
+        {{ event.analysisType }}
+        <span [class]="severityBadge(event.severity)">{{ event.severity | titlecase }}</span>
+        <span [class]="statusBadge(event.status)">{{ event.status }}</span>
+      </h1>
+      <div class="text-muted">{{ event.meaning }}</div>
+    </div>
+    <div class="ms-auto d-flex gap-2">
+      <button class="btn btn-outline-theme" (click)="openAnalytics()"><i class="fa fa-chart-line fa-fw me-1"></i> Analytics</button>
+      <button class="btn btn-outline-default" (click)="back()"><i class="fa fa-arrow-left fa-fw me-1"></i> Kembali</button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Kiri: konteks + kronologi -->
+    <div class="col-lg-8">
+      <card class="mb-3">
+        <card-header class="border-bottom"><h5 class="mb-0"><i class="fa fa-info-circle fa-fw me-2"></i> Konteks Anomali</h5></card-header>
+        <card-body class="p-4">
+          <div class="row g-3">
+            <div class="col-md-4"><label class="text-muted text-uppercase small d-block">Channel</label><div class="fw-semibold">{{ event.channelName }}</div></div>
+            <div class="col-md-4"><label class="text-muted text-uppercase small d-block">Kategori</label><div class="fw-semibold">{{ event.groupName || '—' }}</div></div>
+            <div class="col-md-4"><label class="text-muted text-uppercase small d-block">Confidence</label><div class="fw-semibold">{{ event.confidence != null ? (event.confidence | percent) : '—' }}</div></div>
+          </div>
+          <div class="table-responsive mt-3" *ngIf="contextEntries.length">
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr *ngFor="let c of contextEntries">
+                  <td class="text-muted text-uppercase small" style="width: 40%">{{ c.k }}</td>
+                  <td class="fw-semibold">{{ c.v }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div *ngIf="!contextEntries.length" class="text-muted small mt-3">Tak ada konteks tambahan.</div>
+        </card-body>
+      </card>
+
+      <!-- Kronologi -->
+      <card>
+        <card-header class="border-bottom"><h5 class="mb-0"><i class="fa fa-clock-rotate-left fa-fw me-2"></i> Kronologi</h5></card-header>
+        <card-body class="p-4">
+          <div *ngIf="!event.timeline?.length" class="text-muted small">Belum ada transisi tercatat.</div>
+          <div class="timeline-list" *ngIf="event.timeline?.length">
+            <div class="d-flex mb-3" *ngFor="let t of event.timeline">
+              <div class="me-3 text-center" style="width: 28px">
+                <i class="fa fa-fw" [ngClass]="timelineIcon(t.actorKind)"></i>
+              </div>
+              <div class="flex-1">
+                <div>
+                  <span class="text-muted" *ngIf="t.fromStatus">{{ t.fromStatus }} →</span>
+                  <span class="fw-semibold">{{ t.toStatus }}</span>
+                  <span class="badge bg-secondary-subtle text-secondary ms-1">{{ t.actorKind }}</span>
+                </div>
+                <div class="text-muted small">{{ t.note }}</div>
+                <div class="text-muted small">{{ t.at | date: 'dd MMM yyyy, HH:mm' }}</div>
+              </div>
+            </div>
+          </div>
+        </card-body>
+      </card>
+    </div>
+
+    <!-- Kanan: status + rekurensi + aksi -->
+    <div class="col-lg-4">
+      <card class="mb-3">
+        <card-header class="border-bottom"><h6 class="mb-0">Ringkasan</h6></card-header>
+        <card-body class="p-3">
+          <div class="mb-2"><span class="text-muted small">Mulai</span><div class="fw-semibold">{{ event.startedAt | date: 'dd MMM yyyy, HH:mm' }}</div></div>
+          <div class="mb-2"><span class="text-muted small">Terakhir terlihat</span><div class="fw-semibold">{{ event.lastSeenAt | date: 'dd MMM yyyy, HH:mm' }}</div></div>
+          <div class="mb-2" *ngIf="event.verdict"><span class="text-muted small">Verdikt</span><div class="fw-semibold">{{ event.verdict }}</div></div>
+          <div class="mb-2" *ngIf="event.assignedTo"><span class="text-muted small">Ditugaskan ke</span><div class="fw-semibold">{{ event.assignedTo }}</div></div>
+          <div *ngIf="event.actionNote"><span class="text-muted small">Catatan</span><div>{{ event.actionNote }}</div></div>
+        </card-body>
+      </card>
+
+      <!-- Rekurensi -->
+      <card class="mb-3" *ngIf="event.recurrence">
+        <card-header class="border-bottom d-flex align-items-center">
+          <h6 class="mb-0">Pola Kambuh</h6>
+          <span class="badge bg-purple-subtle text-purple ms-auto" *ngIf="event.recurrence.escalated"><i class="fa fa-repeat me-1"></i> eskalasi</span>
+        </card-header>
+        <card-body class="p-3">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">{{ event.recurrence.count }}× dalam {{ event.recurrence.windowDays }} hari</span>
+            <span class="badge bg-secondary-subtle text-secondary" *ngIf="event.recurrence.trend">tren: {{ event.recurrence.trend }}</span>
+          </div>
+          <div *ngIf="typicalHourEntries.length">
+            <div class="text-muted text-uppercase small mb-1">Jam tipikal</div>
+            <span class="badge bg-body border me-1 mb-1" *ngFor="let e of typicalHourEntries">{{ e.h }}:00 · {{ e.n }}×</span>
+          </div>
+        </card-body>
+      </card>
+
+      <!-- Aksi -->
+      <card>
+        <card-header class="border-bottom"><h6 class="mb-0">Aksi</h6></card-header>
+        <card-body class="p-3">
+          <div *ngIf="actionMsg" class="alert alert-success py-2 small">{{ actionMsg }}</div>
+          <div *ngIf="actionErr" class="alert alert-danger py-2 small">{{ actionErr }}</div>
+
+          <ng-container *ngIf="isActive; else reopenBlock">
+            <!-- Validasi -->
+            <div class="mb-3">
+              <label class="text-muted text-uppercase small d-block mb-1">Validasi</label>
+              <select class="form-select form-select-sm mb-2" [(ngModel)]="verdict">
+                <option *ngFor="let v of verdictOptions" [ngValue]="v.value">{{ v.label }}</option>
+              </select>
+              <textarea class="form-control form-control-sm mb-2" rows="2" placeholder="Catatan (opsional)" [(ngModel)]="verdictNote"></textarea>
+              <button class="btn btn-sm btn-outline-theme w-100" (click)="doValidate()" [disabled]="submitting">
+                <i class="fa fa-check fa-fw me-1"></i> Simpan verdikt
+              </button>
+            </div>
+            <!-- Tugaskan -->
+            <div class="mb-3">
+              <label class="text-muted text-uppercase small d-block mb-1">Tugaskan</label>
+              <input class="form-control form-control-sm mb-2" placeholder="User id penerima" [(ngModel)]="assignedTo">
+              <textarea class="form-control form-control-sm mb-2" rows="1" placeholder="Catatan (opsional)" [(ngModel)]="assignNote"></textarea>
+              <button class="btn btn-sm btn-outline-default w-100" (click)="doAssign()" [disabled]="submitting">
+                <i class="fa fa-user-plus fa-fw me-1"></i> Tugaskan
+              </button>
+            </div>
+            <!-- Tutup -->
+            <div>
+              <label class="text-muted text-uppercase small d-block mb-1">Tutup manual</label>
+              <textarea class="form-control form-control-sm mb-2" rows="1" placeholder="Catatan (opsional)" [(ngModel)]="closeNote"></textarea>
+              <button class="btn btn-sm btn-outline-success w-100" (click)="doClose()" [disabled]="submitting">
+                <i class="fa fa-circle-check fa-fw me-1"></i> Tutup event
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #reopenBlock>
+            <p class="text-muted small">Event sudah selesai.</p>
+            <button class="btn btn-sm btn-outline-warning w-100" (click)="doReopen()" [disabled]="submitting">
+              <i class="fa fa-rotate-left fa-fw me-1"></i> Buka kembali
+            </button>
+          </ng-template>
+        </card-body>
+      </card>
+    </div>
+  </div>
+</ng-container>

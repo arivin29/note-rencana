@@ -60,5 +60,35 @@ module.exports = {
       followSymlinks: false,
       usePolling: false
     }
+  }, {
+    // =====================================================
+    // App #2: iot-broadcast — push sensor_channel_latest ke broker PDAM.
+    // Proses TERPISAH (crash domain sendiri) — flaky broker PDAM / OOM
+    // publisher TIDAK menyentuh proses ingestion iot-gateway.
+    // Ref: docs/design/mqtt-broadcast-spec.md §3.1
+    // =====================================================
+    name: 'iot-broadcast',
+    script: 'dist/broadcast-main.js',
+
+    instances: 1,
+    exec_mode: 'fork',
+
+    env: { NODE_ENV: 'development' },
+    env_production: { NODE_ENV: 'production' },
+
+    error_file: 'logs/pm2-broadcast-error.log',
+    out_file: 'logs/pm2-broadcast-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: true,
+
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '300M',
+    max_restarts: 10,
+    min_uptime: '10s',
+    restart_delay: 5000,
+
+    time: true,
+    source_map_support: true
   }]
 };

@@ -1,11 +1,13 @@
 """Kategori TEKANAN (reference implementation, dok kategori/tekanan.md).
 
-Detektor khusus (night_pressure §5.11, A9/A10) didaftarkan di sini saat P1.
+Import `detectors.night_pressure` = side-effect registrasi detektor khusus kategori
+(§5.11) — contoh pola "detektor kategori = 1 file + register dari modul kategorinya".
 """
 
 from __future__ import annotations
 
 from ai_nrw.categories.base import Category, register_category
+from ai_nrw.detectors import night_pressure as _night  # noqa: F401  (registrasi via import)
 
 CATEGORY = register_category(
     Category(
@@ -19,7 +21,11 @@ CATEGORY = register_category(
             "A5_flatline": {"eps_flat": 0.01, "n": 10},
             "A7_nodata": {"no_data_timeout": "10m"},
             "A8_persistent": {"persist_window": "4h"},
-            # P1: "A9_deviation": {...}, "A10_drift": {...}, "night_pressure": {...}
+            "A9_deviation": {"k": 3.0, "min_points": 3},
+            "A10_drift": {"delta": 0.5, "lambda": 5.0, "min_instances": 30},
+            "night_pressure": {"night_start": "00:00", "night_end": "04:00",
+                               "agg": "median", "drop_frac": 0.15},
+            "forecast": {"horizon_days": 7},   # Tier-0 seasonal-naive dari grid
         },
         meanings={
             "A1_invalid": "Nilai negatif/kosong — sensor/transmitter tekanan rusak.",
@@ -28,6 +34,9 @@ CATEGORY = register_category(
             "A5_flatline": "Tekanan datar — sensor macet/beku atau valve tertutup total.",
             "A7_nodata": "Sensor tekanan tak mengirim data — node/sensor offline.",
             "A8_persistent": "Tekanan di luar batas menetap — eskalasi (persisten).",
+            "A9_deviation": "Tekanan menyimpang dari pola biasanya untuk jam ini — indikasi dini gangguan.",
+            "A10_drift": "Tekanan menurun perlahan menetap — indikasi kuat kebocoran merambat (slow leak).",
+            "night_pressure": "Tekanan malam lebih rendah dari biasanya — indikasi kebocoran (air lolos saat tanpa pemakaian).",
         },
     )
 )

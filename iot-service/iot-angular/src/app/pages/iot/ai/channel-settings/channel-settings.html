@@ -1,0 +1,114 @@
+<div *ngIf="loading" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div> Memuat…</div>
+
+<div *ngIf="!loading">
+  <div *ngIf="actionMsg" class="alert alert-success py-2 small">{{ actionMsg }}</div>
+  <div *ngIf="actionErr" class="alert alert-danger py-2 small">{{ actionErr }}</div>
+
+  <!-- Belum ada detektor (channel belum di-ON-kan) → tawarkan apply preset -->
+  <div *ngIf="selected && !selected.analyses.length" class="text-center text-muted py-4">
+    <i class="fa fa-robot fa-2x mb-2 d-block opacity-50"></i>
+    AI belum aktif untuk channel ini. Pilih preset lalu terapkan untuk mengaktifkan.
+    <div class="d-flex align-items-end gap-2 mt-3 justify-content-center">
+      <select class="form-select form-select-sm w-auto" [(ngModel)]="applyingPreset">
+        <option value="">Pilih preset…</option>
+        <option *ngFor="let p of presetCatalogs" [ngValue]="p.label">{{ p.label }} ({{ p.key }})</option>
+      </select>
+      <button class="btn btn-sm btn-theme" (click)="applyPreset()" [disabled]="saving || !applyingPreset">Aktifkan</button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="selected && selected.analyses.length">
+    <!-- Peringatan salah-deklarasi (kategori channel ≠ preset AI) -->
+    <div *ngIf="mismatchWarning" class="alert alert-warning d-flex align-items-start">
+      <i class="fa fa-triangle-exclamation fa-fw me-2 mt-1"></i>
+      <div class="flex-1">
+        <div>{{ mismatchWarning }}</div>
+        <button class="btn btn-sm btn-warning mt-2" (click)="applyRecommended()" [disabled]="saving">
+          <i class="fa fa-wand-magic-sparkles fa-fw me-1"></i> Ganti ke preset "{{ recommendedPreset }}"
+        </button>
+      </div>
+    </div>
+
+    <!-- Apply preset -->
+    <div class="mb-4">
+      <label class="text-muted text-uppercase small d-block mb-1">Ganti / terapkan preset kategori</label>
+      <div class="d-flex align-items-end gap-2">
+        <div class="flex-1">
+          <select class="form-select form-select-sm" [(ngModel)]="applyingPreset">
+            <option value="">Pilih preset…</option>
+            <option *ngFor="let p of presetCatalogs" [ngValue]="p.label">{{ p.label }} ({{ p.key }})</option>
+          </select>
+        </div>
+        <button class="btn btn-sm btn-outline-theme" (click)="applyPreset()" [disabled]="saving || !applyingPreset">
+          <i class="fa fa-wand-magic-sparkles fa-fw me-1"></i> Terapkan
+        </button>
+      </div>
+      <div class="text-muted small mt-1">
+        <i class="fa fa-circle-info fa-fw"></i>
+        Menerapkan preset <b>mengganti</b> set detektor: detektor kategori lama yang tak ada di preset ini dihapus.
+      </div>
+    </div>
+
+    <label class="text-muted text-uppercase small d-block mb-2">Detektor</label>
+    <div class="list-group mb-3">
+      <div class="list-group-item" *ngFor="let a of selected.analyses; let i = index">
+        <div class="d-flex align-items-center">
+          <div class="form-check form-switch me-3">
+            <input class="form-check-input" type="checkbox" [checked]="a.enabled" (change)="toggleAnalysis(i)">
+          </div>
+          <div class="flex-1" style="cursor: pointer" (click)="toggleExpand(i)">
+            <div class="fw-semibold">
+              {{ a.title || a.analysisType }}
+              <code class="small text-muted ms-1 fw-normal">{{ a.analysisType }}</code>
+              <i class="fa small ms-1 text-muted" [class.fa-chevron-down]="expandedIndex !== i" [class.fa-chevron-up]="expandedIndex === i"></i>
+            </div>
+            <div class="small text-muted">{{ a.what || paramsText(a.params) }}</div>
+          </div>
+          <span class="badge" [class.bg-success-subtle]="a.enabled" [class.text-success]="a.enabled"
+                [class.bg-secondary-subtle]="!a.enabled" [class.text-secondary]="!a.enabled">
+            {{ a.enabled ? 'ON' : 'OFF' }}
+          </span>
+        </div>
+
+        <div *ngIf="expandedIndex === i" class="mt-3 pt-3 border-top">
+          <div *ngIf="!a.paramFields?.length" class="text-muted small">Detektor ini tak punya parameter — cukup aktif/nonaktif.</div>
+          <div class="row g-3" *ngIf="a.paramFields?.length">
+            <div class="col-md-6" *ngFor="let p of a.paramFields; trackBy: trackByParamKey">
+              <label class="small fw-semibold d-block mb-1">
+                {{ p.label || p.key }}
+                <code *ngIf="p.label" class="text-muted fw-normal ms-1" style="font-size: .7rem">{{ p.key }}</code>
+              </label>
+
+              <ng-container [ngSwitch]="p.type">
+                <div *ngSwitchCase="'boolean'" class="form-check form-switch mt-1">
+                  <input type="checkbox" class="form-check-input"
+                         [ngModel]="a.params[p.key]" (ngModelChange)="setParam(a, p.key, $event, 'boolean')">
+                  <span class="small text-muted ms-1">{{ a.params[p.key] ? 'Aktif' : 'Nonaktif' }}</span>
+                </div>
+                <div *ngSwitchCase="'number'" class="input-group input-group-sm">
+                  <input type="number" step="any" class="form-control"
+                         [min]="p.min ?? null" [max]="p.max ?? null"
+                         [ngModel]="a.params[p.key]" (ngModelChange)="setParam(a, p.key, $event, 'number')">
+                  <span *ngIf="p.unit" class="input-group-text">{{ p.unit }}</span>
+                </div>
+                <input *ngSwitchDefault type="text" class="form-control form-control-sm"
+                       [ngModel]="a.params[p.key]" (ngModelChange)="setParam(a, p.key, $event, 'text')">
+              </ng-container>
+
+              <div *ngIf="p.help" class="text-muted mt-1" style="font-size: .78rem; line-height: 1.35">{{ p.help }}</div>
+              <div *ngIf="p.recommended" class="mt-1">
+                <span class="badge bg-info-subtle text-info fw-normal">
+                  <i class="fa fa-lightbulb fa-fw"></i> Disarankan: {{ p.recommended }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-theme" (click)="save()" [disabled]="saving">
+      <i class="fa fa-save fa-fw me-1"></i> {{ saving ? 'Menyimpan…' : 'Simpan perubahan' }}
+    </button>
+  </ng-container>
+</div>

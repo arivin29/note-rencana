@@ -1,0 +1,43 @@
+<!-- Header -->
+<div class="d-flex align-items-start mb-3">
+  <div class="flex-1">
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item"><a routerLink="/iot/ai">Daftar Channel</a></li>
+      <li class="breadcrumb-item active">{{ channelName || 'Channel' }}</li>
+    </ul>
+    <h1 class="page-header mb-2">{{ channelName || 'Channel Detail' }}</h1>
+    <div class="d-flex flex-wrap gap-1">
+      <span class="badge bg-secondary-subtle text-secondary" *ngIf="groupName">{{ groupName }}</span>
+      <span class="badge" [class.bg-success-subtle]="aiEnabled" [class.text-success]="aiEnabled"
+            [class.bg-secondary-subtle]="!aiEnabled" [class.text-secondary]="!aiEnabled">{{ aiEnabled ? 'AI ON' : 'AI OFF' }}</span>
+      <span class="badge" [class.bg-info-subtle]="learnReady" [class.text-info]="learnReady"
+            [class.bg-warning-subtle]="!learnReady" [class.text-warning]="!learnReady">{{ learnReady ? 'baseline siap' : 'baseline belajar…' }}</span>
+    </div>
+  </div>
+  <div class="d-flex gap-2 ms-2">
+    <a routerLink="/iot/ai/events" class="btn btn-outline-default btn-sm"><i class="fa fa-bell fa-fw me-1"></i> Inbox</a>
+    <button class="btn btn-outline-default btn-sm" (click)="back()"><i class="fa fa-arrow-left fa-fw me-1"></i> Kembali</button>
+  </div>
+</div>
+
+<!-- Tab bar (dalam card = pola nav-tabs-v2 yang benar) -->
+<card class="shadow-sm mb-3">
+  <ul class="nav nav-tabs nav-tabs-v2 px-3 pt-1">
+    <li class="nav-item me-2" *ngFor="let t of tabs">
+      <a href="javascript:;" class="nav-link px-3" [class.active]="activeTab === t.key" (click)="activeTab = t.key">
+        <i class="fa fa-fw me-1" [ngClass]="t.icon"></i> {{ t.label }}
+      </a>
+    </li>
+  </ul>
+</card>
+
+<ng-container *ngIf="targetId">
+  <ai-channel-overview *ngIf="activeTab === 'overview'" [targetId]="targetId"></ai-channel-overview>
+  <ai-analytics *ngIf="activeTab === 'chart'" [targetId]="targetId" [embedded]="true"></ai-analytics>
+  <ai-event-inbox-list *ngIf="activeTab === 'events'" [targetId]="targetId" [embedded]="true"></ai-event-inbox-list>
+  <card *ngIf="activeTab === 'settings'" class="shadow-sm">
+    <card-body class="p-4">
+      <ai-channel-settings [targetId]="targetId"></ai-channel-settings>
+    </card-body>
+  </card>
+</ng-container>

@@ -1,0 +1,14 @@
+:host {
+  display: block;
+}
+
+.badge.bg-purple-subtle {
+  background-color: rgba(139, 92, 246, 0.15);
+}
+.text-purple {
+  color: #8b5cf6;
+}
+
+table tbody tr:hover {
+  --bs-table-accent-bg: rgba(var(--bs-theme-rgb), 0.06);
+}

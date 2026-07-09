@@ -11,11 +11,13 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from ai_nrw import categories
-from ai_nrw.detectors import core  # noqa: F401  (import = registrasi detektor core)
+# import = registrasi detektor lewat @register (core A1-A8, A9 deviasi, A10 drift)
+from ai_nrw.detectors import core, deviation, drift  # noqa: F401
 from ai_nrw.detectors import registry
 from ai_nrw.detectors.base import DetectionContext, Sample, Signal
 
 if TYPE_CHECKING:
+    from ai_nrw.baseline.bundle import Baseline
     from ai_nrw.config.loader import ChannelConfig
 
 
@@ -24,8 +26,13 @@ def analyze_channel(
     samples: list[Sample],
     now: datetime,
     last_ts: datetime | None,
+    baseline: "Baseline | None" = None,
 ) -> list[Signal]:
-    """Jalankan semua detektor yang ON untuk channel, kembalikan Signal ber-arti kategori."""
+    """Jalankan semua detektor yang ON untuk channel, kembalikan Signal ber-arti kategori.
+
+    `baseline` (grid + online_state) disuntik saat A9/A10 ON; detektor stateful (A10)
+    memutasi baseline.online_state in-place → pemanggil bertanggung jawab menyimpannya.
+    """
     signals: list[Signal] = []
     for code, params in cfg.analyses.items():
         fn = registry.get(code)
@@ -39,6 +46,7 @@ def analyze_channel(
             max_threshold=cfg.max_threshold,
             params=params or {},
             group_name=cfg.group_name,
+            baseline=baseline,
         )
         signals.extend(fn(ctx))
 

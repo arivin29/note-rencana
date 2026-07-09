@@ -1,0 +1,130 @@
+<div *ngIf="loading" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div> Memuat ringkasan…</div>
+<div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+<div *ngIf="!loading && !configured" class="text-center text-muted py-4">
+  <i class="fa fa-robot fa-2x mb-2 d-block opacity-50"></i>
+  AI belum aktif untuk channel ini. Buka tab <b>Settings</b> untuk menerapkan preset.
+</div>
+
+<div *ngIf="!loading && configured">
+  <!-- Aksi: hitung ulang on-demand -->
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <button class="btn btn-sm btn-theme" (click)="runRecompute()" [disabled]="jobRunning">
+      <i class="fa fa-fw me-1" [class.fa-rotate]="!jobRunning" [class.fa-spinner]="jobRunning" [class.fa-spin]="jobRunning"></i>
+      Hitung ulang baseline + forecast
+    </button>
+    <button class="btn btn-sm btn-outline-theme" (click)="runAnomaly()" [disabled]="jobRunning">
+      <i class="fa fa-play fa-fw me-1"></i> Jalankan analisa sekarang
+    </button>
+    <span class="text-muted small" *ngIf="jobMsg">
+      <i class="fa fa-circle-info fa-fw"></i> {{ jobMsg }}
+    </span>
+  </div>
+
+  <!-- KPI ringkas -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+      <card><card-body class="p-3">
+        <div class="text-muted small text-uppercase">Detektor aktif</div>
+        <div class="h4 mb-0">{{ enabledCount }}</div>
+      </card-body></card>
+    </div>
+    <div class="col-6 col-lg-3">
+      <card><card-body class="p-3">
+        <div class="text-muted small text-uppercase">Sedang nyala</div>
+        <div class="h4 mb-0" [class.text-danger]="firingCount > 0">{{ firingCount }}</div>
+      </card-body></card>
+    </div>
+    <div class="col-6 col-lg-3">
+      <card><card-body class="p-3">
+        <div class="text-muted small text-uppercase">Baseline</div>
+        <div class="mt-1"><span class="badge" [class.bg-info-subtle]="config?.learnReady" [class.text-info]="config?.learnReady"
+             [class.bg-warning-subtle]="!config?.learnReady" [class.text-warning]="!config?.learnReady">
+          {{ config?.learnReady ? 'siap' : 'belajar…' }}</span></div>
+      </card-body></card>
+    </div>
+    <div class="col-6 col-lg-3">
+      <card><card-body class="p-3">
+        <div class="text-muted small text-uppercase">Forecast</div>
+        <div class="mt-1">
+          <span *ngIf="forecast" class="badge bg-success-subtle text-success">tersedia ({{ forecast.horizonDays }}h)</span>
+          <span *ngIf="!forecast && forecastEnabled" class="badge bg-warning-subtle text-warning">menunggu</span>
+          <span *ngIf="!forecastEnabled" class="badge bg-secondary-subtle text-secondary">nonaktif</span>
+        </div>
+      </card-body></card>
+    </div>
+  </div>
+
+  <!-- Papan A1–A10 -->
+  <card class="shadow-sm">
+    <card-header class="border-bottom"><h5 class="mb-0"><i class="fa fa-table-list fa-fw me-2"></i> Status Detektor</h5></card-header>
+    <card-body class="p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="text-uppercase text-muted small">
+            <tr>
+              <th class="ps-4">Detektor</th>
+              <th>Kondisi kini</th>
+              <th>Event terakhir</th>
+              <th>Confidence</th>
+              <th class="pe-4">Makna</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of rows">
+              <td class="ps-4">
+                <div class="fw-semibold">{{ r.analysisType }}</div>
+                <div class="text-muted small">{{ r.paramsSummary }}</div>
+              </td>
+              <td><span [class]="conditionBadge(r)">{{ conditionText(r) }}</span></td>
+              <td>
+                <div *ngIf="r.lastEvent; else noEvent">
+                  <a [routerLink]="['/iot/ai/events', r.lastEvent.id]" class="text-decoration-none" [ngClass]="statusBadge(r.lastEvent.status)">
+                    {{ r.lastEvent.startedAt | date: 'dd MMM, HH:mm' }}
+                  </a>
+                  <div class="text-muted small">{{ r.lastEvent.status }}</div>
+                </div>
+                <ng-template #noEvent><span class="text-muted small">—</span></ng-template>
+              </td>
+              <td>{{ r.confidence != null ? (r.confidence | percent) : '—' }}</td>
+              <td class="pe-4"><span class="text-muted small">{{ r.meaning }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!rows.length" class="text-center text-muted py-4">Tak ada detektor terkonfigurasi.</div>
+    </card-body>
+  </card>
+
+  <!-- Forecast -->
+  <card class="shadow-sm mt-3">
+    <card-header class="border-bottom d-flex align-items-center">
+      <h5 class="mb-0"><i class="fa fa-chart-line fa-fw me-2"></i> Forecast</h5>
+      <span class="ms-auto text-muted small" *ngIf="forecast">
+        {{ forecast.tier }} · dibuat {{ forecast.generatedAt | date: 'dd MMM HH:mm' }}
+      </span>
+    </card-header>
+    <card-body class="p-3">
+      <div *ngIf="!forecast" class="text-muted small">
+        <span *ngIf="forecastEnabled">Belum ada forecast — menunggu job forecast harian (butuh baseline siap).</span>
+        <span *ngIf="!forecastEnabled">Detektor <b>forecast</b> nonaktif. Aktifkan di tab Settings.</span>
+      </div>
+      <div *ngIf="forecast">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead class="text-uppercase text-muted small"><tr><th>Hari</th><th class="text-end">Prediksi</th><th class="text-end">Bawah</th><th class="text-end">Atas</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let d of forecastDays">
+                <td>{{ d.label }}</td>
+                <td class="text-end fw-semibold">{{ d.p50 != null ? (d.p50 | number: '1.2-2') : '—' }}</td>
+                <td class="text-end text-muted">{{ d.lo != null ? (d.lo | number: '1.2-2') : '—' }}</td>
+                <td class="text-end text-muted">{{ d.hi != null ? (d.hi | number: '1.2-2') : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-muted small mt-2">Lihat grafiknya di tab <b>Chart</b> (garis Forecast).</div>
+      </div>
+    </card-body>
+  </card>
+</div>
