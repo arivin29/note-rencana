@@ -1,0 +1,59 @@
+# CI/CD repo mandiri devetek/iot-ai-nrw.
+# (Di dalam monorepo file ini inert — GitHub hanya membaca .github di root repo;
+#  ia aktif justru setelah subtree di-push ke repo dedicated.)
+#
+# test  : tes pure-stdlib TANPA pip install (~20 detik, tak ada lockfile basi).
+# deploy: push ke main + tes lolos → SSH ke server, git pull, deploy.sh
+#         (uv sync / pip, alembic upgrade head, restart worker).
+#
+# Secrets (repo Settings → Secrets and variables → Actions):
+#   HELIOS_SSH_HOST    = IP/host server
+#   HELIOS_SSH_USER    = user SSH (mis. vito)
+#   HELIOS_SSH_KEY     = private key OpenSSH (isi file, bukan path)
+#   HELIOS_REPO_DIR    = path clone di server (mis. /home/vito/iot-ai-nrw)
+#   HELIOS_RESTART_CMD = opsional; worker Vito/supervisor,
+#                        mis. "sudo supervisorctl restart worker-3:*"
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tes stdlib (tanpa dependensi)
+        run: |
+          fail=0
+          for t in tests/test_*.py; do
+            echo "== $t"
+            python "$t" || fail=1
+          done
+          exit $fail
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: helios
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HELIOS_SSH_HOST }}
+          username: ${{ secrets.HELIOS_SSH_USER }}
+          key: ${{ secrets.HELIOS_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd "${{ secrets.HELIOS_REPO_DIR }}"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            export AINRW_RESTART_CMD="${{ secrets.HELIOS_RESTART_CMD }}"
+            bash scripts/deploy.sh
