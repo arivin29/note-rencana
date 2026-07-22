@@ -40,3 +40,6 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
+
+# graphify knowledge graph output (regenerate with: graphify extract . --code-only)
+graphify-out/
