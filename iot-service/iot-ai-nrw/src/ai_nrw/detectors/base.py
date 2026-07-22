@@ -80,6 +80,27 @@ def window_since(samples: list[Sample], now: datetime, span: timedelta) -> list[
     return [s for s in samples if s.ts >= cutoff]
 
 
+def consecutive_steps(samples: list[Sample], max_gap: timedelta) -> list[tuple[Sample, float, float]]:
+    """Pasangan titik berurutan yang layak dinilai → (titik akhir, Δnilai, Δdetik).
+
+    Titik kosong memutus pasangan, dan jeda > `max_gap` dibuang: setelah node offline,
+    titik sebelum dan sesudah lubang data hampir selalu berbeda jauh — itu jeda kirim,
+    bukan perubahan nyata. Dipakai A4 (spike) & A6 (volatilitas).
+    """
+    out: list[tuple[Sample, float, float]] = []
+    prev: Sample | None = None
+    for s in samples:
+        if s.value is None:
+            prev = None
+            continue
+        if prev is not None:
+            dt = (s.ts - prev.ts).total_seconds()
+            if 0 < dt <= max_gap.total_seconds():
+                out.append((s, float(s.value) - float(prev.value), dt))
+        prev = s
+    return out
+
+
 def span_seconds(samples: list[Sample]) -> float:
     """Rentang waktu (detik) antara titik pertama & terakhir."""
     if len(samples) < 2:

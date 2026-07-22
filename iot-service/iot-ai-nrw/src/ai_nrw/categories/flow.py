@@ -16,6 +16,7 @@ CATEGORY = register_category(
         preset={
             "A1_invalid": {"allow_negative": True},   # flow balik boleh negatif (reverse)
             "A3_high": {"sustain_T": "15m"},
+            "A4_spike": {"k": 4.0, "direction": "both", "min_points": 10},  # burst = agresif
             "A5_flatline": {"eps_flat": 0.01, "n": 10},
             "A7_nodata": {"no_data_timeout": "10m"},
             # P2: "MNF": {"window": "02:00-04:00"}, "theft": {...}, "reverse_flow": {...}
@@ -24,6 +25,7 @@ CATEGORY = register_category(
             "A1_invalid": "Nilai debit tak valid — sensor/flowmeter bermasalah.",
             "A2_low": "Debit rendah berkelanjutan — suplai turun / valve tertutup.",
             "A3_high": "Debit tinggi berkelanjutan — indikasi burst / kebocoran / pemakaian tak wajar.",
+            "A4_spike": "Debit melonjak mendadak — indikasi burst / pipa pecah / pengambilan tak wajar.",
             "A5_flatline": "Debit datar — meter macet (indikasi apparent loss).",
             "A7_nodata": "Flowmeter tak mengirim data — node/sensor offline.",
             "A8_persistent": "Debit di luar batas menetap — eskalasi (persisten).",

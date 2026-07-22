@@ -11,8 +11,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from ai_nrw import categories
-# import = registrasi detektor lewat @register (core A1-A8, A9 deviasi, A10 drift)
-from ai_nrw.detectors import core, deviation, drift  # noqa: F401
+# import = registrasi detektor lewat @register
+# (core A1/A2/A3/A5/A7/A8, A4 spike, A6 noise, A9 deviasi, A10 drift)
+from ai_nrw.detectors import core, deviation, drift, noise, spike  # noqa: F401
 from ai_nrw.detectors import registry
 from ai_nrw.detectors.base import DetectionContext, Sample, Signal
 

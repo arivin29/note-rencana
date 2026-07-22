@@ -32,7 +32,9 @@ export const DETECTOR_DOCS: Record<string, DetectorDoc> = {
   A1_invalid: { title: 'Nilai tidak wajar', what: 'Menandai pembacaan mustahil, mis. tekanan negatif atau di luar batas fisik sensor.' },
   A2_low: { title: 'Terlalu rendah', what: 'Memperingatkan bila nilai di bawah batas minimum layanan cukup lama.' },
   A3_high: { title: 'Terlalu tinggi', what: 'Memperingatkan bila nilai di atas batas maksimum layanan cukup lama.' },
+  A4_spike: { title: 'Lonjakan mendadak', what: 'Nilai melompat atau terjun dalam satu langkah — water hammer, hentakan valve, atau pipa pecah.' },
   A5_flatline: { title: 'Sinyal mati (datar)', what: 'Nilai tak berubah sama sekali — sensor macet / beku / kabel putus.' },
+  A6_noise: { title: 'Sinyal bergetar', what: 'Pembacaan jadi jauh lebih goyang dari biasanya — kabel/transmitter bermasalah atau aliran tak stabil.' },
   A7_nodata: { title: 'Tidak ada data', what: 'Tak ada kiriman data dalam rentang waktu — node offline / jaringan putus.' },
   A8_persistent: { title: 'Masalah berkepanjangan', what: 'Kondisi buruk yang bertahan lama tanpa pulih — dieskalasi jadi prioritas.' },
   A9_deviation: { title: 'Menyimpang dari kebiasaan', what: 'Nilai keluar dari rentang normal channel ini (dipelajari dari pola historis).' },
@@ -55,6 +57,36 @@ export const PARAM_DOCS: Record<string, ParamDoc> = {
     recommended: '10–15 menit',
     unit: 'mnt',
   },
+  // A4
+  'A4_spike.k': {
+    label: 'Sensitivitas lonjakan',
+    help: 'Berapa kali lipat dari lompatan biasanya sebelum dianggap mendadak. Ambangnya dihitung otomatis dari kebiasaan channel ini, jadi tak perlu tahu satuan sensornya. Makin kecil (4) = makin sensitif; makin besar (8) = hanya lonjakan besar.',
+    recommended: '6 (debit: 4)',
+    min: 2,
+    max: 12,
+    step: 0.5,
+  },
+  spike_limit: {
+    label: 'Batas lonjakan tetap',
+    help: 'Isi hanya bila ingin memaksa ambang absolut (mis. 1.5 bar per pembacaan). Kosongkan agar ambang dihitung otomatis dari kebiasaan channel — pilihan yang disarankan.',
+    recommended: 'kosongkan (otomatis)',
+  },
+  direction: {
+    label: 'Arah yang dipantau',
+    help: 'both = naik & turun (disarankan). up = hanya lonjakan naik. down = hanya terjunan, mis. bila hanya peduli pipa pecah.',
+    recommended: 'both',
+  },
+  max_gap: {
+    label: 'Jeda data maksimum',
+    help: 'Dua pembacaan yang terpisah lebih lama dari ini tidak dibandingkan. Mencegah data yang hilang saat node offline terbaca sebagai lonjakan palsu saat node kembali online.',
+    recommended: '15 menit',
+    unit: 'mnt',
+  },
+  'A4_spike.min_points': {
+    label: 'Minimum riwayat untuk menilai',
+    help: 'Perlu sekian langkah sebelumnya untuk mengukur "lompatan biasanya" channel ini. Di bawah itu detektor diam daripada menebak.',
+    recommended: '10',
+  },
   // A5
   eps_flat: {
     label: 'Ambang "dianggap datar"',
@@ -65,6 +97,26 @@ export const PARAM_DOCS: Record<string, ParamDoc> = {
     label: 'Jumlah pembacaan datar beruntun',
     help: 'Berapa pembacaan datar berturut-turut sebelum dianggap sinyal mati. Makin besar = lebih yakin, tapi lebih lambat.',
     recommended: '10',
+  },
+  // A6
+  factor: {
+    label: 'Kelipatan getaran vs biasanya',
+    help: 'Berapa kali lipat lebih goyang dari periode sebelumnya sebelum diperingatkan. 3 = tiga kali lipat. Makin kecil = makin sensitif terhadap sensor yang mulai rusak, tapi lebih berisik.',
+    recommended: '3',
+    min: 1.5,
+    max: 10,
+    step: 0.5,
+  },
+  short_window: {
+    label: 'Jendela "belakangan ini"',
+    help: 'Periode terakhir yang dinilai getarannya, dibandingkan dengan data sebelum itu. Makin pendek = makin cepat menangkap gangguan baru, tapi lebih mudah terkecoh data tipis.',
+    recommended: '30 menit',
+    unit: 'mnt',
+  },
+  'A6_noise.min_points': {
+    label: 'Minimum data tiap sisi',
+    help: 'Jumlah pembacaan minimum di jendela terakhir DAN di periode pembanding. Mencegah rasio ekstrem dari segelintir titik.',
+    recommended: '8',
   },
   // A7
   no_data_timeout: {
@@ -118,6 +170,15 @@ export const PARAM_DOCS: Record<string, ParamDoc> = {
     unit: 'hari',
     min: 1,
     max: 30,
+  },
+  step_min: {
+    label: 'Kerapatan titik prakiraan',
+    help: 'Jarak antar-titik pada garis prakiraan. 10 menit menampilkan bentuk harian (puncak pagi, lembah dini hari). Makin besar makin halus/rata dan makin ringan grafiknya. Tak bisa lebih rapat dari slot baseline (10 menit) — nilai lebih kecil otomatis dinaikkan ke 10.',
+    recommended: '10 menit',
+    unit: 'menit',
+    min: 10,
+    max: 1440,
+    step: 10,
   },
   band_pct: {
     label: 'Lebar pita perkiraan minimum',
