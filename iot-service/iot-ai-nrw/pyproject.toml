@@ -14,7 +14,10 @@ dependencies = [
   "polars>=1.0",            # olah data hemat memori (pengganti pandas loop)
   "duckdb>=1.0",            # query lokal / agregasi ad-hoc
   "clickhouse-connect>=0.7",# baca telemetry ClickHouse
-  "psycopg[binary]>=3.2",   # Postgres (ai_*)
+  # psycopg2, BUKAN psycopg3: server via pooler mengembalikan version() sebagai bytes
+  # → psycopg3 crash di deteksi versi SQLAlchemy (lihat settings.py). DSN memakai
+  # postgresql+psycopg2://; ganti ke psycopg3 hanya bila pooler-nya sudah diperbaiki.
+  "psycopg2-binary>=2.9",   # Postgres (ai_*)
   "SQLAlchemy>=2.0",        # akses ai_* + dasar Alembic
   "alembic>=1.13",          # OWNER migrasi skema ai_*
   "APScheduler>=3.10",      # penjadwalan in-proc (cadence)
