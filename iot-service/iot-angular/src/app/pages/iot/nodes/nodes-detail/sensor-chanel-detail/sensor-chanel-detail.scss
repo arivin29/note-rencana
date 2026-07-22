@@ -24,11 +24,10 @@
 
   tbody {
     tr {
-      transition: all 0.2s ease;
+      transition: background-color 0.15s ease;
 
       &:hover {
         background-color: rgba(var(--bs-theme-rgb), 0.05);
-        transform: translateX(2px);
       }
     }
   }
@@ -114,12 +113,11 @@
   }
 }
 
-// Card hover effect
-card {
-  transition: all 0.3s ease;
-  
+// Overview stat cards — subtle lift on hover (scoped so the wide table card stays put)
+.row.g-3 > [class*="col-"] > card {
+  transition: box-shadow 0.2s ease;
+
   &:hover {
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 }
