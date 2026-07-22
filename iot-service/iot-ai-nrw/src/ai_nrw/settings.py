@@ -6,11 +6,18 @@ infrastruktur worker. Ref: dok 05 (arsitektur), dok 06 (model data).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# .env dijangkar ke ROOT PROJECT (folder pyproject.toml), bukan CWD — supervisor/
+# Vito/pm2 tidak menjamin working dir; env_file relatif membuat worker diam-diam
+# jalan pakai default localhost saat CWD meleset. parents[2] = src/ai_nrw → root.
+_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="AINRW_", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, env_prefix="AINRW_", extra="ignore")
 
     # --- Postgres (ai_* : config, event, baseline, forecast, recurrence) ---
     # NOTE: pakai psycopg2 (bukan psycopg3) — server via pooler mengembalikan version()

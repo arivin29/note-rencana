@@ -9,7 +9,9 @@
 #   HELIOS_SSH_HOST  = IP/host server IOT-helios
 #   HELIOS_SSH_USER  = user SSH (mis. root)
 #   HELIOS_SSH_KEY   = private key OpenSSH (isi file, bukan path)
-#   HELIOS_REPO_DIR  = path clone repo di server (mis. /root/pra-project)
+#   HELIOS_REPO_DIR  = path clone repo di server (mis. /home/vito/note-rencana)
+#   HELIOS_RESTART_CMD (opsional) = cara restart worker bila dikelola Vito/supervisor,
+#                      mis. "sudo supervisorctl restart worker-3:*". Kosong = pm2/panel.
 name: ai-nrw
 
 on:
@@ -58,4 +60,5 @@ jobs:
             git fetch origin v1
             git checkout v1
             git pull --ff-only origin v1
+            export AINRW_RESTART_CMD="${{ secrets.HELIOS_RESTART_CMD }}"
             bash iot-service/iot-ai-nrw/scripts/deploy.sh
