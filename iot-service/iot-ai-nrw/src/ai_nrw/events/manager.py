@@ -78,6 +78,10 @@ def _open(cfg: "ChannelConfig", a: lc.OpenEvent, now: datetime) -> None:
     sig = a.signal
     context = dict(sig.context)
     context["clear_streak"] = 0
+    # nilai pemicu ikut disimpan — UI inbox menampilkan "angka vs ambang" tanpa
+    # perlu merekonstruksi dari peak_magnitude (detektor tak semua menaruh value)
+    if "value" not in context and sig.value is not None:
+        context["value"] = round(float(sig.value), 4)
     rows = db.execute_returning(
         """
         INSERT INTO ai_event (

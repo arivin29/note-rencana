@@ -34,6 +34,12 @@ export interface AiEventListItem {
   lastSeenAt: string;
   durationSec: number | null;
   isRecurring: boolean;
+  /** Konteks kaya kartu triase inbox. */
+  nodeName?: string | null;
+  projectName?: string | null;
+  unit?: string | null;
+  peakMagnitude?: number | null;
+  context?: Record<string, any> | null;
 }
 
 export interface AiEventLog {

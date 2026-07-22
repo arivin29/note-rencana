@@ -31,10 +31,12 @@ export class EventInboxListPage implements OnInit {
   searchTerm = '';
   severityOptions = ['', 'critical', 'warning', 'info'];
   statusTabs: Array<{ key: 'active' | 'resolved' | 'all'; label: string }> = [
-    { key: 'active', label: 'Aktif' },
-    { key: 'resolved', label: 'Selesai' },
+    { key: 'active', label: 'Perlu perhatian' },
+    { key: 'resolved', label: 'Pulih & selesai' },
     { key: 'all', label: 'Semua' },
   ];
+  /** id event yang sedang divalidasi inline (disable tombol ✓/✗-nya). */
+  validatingId: string | null = null;
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
   // paginasi server-side
@@ -196,5 +198,130 @@ export class EventInboxListPage implements OnInit {
     if (sec < 3600) return `${Math.round(sec / 60)}m`;
     if (sec < 86400) return `${Math.round(sec / 3600)}j`;
     return `${Math.round(sec / 86400)}h`;
+  }
+
+  // --- kartu triase -------------------------------------------------------
+
+  /** Status internal → bahasa operator (apa yang harus SAYA lakukan). */
+  statusHuman(status: string): string {
+    return (
+      {
+        baru: 'Perlu ditinjau',
+        ditinjau: 'Sedang ditinjau',
+        ditindak: 'Sedang ditangani',
+        selesai: 'Selesai',
+        auto_closed: 'Pulih sendiri',
+        superseded: 'Digantikan',
+      }[status] || status
+    );
+  }
+
+  isActive(e: AiEventListItem): boolean {
+    return ['baru', 'ditinjau', 'ditindak'].includes(e.status);
+  }
+
+  /** Kode pendek untuk chip (A2_low → A2; forecast_breach → Prediksi). */
+  codeChip(analysisType: string): string {
+    const m = analysisType.match(/^A(\d+)_/);
+    if (m) return 'A' + m[1];
+    return { forecast_breach: 'Prediksi', night_pressure: 'Malam' }[analysisType] || analysisType;
+  }
+
+  /** "32 mnt lalu" / "2 jam lalu" / "3 hari lalu". */
+  timeAgo(iso: string): string {
+    const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 90) return 'baru saja';
+    if (s < 3600) return `${Math.round(s / 60)} mnt lalu`;
+    if (s < 86400) return `${Math.round(s / 3600)} jam lalu`;
+    return `${Math.round(s / 86400)} hari lalu`;
+  }
+
+  /** Baris angka: "2.1 bar — di bawah min layanan 3" per jenis detektor.
+   *  Sumber: context event (worker baru ikut menyimpan `value`); event lama
+   *  A2/A3 direkonstruksi dari peak_magnitude. Tak ada data → null (baris sembunyi). */
+  numberLine(e: AiEventListItem): string | null {
+    const c = e.context || {};
+    const u = e.unit ? ` ${e.unit}` : '';
+    const num = (v: any) => (v == null || isNaN(+v) ? null : (+v).toFixed(Math.abs(+v) < 10 ? 2 : 1));
+    const thr = num(c['threshold']);
+    let val = num(c['value']);
+
+    switch (e.analysisType) {
+      case 'A2_low':
+      case 'A3_high': {
+        const below = e.analysisType === 'A2_low';
+        if (!val && thr != null && e.peakMagnitude != null) {
+          const t = +thr;
+          val = num(t + (below ? -1 : 1) * e.peakMagnitude * Math.abs(t)) ? '≈' + num(t + (below ? -1 : 1) * e.peakMagnitude * Math.abs(t)) : null;
+        }
+        if (val == null && thr == null) return null;
+        return `${val ?? '?'}${u} — ${below ? 'di bawah min' : 'di atas max'} layanan ${thr ?? '?'}${u}`;
+      }
+      case 'A9_deviation': {
+        const exp = num(c['expected_median']);
+        return exp != null ? `${val ?? '?'}${u} — normalnya jam segini ≈${exp}${u} (z=${num(c['z']) ?? '?'})` : null;
+      }
+      case 'forecast_breach': {
+        const pred = num(c['predicted']);
+        const lead = c['lead_hours'];
+        if (pred == null) return null;
+        const at = c['cross_ts'] ? new Date(+c['cross_ts']).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null;
+        return `prediksi ${pred}${u}${at ? ` sekitar pukul ${at}` : ''}${lead != null ? ` (±${lead} jam lagi)` : ''} — batas ${thr ?? '?'}${u}`;
+      }
+      case 'A7_nodata': {
+        const gap = c['gap_sec'];
+        return gap != null ? `tanpa data ${this.durationText(Math.round(+gap))}` : null;
+      }
+      case 'A5_flatline':
+        return c['n'] != null ? `datar ${c['n']} pembacaan berturut${val != null ? ` di ${val}${u}` : ''}` : null;
+      case 'A6_noise':
+        return c['ratio'] != null ? `${c['ratio']}× lebih bergetar dari biasanya` : null;
+      case 'A10_drift':
+        return c['direction'] ? `tren ${c['direction'] === 'down' ? 'turun' : 'naik'} perlahan${val != null ? `, kini ${val}${u}` : ''}` : null;
+      case 'A1_invalid':
+        return val != null ? `nilai terbaca ${val}${u}` : null;
+      default:
+        return val != null ? `${val}${u}${thr != null ? ` (ambang ${thr}${u})` : ''}` : null;
+    }
+  }
+
+  /** Validasi 1-klik dari kartu — feedback loop tanpa buka detail. */
+  quickValidate(e: AiEventListItem, verdict: 'benar' | 'false_alarm', ev: Event): void {
+    ev.stopPropagation(); // jangan ikut membuka halaman detail
+    if (this.validatingId) return;
+    this.validatingId = e.id;
+    this.ai.validateEvent(e.id, { verdict }).subscribe({
+      next: () => {
+        this.validatingId = null;
+        this.refresh();
+      },
+      error: (err) => {
+        this.validatingId = null;
+        this.error = err?.error?.message || err?.message || 'Gagal memvalidasi';
+      },
+    });
+  }
+
+  /** Klik tile KPI = filter cepat. */
+  kpiFilter(kind: 'critical' | 'warning' | 'baru' | 'auto_closed'): void {
+    if (kind === 'critical' || kind === 'warning') {
+      this.statusTab = 'active';
+      this.severity = kind;
+    } else if (kind === 'baru') {
+      this.statusTab = 'active';
+      this.severity = '';
+    } else {
+      this.statusTab = 'resolved';
+      this.severity = '';
+    }
+    this.currentPage = 1;
+    this.loadEvents();
+  }
+
+  kpi(kind: string): number {
+    const s = this.stats;
+    if (!s) return 0;
+    if (kind === 'critical' || kind === 'warning') return s.bySeverity?.[kind] || 0;
+    return s.byStatus?.[kind] || 0;
   }
 }

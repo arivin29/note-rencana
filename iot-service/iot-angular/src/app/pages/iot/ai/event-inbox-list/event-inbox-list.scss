@@ -9,6 +9,94 @@
   color: #8b5cf6;
 }
 
-table tbody tr:hover {
-  --bs-table-accent-bg: rgba(var(--bs-theme-rgb), 0.06);
+// --- KPI strip -------------------------------------------------------------
+.kpi-tile {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover {
+    background-color: rgba(var(--bs-theme-rgb), 0.08);
+    border-color: rgba(var(--bs-theme-rgb), 0.4);
+  }
+
+  .kpi-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .kpi-label {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color, rgba(255, 255, 255, 0.6));
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &.kpi-critical .kpi-num { color: #dc3545; }
+  &.kpi-warning .kpi-num { color: #f59c1a; }
+  &.kpi-new .kpi-num { color: #49b6d6; }
+  &.kpi-recovered .kpi-num { color: #3cd2a5; }
+}
+
+// --- kartu triase ----------------------------------------------------------
+.event-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background-color: rgba(var(--bs-theme-rgb), 0.05);
+  }
+
+  // strip kiri = severity (hirarki visual utama kartu)
+  &.sev-critical { border-left-color: #dc3545; }
+  &.sev-warning { border-left-color: #f59c1a; }
+  &.sev-info { border-left-color: #49b6d6; }
+}
+
+.event-title {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.event-loc,
+.event-num {
+  font-size: 0.8125rem;
+}
+
+.event-num {
+  color: var(--bs-body-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-chip {
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+// titik merah berdenyut = event masih berlangsung
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc3545;
+  animation: live-pulse 1.6s ease-in-out infinite;
+  vertical-align: baseline;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }

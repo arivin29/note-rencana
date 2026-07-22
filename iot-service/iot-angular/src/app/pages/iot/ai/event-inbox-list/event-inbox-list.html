@@ -7,15 +7,45 @@
       <li class="breadcrumb-item active">Event Inbox</li>
     </ul>
     <h1 class="page-header mb-0">Event Inbox</h1>
-    <div class="text-muted small">Triage anomali lintas-channel</div>
+    <div class="text-muted small">
+      Anomali terdeteksi otomatis dari data sensor (dievaluasi tiap 5 menit). Yang pulih sendiri akan tertutup otomatis.
+    </div>
   </div>
   <div class="ms-auto">
     <a routerLink="/iot/ai" class="btn btn-outline-theme btn-sm me-2">
-      <i class="fa fa-diagram-3 fa-fw me-1"></i> Daftar Channel
+      <i class="fa fa-diagram-project fa-fw me-1"></i> Daftar Channel
     </a>
     <button class="btn btn-outline-default btn-sm" (click)="refresh()" [disabled]="loading">
       <i class="fa fa-rotate fa-fw me-1" [class.fa-spin]="loading"></i> Muat ulang
     </button>
+  </div>
+</div>
+
+<!-- KPI strip — ringkasan + filter cepat -->
+<div class="row g-3 mb-3" *ngIf="!embedded && stats">
+  <div class="col-6 col-lg-3">
+    <div class="kpi-tile kpi-critical" (click)="kpiFilter('critical')" role="button">
+      <div class="kpi-num">{{ kpi('critical') }}</div>
+      <div class="kpi-label"><i class="fa fa-circle-exclamation me-1"></i>Kritis aktif</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-tile kpi-warning" (click)="kpiFilter('warning')" role="button">
+      <div class="kpi-num">{{ kpi('warning') }}</div>
+      <div class="kpi-label"><i class="fa fa-triangle-exclamation me-1"></i>Peringatan aktif</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-tile kpi-new" (click)="kpiFilter('baru')" role="button">
+      <div class="kpi-num">{{ kpi('baru') }}</div>
+      <div class="kpi-label"><i class="fa fa-inbox me-1"></i>Perlu ditinjau</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-tile kpi-recovered" (click)="kpiFilter('auto_closed')" role="button">
+      <div class="kpi-num">{{ kpi('auto_closed') }}</div>
+      <div class="kpi-label"><i class="fa fa-circle-check me-1"></i>Pulih sendiri</div>
+    </div>
   </div>
 </div>
 
@@ -59,45 +89,77 @@
       <div class="spinner-border spinner-border-sm me-2"></div> Memuat…
     </div>
 
-    <!-- Table -->
-    <div class="table-responsive" *ngIf="!loading">
-      <table class="table table-hover text-nowrap align-middle">
-        <thead class="text-uppercase text-muted small">
-          <tr>
-            <th>Channel</th>
-            <th>Anomali</th>
-            <th>Severity</th>
-            <th>Status</th>
-            <th>Mulai</th>
-            <th class="text-end">Durasi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let e of events" style="cursor: pointer" (click)="openEvent(e.id)">
-            <td>
-              <a class="text-inverse fw-semibold text-decoration-none">{{ e.channelName }}</a>
-              <div class="text-muted small">{{ e.groupName || '—' }}</div>
-            </td>
-            <td>
-              <span class="fw-semibold">{{ e.analysisType }}</span>
-              <span *ngIf="e.isRecurring" class="badge bg-purple-subtle text-purple ms-1" title="Sering kambuh">
-                <i class="fa fa-repeat"></i> kambuh
+    <!-- Kartu triase -->
+    <div class="event-cards" *ngIf="!loading">
+      <div class="event-card" *ngFor="let e of events" [class.sev-critical]="e.severity === 'critical'"
+           [class.sev-warning]="e.severity === 'warning'" [class.sev-info]="e.severity === 'info'"
+           (click)="openEvent(e.id)" role="button">
+
+        <!-- Baris 1: APA yang terjadi (bahasa manusia) + chip kode -->
+        <div class="d-flex align-items-start">
+          <div class="flex-fill">
+            <div class="event-title">
+              {{ e.meaning || e.analysisType }}
+            </div>
+            <div class="mt-1">
+              <span class="badge bg-body border text-inverse text-opacity-75 me-1" [title]="e.analysisType">{{ codeChip(e.analysisType) }}</span>
+              <span [class]="severityBadge(e.severity)">{{ e.severity | titlecase }}</span>
+              <span *ngIf="e.isRecurring" class="badge bg-purple-subtle text-purple ms-1" title="Pola ini sering kambuh di channel ini">
+                <i class="fa fa-repeat me-1"></i>kambuh
               </span>
-              <div class="text-muted small text-wrap" style="max-width: 340px">{{ e.meaning }}</div>
-            </td>
-            <td><span [class]="severityBadge(e.severity)">{{ e.severity | titlecase }}</span></td>
-            <td><span [class]="statusBadge(e.status)">{{ e.status }}</span></td>
-            <td class="text-muted">{{ e.startedAt | date: 'dd MMM, HH:mm' }}</td>
-            <td class="text-end text-muted">{{ durationText(e.durationSec) }}</td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+          <span class="badge status-chip ms-2" [class]="statusBadge(e.status)">{{ statusHuman(e.status) }}</span>
+        </div>
+
+        <!-- Baris 2: DI MANA -->
+        <div class="event-loc text-muted mt-2">
+          <i class="fa fa-location-dot fa-fw opacity-50"></i>
+          <ng-container *ngIf="e.projectName">{{ e.projectName }} <span class="opacity-50">›</span> </ng-container>
+          <ng-container *ngIf="e.nodeName">{{ e.nodeName }} <span class="opacity-50">›</span> </ng-container>
+          <span class="text-inverse">{{ e.channelName }}</span>
+          <span *ngIf="e.groupName" class="ms-1 opacity-75">({{ e.groupName }})</span>
+        </div>
+
+        <!-- Baris 3: ANGKA vs ambang (sembunyi bila tak ada data) -->
+        <div class="event-num mt-1" *ngIf="numberLine(e) as line">
+          <i class="fa fa-chart-line fa-fw opacity-50"></i> {{ line }}
+        </div>
+
+        <!-- Baris 4: waktu + aksi -->
+        <div class="d-flex align-items-center mt-2 pt-2 border-top border-opacity-25">
+          <div class="text-muted small">
+            <span *ngIf="isActive(e)" class="live-dot me-1" title="Masih berlangsung"></span>
+            <span *ngIf="isActive(e)">masih berlangsung · </span>
+            mulai {{ timeAgo(e.startedAt) }}
+            <span *ngIf="!isActive(e) && e.durationSec != null"> · berlangsung {{ durationText(e.durationSec) }}</span>
+          </div>
+          <div class="ms-auto" (click)="$event.stopPropagation()">
+            <ng-container *ngIf="isActive(e)">
+              <button class="btn btn-sm btn-outline-success me-1" [disabled]="validatingId === e.id"
+                      title="Konfirmasi anomali ini benar terjadi di lapangan"
+                      (click)="quickValidate(e, 'benar', $event)">
+                <i class="fa fa-check me-1"></i>Benar
+              </button>
+              <button class="btn btn-sm btn-outline-danger me-2" [disabled]="validatingId === e.id"
+                      title="Tandai sebagai alarm palsu — membantu AI belajar"
+                      (click)="quickValidate(e, 'false_alarm', $event)">
+                <i class="fa fa-xmark me-1"></i>Alarm palsu
+              </button>
+            </ng-container>
+            <button class="btn btn-sm btn-outline-default" (click)="openEvent(e.id)">
+              Detail <i class="fa fa-chevron-right ms-1 small"></i>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Empty -->
-    <div *ngIf="!loading && !events.length && !error" class="text-center text-muted py-5 border-top">
-      <i class="fa fa-inbox fa-2x mb-2 d-block opacity-50"></i>
-      Tak ada event untuk filter ini.
+    <div *ngIf="!loading && !events.length && !error" class="text-center text-muted py-5">
+      <i class="fa fa-circle-check fa-2x mb-2 d-block opacity-50 text-success"></i>
+      <div class="fw-semibold">Tidak ada event untuk filter ini.</div>
+      <div class="small">Semua channel dalam kondisi normal — worker tetap memeriksa tiap 5 menit.</div>
     </div>
 
     <!-- Pagination -->
