@@ -18,18 +18,25 @@ monorepo → sini). **Jangan commit langsung ke repo ini** — kerjakan di monor
 ## Script deployment (panel Vito, "executed on every deployment")
 
 ```bash
-set -e
-git pull origin main
-export AINRW_RESTART_CMD="sudo supervisorctl restart worker-1:*"   # sesuaikan nama worker
-bash scripts/deploy.sh
+git pull origin ${BRANCH}
+export UV_PYTHON_INSTALL_DIR=/opt/uv/python
+uv sync
+uv run alembic upgrade head
 ```
+
+Lalu **centang "Restart workers"** di bawah editor script. JANGAN restart worker
+manual via supervisorctl di script — panel me-restart berdasarkan ID worker dari
+DB-nya sendiri (program supervisor dinamai `<worker-id>`, mis. `8`), jadi tetap
+benar walau worker di-recreate; nama hardcode akan basi.
 
 `git pull` WAJIB baris pertama — Vito tidak menarik commit sendiri untuk site
 custom; tanpanya `uv sync` merasa environment sudah sesuai (pyproject lama) dan
-fix di remote tak pernah sampai. Nama worker: `sudo supervisorctl status`.
+fix di remote tak pernah sampai. Migrasi selalu SEBELUM restart, jadi worker
+baru tak pernah ketemu skema lama.
 
-`scripts/deploy.sh` idempoten: `uv sync` → cek `.env` → `alembic upgrade head`
-(SEBELUM restart, worker baru tak pernah ketemu skema lama) → restart.
+Alternatif non-Vito (pm2/server polos): `bash scripts/deploy.sh` — idempoten,
+plus guard `.env` & gerbang Python ≥ 3.11; restart via `AINRW_RESTART_CMD`
+atau pm2 bila ada, selain itu diserahkan ke panel.
 
 ## Verifikasi setelah deploy
 
