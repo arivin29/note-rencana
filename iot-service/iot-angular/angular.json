@@ -5,11 +5,11 @@
   "projects": {
     "hud-angular": {
       "projectType": "application",
-			"schematics": {
+      "schematics": {
         "@schematics/angular:component": {
           "style": "scss"
         }
-			},
+      },
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
@@ -26,7 +26,12 @@
             "assets": [
               "src/assets",
               "src/favicon.ico",
-              "src/manifest.json"
+              "src/manifest.json",
+              {
+                "glob": "{swagger-ui.css,swagger-ui-bundle.js}",
+                "input": "node_modules/swagger-ui-dist",
+                "output": "assets/swagger"
+              }
             ],
             "styles": [
               "src/styles.css",
@@ -38,15 +43,29 @@
               "node_modules/codemirror/theme/dracula.css"
             ],
             "scripts": [
-            	"node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
-            	"node_modules/apexcharts/dist/apexcharts.min.js",
-            	"src/app/composables/slide.js",
-            	"src/app/composables/iconify.js",
-            	"node_modules/codemirror/mode/sql/sql.js"
+              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
+              "node_modules/apexcharts/dist/apexcharts.min.js",
+              "src/app/composables/slide.js",
+              "src/app/composables/iconify.js",
+              "node_modules/codemirror/lib/codemirror.js",
+              "node_modules/codemirror/mode/sql/sql.js"
             ],
             "allowedCommonJsDependencies": [
-            	"lodash", "lity", "jquery", "quill", "quill-delta", "bezier-easing", "ev-emitter", "moment", "apexcharts", "jsvectormap",
-            	"codemirror", "rbush", "exceljs", "file-saver"
+              "lodash",
+              "lity",
+              "jquery",
+              "quill",
+              "quill-delta",
+              "bezier-easing",
+              "ev-emitter",
+              "moment",
+              "apexcharts",
+              "jsvectormap",
+              "codemirror",
+              "rbush",
+              "exceljs",
+              "file-saver",
+              "swagger-ui-dist"
             ]
           },
           "configurations": {
@@ -72,13 +91,13 @@
               ]
             },
             "development": {
-							"buildOptimizer": false,
+              "buildOptimizer": false,
               "optimization": false,
               "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
-						},
+            },
             "go": {
               "buildOptimizer": false,
               "optimization": false,

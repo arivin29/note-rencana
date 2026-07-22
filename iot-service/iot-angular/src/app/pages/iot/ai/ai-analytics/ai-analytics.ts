@@ -127,13 +127,18 @@ export class AiAnalyticsPage implements OnInit {
     const series: any[] = [actual, median, hi, lo];
 
     // Forecast masa depan = 3 garis (prediksi + atas + bawah).
+    // Titik worker kini ber-timestamp absolut (`ts`, epoch ms) beresolusi slot grid (10 mnt).
+    // Baris ai_forecast lama tak punya `ts` — di situ jatuh balik ke offset 1 hari per titik.
     // Lantai band minimal 20% dari nilai harapan (±10%) — cocokkan worker seasonal.py.
     // Idempoten: bila band tersimpan sudah ≥20%, floor ini tak mengubah apa pun.
     if (d.forecast && Array.isArray(d.forecast.daily) && d.forecast.daily.length) {
       const gen = this.ts(d.forecast.generatedAt);
-      const at = (i: number) => gen + (i + 1) * 864e5;
       const pick = (o: any, ...k: string[]) => k.map((x) => o[x]).find((v) => v != null) ?? null;
       const MIN_BAND_FRAC = 0.2;
+      const at = (o: any, i: number) => {
+        const t = pick(o, 'ts', 't');
+        return t != null ? Number(t) : gen + (i + 1) * 864e5; // fallback: forecast harian lama
+      };
       const band = (o: any) => {
         const p50 = pick(o, 'p50', 'estAvg', 'value');
         let hi = pick(o, 'hi', 'bandHi');
@@ -145,10 +150,13 @@ export class AiAnalyticsPage implements OnInit {
         }
         return { p50, hi, lo };
       };
-      const b = d.forecast.daily.map(band);
-      series.push({ name: 'Forecast', type: 'line', data: d.forecast.daily.map((_o: any, i: number) => [at(i), b[i].p50]) });
-      series.push({ name: 'Forecast atas', type: 'line', data: d.forecast.daily.map((_o: any, i: number) => [at(i), b[i].hi]) });
-      series.push({ name: 'Forecast bawah', type: 'line', data: d.forecast.daily.map((_o: any, i: number) => [at(i), b[i].lo]) });
+      const pts = d.forecast.daily.map((o: any, i: number) => ({ at: at(o, i), ...band(o) }));
+      const line = (name: string, key: 'p50' | 'hi' | 'lo') => ({
+        name,
+        type: 'line',
+        data: pts.map((p: any) => [p.at, p[key]]),
+      });
+      series.push(line('Forecast', 'p50'), line('Forecast atas', 'hi'), line('Forecast bawah', 'lo'));
     }
 
     this.chartSeries = series;
