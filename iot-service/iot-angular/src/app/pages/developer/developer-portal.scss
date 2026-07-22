@@ -195,3 +195,14 @@ pre {
     margin-bottom: 0;
     code { font-size: 0.8rem; line-height: 1.6; }
 }
+
+/* Swagger UI di-embed via iframe srcdoc (isolasi total dari tema admin). */
+.swagger-frame {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 300px);
+    min-height: 600px;
+    border: 1px solid var(--bs-border-color, #e5e7eb);
+    border-radius: .5rem;
+    background: #fff;
+}

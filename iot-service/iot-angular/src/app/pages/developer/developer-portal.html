@@ -52,89 +52,17 @@
     </li>
 </ul>
 
-<!-- Tab: API Explorer (Swagger-like) -->
-<div *ngIf="activeTab === 'explorer'">
-    <div *ngFor="let section of apiSections" class="api-section mb-3">
-        <div class="section-header" (click)="section.expanded = !section.expanded">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi" [ngClass]="section.icon"></i>
-                <h6 class="mb-0 fw-bold">{{ section.title }}</h6>
-                <small class="text-muted">— {{ section.description }}</small>
-                <span class="badge bg-secondary bg-opacity-25 ms-2">{{ section.endpoints.length }}</span>
-            </div>
-            <i class="bi" [ngClass]="section.expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-        </div>
-
-        <div *ngIf="section.expanded" class="section-body">
-            <div *ngFor="let ep of section.endpoints" class="endpoint-card" [class.endpoint-expanded]="ep.expanded">
-                <!-- Endpoint Header -->
-                <div class="endpoint-header" (click)="toggleEndpoint(ep)">
-                    <span class="method-badge" [ngClass]="getMethodClass(ep.method)">{{ ep.method }}</span>
-                    <code class="endpoint-path">{{ ep.path }}</code>
-                    <span class="endpoint-summary">{{ ep.summary }}</span>
-                    <i class="bi ms-auto" [ngClass]="ep.expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                </div>
-
-                <!-- Expanded Content -->
-                <div *ngIf="ep.expanded" class="endpoint-body">
-                    <p class="text-muted small mb-3">{{ ep.description }}</p>
-
-                    <!-- Parameters -->
-                    <div *ngIf="ep.params.length > 0" class="mb-3">
-                        <h6 class="small fw-bold text-uppercase mb-2">Parameters</h6>
-                        <div class="params-grid">
-                            <div *ngFor="let p of ep.params" class="param-row">
-                                <div class="param-info">
-                                    <code class="param-name">{{ p.name }}</code>
-                                    <span class="badge bg-light text-dark">{{ p.type }}</span>
-                                    <span *ngIf="p.required" class="badge bg-danger bg-opacity-15 text-danger">required</span>
-                                    <span *ngIf="!p.required" class="badge bg-secondary bg-opacity-10 text-muted">optional</span>
-                                    <span class="param-in">({{ p.in }})</span>
-                                </div>
-                                <div class="param-desc small text-muted">{{ p.description }}</div>
-                                <input type="text" class="form-control form-control-sm param-input"
-                                       [(ngModel)]="p.value"
-                                       [placeholder]="p.description">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Try It -->
-                    <div class="try-it-section">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <button class="btn btn-sm btn-theme" (click)="executeRequest(ep)" [disabled]="ep.testing">
-                                <span *ngIf="ep.testing" class="spinner-border spinner-border-sm me-1"></span>
-                                <i *ngIf="!ep.testing" class="bi bi-play-fill me-1"></i>
-                                {{ ep.testing ? 'Sending...' : 'Execute' }}
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary" (click)="copyToClipboard(getCurlCommand(ep), ep.path)">
-                                <i class="bi" [ngClass]="copiedText === ep.path ? 'bi-check' : 'bi-clipboard'"></i> cURL
-                            </button>
-                            <span class="small text-muted ms-auto">
-                                {{ buildRequestUrl(ep) }}
-                            </span>
-                        </div>
-
-                        <!-- Response -->
-                        <div *ngIf="ep.testResponse || ep.responseExample" class="response-section">
-                            <div class="response-header d-flex align-items-center gap-2 mb-1">
-                                <span class="small fw-bold">
-                                    {{ ep.testResponse ? 'Response' : 'Example Response' }}
-                                </span>
-                                <span *ngIf="ep.testStatus" class="badge" [ngClass]="getStatusClass(ep.testStatus)">
-                                    {{ ep.testStatus }}
-                                </span>
-                                <span *ngIf="ep.testTime" class="small text-muted">
-                                    {{ ep.testTime }}ms
-                                </span>
-                            </div>
-                            <pre class="response-body"><code>{{ ep.testResponse || ep.responseExample }}</code></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- Tab: API Explorer (Swagger UI native, spec External API v2) -->
+<!-- [hidden] bukan *ngIf: container tetap di DOM → Swagger di-mount sekali (ngAfterViewInit). -->
+<div [hidden]="activeTab !== 'explorer'">
+    <div class="alert alert-info d-flex align-items-center gap-2 py-2 small mb-3">
+        <i class="bi bi-info-circle"></i>
+        <span>
+            Dokumentasi interaktif langsung dari spesifikasi OpenAPI. Isi <strong>API Key</strong> di atas,
+            lalu <strong>Try it out</strong> — key otomatis disertakan di header <code>X-API-Key</code>.
+        </span>
     </div>
+    <iframe #swaggerFrame class="swagger-frame" title="API Documentation"></iframe>
 </div>
 
 <!-- Tab: My API Keys -->
