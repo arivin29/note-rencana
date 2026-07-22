@@ -29,6 +29,10 @@ CATEGORY = register_category(
             "night_pressure": {"night_start": "00:00", "night_end": "04:00",
                                "agg": "median", "drop_frac": 0.15},
             "forecast": {"horizon_days": 7},   # Tier-0 seasonal-naive dari grid
+            # default no-op (24 jam, tanpa libur) — jaringan "nyala 20 jam" tinggal
+            # mengubah windows, mis. ["04:00-24:00"]; holidays: ["2026-03-31", "12-25"]
+            "active_schedule": {"windows": ["00:00-24:00"], "tz": "Asia/Jakarta",
+                                "holidays": []},
         },
         meanings={
             "A1_invalid": "Nilai negatif/kosong — sensor/transmitter tekanan rusak.",
@@ -42,6 +46,7 @@ CATEGORY = register_category(
             "A9_deviation": "Tekanan menyimpang dari pola biasanya untuk jam ini — indikasi dini gangguan.",
             "A10_drift": "Tekanan menurun perlahan menetap — indikasi kuat kebocoran merambat (slow leak).",
             "night_pressure": "Tekanan malam lebih rendah dari biasanya — indikasi kebocoran (air lolos saat tanpa pemakaian).",
+            "active_schedule": "Jam operasi channel + kalender libur — di luar jam aktif, alarm nol/datar dibungkam.",
         },
     )
 )

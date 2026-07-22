@@ -41,6 +41,7 @@ export const DETECTOR_DOCS: Record<string, DetectorDoc> = {
   A10_drift: { title: 'Pergeseran perlahan', what: 'Nilai menggeser sedikit demi sedikit — indikasi bocor kecil atau sensor melenceng.' },
   forecast: { title: 'Prakiraan (forecast)', what: 'Memproyeksikan nilai beberapa hari ke depan beserta pita perkiraan atas/bawah.' },
   night_pressure: { title: 'Tekanan malam (MNF)', what: 'Memantau tekanan saat pemakaian minimum (dini hari) — indikator kuat kebocoran jaringan.' },
+  active_schedule: { title: 'Jam operasi & hari libur', what: 'Di luar jam aktif (mis. pompa mati dini hari), alarm nilai nol/datar dibungkam. Saat hari libur, detektor pembanding-kebiasaan dikendurkan karena pola pemakaian memang berbeda.' },
 };
 
 export const PARAM_DOCS: Record<string, ParamDoc> = {
@@ -188,6 +189,32 @@ export const PARAM_DOCS: Record<string, ParamDoc> = {
     min: 0,
     max: 100,
     step: 5,
+  },
+  // active_schedule
+  windows: {
+    label: 'Jam aktif channel',
+    help: 'Rentang jam saat jaringan beroperasi normal, format "HH:MM-HH:MM" (pisahkan koma bila lebih dari satu). Contoh jaringan nyala 20 jam: 04:00-24:00. Boleh lintas tengah malam (22:00-06:00). Kosongkan atau 00:00-24:00 = channel 24 jam.',
+    recommended: '00:00-24:00 (24 jam)',
+  },
+  tz: {
+    label: 'Zona waktu',
+    help: 'Zona waktu untuk membaca jam aktif dan tanggal libur. Asia/Jakarta = WIB, Asia/Makassar = WITA, Asia/Jayapura = WIT.',
+    recommended: 'Asia/Jakarta',
+  },
+  holidays: {
+    label: 'Kalender libur',
+    help: 'Daftar tanggal (pisahkan koma). "2026-03-31" = tanggal persis; "12-25" = berulang tiap tahun. Pada hari ini pola pemakaian dianggap wajar berbeda — detektor pembanding-kebiasaan dikendurkan supaya Idul Fitri/tahun baru tidak jadi banjir alarm palsu.',
+    recommended: 'isi hari besar setempat',
+  },
+  suppress_off: {
+    label: 'Alarm yang dibungkam saat jam mati',
+    help: 'Daftar kode detektor yang dibungkam di luar jam aktif. Bawaan: A1_invalid, A2_low, A5_flatline (nilai nol/datar normal saat pompa mati). Tambahkan A7_nodata bila node ikut dimatikan malam hari.',
+    recommended: 'biarkan bawaan',
+  },
+  relax_holiday: {
+    label: 'Detektor yang dikendurkan saat libur',
+    help: 'Daftar kode yang dibungkam pada hari libur. Bawaan: A6_noise, A9_deviation, A10_drift, night_pressure — semua yang membandingkan ke kebiasaan. Batas layanan (A2/A3/A8) tetap berjalan.',
+    recommended: 'biarkan bawaan',
   },
   // night_pressure
   agg: {

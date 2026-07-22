@@ -14,7 +14,7 @@ from ai_nrw import categories
 # import = registrasi detektor lewat @register
 # (core A1/A2/A3/A5/A7/A8, A4 spike, A6 noise, A9 deviasi, A10 drift)
 from ai_nrw.detectors import core, deviation, drift, noise, spike  # noqa: F401
-from ai_nrw.detectors import registry
+from ai_nrw.detectors import registry, schedule
 from ai_nrw.detectors.base import DetectionContext, Sample, Signal
 
 if TYPE_CHECKING:
@@ -34,11 +34,17 @@ def analyze_channel(
     `baseline` (grid + online_state) disuntik saat A9/A10 ON; detektor stateful (A10)
     memutasi baseline.online_state in-place → pemanggil bertanggung jawab menyimpannya.
     """
+    # active_schedule: jam mati → suppress A1/A2/A5 (nol/datar normal saat pompa mati);
+    # hari libur → relaxed, bungkam detektor adaptif (pola demand memang beda).
+    sched = schedule.evaluate(cfg.analyses.get(schedule.ACTIVE_SCHEDULE), now)
+
     signals: list[Signal] = []
     for code, params in cfg.analyses.items():
+        if code in sched.suppressed:
+            continue
         fn = registry.get(code)
         if fn is None:
-            continue  # 'baseline'/'forecast' dll bukan detektor per-siklus
+            continue  # 'baseline'/'forecast'/'active_schedule' dll bukan detektor per-siklus
         ctx = DetectionContext(
             samples=samples,
             now=now,
