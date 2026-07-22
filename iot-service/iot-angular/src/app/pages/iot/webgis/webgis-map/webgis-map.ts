@@ -1067,6 +1067,33 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // Handle layer data replaced (GeoJSON re-upload) — reload geometry from server
+  onLayerDataReplaced(updatedLayer: LayerResponseDto): void {
+    const layerState = this.layers.find(
+      (ls: LayerState) => ls.layerData?.idLayer === updatedLayer.idLayer
+    );
+    if (!layerState) return;
+
+    layerState.layerData = updatedLayer;
+    layerState.style = updatedLayer.styleJson || layerState.style || {};
+
+    // Drop the old OL layer and fetch the fresh GeoJSON
+    if (layerState.olLayer) {
+      this.map?.removeLayer(layerState.olLayer);
+      layerState.olLayer = undefined;
+    }
+    this.loadCustomLayerGeoJSON(layerState);
+
+    // Keep edit drawer in sync (new properties from the new file)
+    if (this.editingLayer?.idLayer === updatedLayer.idLayer) {
+      this.editingLayer = updatedLayer;
+      const config = updatedLayer.configJson as any;
+      if (config?.properties) {
+        this.editingLayerProperties = config.properties;
+      }
+    }
+  }
+
   // Handle layer deleted from edit drawer
   onLayerDeleted(idLayer: string): void {
     // Find and remove the layer state

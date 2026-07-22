@@ -1,9 +1,20 @@
 import { Component, EventEmitter, Input, Output, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Subject, takeUntil, firstValueFrom } from 'rxjs';
-import { WebGisLayersService } from '../../../../../../sdk/core/services';
+import KML from 'ol/format/KML';
+import GeoJSON from 'ol/format/GeoJSON';
+import { DocumentsService, WebGisLayersService } from '../../../../../../sdk/core/services';
 import { LayerResponseDto } from '../../../../../../sdk/core/models/layer-response-dto';
 import { UpdateStyleDto } from '../../../../../../sdk/core/models/update-style-dto';
+
+export interface ReplaceDataInfo {
+  featureCount: number;
+  geometryType: string;
+  properties: string[];
+  bounds: [number, number, number, number] | null;
+  warnings: string[];
+  errors: string[];
+}
 
 export interface LayerStyle {
   fillColor: string;
@@ -57,6 +68,7 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
   @Output() styleUpdated = new EventEmitter<StyleUpdateEvent>();
   @Output() styleSaved = new EventEmitter<LayerResponseDto>();
   @Output() layerDeleted = new EventEmitter<string>();
+  @Output() dataReplaced = new EventEmitter<LayerResponseDto>();
 
   private destroy$ = new Subject<void>();
 
@@ -77,6 +89,13 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
   isSaving = false;
   isDeleting = false;
   saveError: string = '';
+
+  // Replace-data (re-upload GeoJSON/KML) state
+  replaceFile: File | null = null;
+  replaceParsedGeoJson: any = null;
+  replaceInfo: ReplaceDataInfo | null = null;
+  replaceError: string = '';
+  isReplacing = false;
   
   // Operations for data-driven width
   widthOperations = [
@@ -102,7 +121,8 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
 
   constructor(
     private fb: FormBuilder,
-    private layersService: WebGisLayersService
+    private layersService: WebGisLayersService,
+    private documentsService: DocumentsService
   ) {}
 
   ngOnInit(): void {
@@ -112,6 +132,9 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['layer'] || changes['properties']) && this.layer) {
       this.loadLayerStyle();
+    }
+    if (changes['layer']) {
+      this.resetReplaceState();
     }
   }
 
@@ -459,8 +482,231 @@ export class EditLayerDrawerComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
 
+  // ===== REPLACE DATA (re-upload GeoJSON/KML) =====
+
+  get currentDataFilename(): string {
+    const config = this.layer?.configJson as any;
+    return config?.originalFilename || '-';
+  }
+
+  get currentFeatureCount(): number | null {
+    const config = this.layer?.configJson as any;
+    return config?.featureCount ?? null;
+  }
+
+  get canReplaceData(): boolean {
+    // Only file-based layers can have their data replaced
+    const st = (this.layer as any)?.sourceType;
+    return st === 'geojson' || st === 'kml';
+  }
+
+  async onReplaceFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.resetReplaceState();
+
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.replaceError = 'File terlalu besar. Maksimal 50MB.';
+      return;
+    }
+
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!['.geojson', '.json', '.kml'].includes(ext)) {
+      this.replaceError = 'File harus berekstensi .geojson, .json, atau .kml';
+      return;
+    }
+
+    this.replaceFile = file;
+
+    try {
+      const content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Gagal membaca file'));
+        reader.readAsText(file);
+      });
+
+      const geoJson = ext === '.kml' ? this.kmlToGeoJson(content) : JSON.parse(content);
+      this.parseReplaceGeoJson(geoJson);
+    } catch (e: any) {
+      this.replaceError = 'Gagal parse file: ' + (e.message || 'Format tidak valid');
+      this.replaceFile = null;
+    } finally {
+      // Allow re-selecting the same file
+      input.value = '';
+    }
+  }
+
+  private kmlToGeoJson(content: string): any {
+    const features = new KML({ extractStyles: false }).readFeatures(content, {
+      dataProjection: 'EPSG:4326',
+      featureProjection: 'EPSG:4326'
+    });
+    return JSON.parse(new GeoJSON().writeFeatures(features));
+  }
+
+  private parseReplaceGeoJson(geoJson: any): void {
+    const info: ReplaceDataInfo = {
+      featureCount: 0,
+      geometryType: 'Unknown',
+      properties: [],
+      bounds: null,
+      warnings: [],
+      errors: []
+    };
+
+    let features: any[] = [];
+    if (geoJson?.type === 'FeatureCollection') {
+      features = geoJson.features || [];
+    } else if (geoJson?.type === 'Feature') {
+      features = [geoJson];
+      geoJson = { type: 'FeatureCollection', features };
+    } else if (geoJson?.type && geoJson.coordinates) {
+      features = [{ type: 'Feature', geometry: geoJson, properties: {} }];
+      geoJson = { type: 'FeatureCollection', features };
+    } else {
+      info.errors.push('Bukan format GeoJSON yang valid');
+      this.replaceInfo = info;
+      return;
+    }
+
+    info.featureCount = features.length;
+    if (features.length === 0) {
+      info.errors.push('File tidak memiliki feature');
+    }
+
+    const geometryTypes = new Set<string>();
+    const allProperties = new Set<string>();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    const walkCoords = (coords: any): void => {
+      if (typeof coords?.[0] === 'number') {
+        if (coords[0] < minX) minX = coords[0];
+        if (coords[0] > maxX) maxX = coords[0];
+        if (coords[1] < minY) minY = coords[1];
+        if (coords[1] > maxY) maxY = coords[1];
+      } else if (Array.isArray(coords)) {
+        coords.forEach(walkCoords);
+      }
+    };
+
+    for (const feature of features) {
+      if (feature.geometry?.type) geometryTypes.add(feature.geometry.type);
+      if (feature.properties) Object.keys(feature.properties).forEach(k => allProperties.add(k));
+      if (feature.geometry?.coordinates) walkCoords(feature.geometry.coordinates);
+    }
+
+    info.geometryType = Array.from(geometryTypes).join(', ') || 'Unknown';
+    info.properties = Array.from(allProperties);
+    if (minX !== Infinity) {
+      info.bounds = [minX, minY, maxX, maxY];
+      if (minX < -180 || maxX > 180 || minY < -90 || maxY > 90) {
+        info.warnings.push('Koordinat di luar range WGS84. Mungkin menggunakan CRS lain.');
+      }
+    }
+
+    // Warn if geometry type changed vs existing layer
+    const currentGt = (this.layer as any)?.geometryType;
+    const newGt = info.geometryType.split(',')[0]?.trim();
+    if (currentGt && newGt && newGt !== 'Unknown' && !newGt.toLowerCase().includes(String(currentGt).toLowerCase()) && !String(currentGt).toLowerCase().includes(newGt.toLowerCase())) {
+      info.warnings.push(`Tipe geometri berubah: ${currentGt} → ${newGt}`);
+    }
+
+    this.replaceParsedGeoJson = geoJson;
+    this.replaceInfo = info;
+  }
+
+  async replaceLayerData(): Promise<void> {
+    if (!this.layer || !this.replaceFile || !this.replaceInfo || this.replaceInfo.errors.length > 0) return;
+
+    this.isReplacing = true;
+    this.replaceError = '';
+
+    try {
+      const ext = '.' + this.replaceFile.name.split('.').pop()?.toLowerCase();
+      const config = (this.layer.configJson as any) || {};
+
+      // Backend serves file-based layers via JSON parse of the stored file,
+      // so KML is uploaded as its converted GeoJSON equivalent.
+      const sourceType = 'geojson';
+      let uploadFile = this.replaceFile;
+      if (ext === '.kml') {
+        const geojsonName = this.replaceFile.name.replace(/\.kml$/i, '.geojson');
+        uploadFile = new File(
+          [JSON.stringify(this.replaceParsedGeoJson)],
+          geojsonName,
+          { type: 'application/geo+json' }
+        );
+      }
+
+      // 1. Upload the new file as a document (same flow as add-layer)
+      const doc = await firstValueFrom(
+        this.documentsService.documentsControllerUpload({
+          body: {
+            file: uploadFile,
+            fromModule: 'project',
+            fromModuleId: (this.layer as any).idProject || '',
+            documentType: `layer_${sourceType}`,
+            metadata: JSON.stringify({
+              layerName: this.layer.layerName,
+              layerType: (this.layer as any).layerType,
+              featureCount: this.replaceInfo.featureCount,
+              geometryType: this.replaceInfo.geometryType,
+              replacesDocument: config.idDocument || null
+            })
+          }
+        })
+      );
+
+      // 2. Point the layer at the new document + refresh config metadata
+      const updatedLayer = await firstValueFrom(
+        this.layersService.layersControllerUpdate({
+          id: this.layer.idLayer,
+          body: {
+            sourceType,
+            sourceRef: doc.idDocument,
+            geometryType: this.replaceInfo.geometryType.split(',')[0]?.trim() || (this.layer as any).geometryType,
+            configJson: {
+              ...config,
+              idDocument: doc.idDocument,
+              originalFilename: doc.originalFilename,
+              filePath: doc.filePath,
+              featureCount: this.replaceInfo.featureCount,
+              bounds: this.replaceInfo.bounds,
+              properties: this.replaceInfo.properties
+            }
+          } as any
+        })
+      );
+
+      this.dataReplaced.emit(updatedLayer);
+      this.resetReplaceState();
+    } catch (error: any) {
+      console.error('Error replacing layer data:', error);
+      this.replaceError = error.error?.message || 'Gagal mengganti data layer. Silakan coba lagi.';
+    } finally {
+      this.isReplacing = false;
+    }
+  }
+
+  cancelReplaceData(): void {
+    this.resetReplaceState();
+  }
+
+  private resetReplaceState(): void {
+    this.replaceFile = null;
+    this.replaceParsedGeoJson = null;
+    this.replaceInfo = null;
+    this.replaceError = '';
+    this.isReplacing = false;
+  }
+
   onClose(): void {
     this.saveError = '';
+    this.resetReplaceState();
     this.close.emit();
   }
 

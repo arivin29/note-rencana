@@ -42,6 +42,67 @@
           </div>
         </div>
 
+        <!-- Data Source (replace uploaded GeoJSON/KML) -->
+        <div class="info-section" *ngIf="canReplaceData">
+          <h6 class="section-title">
+            <i class="bi bi-file-earmark-arrow-up me-2"></i>Sumber Data
+          </h6>
+
+          <div class="current-file">
+            <i class="bi bi-file-earmark-code"></i>
+            <div class="current-file-info">
+              <span class="current-file-name">{{ currentDataFilename }}</span>
+              <small class="text-muted" *ngIf="currentFeatureCount !== null">{{ currentFeatureCount }} features</small>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">Ganti dengan file baru <small class="text-muted">(.geojson, .json, .kml)</small></label>
+            <input type="file" class="form-control form-control-sm"
+                   accept=".geojson,.json,.kml"
+                   (change)="onReplaceFileSelected($event)"
+                   [disabled]="isReplacing">
+          </div>
+
+          <!-- Parsed summary -->
+          <div class="replace-summary" *ngIf="replaceInfo">
+            <div class="summary-row">
+              <span class="text-muted">File baru</span>
+              <span>{{ replaceFile?.name }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="text-muted">Features</span>
+              <span>{{ replaceInfo.featureCount }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="text-muted">Geometri</span>
+              <span>{{ replaceInfo.geometryType }}</span>
+            </div>
+            <div class="alert alert-warning py-1 px-2 mt-2 mb-0" *ngFor="let w of replaceInfo.warnings">
+              <small><i class="bi bi-exclamation-triangle me-1"></i>{{ w }}</small>
+            </div>
+            <div class="alert alert-danger py-1 px-2 mt-2 mb-0" *ngFor="let e of replaceInfo.errors">
+              <small><i class="bi bi-x-circle me-1"></i>{{ e }}</small>
+            </div>
+          </div>
+
+          <div class="alert alert-danger py-1 px-2 mt-2" *ngIf="replaceError">
+            <small><i class="bi bi-x-circle me-1"></i>{{ replaceError }}</small>
+          </div>
+
+          <div class="d-flex gap-2 mt-2" *ngIf="replaceInfo && replaceInfo.errors.length === 0">
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-fill"
+                    (click)="cancelReplaceData()" [disabled]="isReplacing">
+              Batal
+            </button>
+            <button type="button" class="btn btn-sm btn-warning flex-fill"
+                    (click)="replaceLayerData()" [disabled]="isReplacing">
+              <span *ngIf="!isReplacing"><i class="bi bi-arrow-repeat me-1"></i>Ganti Data</span>
+              <span *ngIf="isReplacing"><span class="spinner-border spinner-border-sm me-1"></span>Mengganti...</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Fill Style (for points and polygons) -->
         <div class="info-section" *ngIf="isPointLayer || isPolygonLayer">
           <h6 class="section-title">
