@@ -1,0 +1,61 @@
+# CI/CD worker AI-NRW — jalan hanya saat folder iot-ai-nrw berubah.
+#
+# test  : tes pure-stdlib (TANPA pip install — sengaja, semua tes bebas dependensi)
+#         → ~20 detik per run, tak ada cache/lockfile yang bisa basi.
+# deploy: push ke v1 & tes lolos → SSH ke server, git pull, deploy.sh
+#         (venv + migrasi alembic + pm2 restart).
+#
+# Secrets yang harus diisi di GitHub repo Settings → Secrets and variables → Actions:
+#   HELIOS_SSH_HOST  = IP/host server IOT-helios
+#   HELIOS_SSH_USER  = user SSH (mis. root)
+#   HELIOS_SSH_KEY   = private key OpenSSH (isi file, bukan path)
+#   HELIOS_REPO_DIR  = path clone repo di server (mis. /root/pra-project)
+name: ai-nrw
+
+on:
+  push:
+    branches: [v1, main]
+    paths: ['iot-service/iot-ai-nrw/**', '.github/workflows/ai-nrw.yml']
+  pull_request:
+    paths: ['iot-service/iot-ai-nrw/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: iot-service/iot-ai-nrw
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tes stdlib (tanpa dependensi)
+        run: |
+          fail=0
+          for t in tests/test_*.py; do
+            echo "== $t"
+            python "$t" || fail=1
+          done
+          exit $fail
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/v1'
+    runs-on: ubuntu-latest
+    # environment memberi jejak audit deploy di tab Environments (opsional tapi murah)
+    environment: helios
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HELIOS_SSH_HOST }}
+          username: ${{ secrets.HELIOS_SSH_USER }}
+          key: ${{ secrets.HELIOS_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd "${{ secrets.HELIOS_REPO_DIR }}"
+            git fetch origin v1
+            git checkout v1
+            git pull --ff-only origin v1
+            bash iot-service/iot-ai-nrw/scripts/deploy.sh
