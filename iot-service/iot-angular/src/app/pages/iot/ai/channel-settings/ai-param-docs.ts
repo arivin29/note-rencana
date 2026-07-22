@@ -39,7 +39,8 @@ export const DETECTOR_DOCS: Record<string, DetectorDoc> = {
   A8_persistent: { title: 'Masalah berkepanjangan', what: 'Kondisi buruk yang bertahan lama tanpa pulih — dieskalasi jadi prioritas.' },
   A9_deviation: { title: 'Menyimpang dari kebiasaan', what: 'Nilai keluar dari rentang normal channel ini (dipelajari dari pola historis).' },
   A10_drift: { title: 'Pergeseran perlahan', what: 'Nilai menggeser sedikit demi sedikit — indikasi bocor kecil atau sensor melenceng.' },
-  forecast: { title: 'Prakiraan (forecast)', what: 'Memproyeksikan nilai beberapa hari ke depan beserta pita perkiraan atas/bawah.' },
+  forecast: { title: 'Prakiraan (forecast)', what: 'Memproyeksikan nilai beberapa hari ke depan beserta pita perkiraan atas/bawah, dan memberi peringatan dini bila garisnya diprakirakan melewati batas layanan.' },
+  forecast_breach: { title: 'Peringatan dini lewat-ambang', what: 'Prakiraan menunjukkan nilai akan melewati batas layanan dalam beberapa jam ke depan — kesempatan bertindak sebelum terjadi.' },
   night_pressure: { title: 'Tekanan malam (MNF)', what: 'Memantau tekanan saat pemakaian minimum (dini hari) — indikator kuat kebocoran jaringan.' },
   active_schedule: { title: 'Jam operasi & hari libur', what: 'Di luar jam aktif (mis. pompa mati dini hari), alarm nilai nol/datar dibungkam. Saat hari libur, detektor pembanding-kebiasaan dikendurkan karena pola pemakaian memang berbeda.' },
 };
@@ -180,6 +181,30 @@ export const PARAM_DOCS: Record<string, ParamDoc> = {
     min: 10,
     max: 1440,
     step: 10,
+  },
+  early_warning: {
+    label: 'Peringatan dini lewat-ambang',
+    help: 'Jika AKTIF, prakiraan yang memotong batas layanan channel memunculkan event "peringatan dini" di inbox — sebelum pelanggaran benar-benar terjadi.',
+    recommended: 'Aktif',
+  },
+  lead_max: {
+    label: 'Jangkauan peringatan',
+    help: 'Hanya pelanggaran yang diprakirakan terjadi dalam rentang ini yang diperingatkan. Terlalu jauh ke depan = prakiraan makin tidak pasti, peringatannya jadi berisik.',
+    recommended: '48 jam',
+    unit: 'jam',
+  },
+  lead_critical: {
+    label: 'Ambang "mendesak"',
+    help: 'Bila pelanggaran diprakirakan terjadi lebih cepat dari ini, event naik ke tingkat critical.',
+    recommended: '6 jam',
+    unit: 'jam',
+  },
+  min_breach_points: {
+    label: 'Titik pelanggaran beruntun',
+    help: 'Butuh sekian titik prakiraan berturut-turut melewati ambang sebelum diperingatkan. Mencegah satu titik nyelonong di ekor prakiraan membangunkan orang.',
+    recommended: '2 (= 20 menit)',
+    min: 1,
+    max: 12,
   },
   band_pct: {
     label: 'Lebar pita perkiraan minimum',

@@ -54,6 +54,7 @@ class DetectionContext:
     params: dict[str, Any]         # param analisa ini (dari ai_config.params)
     group_name: str | None = None  # kategori metric (Tekanan/Debit/…)
     baseline: Any = None           # grid/state (P1: A9/A10)
+    forecast: list[dict] | None = None  # titik ai_forecast tersimpan (early-warning)
 
 
 _DUR_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([smhd]?)\s*$", re.IGNORECASE)

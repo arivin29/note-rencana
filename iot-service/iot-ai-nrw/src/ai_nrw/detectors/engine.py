@@ -12,8 +12,9 @@ from typing import TYPE_CHECKING
 
 from ai_nrw import categories
 # import = registrasi detektor lewat @register
-# (core A1/A2/A3/A5/A7/A8, A4 spike, A6 noise, A9 deviasi, A10 drift)
-from ai_nrw.detectors import core, deviation, drift, noise, spike  # noqa: F401
+# (core A1/A2/A3/A5/A7/A8, A4 spike, A6 noise, A9 deviasi, A10 drift,
+#  early_warning: kode 'forecast' → sinyal 'forecast_breach')
+from ai_nrw.detectors import core, deviation, drift, early_warning, noise, spike  # noqa: F401
 from ai_nrw.detectors import registry, schedule
 from ai_nrw.detectors.base import DetectionContext, Sample, Signal
 
@@ -28,6 +29,7 @@ def analyze_channel(
     now: datetime,
     last_ts: datetime | None,
     baseline: "Baseline | None" = None,
+    forecast: list[dict] | None = None,
 ) -> list[Signal]:
     """Jalankan semua detektor yang ON untuk channel, kembalikan Signal ber-arti kategori.
 
@@ -44,7 +46,10 @@ def analyze_channel(
             continue
         fn = registry.get(code)
         if fn is None:
-            continue  # 'baseline'/'forecast'/'active_schedule' dll bukan detektor per-siklus
+            # 'baseline'/'active_schedule' dll bukan detektor per-siklus. ('forecast'
+            # KINI terdaftar — early_warning menilai forecast tersimpan tiap siklus;
+            # job PENGHASIL forecast tetap terpisah di run_forecast_cycle.)
+            continue
         ctx = DetectionContext(
             samples=samples,
             now=now,
@@ -54,6 +59,7 @@ def analyze_channel(
             params=params or {},
             group_name=cfg.group_name,
             baseline=baseline,
+            forecast=forecast,
         )
         signals.extend(fn(ctx))
 

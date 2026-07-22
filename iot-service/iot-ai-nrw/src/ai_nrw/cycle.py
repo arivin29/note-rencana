@@ -74,7 +74,15 @@ def run_anomaly_cycle(
             needs_baseline = bool(_BASELINE_CODES & cfg.analyses.keys())
             bl = baseline_store.load_baseline(cfg.target_id) if needs_baseline else None
 
-            signals = analyze_channel(cfg, samples, now, last_ts, baseline=bl)
+            # early-warning: baca forecast tersimpan (1 lookup PK) bila forecast ON
+            # dan early_warning tak dimatikan — detektor kode 'forecast' yang menilai.
+            fc = None
+            if FORECAST in cfg.analyses and bool(
+                (cfg.analyses[FORECAST] or {}).get("early_warning", True)
+            ):
+                fc = forecast_store.load_points(cfg.target_id)
+
+            signals = analyze_channel(cfg, samples, now, last_ts, baseline=bl, forecast=fc)
             counts = process_channel(cfg, signals, now)
 
             # detektor stateful memutasi bundle in-place → persist (walau tak ada anomali)

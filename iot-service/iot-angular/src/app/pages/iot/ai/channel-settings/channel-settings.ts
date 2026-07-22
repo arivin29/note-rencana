@@ -81,10 +81,14 @@ export class ChannelSettingsComponent implements OnInit {
 
   private decorate(d: AiConfigDetail): AiConfigDetail {
     d.analyses.forEach((a) => {
-      // forecast: pastikan "band_pct" muncul walau backend belum menyimpannya (default 20%).
+      // forecast: munculkan "band_pct" & "step_min" walau backend belum menyimpannya.
+      // Nilai di sini harus sama dengan default worker (cycle.run_forecast_cycle).
       if (a.analysisType === 'forecast') {
         if (!a.params) a.params = {};
         if (a.params['band_pct'] == null) a.params['band_pct'] = 20;
+        if (a.params['step_min'] == null) a.params['step_min'] = 10;
+        if (a.params['early_warning'] == null) a.params['early_warning'] = true;
+        if (a.params['lead_max'] == null) a.params['lead_max'] = '48h';
       }
       const doc = detectorDoc(a.analysisType);
       a.title = doc.title;

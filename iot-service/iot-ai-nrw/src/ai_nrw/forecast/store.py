@@ -12,6 +12,24 @@ from ai_nrw.forecast.base import DailyForecast, ForecastPoint
 from ai_nrw.store import db
 
 
+def load_points(target_id: str) -> list[dict]:
+    """Titik forecast tersimpan (list dict mentah dari jsonb), [] bila belum ada.
+
+    Dipakai detektor early-warning tiap siklus anomali — 1 lookup PK per channel,
+    murah. Baris legacy (per-hari, tanpa `ts`) ikut terkirim; pemakai yang menyaring.
+    """
+    rows = db.fetch_all(
+        "SELECT daily FROM ai_forecast WHERE target_id = CAST(:t AS uuid)",
+        {"t": target_id},
+    )
+    if not rows:
+        return []
+    daily = rows[0]["daily"]
+    if isinstance(daily, str):  # driver bisa mengembalikan jsonb sebagai teks
+        daily = json.loads(daily)
+    return daily or []
+
+
 def save(
     id_owner: str,
     target_id: str,

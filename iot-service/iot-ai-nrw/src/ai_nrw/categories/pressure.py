@@ -28,7 +28,8 @@ CATEGORY = register_category(
             "A10_drift": {"delta": 0.5, "lambda": 5.0, "min_instances": 30},
             "night_pressure": {"night_start": "00:00", "night_end": "04:00",
                                "agg": "median", "drop_frac": 0.15},
-            "forecast": {"horizon_days": 7},   # Tier-0 seasonal-naive dari grid
+            # Tier-0 seasonal-naive dari grid + early-warning lewat-ambang
+            "forecast": {"horizon_days": 7, "early_warning": True, "lead_max": "48h"},
             # default no-op (24 jam, tanpa libur) — jaringan "nyala 20 jam" tinggal
             # mengubah windows, mis. ["04:00-24:00"]; holidays: ["2026-03-31", "12-25"]
             "active_schedule": {"windows": ["00:00-24:00"], "tz": "Asia/Jakarta",
@@ -47,6 +48,7 @@ CATEGORY = register_category(
             "A10_drift": "Tekanan menurun perlahan menetap — indikasi kuat kebocoran merambat (slow leak).",
             "night_pressure": "Tekanan malam lebih rendah dari biasanya — indikasi kebocoran (air lolos saat tanpa pemakaian).",
             "active_schedule": "Jam operasi channel + kalender libur — di luar jam aktif, alarm nol/datar dibungkam.",
+            "forecast_breach": "Tekanan diprakirakan melewati batas layanan — peringatan dini sebelum benar-benar terjadi.",
         },
     )
 )
