@@ -127,10 +127,26 @@ def run_baseline_cycle(
     return totals
 
 
+def _next_step_boundary(now: datetime, step_min: int) -> datetime:
+    """Titik forecast pertama = batas langkah berikutnya setelah `now` (detik dibuang).
+
+    Disnap ke kisi menit-dalam-hari, jadi timestamp forecast sejajar dengan slot grid
+    (10:00, 10:10, ...) dan bukan offset acak dari saat cron kebetulan jalan.
+    """
+    minutes_of_day = now.hour * 60 + now.minute
+    next_bucket = minutes_of_day // step_min + 1
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return midnight + timedelta(minutes=next_bucket * step_min)
+
+
 def run_forecast_cycle(
     now: datetime | None = None, only_targets: set[str] | None = None
 ) -> dict[str, int]:
-    """Ramalan harian (Tier-0 seasonal-naive dari grid) untuk channel yang ON forecast.
+    """Ramalan Tier-0 (seasonal-naive dari grid) untuk channel yang ON forecast.
+
+    Resolusi = slot grid baseline (default 10 menit), bukan per hari — profil harian
+    (puncak pagi, lembah malam) ikut terbawa. Mulai dari langkah berikutnya setelah `now`
+    supaya garis forecast menyambung dengan ekor data aktual di chart.
 
     Butuh grid sudah di-learn (run_baseline_cycle). Grid kosong → channel dilewati.
     """
@@ -141,7 +157,6 @@ def run_forecast_cycle(
     if not configs:
         return {}
 
-    start = (now + timedelta(days=1)).date()  # d=0 = besok
     totals = {"channels": 0, "skipped": 0, "errors": 0}
     for cfg in configs:
         try:
@@ -154,15 +169,28 @@ def run_forecast_cycle(
             # band_pct (persen, UI-friendly) → fraksi lebar pita minimum. Default 20%.
             band_pct = float(params.get("band_pct", 20))
             min_band_frac = max(0.0, band_pct / 100.0)
-            daily = fc_seasonal.forecast_daily(
-                bl.grid, start, horizon_days=horizon, min_band_frac=min_band_frac
+            # step_min disnap ke kelipatan slot grid — forecast tak bisa lebih halus dari grid.
+            step = fc_seasonal.snap_step(
+                int(params.get("step_min", bl.slot_size_min)), bl.slot_size_min
             )
-            if not daily:
+            points = fc_seasonal.forecast_slots(
+                bl.grid,
+                _next_step_boundary(now, step),
+                horizon_days=horizon,
+                slot_size_min=bl.slot_size_min,
+                step_min=step,
+                min_band_frac=min_band_frac,
+            )
+            if not points:
                 totals["skipped"] += 1
                 continue
             forecast_store.save(
-                cfg.id_owner, cfg.target_id, horizon, fc_seasonal.TIER, daily,
-                metrics={"method": "seasonal_naive", "days": len(daily)},
+                cfg.id_owner, cfg.target_id, horizon, fc_seasonal.TIER, points,
+                metrics={
+                    "method": "seasonal_naive",
+                    "step_min": step,
+                    "points": len(points),
+                },
             )
             totals["channels"] += 1
         except Exception as e:  # noqa: BLE001

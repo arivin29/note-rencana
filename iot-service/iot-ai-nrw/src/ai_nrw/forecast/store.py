@@ -1,13 +1,14 @@
 """Persistensi ai_forecast — overwrite ramalan terbaru per channel (unik per target).
 
-Ref: dok 06 §6. `daily` = list DailyForecast (jsonb), `metrics` = metadata metode.
+Ref: dok 06 §6. Kolom `daily` (jsonb) kini menampung list ForecastPoint ber-timestamp —
+namanya sejarah, isinya bukan lagi per hari. `metrics.step_min` memberi tahu resolusinya.
 """
 
 from __future__ import annotations
 
 import json
 
-from ai_nrw.forecast.base import DailyForecast
+from ai_nrw.forecast.base import DailyForecast, ForecastPoint
 from ai_nrw.store import db
 
 
@@ -16,7 +17,7 @@ def save(
     target_id: str,
     horizon_days: int,
     tier: str,
-    daily: list[DailyForecast],
+    daily: list[ForecastPoint] | list[DailyForecast],
     metrics: dict | None = None,
 ) -> None:
     db.execute(
