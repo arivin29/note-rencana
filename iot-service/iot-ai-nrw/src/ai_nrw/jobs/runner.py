@@ -18,12 +18,17 @@ log = structlog.get_logger()
 
 
 def _latest_event_time(target_id: str):
-    """max(event_time) channel di ClickHouse (untuk anomali as-of). None bila gagal."""
+    """max(event_time) channel di ClickHouse (untuk anomali as-of), sebagai instant UTC
+    TERKOREKSI — samakan dgn koreksi tz di ingestor.fetch_new_points supaya `asof` sejajar
+    dengan timestamp sampel (bukan mundur 7 jam). None bila kosong/gagal."""
     try:
         from ai_nrw.store.clickhouse import client
 
+        # toString(event_time) merender wall-clock di tz kolom (mis-tag), lalu di-parse
+        # ULANG sbg UTC = instant yang dimaksud — identik dgn koreksi ts_utc di ingestor.
         rows = client().query(
-            "SELECT max(event_time) FROM iot.sensor_telemetry WHERE channel_id = {t:UUID}",
+            "SELECT toDateTime64(toString(max(event_time)), 3, 'UTC') "
+            "FROM iot.sensor_telemetry WHERE channel_id = {t:UUID}",
             parameters={"t": target_id},
         ).result_rows
         return rows[0][0] if rows and rows[0][0] else None
