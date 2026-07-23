@@ -1,6 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AiAnalytics, AiEventDetail, AiNrwService } from '../../../../services/ai-nrw.service';
+import {
+  AiAnalysisItem,
+  AiAnalytics,
+  AiConfigDetail,
+  AiEventDetail,
+  AiNrwService,
+} from '../../../../services/ai-nrw.service';
+import { detectorDoc, paramDoc } from '../channel-settings/ai-param-docs';
 
 /**
  * Event Detail — dijelaskan untuk orang awam (dok 08 §2).
@@ -60,6 +67,7 @@ export class EventInboxDetailPage implements OnInit {
         this.event = e;
         this.rebuildDerived();
         this.loadChart();
+        this.loadConfig();
         this.loading = false;
       },
       error: (err) => {
@@ -411,6 +419,165 @@ export class EventInboxDetailPage implements OnInit {
   openAnalytics(): void {
     // buka Channel Hub langsung di tab Chart (analitik lengkap), bukan halaman chart terpisah
     if (this.event) this.router.navigate(['/iot/ai/channel', this.event.targetId], { queryParams: { tab: 'chart' } });
+  }
+
+  openSettings(): void {
+    // buka editor detektor lengkap (semua A1–A10) di hub
+    if (this.event) this.router.navigate(['/iot/ai/channel', this.event.targetId], { queryParams: { tab: 'settings' } });
+  }
+
+  // ======================================================================
+  // Editor konfigurasi inline — atur/longgarkan detektor yang memicu event ini
+  // ======================================================================
+  cfg: AiConfigDetail | null = null;
+  cfgAnalysis: AiAnalysisItem | null = null; // detektor pemicu (referensi ke cfg.analyses[i])
+  cfgLoading = false;
+  cfgSaving = false;
+  cfgMsg: string | null = null;
+  cfgErr: string | null = null;
+
+  /** event.analysisType → key config (kebanyakan identik; forecast_breach dari analisis 'forecast'). */
+  private configTypeFor(t: string): string {
+    return { forecast_breach: 'forecast', night_pressure: 'night_pressure' }[t] || t;
+  }
+
+  /** Param sensitivitas utama tiap detektor untuk tombol "Longgarkan". */
+  private readonly loosenParam: Record<string, string> = {
+    A10_drift: 'delta',
+    A5_flatline: 'n',
+    A2_low: 'sustain_T',
+    A3_high: 'sustain_T',
+    A9_deviation: 'k',
+    A7_nodata: 'no_data_timeout',
+    A8_persistent: 'persist_window',
+    A6_noise: 'factor',
+    A4_spike: 'k',
+    night_pressure: 'drop_frac',
+  };
+
+  private loadConfig(): void {
+    const e = this.event;
+    if (!e?.targetId) return;
+    this.cfgLoading = true;
+    this.cfg = this.cfgAnalysis = null;
+    this.cfgMsg = this.cfgErr = null;
+    this.ai.getConfig(e.targetId).subscribe({
+      next: (d) => {
+        this.cfg = d;
+        const key = this.configTypeFor(e.analysisType);
+        const a = (d.analyses || []).find((x) => x.analysisType === key) || null;
+        if (a) this.cfgAnalysis = this.decorateAnalysis(a);
+        this.cfgLoading = false;
+      },
+      error: () => {
+        this.cfgLoading = false; // channel belum punya config → panel tak tampil
+      },
+    });
+  }
+
+  /** Lengkapi satu analisis dengan label ramah + hint (pakai kamus ai-param-docs). */
+  private decorateAnalysis(a: AiAnalysisItem): AiAnalysisItem {
+    const doc = detectorDoc(a.analysisType);
+    a.title = doc.title;
+    a.what = doc.what;
+    a.paramFields = a.params
+      ? Object.keys(a.params).map((key) => {
+          const v = a.params[key];
+          const type = typeof v === 'boolean' ? 'boolean' : typeof v === 'number' ? 'number' : 'text';
+          const pd = paramDoc(a.analysisType, key);
+          return { key, type, label: pd?.label, help: pd?.help, recommended: pd?.recommended, unit: pd?.unit, min: pd?.min, max: pd?.max, step: pd?.step };
+        })
+      : [];
+    return a;
+  }
+
+  trackByParamKey = (_: number, p: { key: string }): string => p.key;
+
+  setCfgParam(key: string, value: any, type: string): void {
+    const a = this.cfgAnalysis;
+    if (!a) return;
+    if (!a.params) a.params = {};
+    if (type === 'number') {
+      const n = Number(value);
+      a.params[key] = value === '' || isNaN(n) ? value : n;
+    } else if (type === 'boolean') {
+      a.params[key] = !!value;
+    } else {
+      a.params[key] = value;
+    }
+    this.cfgMsg = null;
+  }
+
+  /** Ada param sensitivitas yang bisa dilonggarkan untuk detektor ini? */
+  get canLoosen(): boolean {
+    const a = this.cfgAnalysis;
+    const k = a && this.loosenParam[a.analysisType];
+    return !!(a?.enabled && k && a.params && a.params[k] != null);
+  }
+
+  /** Naikkan ambang param kunci ~1.5× → detektor jadi kurang sensitif (alarm lebih sedikit). */
+  loosen(): void {
+    const a = this.cfgAnalysis;
+    if (!a) return;
+    const key = this.loosenParam[a.analysisType];
+    if (!key || a.params?.[key] == null) return;
+    const old = a.params[key];
+    const next = this.scaleLooser(old);
+    if (next == null || String(next) === String(old)) {
+      this.cfgMsg = 'Sudah pada nilai paling longgar yang wajar.';
+      return;
+    }
+    a.params[key] = next;
+    const label = paramDoc(a.analysisType, key)?.label || key;
+    this.cfgMsg = `Dilonggarkan — ${label}: ${old} → ${next}. Klik "Simpan" untuk menerapkan.`;
+  }
+
+  /** Skala nilai jadi lebih longgar: angka ×1.5, durasi "15m"/"4h" ×1.5. */
+  private scaleLooser(v: any): any {
+    if (typeof v === 'number') {
+      const n = v * 1.5;
+      return Number.isInteger(v) ? Math.max(v + 1, Math.round(n)) : Math.round(n * 100) / 100;
+    }
+    const m = String(v).trim().match(/^(\d+(?:\.\d+)?)\s*([smhd])$/i);
+    if (m) {
+      const scaled = Math.max(Number(m[1]) + 1, Math.round(Number(m[1]) * 1.5));
+      return `${scaled}${m[2].toLowerCase()}`;
+    }
+    return null;
+  }
+
+  toggleCfgEnabled(): void {
+    if (this.cfgAnalysis) {
+      this.cfgAnalysis.enabled = !this.cfgAnalysis.enabled;
+      this.cfgMsg = null;
+    }
+  }
+
+  /** Matikan detektor ini & simpan langsung (jalur cepat untuk alarm yang dianggap noise). */
+  disableDetector(): void {
+    if (!this.cfgAnalysis) return;
+    this.cfgAnalysis.enabled = false;
+    this.saveConfig('Deteksi ini dimatikan.');
+  }
+
+  saveConfig(okMsg = 'Konfigurasi tersimpan.'): void {
+    if (!this.cfg || !this.cfgAnalysis) return;
+    this.cfgSaving = true;
+    this.cfgMsg = this.cfgErr = null;
+    this.ai.updateConfig(this.cfg.targetId, { analyses: this.cfg.analyses }).subscribe({
+      next: (d) => {
+        this.cfg = d;
+        const key = this.configTypeFor(this.event!.analysisType);
+        const a = (d.analyses || []).find((x) => x.analysisType === key) || null;
+        this.cfgAnalysis = a ? this.decorateAnalysis(a) : null;
+        this.cfgSaving = false;
+        this.cfgMsg = okMsg + ' Berlaku pada siklus deteksi berikutnya (±5 menit).';
+      },
+      error: (err) => {
+        this.cfgSaving = false;
+        this.cfgErr = err?.error?.message || err?.message || 'Gagal menyimpan konfigurasi';
+      },
+    });
   }
 
   // ======================================================================
