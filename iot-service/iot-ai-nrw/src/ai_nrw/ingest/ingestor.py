@@ -10,11 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from ai_nrw.settings import settings
 from ai_nrw.store.clickhouse import client
 
 
 def _as_utc(ts: datetime) -> datetime:
-    """event_time ClickHouse = UTC; lekatkan tzinfo bila naive agar konsisten aware-UTC."""
+    """ts_utc dari query sudah instant UTC yang benar; lekatkan tzinfo bila naive."""
     return ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)
 
 
@@ -22,17 +23,27 @@ def _as_utc(ts: datetime) -> datetime:
 class Point:
     """Satu titik telemetry (nilai utama = eng_value)."""
 
-    ts: datetime          # event_time (UTC)
+    ts: datetime          # event_time (UTC, sudah dikoreksi tz — lihat _QUERY)
     value: float | None   # eng_value
     raw: float | None     # raw_value
 
 
+# KOREKSI TIMEZONE (lihat settings.ch_event_tz): kolom event_time ter-tag Asia/Jakarta
+# padahal nilainya wall-clock UTC. Kita bandingkan & kembalikan pada basis wall-clock
+# yang konsisten agar jendela ingest berbasis UTC benar-benar menyentuh data terbaru:
+#   - boundary  : {since} (wall-clock UTC) di-parse ULANG di tz kolom → sejajar event_time.
+#                 event_time dibiarkan telanjang di WHERE agar indeks tetap terpakai.
+#   - ts_utc    : wall-clock event_time (di tz kolom) di-parse ULANG sebagai UTC =
+#                 instant yang DIMAKSUD produser. Bila kolom kelak jadi UTC murni
+#                 (AINRW_CH_EVENT_TZ=UTC), kedua ekspresi jadi no-op.
 _QUERY = """
-SELECT channel_id, event_time, eng_value, raw_value
+SELECT channel_id,
+       toDateTime64(toString(event_time), 3, 'UTC') AS ts_utc,
+       eng_value, raw_value
 FROM iot.sensor_telemetry
 WHERE has({ids:Array(UUID)}, channel_id)
-  AND event_time > {since:DateTime64(3)}
-ORDER BY event_time ASC, channel_id
+  AND event_time > toDateTime64({since_wall:String}, 3, {ch_tz:String})
+ORDER BY ts_utc ASC, channel_id
 """
 
 
@@ -49,9 +60,12 @@ def fetch_new_points(
     if not channel_ids:
         return {}
 
+    # wall-clock UTC dari `since` (buang tzinfo) → dibaca ulang di tz kolom oleh query
+    since_wall = since.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
     result = client().query(
         _QUERY,
-        parameters={"ids": channel_ids, "since": since},
+        parameters={"ids": channel_ids, "since_wall": since_wall, "ch_tz": settings.ch_event_tz},
     )
 
     out: dict[str, list[Point]] = {cid: [] for cid in channel_ids}

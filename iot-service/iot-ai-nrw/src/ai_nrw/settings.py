@@ -31,13 +31,20 @@ class Settings(BaseSettings):
     ch_database: str = "iot"
     ch_user: str = "default"
     ch_password: str = ""
+    # TZ kolom event_time di sensor_telemetry. Di produksi kolomnya ter-tag
+    # Asia/Jakarta padahal nilainya adalah wall-clock UTC (mis-tag pipeline) — tanpa
+    # kompensasi, jendela ingest berbasis UTC meleset ~7 jam & worker "kelaparan data".
+    # Ingestor menafsir ulang wall-clock event_time sebagai UTC (lihat ingestor.py).
+    # Bila pipeline dibetulkan jadi UTC murni, set AINRW_CH_EVENT_TZ=UTC → jadi no-op.
+    ch_event_tz: str = "Asia/Jakarta"
 
     # --- Cadence default (dok 05 §4) — bisa di-override per target di ai_config ---
     cadence_anomaly_sec: int = 300      # 5 menit (data ingest tetap 2 menit)
     cadence_jobs_sec: int = 15          # poll antrean job manual (hitung-ulang on-demand)
-    cadence_baseline_cron: str = "30 2 * * *"  # learn grid musiman (A9), harian dini hari
-    cadence_forecast_cron: str = "0 2 * * *"   # harian, dini hari
-    cadence_recurrence_cron: str = "0 * * * *" # tiap jam
+    # baseline HARUS sebelum forecast: forecast Tier-0 baca grid hasil baseline.
+    cadence_baseline_cron: str = "0 2 * * *"    # learn grid musiman (A9), 02:00
+    cadence_forecast_cron: str = "30 2 * * *"   # ramalan, 02:30 (setelah grid segar)
+    cadence_recurrence_cron: str = "0 * * * *"  # tiap jam
 
     # --- Sharding (dok 05 §6) — worker ini menangani tenant mana ---
     tenant_ids: list[str] | None = None   # None = semua tenant (skala kecil)
