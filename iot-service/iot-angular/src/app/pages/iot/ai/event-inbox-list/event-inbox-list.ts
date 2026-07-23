@@ -220,6 +220,25 @@ export class EventInboxListPage implements OnInit {
     return ['baru', 'ditinjau', 'ditindak'].includes(e.status);
   }
 
+  /** Nama channel tanpa prefiks nama node — node sudah tampil di segmen sendiri,
+   *  jadi "Tenggarong (node6) tekanan" cukup jadi "tekanan". */
+  channelShort(e: AiEventListItem): string {
+    const ch = (e.channelName || '').trim();
+    const nd = (e.nodeName || '').trim();
+    if (nd && ch.toLowerCase().startsWith(nd.toLowerCase())) {
+      const rest = ch.slice(nd.length).replace(/^[\s\-–—:·»›|]+/, '').trim();
+      if (rest) return rest;
+    }
+    return ch;
+  }
+
+  /** Tampilkan tag grup hanya bila menambah info (bukan sekadar mengulang channel). */
+  showGroup(e: AiEventListItem): boolean {
+    const g = (e.groupName || '').trim().toLowerCase();
+    if (!g) return false;
+    return !this.channelShort(e).toLowerCase().includes(g);
+  }
+
   /** Kode pendek untuk chip (A2_low → A2; forecast_breach → Prediksi). */
   codeChip(analysisType: string): string {
     const m = analysisType.match(/^A(\d+)_/);

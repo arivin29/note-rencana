@@ -117,8 +117,8 @@
           <i class="fa fa-location-dot fa-fw opacity-50"></i>
           <ng-container *ngIf="e.projectName">{{ e.projectName }} <span class="opacity-50">›</span> </ng-container>
           <ng-container *ngIf="e.nodeName">{{ e.nodeName }} <span class="opacity-50">›</span> </ng-container>
-          <span class="text-inverse">{{ e.channelName }}</span>
-          <span *ngIf="e.groupName" class="ms-1 opacity-75">({{ e.groupName }})</span>
+          <span class="text-inverse">{{ channelShort(e) }}</span>
+          <span *ngIf="showGroup(e)" class="ms-1 opacity-75">({{ e.groupName }})</span>
         </div>
 
         <!-- Baris 3: ANGKA vs ambang (sembunyi bila tak ada data) -->
