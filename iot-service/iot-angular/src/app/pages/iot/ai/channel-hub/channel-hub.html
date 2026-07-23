@@ -24,7 +24,7 @@
 <card class="shadow-sm mb-3">
   <ul class="nav nav-tabs nav-tabs-v2 px-3 pt-1">
     <li class="nav-item me-2" *ngFor="let t of tabs">
-      <a href="javascript:;" class="nav-link px-3" [class.active]="activeTab === t.key" (click)="activeTab = t.key">
+      <a href="javascript:;" class="nav-link px-3" [class.active]="activeTab === t.key" (click)="setTab(t.key)">
         <i class="fa fa-fw me-1" [ngClass]="t.icon"></i> {{ t.label }}
       </a>
     </li>

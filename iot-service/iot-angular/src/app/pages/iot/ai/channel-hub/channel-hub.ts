@@ -34,10 +34,30 @@ export class ChannelHubPage implements OnInit {
     private ai: AiNrwService,
   ) {}
 
+  private readonly tabKeys = ['overview', 'chart', 'events', 'settings'] as const;
+
   ngOnInit(): void {
     this.route.paramMap.subscribe((p) => {
       this.targetId = p.get('targetId');
       if (this.targetId) this.loadMeta();
+    });
+    // deep-link tab via ?tab= (mis. tombol "Analitik lengkap" → ?tab=chart)
+    this.route.queryParamMap.subscribe((q) => {
+      const tab = q.get('tab');
+      if (tab && (this.tabKeys as readonly string[]).includes(tab)) {
+        this.activeTab = tab as ChannelHubPage['activeTab'];
+      }
+    });
+  }
+
+  /** Ganti tab + cerminkan ke URL (?tab=) agar bisa di-bookmark/dibagikan. */
+  setTab(tab: 'overview' | 'chart' | 'events' | 'settings'): void {
+    this.activeTab = tab;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
     });
   }
 

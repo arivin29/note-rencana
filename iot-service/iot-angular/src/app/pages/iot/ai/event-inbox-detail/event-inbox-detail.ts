@@ -409,7 +409,8 @@ export class EventInboxDetailPage implements OnInit {
   }
 
   openAnalytics(): void {
-    if (this.event) this.router.navigate(['/iot/ai/analytics', this.event.targetId]);
+    // buka Channel Hub langsung di tab Chart (analitik lengkap), bukan halaman chart terpisah
+    if (this.event) this.router.navigate(['/iot/ai/channel', this.event.targetId], { queryParams: { tab: 'chart' } });
   }
 
   // ======================================================================
