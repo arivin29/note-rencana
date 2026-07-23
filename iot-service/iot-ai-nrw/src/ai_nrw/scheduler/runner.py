@@ -31,7 +31,9 @@ def build_scheduler() -> BlockingScheduler:
         id="anomaly",
         max_instances=1,
         coalesce=True,
-        next_run_time=None,  # tunggu tick pertama; panggil manual di boot bila perlu
+        # JANGAN set next_run_time=None → itu menandai job PAUSED (tak pernah jalan) di
+        # APScheduler, bukan "tunggu tick pertama". IntervalTrigger default sudah menunda
+        # tembakan pertama sebesar satu interval; itulah perilaku yang diinginkan.
     )
     sched.add_job(
         run_jobs_cycle,
