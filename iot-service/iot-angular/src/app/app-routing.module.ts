@@ -151,6 +151,12 @@ const routes: Routes = [
         data: { title: 'AI-NRW' }
     },
     {
+        path: 'iot/notifications',
+        loadChildren: () => import('./pages/iot/notifications/notifications.module').then((m) => m.NotificationsModule),
+        canActivate: [AuthGuard],
+        data: { title: 'Pusat Notifikasi' }
+    },
+    {
         path: 'iot/telemetry-channels',
         loadChildren: () => import('./pages/iot/telemetry-channels/telemetry-channels.module').then((m) => m.TelemetryChannelsModule)
     },

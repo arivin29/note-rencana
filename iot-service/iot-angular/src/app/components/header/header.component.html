@@ -119,9 +119,10 @@
 				</div>
 			</ng-container>
 			<hr class="my-0 mt-2">
-			<div class="py-10px mb-n2 text-center d-flex justify-content-around">
+			<div class="py-10px mb-n2 text-center d-flex justify-content-around align-items-center">
 				<a href="javascript:;" (click)="markAllAsRead()" class="text-decoration-none fw-bold" *ngIf="unreadCount > 0">MARK ALL READ</a>
-				<a routerLink="/iot/alerts" class="text-decoration-none fw-bold">SEE ALL</a>
+				<a routerLink="/iot/notifications" class="text-decoration-none fw-bold">PUSAT NOTIFIKASI</a>
+				<a routerLink="/iot/notifications" [queryParams]="{ tab: 'settings' }" class="text-decoration-none" title="Pengaturan notifikasi"><i class="bi bi-gear fs-14px"></i></a>
 			</div>
 		</div>
 	</div>

@@ -1,0 +1,133 @@
+<!-- Breadcrumb + judul -->
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
+  <li class="breadcrumb-item active">Pusat Notifikasi</li>
+</ol>
+<h1 class="page-header mb-1">Pusat Notifikasi</h1>
+<div class="text-body text-opacity-60 mb-3">Atur event apa saja yang dinotifikasi & preferensi pribadimu.</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs nav-tabs-v2 mb-3">
+  <li class="nav-item me-2">
+    <a class="nav-link" [class.active]="activeTab === 'inbox'" href="javascript:;" (click)="setTab('inbox')">
+      <i class="bi bi-inbox me-1"></i> Kotak Masuk
+    </a>
+  </li>
+  <li class="nav-item me-2">
+    <a class="nav-link" [class.active]="activeTab === 'settings'" href="javascript:;" (click)="setTab('settings')">
+      <i class="bi bi-sliders me-1"></i> Pengaturan
+    </a>
+  </li>
+  <li class="nav-item me-2">
+    <a class="nav-link" [class.active]="activeTab === 'prefs'" href="javascript:;" (click)="setTab('prefs')">
+      <i class="bi bi-person-gear me-1"></i> Preferensi Saya
+    </a>
+  </li>
+</ul>
+
+<!-- ===== Tab: Kotak Masuk (placeholder — dok 03) ===== -->
+<div *ngIf="activeTab === 'inbox'">
+  <card>
+    <card-body>
+      <div class="text-center text-body text-opacity-50 py-5">
+        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+        Kotak masuk notifikasi akan hadir bersama mesin pengirim (dispatcher).
+        Sementara ini, atur dulu <a href="javascript:;" (click)="setTab('settings')">Pengaturan</a>.
+      </div>
+    </card-body>
+  </card>
+</div>
+
+<!-- ===== Tab: Pengaturan (rules per-owner) ===== -->
+<div *ngIf="activeTab === 'settings'">
+  <!-- admin harus pilih owner -->
+  <card class="mb-3" *ngIf="isAdmin">
+    <card-body>
+      <div class="d-flex align-items-end gap-2 flex-wrap">
+        <div class="flex-grow-1">
+          <label class="form-label mb-1">ID Owner (admin memilih tenant)</label>
+          <input type="text" class="form-control" [(ngModel)]="adminOwnerId" placeholder="uuid owner…" />
+        </div>
+        <button class="btn btn-outline-theme" (click)="loadRules()">Muat</button>
+      </div>
+      <div class="text-body text-opacity-50 small mt-2">
+        Sebagai admin kamu bisa mengatur rule owner mana pun. Tenant otomatis ter-scope ke owner-nya.
+      </div>
+    </card-body>
+  </card>
+
+  <div *ngIf="rulesLoading" class="text-center py-5"><div class="spinner-border text-theme"></div></div>
+  <div *ngIf="rulesError" class="alert alert-danger">{{ rulesError }}</div>
+
+  <div *ngIf="!rulesLoading && !groups.length && isAdmin && !rulesError" class="alert alert-info">
+    Masukkan ID Owner lalu klik <b>Muat</b> untuk mengatur rule.
+  </div>
+
+  <card *ngFor="let g of groups" class="mb-3">
+    <card-header class="d-flex align-items-center justify-content-between">
+      <span><b>{{ g.label }}</b> <span class="text-body text-opacity-50">· {{ enabledCount(g) }}/{{ g.rows.length }} aktif</span></span>
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-theme" (click)="toggleAll(g, true)" [disabled]="groupAllOn(g)">Aktifkan semua</button>
+        <button class="btn btn-outline-default" (click)="toggleAll(g, false)">Matikan semua</button>
+      </div>
+    </card-header>
+    <card-body>
+      <div class="form-check form-switch mb-2 d-flex align-items-center" *ngFor="let r of g.rows; trackBy: trackByTrigger">
+        <input class="form-check-input me-2" type="checkbox" [(ngModel)]="r.enabled" [id]="'rule-' + r.triggerKey" />
+        <label class="form-check-label flex-grow-1" [for]="'rule-' + r.triggerKey">{{ r.label }}</label>
+        <span [class]="severityBadge(r.defaultSeverity)">{{ r.defaultSeverity }}</span>
+      </div>
+    </card-body>
+  </card>
+
+  <div class="d-flex align-items-center gap-3" *ngIf="groups.length">
+    <button class="btn btn-theme" (click)="saveRules()" [disabled]="rulesSaving">
+      <span *ngIf="rulesSaving" class="spinner-border spinner-border-sm me-1"></span> Simpan Pengaturan
+    </button>
+    <span class="text-success" *ngIf="rulesSavedMsg"><i class="bi bi-check-circle me-1"></i>{{ rulesSavedMsg }}</span>
+  </div>
+</div>
+
+<!-- ===== Tab: Preferensi Saya (per-user) ===== -->
+<div *ngIf="activeTab === 'prefs'">
+  <div *ngIf="prefsLoading" class="text-center py-5"><div class="spinner-border text-theme"></div></div>
+  <div *ngIf="prefsError" class="alert alert-danger">{{ prefsError }}</div>
+
+  <ng-container *ngIf="!prefsLoading">
+    <card class="mb-3">
+      <card-header><b>Jam tenang</b> <span class="text-body text-opacity-50">· bisukan semua notifikasi pada rentang ini</span></card-header>
+      <card-body>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <div>
+            <label class="form-label mb-1 small">Mulai</label>
+            <input type="time" class="form-control" [(ngModel)]="quietStart" />
+          </div>
+          <div>
+            <label class="form-label mb-1 small">Selesai</label>
+            <input type="time" class="form-control" [(ngModel)]="quietEnd" />
+          </div>
+        </div>
+      </card-body>
+    </card>
+
+    <card class="mb-3">
+      <card-header><b>Bisukan tipe tertentu</b> <span class="text-body text-opacity-50">· hanya untuk akunmu</span></card-header>
+      <card-body>
+        <div *ngIf="!mutable.length" class="text-body text-opacity-50">Belum ada tipe aktif untuk owner ini.</div>
+        <div class="form-check form-switch mb-2 d-flex align-items-center" *ngFor="let m of mutable; trackBy: trackByTrigger">
+          <input class="form-check-input me-2" type="checkbox" [(ngModel)]="m.muted" [id]="'mute-' + m.triggerKey" />
+          <label class="form-check-label flex-grow-1" [for]="'mute-' + m.triggerKey">
+            {{ m.label }} <span class="text-body text-opacity-40 small">({{ m.groupKey }})</span>
+          </label>
+        </div>
+      </card-body>
+    </card>
+
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-theme" (click)="savePrefs()" [disabled]="prefsSaving">
+        <span *ngIf="prefsSaving" class="spinner-border spinner-border-sm me-1"></span> Simpan Preferensi
+      </button>
+      <span class="text-success" *ngIf="prefsSavedMsg"><i class="bi bi-check-circle me-1"></i>{{ prefsSavedMsg }}</span>
+    </div>
+  </ng-container>
+</div>
