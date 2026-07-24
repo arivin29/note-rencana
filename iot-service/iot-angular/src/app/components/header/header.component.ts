@@ -14,6 +14,7 @@ interface NotificationData {
   title: string;
   time: string;
   isRead: boolean;
+  deepLink?: string;
 }
 
 @Component({
@@ -122,12 +123,32 @@ export class HeaderComponent implements OnInit {
 	 */
 	private mapNotification(item: any): NotificationData {
 		return {
-			id: item.id || item._id,
+			// Backend memakai idNotification; `item.id` selalu undefined (bug lama).
+			id: item.idNotification || item.id,
 			icon: this.getNotificationIcon(item.type),
 			title: item.title || 'Notification',
 			time: this.getRelativeTime(item.createdAt || item.created_at),
-			isRead: item.isRead || false
+			isRead: item.isRead || false,
+			// Dispatcher menaruh tujuan asal event di data.deepLink (Dok 03).
+			deepLink: item.data?.deepLink
 		};
+	}
+
+	/**
+	 * Buka notifikasi: tandai dibaca lalu lompat ke sumber event-nya.
+	 */
+	openNotification(notification: NotificationData): void {
+		const target = notification.deepLink || '/iot/notifications';
+		if (notification.id && !notification.isRead) {
+			this.notificationsService.notificationsControllerMarkAsRead$Response({ id: notification.id }).subscribe({
+				next: () => {
+					notification.isRead = true;
+					this.unreadCount = Math.max(0, this.unreadCount - 1);
+				},
+				error: (err) => console.error('Error marking notification as read:', err)
+			});
+		}
+		this.router.navigateByUrl(target);
 	}
 
 	/**

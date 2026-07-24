@@ -100,7 +100,7 @@
 			<h6 class="dropdown-header fs-10px mb-1">NOTIFICATIONS ({{ unreadCount }})</h6>
 			<div class="dropdown-divider mt-1"></div>
 			<ng-container *ngIf="notificationData.length > 0">
-				<a href="javascript:;" class="d-flex align-items-center py-10px dropdown-item text-wrap fw-semibold" *ngFor="let notification of notificationData">
+				<a href="javascript:;" (click)="openNotification(notification)" class="d-flex align-items-center py-10px dropdown-item text-wrap fw-semibold" *ngFor="let notification of notificationData">
 					<div class="fs-20px">
 						<i *ngIf="notification.icon" [ngClass]="notification.icon"></i>
 					</div>
