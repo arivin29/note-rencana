@@ -1,5 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 import { NodeConfig, NodeModel, AddedSensor, PayloadField } from './pairing-workspace.types';
 import { UnpairedDevicesService } from 'src/sdk/core/services';
 import { UnpairedDeviceResponseDto } from 'src/sdk/core/models';
@@ -110,7 +112,8 @@ export class PairingWorkspacePage implements OnInit, OnDestroy {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private unpairedDevicesService: UnpairedDevicesService
+        private unpairedDevicesService: UnpairedDevicesService,
+        private http: HttpClient
     ) { }
 
     private get storageKey(): string {
@@ -282,15 +285,38 @@ export class PairingWorkspacePage implements OnInit, OnDestroy {
     onSubmitPairing(payload: any): void {
         console.log('Submitting pairing configuration:', payload);
 
-        // If node was created in step 1, we already have id_node
-        // Update unpaired device status with the node ID
-        if (this.id_node && this.stepReviewSubmit) {
-            this.stepReviewSubmit.updateUnpairedDeviceStatus(this.id_node);
+        // Node target: node baru (dibuat step 1) atau node existing yang dipilih.
+        const nodeId = this.id_node || this.nodeConfig?.selectedExistingNode?.idNode || null;
+
+        // Tautkan profil lewat endpoint assign-profile: backend menjamin SETIAP node
+        // punya profil sendiri (duplikat bila sumber sudah dipakai node lain) — tak berbagi
+        // instance, dan transaksional (tak ada lagi node tanpa profil). Ganti pola lama yang
+        // meng-assign 1 profil bersama.
+        if (nodeId && this.idSensorProfile) {
+            this.loading = true;
+            this.http.post(`${environment.apiUrl}/api/nodes/${nodeId}/assign-profile`, {
+                idNodeProfile: this.idSensorProfile
+            }).subscribe({
+                next: () => this.finishPairing(nodeId),
+                error: (err) => {
+                    this.loading = false;
+                    console.error('Failed to assign node profile', err);
+                    alert('Node berhasil dibuat, tapi gagal menautkan profil. Coba set profil dari halaman node.');
+                    this.finishPairing(nodeId);
+                }
+            });
+            return;
         }
 
-        // Clear saved state on successful pairing
-        this.clearState();
+        this.finishPairing(nodeId);
+    }
 
+    private finishPairing(nodeId: string | null): void {
+        this.loading = false;
+        if (nodeId && this.stepReviewSubmit) {
+            this.stepReviewSubmit.updateUnpairedDeviceStatus(nodeId);
+        }
+        this.clearState();
         alert('Pairing completed successfully!');
         this.router.navigate(['/iot/unpaired-devices']);
     }

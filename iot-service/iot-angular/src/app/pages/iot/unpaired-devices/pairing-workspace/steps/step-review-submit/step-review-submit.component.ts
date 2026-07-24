@@ -119,28 +119,9 @@ export class StepReviewSubmitComponent implements OnInit, OnChanges {
 
     emitSubmit(): void {
         this.generateFinalPayload();
-        if (this.shouldUpdateNodeProfile()) {
-            const nodeId = this.nodeConfig.selectedExistingNode!.idNode;
-            this.nodesService.nodesControllerUpdate({
-                id: nodeId,
-                body: {
-                    idNodeProfile: this.idSensorProfile || undefined
-                }
-            }).subscribe({
-                next: () => {
-                    this.updateUnpairedDeviceStatus(nodeId);
-                    this.submit.emit(this.finalPayload);
-                },
-                error: (err) => {
-                    console.error('Failed to assign node profile', err);
-                    this.submit.emit(this.finalPayload);
-                }
-            });
-            return;
-        }
-        
-        // For new node creation, emit and let parent handle node creation
-        // Parent will call updateUnpairedDeviceStatus after getting node ID from response
+        // Penautan profil kini ditangani INDUK (onSubmitPairing → POST assign-profile) secara
+        // seragam untuk node baru & existing → menjamin profil-per-node (tak berbagi instance,
+        // transaksional). Di sini cukup emit payload.
         this.submit.emit(this.finalPayload);
     }
 
@@ -186,14 +167,6 @@ export class StepReviewSubmitComponent implements OnInit, OnChanges {
 
     getProfileChannelPath(channelCode: string): string | undefined {
         return this.profileChannelMap[channelCode?.toUpperCase()];
-    }
-
-    private shouldUpdateNodeProfile(): boolean {
-        return (
-            this.nodeConfig.mode === 'existing' &&
-            !!this.nodeConfig.selectedExistingNode?.idNode &&
-            !!this.idSensorProfile
-        );
     }
 
     private loadNodeDetail(): void {
