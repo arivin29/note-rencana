@@ -14,6 +14,8 @@ export interface AlertEventsControllerFindAll$Params {
   limit?: number;
   idAlertRule?: string;
   status?: string;
+  ruleType?: string;
+  severity?: string;
   startDate?: string;
   endDate?: string;
 
@@ -30,6 +32,8 @@ export function alertEventsControllerFindAll(http: HttpClient, rootUrl: string, 
     rb.query('limit', params.limit, {});
     rb.query('idAlertRule', params.idAlertRule, {});
     rb.query('status', params.status, {});
+    rb.query('ruleType', params.ruleType, {});
+    rb.query('severity', params.severity, {});
     rb.query('startDate', params.startDate, {});
     rb.query('endDate', params.endDate, {});
     rb.query('ownerId', params.ownerId, {});

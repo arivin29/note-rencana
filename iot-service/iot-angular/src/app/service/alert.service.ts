@@ -57,6 +57,8 @@ export class AlertService {
     limit?: number;
     idAlertRule?: string;
     status?: string;
+    ruleType?: string;
+    severity?: string;
     startDate?: string;
     endDate?: string;
     ownerId?: string | null;
@@ -66,6 +68,8 @@ export class AlertService {
       limit: filters?.limit,
       idAlertRule: filters?.idAlertRule,
       status: filters?.status,
+      ruleType: filters?.ruleType || undefined,
+      severity: filters?.severity || undefined,
       startDate: filters?.startDate,
       endDate: filters?.endDate,
       ownerId: filters?.ownerId || undefined

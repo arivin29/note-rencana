@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AlertService, AlertStatistics, OfflineNodesSummary } from '../../../service/alert.service';
 import { AuthService } from '../../../services/auth.service';
+import { OwnersService } from '../../../../sdk/core/services/owners.service';
+import { OwnerResponseDto } from '../../../../sdk/core/models/owner-response-dto';
 import { interval, Subscription } from 'rxjs';
 
 @Component({
@@ -10,15 +12,22 @@ import { interval, Subscription } from 'rxjs';
 })
 export class AlertCenterComponent implements OnInit, OnDestroy {
   loading = false;
+  error: string | null = null;
   Math = Math; // Expose Math to template
-  
-  // Auto-refresh subscription
+
+  // Auto-refresh every 5 minutes
   private refreshSubscription?: Subscription;
-  refreshInterval = 300000; // 5 minutes in milliseconds
-  
+  refreshInterval = 300000;
+
   // Owner context for multi-tenant filtering
-  private ownerId: string | null = null;
-  
+  private tenantOwnerId: string | null = null;
+  isAdmin = false;
+  ownerOptions: OwnerResponseDto[] = [];
+  selectedOwnerId = '';
+
+  // Alert categories (rule types) discovered from statistics
+  ruleTypes: string[] = [];
+
   statistics: AlertStatistics = {
     open: 0,
     acknowledged: 0,
@@ -26,7 +35,7 @@ export class AlertCenterComponent implements OnInit, OnDestroy {
     total: 0,
     dateRange: '7d'
   };
-  
+
   offlineSummary: OfflineNodesSummary = {
     warning: 0,
     critical: 0,
@@ -34,195 +43,264 @@ export class AlertCenterComponent implements OnInit, OnDestroy {
   };
 
   alerts: any[] = [];
+  statusOptions: Array<'open' | 'acknowledged' | 'cleared'> = ['open', 'acknowledged', 'cleared'];
   filters = {
     status: 'open',
+    ruleType: '',
     page: 1,
     limit: 20
   };
-  
-  // Pagination metadata
+  pageSizeOptions = [10, 20, 50, 100];
+
   totalAlerts = 0;
   totalPages = 0;
 
   constructor(
     private alertService: AlertService,
-    private authService: AuthService
+    private authService: AuthService,
+    private ownersService: OwnersService
   ) {}
 
   ngOnInit() {
-    // Get owner context from auth token
-    this.ownerId = this.authService.getCurrentOwnerId();
-    console.log('AlertCenter initialized with ownerId:', this.ownerId);
-    
+    this.tenantOwnerId = this.authService.getCurrentOwnerId();
+    this.isAdmin = !this.tenantOwnerId;
+    if (this.isAdmin) {
+      this.loadOwners();
+    }
+
+    this.refreshAll();
+    this.refreshSubscription = interval(this.refreshInterval).subscribe(() => this.refreshAll());
+  }
+
+  private get ownerId(): string | null {
+    return this.isAdmin ? (this.selectedOwnerId || null) : this.tenantOwnerId;
+  }
+
+  private loadOwners() {
+    this.ownersService.ownersControllerFindAll({ page: 1, limit: 200 } as any).subscribe({
+      next: (response: any) => {
+        const parsed = this.parseBody(response);
+        this.ownerOptions = parsed?.data || (Array.isArray(parsed) ? parsed : []);
+      },
+      error: (err) => console.error('Error loading owners:', err)
+    });
+  }
+
+  ngOnDestroy() {
+    this.refreshSubscription?.unsubscribe();
+  }
+
+  refreshAll() {
     this.loadStatistics();
     this.loadOfflineSummary();
     this.loadAlerts();
-    
-    // Setup auto-refresh every 5 minutes
-    this.refreshSubscription = interval(this.refreshInterval).subscribe(() => {
-      console.log('Auto-refreshing alerts...');
-      this.loadStatistics();
-      this.loadOfflineSummary();
-      this.loadAlerts();
-    });
-  }
-  
-  ngOnDestroy() {
-    // Cleanup subscription to prevent memory leaks
-    if (this.refreshSubscription) {
-      this.refreshSubscription.unsubscribe();
-    }
   }
 
   loadStatistics() {
     this.alertService.getAlertStatistics('7d', this.ownerId).subscribe({
       next: (response: any) => {
-        // Handle if response is string
-        let parsedData = response;
-        if (typeof response === 'string') {
-          try {
-            parsedData = JSON.parse(response);
-          } catch (e) {
-            console.error('Failed to parse statistics:', e);
-            return;
-          }
+        const parsed = this.parseBody(response);
+        if (parsed) {
+          this.statistics = { ...this.statistics, ...parsed };
+          const types = Object.keys(parsed.byType || {});
+          if (types.length) this.ruleTypes = types.sort();
         }
-        this.statistics = { ...this.statistics, ...parsedData };
-        console.log('Statistics loaded:', this.statistics);
       },
-      error: (err) => {
-        console.error('Error loading statistics:', err);
-      }
+      error: (err) => console.error('Error loading statistics:', err)
     });
   }
 
   loadOfflineSummary() {
     this.alertService.getOfflineNodesSummary(this.ownerId).subscribe({
       next: (response: any) => {
-        // Handle if response is string
-        let parsedData = response;
-        if (typeof response === 'string') {
-          try {
-            parsedData = JSON.parse(response);
-          } catch (e) {
-            console.error('Failed to parse offline summary:', e);
-            return;
-          }
-        }
-        this.offlineSummary = parsedData;
-        console.log('Offline summary loaded:', this.offlineSummary);
+        const parsed = this.parseBody(response);
+        if (parsed) this.offlineSummary = parsed;
       },
-      error: (err) => {
-        console.error('Error loading offline summary:', err);
-      }
+      error: (err) => console.error('Error loading offline summary:', err)
     });
   }
 
   loadAlerts() {
     this.loading = true;
+    this.error = null;
     this.alertService.getAlertEvents({ ...this.filters, ownerId: this.ownerId }).subscribe({
       next: (response: any) => {
         this.loading = false;
-        
-        // Handle if response is string (shouldn't happen with proper SDK)
-        let parsedData = response;
-        if (typeof response === 'string') {
-          try {
-            parsedData = JSON.parse(response);
-          } catch (e) {
-            console.error('Failed to parse response:', e);
-            this.alerts = [];
-            return;
-          }
+        const parsed = this.parseBody(response);
+        if (!parsed) {
+          this.alerts = [];
+          return;
         }
-        
         // API returns { data: [...], total, page, limit }
-        this.alerts = parsedData.data || parsedData || [];
-        this.totalAlerts = parsedData.total || this.alerts.length;
+        this.alerts = parsed.data || parsed || [];
+        this.totalAlerts = parsed.total || this.alerts.length;
         this.totalPages = Math.ceil(this.totalAlerts / this.filters.limit);
-        console.log('Loaded alerts:', this.alerts.length, 'of', this.totalAlerts, 'total');
       },
       error: (err) => {
         this.loading = false;
-        console.error('Error loading alerts:', err);
+        this.error = err?.error?.message || 'Failed to load alerts';
       }
     });
   }
 
-  acknowledgeAlert(alert: any) {
-    const note = prompt('Add acknowledgement note (optional):');
-    if (note !== null) { // null = cancelled
-      this.alertService.acknowledgeAlert(alert.idAlertEvent, note || undefined).subscribe({
-        next: () => {
-          alert.status = 'acknowledged';
-          this.loadStatistics();
-        },
-        error: (err) => {
-          console.error('Error acknowledging alert:', err);
-          alert('Failed to acknowledge alert');
-        }
-      });
+  private parseBody(response: any): any {
+    if (typeof response !== 'string') return response;
+    try {
+      return JSON.parse(response);
+    } catch {
+      return null;
     }
   }
 
-  clearAlert(alert: any) {
+  acknowledgeAlert(alertEvent: any) {
+    const note = prompt('Add acknowledgement note (optional):');
+    if (note === null) return; // cancelled
+    this.alertService.acknowledgeAlert(alertEvent.idAlertEvent, note || undefined).subscribe({
+      next: () => {
+        alertEvent.status = 'acknowledged';
+        this.loadStatistics();
+      },
+      error: (err) => {
+        console.error('Error acknowledging alert:', err);
+        window.alert('Failed to acknowledge alert');
+      }
+    });
+  }
+
+  clearAlert(alertEvent: any) {
     const note = prompt('Add resolution note:');
-    if (note) {
-      this.alertService.clearAlert(alert.idAlertEvent, note).subscribe({
-        next: () => {
-          alert.status = 'cleared';
-          this.loadStatistics();
-          this.loadAlerts(); // Refresh list
-        },
-        error: (err) => {
-          console.error('Error clearing alert:', err);
-          alert('Failed to clear alert');
-        }
-      });
-    }
+    if (!note) return;
+    this.alertService.clearAlert(alertEvent.idAlertEvent, note).subscribe({
+      next: () => {
+        this.loadStatistics();
+        this.loadAlerts();
+      },
+      error: (err) => {
+        console.error('Error clearing alert:', err);
+        window.alert('Failed to clear alert');
+      }
+    });
   }
 
   filterByStatus(status: string) {
     this.filters.status = status;
-    this.filters.page = 1; // Reset to page 1
+    this.filters.page = 1;
     this.loadAlerts();
   }
-  
-  // Pagination methods
+
+  changeCategory(ruleType: string) {
+    this.filters.ruleType = ruleType;
+    this.filters.page = 1;
+    this.loadAlerts();
+  }
+
+  changeOwner(ownerId: string) {
+    this.selectedOwnerId = ownerId;
+    this.filters.page = 1;
+    this.refreshAll();
+  }
+
+  statusCount(status: string): number {
+    return (this.statistics as any)[status] ?? 0;
+  }
+
+  // ---- display helpers ----
+
+  channelOf(alertEvent: any) {
+    return alertEvent?.alertRule?.sensorChannel;
+  }
+
+  sensorOf(alertEvent: any) {
+    return this.channelOf(alertEvent)?.sensor;
+  }
+
+  nodeOf(alertEvent: any) {
+    return alertEvent?.node || this.sensorOf(alertEvent)?.node;
+  }
+
+  severityOf(alertEvent: any): string | undefined {
+    return alertEvent?.severity || alertEvent?.alertRule?.severity;
+  }
+
+  locationOf(alertEvent: any): string {
+    const node = this.nodeOf(alertEvent);
+    if (!node) return '';
+    let address = node.address || '';
+    if (address.length > 40) address = address.slice(0, 40) + '...';
+    return [node.city, address].filter(Boolean).join(' · ');
+  }
+
+  ruleTypeLabel(alertEvent: any): string {
+    return (alertEvent?.alertRule?.ruleType || 'unknown').replace(/_/g, ' ');
+  }
+
+  ruleTypeText(ruleType: string): string {
+    return (ruleType || '').replace(/_/g, ' ');
+  }
+
+  isOfflineRule(alertEvent: any): boolean {
+    return alertEvent?.alertRule?.ruleType === 'node_offline';
+  }
+
+  valueUnit(alertEvent: any): string {
+    if (this.isOfflineRule(alertEvent)) return 'min offline';
+    return this.channelOf(alertEvent)?.unit || '';
+  }
+
+  severityBadge(severity?: string): string {
+    switch (severity) {
+      case 'critical': return 'badge bg-danger-subtle text-danger';
+      case 'warning': return 'badge bg-warning-subtle text-warning';
+      case 'info': return 'badge bg-info-subtle text-info';
+      default: return 'badge bg-secondary-subtle text-secondary';
+    }
+  }
+
+  statusBadge(status?: string): string {
+    switch (status) {
+      case 'open': return 'badge bg-danger-subtle text-danger';
+      case 'acknowledged': return 'badge bg-warning-subtle text-warning';
+      case 'cleared': return 'badge bg-success-subtle text-success';
+      default: return 'badge bg-secondary-subtle text-secondary';
+    }
+  }
+
+  // ---- pagination ----
+
+  changePageSize(size: number) {
+    this.filters.limit = +size;
+    this.filters.page = 1;
+    this.loadAlerts();
+  }
+
   goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
+    if (page >= 1 && page <= this.totalPages && page !== this.filters.page) {
       this.filters.page = page;
       this.loadAlerts();
     }
   }
-  
-  nextPage() {
-    if (this.filters.page < this.totalPages) {
-      this.filters.page++;
-      this.loadAlerts();
-    }
-  }
-  
-  previousPage() {
-    if (this.filters.page > 1) {
-      this.filters.page--;
-      this.loadAlerts();
-    }
-  }
-  
+
   get pages(): number[] {
     const pages = [];
     const maxVisible = 5;
     let start = Math.max(1, this.filters.page - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible - 1);
-    
+    const end = Math.min(this.totalPages, start + maxVisible - 1);
+
     if (end - start < maxVisible - 1) {
       start = Math.max(1, end - maxVisible + 1);
     }
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
     return pages;
+  }
+
+  get paginationStart(): number {
+    return this.totalAlerts === 0 ? 0 : (this.filters.page - 1) * this.filters.limit + 1;
+  }
+
+  get paginationEnd(): number {
+    return Math.min(this.filters.page * this.filters.limit, this.totalAlerts);
   }
 }
