@@ -25,17 +25,62 @@
   </li>
 </ul>
 
-<!-- ===== Tab: Kotak Masuk (placeholder — dok 03) ===== -->
+<!-- ===== Tab: Kotak Masuk (feed personal — dok 03) ===== -->
 <div *ngIf="activeTab === 'inbox'">
   <card>
-    <card-body>
-      <div class="text-center text-body text-opacity-50 py-5">
+    <card-header class="d-flex align-items-center justify-content-between">
+      <div>
+        <span class="fw-bold">Kotak Masuk</span>
+        <span class="text-body text-opacity-50 ms-2">{{ inboxTotal }} notifikasi</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="btn-group btn-group-sm">
+          <button type="button" class="btn" [class.btn-theme]="inboxFilter === 'all'" [class.btn-outline-theme]="inboxFilter !== 'all'" (click)="setInboxFilter('all')">Semua</button>
+          <button type="button" class="btn" [class.btn-theme]="inboxFilter === 'unread'" [class.btn-outline-theme]="inboxFilter !== 'unread'" (click)="setInboxFilter('unread')">Belum dibaca</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-theme" (click)="markAllRead()" [disabled]="inboxLoading">
+          <i class="bi bi-check2-all me-1"></i> Tandai semua dibaca
+        </button>
+      </div>
+    </card-header>
+    <card-body class="p-0">
+      <div *ngIf="inboxLoading" class="text-center text-body text-opacity-50 py-5">Memuat…</div>
+      <div *ngIf="inboxError" class="alert alert-danger m-3 mb-0">{{ inboxError }}</div>
+
+      <div *ngIf="!inboxLoading && !inboxError && inbox.length === 0" class="text-center text-body text-opacity-50 py-5">
         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-        Kotak masuk notifikasi akan hadir bersama mesin pengirim (dispatcher).
-        Sementara ini, atur dulu <a href="javascript:;" (click)="setTab('settings')">Pengaturan</a>.
+        Belum ada notifikasi. Atur event yang ingin dipantau di
+        <a href="javascript:;" (click)="setTab('settings')">Pengaturan</a>.
+      </div>
+
+      <div class="list-group list-group-flush" *ngIf="!inboxLoading && inbox.length > 0">
+        <a href="javascript:;" class="list-group-item list-group-item-action d-flex align-items-start py-3"
+           [class.bg-inverse]="!item.isRead" [class.bg-opacity-10]="!item.isRead"
+           *ngFor="let item of inbox" (click)="openInboxItem(item)">
+          <div class="fs-20px me-3 pt-1"><i [ngClass]="iconFor(item.type)"></i></div>
+          <div class="flex-1">
+            <div class="d-flex align-items-center">
+              <span class="fw-bold text-inverse">{{ item.title }}</span>
+              <span class="badge ms-2" [ngClass]="badgeFor(item.severity || item.type)">{{ item.severity || item.type }}</span>
+              <span class="badge bg-inverse bg-opacity-15 text-inverse ms-2" *ngIf="item.data?.triggerKey">{{ item.data?.triggerKey }}</span>
+              <span class="ms-auto small text-body text-opacity-50">{{ relativeTime(item.createdAt) }}</span>
+            </div>
+            <div class="text-body text-opacity-75 small mt-1">{{ item.message }}</div>
+          </div>
+          <div class="ps-2 pt-1 fs-16px text-body text-opacity-50"><i class="bi bi-chevron-right"></i></div>
+        </a>
       </div>
     </card-body>
   </card>
+
+  <!-- Pagination -->
+  <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="inboxTotalPages > 1">
+    <div class="text-body text-opacity-50 small">Halaman {{ inboxPage }} dari {{ inboxTotalPages }}</div>
+    <div class="btn-group btn-group-sm">
+      <button type="button" class="btn btn-outline-theme" [disabled]="inboxPage <= 1" (click)="goInboxPage(inboxPage - 1)">Sebelumnya</button>
+      <button type="button" class="btn btn-outline-theme" [disabled]="inboxPage >= inboxTotalPages" (click)="goInboxPage(inboxPage + 1)">Berikutnya</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== Tab: Pengaturan (rules per-owner) ===== -->

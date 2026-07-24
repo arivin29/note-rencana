@@ -46,8 +46,33 @@ export interface RuleUpsertItem {
   channels?: string[];
 }
 
+/** Satu baris inbox — dihasilkan dispatcher (dok notifikasi 03). */
+export interface NotifInboxItem {
+  idNotification: string;
+  type: string;
+  title: string;
+  message: string;
+  severity: string | null;
+  fromModule: string;
+  fromModuleId: string | null;
+  isRead: boolean;
+  createdAt: string;
+  data?: {
+    deepLink?: string;
+    triggerKey?: string;
+    nodeName?: string;
+    projectName?: string;
+    [k: string]: unknown;
+  };
+}
+
 interface Wrapped<T> {
   data: T[];
+}
+
+interface Paged<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,5 +101,24 @@ export class NotificationSettingsService {
 
   savePreferences(preferences: NotifPrefView[]): Observable<Wrapped<NotifPrefView>> {
     return this.http.put<Wrapped<NotifPrefView>>(`${this.API}/preferences`, { preferences });
+  }
+
+  // ===== Kotak Masuk (dok 03) =====
+
+  listInbox(opts: { page?: number; limit?: number; isRead?: boolean; type?: string } = {}): Observable<Paged<NotifInboxItem>> {
+    const params: Record<string, string> = {};
+    if (opts.page) params['page'] = String(opts.page);
+    if (opts.limit) params['limit'] = String(opts.limit);
+    if (opts.isRead !== undefined) params['isRead'] = String(opts.isRead);
+    if (opts.type) params['type'] = opts.type;
+    return this.http.get<Paged<NotifInboxItem>>(this.API, { params });
+  }
+
+  markRead(id: string): Observable<unknown> {
+    return this.http.patch(`${this.API}/${id}/read`, {});
+  }
+
+  markAllRead(): Observable<unknown> {
+    return this.http.patch(`${this.API}/mark-all-read`, {});
   }
 }

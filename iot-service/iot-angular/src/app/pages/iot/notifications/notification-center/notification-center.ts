@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth.service';
 import {
   NotificationSettingsService,
+  NotifInboxItem,
   NotifPrefView,
   NotifRuleView,
 } from '../../../../services/notification-settings.service';
@@ -36,6 +37,16 @@ export class NotificationCenterComponent implements OnInit {
   isAdmin = false;
   adminOwnerId = ''; // admin memilih owner secara manual
 
+  // --- Kotak Masuk (dok 03) ---
+  inbox: NotifInboxItem[] = [];
+  inboxLoading = false;
+  inboxError: string | null = null;
+  inboxFilter: 'all' | 'unread' = 'all';
+  inboxPage = 1;
+  inboxLimit = 20;
+  inboxTotal = 0;
+  inboxTotalPages = 1;
+
   // --- Rules ---
   rulesLoading = false;
   rulesSaving = false;
@@ -56,6 +67,7 @@ export class NotificationCenterComponent implements OnInit {
     private svc: NotificationSettingsService,
     private auth: AuthService,
     private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -64,6 +76,8 @@ export class NotificationCenterComponent implements OnInit {
     if (tab === 'inbox' || tab === 'settings' || tab === 'prefs') this.activeTab = tab;
     if (this.activeTab === 'prefs') {
       this.loadPrefs();
+    } else if (this.activeTab === 'inbox') {
+      this.loadInbox();
     } else if (!this.isAdmin) {
       this.loadRules();
     }
@@ -72,6 +86,102 @@ export class NotificationCenterComponent implements OnInit {
   setTab(t: 'inbox' | 'settings' | 'prefs'): void {
     this.activeTab = t;
     if (t === 'prefs' && !this.mutable.length) this.loadPrefs();
+    if (t === 'inbox' && !this.inbox.length) this.loadInbox();
+  }
+
+  // ===== KOTAK MASUK =====
+  loadInbox(): void {
+    this.inboxLoading = true;
+    this.inboxError = null;
+    this.svc
+      .listInbox({
+        page: this.inboxPage,
+        limit: this.inboxLimit,
+        isRead: this.inboxFilter === 'unread' ? false : undefined,
+      })
+      .subscribe({
+        next: (r) => {
+          this.inbox = r.data || [];
+          this.inboxTotal = r.meta?.total ?? this.inbox.length;
+          this.inboxTotalPages = r.meta?.totalPages || 1;
+          this.inboxLoading = false;
+        },
+        error: (e) => {
+          this.inboxError = e?.error?.message || 'Gagal memuat kotak masuk';
+          this.inboxLoading = false;
+        },
+      });
+  }
+
+  setInboxFilter(f: 'all' | 'unread'): void {
+    this.inboxFilter = f;
+    this.inboxPage = 1;
+    this.loadInbox();
+  }
+
+  goInboxPage(page: number): void {
+    if (page < 1 || page > this.inboxTotalPages) return;
+    this.inboxPage = page;
+    this.loadInbox();
+  }
+
+  /** Buka notifikasi: tandai dibaca lalu lompat ke sumber event (data.deepLink). */
+  openInboxItem(item: NotifInboxItem): void {
+    const target = item.data?.deepLink;
+    if (!item.isRead) {
+      this.svc.markRead(item.idNotification).subscribe({
+        next: () => (item.isRead = true),
+        error: () => undefined,
+      });
+    }
+    if (target) this.router.navigateByUrl(target);
+  }
+
+  markAllRead(): void {
+    this.svc.markAllRead().subscribe({
+      next: () => this.loadInbox(),
+      error: (e) => (this.inboxError = e?.error?.message || 'Gagal menandai semua dibaca'),
+    });
+  }
+
+  iconFor(type: string): string {
+    switch (type) {
+      case 'alert':
+        return 'bi bi-exclamation-triangle text-danger';
+      case 'error':
+        return 'bi bi-x-circle text-danger';
+      case 'warning':
+        return 'bi bi-exclamation-circle text-warning';
+      case 'success':
+        return 'bi bi-check-circle text-success';
+      default:
+        return 'bi bi-info-circle text-theme';
+    }
+  }
+
+  badgeFor(severity: string): string {
+    switch (severity) {
+      case 'critical':
+      case 'alert':
+      case 'error':
+        return 'bg-danger';
+      case 'warning':
+        return 'bg-warning text-dark';
+      default:
+        return 'bg-info';
+    }
+  }
+
+  relativeTime(iso: string): string {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
+    const menit = Math.floor(diff / 60000);
+    if (menit < 1) return 'baru saja';
+    if (menit < 60) return `${menit} menit lalu`;
+    const jam = Math.floor(menit / 60);
+    if (jam < 24) return `${jam} jam lalu`;
+    const hari = Math.floor(jam / 24);
+    return hari < 30 ? `${hari} hari lalu` : new Date(iso).toLocaleDateString('id-ID');
   }
 
   private ownerParam(): string | undefined {
