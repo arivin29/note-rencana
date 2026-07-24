@@ -52,6 +52,43 @@ export class AuthService {
 
     this.isAuthenticatedSubject = new BehaviorSubject<boolean>(!!storedUser);
     this.isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+
+    // Proactive sliding refresh: on app load and every hour, renew tokens
+    // when the access token has less than 7 days left. Combined with the
+    // 60-day refresh token this keeps active users logged in indefinitely.
+    this.refreshIfExpiringSoon();
+    setInterval(() => this.refreshIfExpiringSoon(), 60 * 60 * 1000);
+  }
+
+  /**
+   * Silently refresh the token pair when the access token is close to expiry
+   */
+  private refreshIfExpiringSoon(): void {
+    const token = this.getAccessToken();
+    if (!token || !this.getRefreshToken()) return;
+
+    const expiresAt = this.getTokenExpiry(token);
+    if (expiresAt === null) return;
+
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    if (expiresAt - Date.now() < sevenDaysMs) {
+      this.refreshToken().subscribe({
+        next: () => console.log('Access token proactively refreshed'),
+        error: () => { /* handled inside refreshToken (logout on failure) */ }
+      });
+    }
+  }
+
+  /**
+   * Decode JWT exp claim (ms since epoch), or null if unreadable
+   */
+  private getTokenExpiry(token: string): number | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -157,6 +194,10 @@ export class AuthService {
     ).pipe(
       tap(response => {
         this.setAccessToken(response.access_token);
+        // Sliding session: backend issues a fresh refresh token on every refresh
+        if (response.refresh_token) {
+          localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refresh_token);
+        }
       }),
       catchError(error => {
         // If refresh fails, logout user
@@ -267,7 +308,9 @@ export class AuthService {
    */
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.TOKEN_KEY, authResult.access_token);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, authResult.refresh_token);
+    if (authResult.refresh_token) {
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, authResult.refresh_token);
+    }
     localStorage.setItem(this.USER_KEY, JSON.stringify(authResult.user));
     
     this.currentUserSubject.next(authResult.user);
@@ -313,7 +356,10 @@ export class AuthService {
    * Get refresh token from storage
    */
   private getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    const token = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    // Older sessions stored the literal string "undefined"
+    if (!token || token === 'undefined' || token === 'null') return null;
+    return token;
   }
 
   /**
