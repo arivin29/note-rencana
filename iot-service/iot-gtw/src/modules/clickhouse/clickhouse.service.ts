@@ -26,8 +26,9 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
   // Reconnect settings
   private reconnectTimer: NodeJS.Timeout;
   private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = 10;
+  private readonly maxFastReconnectAttempts = 10;
   private readonly reconnectIntervalMs = 10000; // 10 seconds
+  private readonly slowReconnectIntervalMs = 60000; // 1 minute, after fast attempts exhausted
   private isReconnecting = false;
 
   constructor(private readonly configService: ConfigService) {
@@ -97,22 +98,26 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Schedule reconnection attempt
    */
   private scheduleReconnect(): void {
-    if (this.isReconnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        this.logger.error(`Max reconnect attempts (${this.maxReconnectAttempts}) reached. Will retry on next flush.`);
-      }
+    if (this.isReconnecting) {
       return;
     }
 
     this.isReconnecting = true;
     this.reconnectAttempts++;
 
-    this.logger.warn(`Scheduling ClickHouse reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${this.reconnectIntervalMs / 1000}s`);
+    // Never give up: fast retries first, then a slow steady interval so the
+    // service survives long ClickHouse maintenance windows.
+    const delayMs =
+      this.reconnectAttempts <= this.maxFastReconnectAttempts
+        ? this.reconnectIntervalMs
+        : this.slowReconnectIntervalMs;
+
+    this.logger.warn(`Scheduling ClickHouse reconnect attempt ${this.reconnectAttempts} in ${delayMs / 1000}s`);
 
     this.reconnectTimer = setTimeout(async () => {
       this.isReconnecting = false;
       await this.reconnect();
-    }, this.reconnectIntervalMs);
+    }, delayMs);
   }
 
   /**
@@ -188,6 +193,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    */
   async insertTelemetry(data: SensorTelemetryDto): Promise<void> {
     this.telemetryBuffer.push(data);
+    this.trimBuffer(this.telemetryBuffer, 'telemetry');
 
     if (this.telemetryBuffer.length >= this.batchSize) {
       await this.flushTelemetry();
@@ -199,6 +205,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    */
   async insertTelemetryBatch(data: SensorTelemetryDto[]): Promise<void> {
     this.telemetryBuffer.push(...data);
+    this.trimBuffer(this.telemetryBuffer, 'telemetry');
 
     if (this.telemetryBuffer.length >= this.batchSize) {
       await this.flushTelemetry();
@@ -210,9 +217,23 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    */
   async updateChannelLatest(data: SensorChannelLatestDto): Promise<void> {
     this.channelLatestBuffer.push(data);
+    this.trimBuffer(this.channelLatestBuffer, 'channelLatest');
 
     if (this.channelLatestBuffer.length >= this.batchSize) {
       await this.flushChannelLatest();
+    }
+  }
+
+  /**
+   * Drop oldest buffered rows past the cap so a long ClickHouse outage
+   * can't grow the buffers unbounded (Postgres keeps the full history).
+   */
+  private trimBuffer(buffer: unknown[], name: string): void {
+    const max = this.batchSize * 10;
+    if (buffer.length > max) {
+      const dropped = buffer.length - max;
+      buffer.splice(0, dropped);
+      this.logger.warn(`Buffer ${name} over capacity while ClickHouse unavailable — dropped ${dropped} oldest rows`);
     }
   }
 
