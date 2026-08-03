@@ -19,6 +19,7 @@ import { ForgotPasswordPage } from './template/page/forgot-password/page-forgot-
 
 // Admin Components
 import { AuditLogsListComponent } from './pages/admin/audit-logs/audit-logs-list.component';
+import { ActivityMonitorComponent } from './pages/admin/activity-monitor/activity-monitor.component';
 
 // API Configuration 
 import { environment } from '../environments/environment';
@@ -94,8 +95,9 @@ import { AlertService } from './service/alert.service';
         ProfileComponent,
         LoginPage,
         RegisterPage,
-        ForgotPasswordPage, 
-        AuditLogsListComponent
+        ForgotPasswordPage,
+        AuditLogsListComponent,
+        ActivityMonitorComponent
     ],
     imports: [
         CommonModule,

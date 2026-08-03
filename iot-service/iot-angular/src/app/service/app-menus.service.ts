@@ -111,6 +111,7 @@ export class AppMenuService {
 			{ 'text': 'Administration', 'is_header': true, 'roles': ['admin'] },
 			{ 'path': '/admin/users', 'icon': 'bi bi-people-fill', 'text': 'User Management', 'roles': ['admin'] },
 			{ 'path': '/admin/audit-logs', 'icon': 'bi bi-shield-check', 'text': 'Audit Logs', 'roles': ['admin'] },
+			{ 'path': '/admin/activity-monitor', 'icon': 'bi bi-activity', 'text': 'Aktivitas PDAM', 'roles': ['admin'] },
 			{ 'is_divider': true }, 
 			{ 'text': 'Users', 'is_header': true }, 
 			{ 'path': '/profile', 'icon': 'bi bi-people', 'text': 'Profile' }, 

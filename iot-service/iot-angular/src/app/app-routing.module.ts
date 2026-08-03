@@ -12,6 +12,7 @@ import { ForgotPasswordPage } from './template/page/forgot-password/page-forgot-
 
 // Admin Components 
 import { AuditLogsListComponent } from './pages/admin/audit-logs/audit-logs-list.component';
+import { ActivityMonitorComponent } from './pages/admin/activity-monitor/activity-monitor.component';
 
 import { IotDashboardPage } from './pages/iot/dashboard/iot-dashboard';
 import { IotDashboardKeduaPage } from './pages/iot/dashboard-kedua/iot-dashboard-kedua';
@@ -120,11 +121,17 @@ const routes: Routes = [
 
     // Admin Routes (Protected - Admin Only)
      
-    { 
-        path: 'admin/audit-logs', 
-        component: AuditLogsListComponent, 
+    {
+        path: 'admin/audit-logs',
+        component: AuditLogsListComponent,
         canActivate: [AuthGuard],
-        data: { title: 'Audit Logs', roles: ['admin'] } 
+        data: { title: 'Audit Logs', roles: ['admin'] }
+    },
+    {
+        path: 'admin/activity-monitor',
+        component: ActivityMonitorComponent,
+        canActivate: [AuthGuard],
+        data: { title: 'Aktivitas PDAM', roles: ['admin'] }
     },
 
     // IoT Dashboard Routes (Protected)

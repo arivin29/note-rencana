@@ -1,0 +1,56 @@
+.kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Bar chart sesi harian — CSS murni, theme-aware */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 160px;
+}
+
+.bar-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.bar-fill {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--bs-theme, #0271ff);
+  opacity: 0.85;
+  transition: height 0.3s ease;
+}
+
+.bar-fill.bar-empty {
+  background: var(--bs-body-color);
+  opacity: 0.12;
+}
+
+.bar-label {
+  font-size: 0.6rem;
+  color: var(--bs-body-color);
+  opacity: 0.5;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+}

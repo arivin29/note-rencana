@@ -2,6 +2,7 @@ import { Component, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Router, NavigationEnd, NavigationStart, ActivatedRoute } from '@angular/router';
 import { AppSettings } from './service/app-settings.service';
+import { ActivityService } from './services/activity.service';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +15,9 @@ export class AppComponent {
 	appEvent = new EventEmitter<string>();
 	appLoaded: boolean = false;
 	
-	constructor(public appSettings: AppSettings, private cdr: ChangeDetectorRef) { }
+	constructor(public appSettings: AppSettings, private cdr: ChangeDetectorRef, activityService: ActivityService) {
+		activityService.startTracking();
+	}
 	
 	handleSetCover(coverClass: string) {
 		var htmlElm = document.querySelector('html');
