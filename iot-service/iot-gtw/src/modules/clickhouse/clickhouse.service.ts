@@ -481,6 +481,9 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    */
   async query<T = any>(sql: string, params?: Record<string, any>): Promise<T[]> {
     if (!this.isConnected) {
+      // Kick a reconnect so read-side consumers (broadcast/forwarding) also
+      // self-heal, not just the ingest flush path.
+      this.scheduleReconnect();
       throw new Error('ClickHouse not connected');
     }
 
