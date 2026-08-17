@@ -11,6 +11,7 @@ A multi-tenant IoT platform: **Owner → Project → Node → Sensor → SensorC
 | Frontend | `pra-project/iot-service/iot-angular` | Angular 20 SPA (this repo) |
 | Backend | `../../../iot-backend-go` (`/Users/arivin29macmini/Documents/DEVETEK/iot-backend-go`) | Goravel Go API, port 3000 |
 | Legacy docs | `pra-project/iot-service/iot-backend/docs` | Old NestJS design — reference for endpoints & DB schema (`FULL_PROJECT_MAPPING.md`) |
+| On-prem releases | `pra-project/iot-service/client-final` (git `devetek/iot-client-final`, nested/ignored) | Build-only artifacts per PDAM klien (binary Go + bundle gtw). Cara build: `client-final/docs/BUILD-TUTORIAL.md`; arsitektur: `client-final/docs/ONPREM-SPEC.md` |
 
 Backend was rewritten **NestJS → Goravel (Go)**; HTTP/JSON contract preserved so the generated Angular SDK still works.
 

@@ -19,6 +19,7 @@ Complete documentation for IoT Gateway service.
 - **[TELTONIKA-QUICK-REF.md](../TELTONIKA-QUICK-REF.md)** - Teltonika quick reference guide
 
 ### Operations
+- **[On-prem client build (client-final)](../../client-final/docs/BUILD-TUTORIAL.md)** - Bundle gtw ke satu file `main.js` (esbuild, `npm run build:bundle` / `scripts/bundle.js`) + binary Go untuk server PDAM; spec: [ONPREM-SPEC.md](../../client-final/docs/ONPREM-SPEC.md). Flag terkait: `CLICKHOUSE_ENABLED=false`, `TELTONIKA_ENABLED=false`.
 - **[MINIMAL-LOGGING.md](MINIMAL-LOGGING.md)** - Logging optimization & configuration
 - **[LOGGING-QUICK-REF.md](LOGGING-QUICK-REF.md)** - Quick reference for logging modes
 
