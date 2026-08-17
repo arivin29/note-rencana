@@ -5,6 +5,9 @@ export default registerAs('clickhouse', () => {
   const port = parseInt(process.env.CLICKHOUSE_PORT, 10) || 8123;
   
   return {
+    // Set CLICKHOUSE_ENABLED=false on on-prem installs without ClickHouse:
+    // the service becomes a no-op (no connect, no retries, isReady() === false).
+    enabled: (process.env.CLICKHOUSE_ENABLED || 'true').toLowerCase() !== 'false',
     host,
     port,
     database: process.env.CLICKHOUSE_DATABASE || 'iot',

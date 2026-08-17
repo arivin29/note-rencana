@@ -12,6 +12,8 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ClickhouseService.name);
   private client: ClickHouseClient;
   private isConnected = false;
+  /** false → CLICKHOUSE_ENABLED=false: whole service is a no-op (on-prem installs). */
+  private readonly enabled: boolean;
 
   // Batch buffers
   private telemetryBuffer: SensorTelemetryDto[] = [];
@@ -32,16 +34,22 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
   private isReconnecting = false;
 
   constructor(private readonly configService: ConfigService) {
+    this.enabled = this.configService.get<boolean>('clickhouse.enabled') !== false;
     this.batchSize = this.configService.get<number>('clickhouse.batchSize') || 1000;
     this.flushIntervalMs = this.configService.get<number>('clickhouse.flushIntervalMs') || 5000;
   }
 
   async onModuleInit() {
+    if (!this.enabled) {
+      this.logger.warn('ClickHouse disabled via CLICKHOUSE_ENABLED=false — telemetry stays in PostgreSQL only');
+      return;
+    }
     await this.connect();
     this.startFlushTimer();
   }
 
   async onModuleDestroy() {
+    if (!this.enabled) return;
     this.stopFlushTimer();
     this.stopReconnectTimer();
     await this.flushAll();
@@ -163,7 +171,12 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Check if connected
    */
   isReady(): boolean {
-    return this.isConnected;
+    return this.enabled && this.isConnected;
+  }
+
+  /** Whether ClickHouse is enabled at all for this install. */
+  isEnabled(): boolean {
+    return this.enabled;
   }
 
   /**
@@ -192,6 +205,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Add telemetry data to buffer
    */
   async insertTelemetry(data: SensorTelemetryDto): Promise<void> {
+    if (!this.enabled) return;
     this.telemetryBuffer.push(data);
     this.trimBuffer(this.telemetryBuffer, 'telemetry');
 
@@ -204,6 +218,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Add multiple telemetry records to buffer
    */
   async insertTelemetryBatch(data: SensorTelemetryDto[]): Promise<void> {
+    if (!this.enabled) return;
     this.telemetryBuffer.push(...data);
     this.trimBuffer(this.telemetryBuffer, 'telemetry');
 
@@ -216,6 +231,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Update channel latest status
    */
   async updateChannelLatest(data: SensorChannelLatestDto): Promise<void> {
+    if (!this.enabled) return;
     this.channelLatestBuffer.push(data);
     this.trimBuffer(this.channelLatestBuffer, 'channelLatest');
 
@@ -241,6 +257,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Update node latest status
    */
   async updateNodeLatest(data: NodeLatestDto): Promise<void> {
+    if (!this.enabled) return;
     // Remove existing entry for same node_id to avoid duplicates in buffer
     this.nodeLatestBuffer = this.nodeLatestBuffer.filter(n => n.node_id !== data.node_id);
     this.nodeLatestBuffer.push(data);
@@ -258,6 +275,7 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Flush all buffers
    */
   async flushAll(): Promise<void> {
+    if (!this.enabled) return;
     await Promise.all([
       this.flushTelemetry(),
       this.flushChannelLatest(),
@@ -453,6 +471,9 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Health check
    */
   async healthCheck(): Promise<{ status: string; connected: boolean; buffers: any }> {
+    if (!this.enabled) {
+      return { status: 'disabled', connected: false, buffers: this.getBufferStats() };
+    }
     let pingOk = false;
 
     if (this.isConnected) {
@@ -480,6 +501,9 @@ export class ClickhouseService implements OnModuleInit, OnModuleDestroy {
    * Used for data forwarding to read from ClickHouse
    */
   async query<T = any>(sql: string, params?: Record<string, any>): Promise<T[]> {
+    if (!this.enabled) {
+      throw new Error('ClickHouse disabled (CLICKHOUSE_ENABLED=false)');
+    }
     if (!this.isConnected) {
       // Kick a reconnect so read-side consumers (broadcast/forwarding) also
       // self-heal, not just the ingest flush path.

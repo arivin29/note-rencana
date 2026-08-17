@@ -23,7 +23,8 @@
     "test:logs": "node scripts/test/check-iot-logs.js",
     "test:teltonika:tcp": "node scripts/test/test-teltonika-tcp.js",
     "test:teltonika:data": "node scripts/test/check-teltonika-data.js",
-    "test:clickhouse": "node scripts/test/test-clickhouse.js"
+    "test:clickhouse": "node scripts/test/test-clickhouse.js",
+    "build:bundle": "nest build && node scripts/bundle.js bundle"
   },
   "keywords": [],
   "author": "",
@@ -53,6 +54,7 @@
     "@swc/cli": "^0.1.65",
     "@swc/core": "^1.15.2",
     "@types/node": "^20.19.25",
+    "esbuild": "^0.24.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

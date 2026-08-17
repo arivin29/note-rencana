@@ -15,6 +15,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     private isConnected = false;
     private reconnectAttempts = 0;
     private readonly maxReconnectAttempts = 10;
+    private readonly slowReconnectPeriodMs = 10000;
 
     constructor(
         private readonly configService: ConfigService,
@@ -58,6 +59,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
             this.client.on('connect', () => {
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
+                (this.client as any).options.reconnectPeriod = options?.reconnectPeriod ?? 1000;
                 this.logger.log('✅ Connected to MQTT broker');
                 this.subscribeToTopics();
             });
@@ -71,9 +73,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
                 this.reconnectAttempts++;
                 this.logger.warn(`Reconnecting to MQTT broker... (attempt ${this.reconnectAttempts})`);
 
-                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-                    this.logger.error('Max reconnect attempts reached. Stopping reconnection.');
-                    this.client.end();
+                // Never give up (a dead ingest = silent data loss until someone
+                // restarts pm2). After the fast attempts, back off to a slow
+                // steady interval so a long broker outage doesn't spam logs.
+                if (this.reconnectAttempts === this.maxReconnectAttempts) {
+                    this.logger.error(
+                        `MQTT broker still unreachable after ${this.maxReconnectAttempts} attempts — ` +
+                        `switching to slow retry every ${this.slowReconnectPeriodMs / 1000}s (will keep trying)`,
+                    );
+                    (this.client as any).options.reconnectPeriod = this.slowReconnectPeriodMs;
                 }
             });
 

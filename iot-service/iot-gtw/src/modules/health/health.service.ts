@@ -103,6 +103,14 @@ export class HealthService {
     try {
       const health = await this.clickhouseService.healthCheck();
 
+      if (health.status === 'disabled') {
+        return {
+          status: 'ok',
+          message: 'ClickHouse disabled on this install (CLICKHOUSE_ENABLED=false)',
+          details: health,
+        };
+      }
+
       if (health.connected) {
         return {
           status: 'ok',

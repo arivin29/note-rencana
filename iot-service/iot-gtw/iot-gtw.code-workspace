@@ -20,6 +20,9 @@
         },
         {
             "path": "../iot-ai-nrw"
+        },
+        {
+            "path": "../client-final"
         }
     ],
     "settings": {
