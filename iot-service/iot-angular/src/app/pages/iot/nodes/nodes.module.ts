@@ -17,6 +17,7 @@ import { NodeDetailAddChannelDrawerComponent } from './nodes-detail/node-detail-
 import { NodeRelayControlComponent } from './nodes-detail/node-relay-control/node-relay-control.component';
 import { NodeMappingUpdateComponent } from './nodes-detail/node-mapping-update/node-mapping-update.component';
 import { SensorContextDrawerComponent } from './nodes-detail/sensor-context-drawer/sensor-context-drawer.component';
+import { SensorFlowDiagramComponent } from './nodes-detail/sensor-flow-diagram/sensor-flow-diagram.component';
 
 @NgModule({
   declarations: [
@@ -29,7 +30,8 @@ import { SensorContextDrawerComponent } from './nodes-detail/sensor-context-draw
     NodeDetailAddChannelDrawerComponent,
     NodeRelayControlComponent,
     NodeMappingUpdateComponent,
-    SensorContextDrawerComponent
+    SensorContextDrawerComponent,
+    SensorFlowDiagramComponent
   ],
   imports: [
     CommonModule, 

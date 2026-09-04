@@ -1,0 +1,143 @@
+<div class="flow-diagram rounded border border-inverse border-opacity-10 bg-inverse bg-opacity-5 p-3 mt-3">
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <div class="fw-semibold small text-inverse text-opacity-75">
+            <i class="fa fa-water me-1 text-theme"></i>
+            Hidrolika Pipa
+            <span class="text-muted fw-normal ms-1" *ngIf="catalogLabel">· {{ catalogLabel }}</span>
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <span [class]="crossCheckBadge">
+                {{ crossCheckLabel }}
+                <ng-container *ngIf="crossCheck !== 'idle' && crossCheck !== 'unknown' && deviationPct !== null">
+                    · {{ deviationPct > 0 ? '+' : '' }}{{ deviationPct | number:'1.0-1' }}%
+                </ng-container>
+            </span>
+        </div>
+    </div>
+
+    <!-- Diagram penampang pipa: d (diameter), Q (debit), V (kecepatan) -->
+    <svg class="flow-svg" viewBox="0 0 680 330" preserveAspectRatio="xMidYMid meet" role="img"
+         [attr.aria-label]="'Diagram aliran ' + sensorLabel">
+        <defs>
+            <linearGradient id="pipeShell" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" class="shell-stop-1" />
+                <stop offset="45%" class="shell-stop-2" />
+                <stop offset="100%" class="shell-stop-3" />
+            </linearGradient>
+            <linearGradient id="waterFace" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" class="water-stop-1" />
+                <stop offset="100%" class="water-stop-2" />
+            </linearGradient>
+            <marker id="flowHead" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" class="arrow-fill" />
+            </marker>
+            <marker id="dimHeadUp" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto">
+                <polygon points="4 0, 8 8, 0 8" class="dim-fill" />
+            </marker>
+            <marker id="dimHeadDown" markerWidth="8" markerHeight="8" refX="4" refY="1" orient="auto">
+                <polygon points="4 8, 0 0, 8 0" class="dim-fill" />
+            </marker>
+        </defs>
+
+        <!-- badan pipa -->
+        <ellipse cx="215" cy="175" rx="34" ry="100" class="pipe-back" />
+        <rect x="215" y="75" width="255" height="200" fill="url(#pipeShell)" />
+        <line x1="215" y1="75" x2="470" y2="75" class="pipe-edge" />
+        <line x1="215" y1="275" x2="470" y2="275" class="pipe-edge" />
+
+        <!-- penampang depan + isi air -->
+        <ellipse cx="470" cy="175" rx="34" ry="100" class="pipe-face" />
+        <ellipse cx="470" cy="175" rx="26" ry="78" fill="url(#waterFace)" class="water-face"
+                 [class.water-idle]="!hasFlowMovement" />
+
+        <!-- garis dimensi diameter -->
+        <line x1="172" y1="75" x2="215" y2="75" class="dim-tick" />
+        <line x1="172" y1="275" x2="215" y2="275" class="dim-tick" />
+        <line x1="181" y1="79" x2="181" y2="271" class="dim-line"
+              marker-start="url(#dimHeadUp)" marker-end="url(#dimHeadDown)" />
+
+        <!-- panah arah aliran -->
+        <line x1="512" y1="175" x2="632" y2="175" class="flow-arrow" marker-end="url(#flowHead)" />
+
+        <!-- titik acuan -->
+        <circle cx="320" cy="175" r="12" class="point-dot" />
+        <text x="320" y="180" text-anchor="middle" class="point-text">d</text>
+        <circle cx="470" cy="175" r="12" class="point-dot" />
+        <text x="470" y="180" text-anchor="middle" class="point-text">Q</text>
+        <circle cx="560" cy="175" r="12" class="point-dot" />
+        <text x="560" y="180" text-anchor="middle" class="point-text">V</text>
+
+        <!-- leader lines -->
+        <path d="M160 168 L 308 174" class="leader" />
+        <path d="M470 163 L 476 62" class="leader" />
+        <path d="M560 187 L 560 236" class="leader" />
+
+        <!-- kotak nilai: diameter -->
+        <g class="value-box" [class.value-empty]="diameter.value === null">
+            <rect x="8" y="146" width="152" height="46" rx="8" />
+            <text x="20" y="169" class="value-num">
+                <ng-container *ngIf="diameter.value !== null; else noDiameter">
+                    {{ diameter.value | number:'1.0-2' }} <tspan class="value-unit">mm</tspan>
+                </ng-container>
+                <ng-template #noDiameter><tspan class="value-empty-text">belum diatur</tspan></ng-template>
+            </text>
+            <text x="20" y="185" class="value-cap">diameter dalam · {{ sourceLabel(diameter.source) }}</text>
+        </g>
+
+        <!-- kotak nilai: debit -->
+        <g class="value-box" [class.value-empty]="flow.value === null">
+            <rect x="386" y="16" width="182" height="46" rx="8" />
+            <text x="398" y="39" class="value-num">
+                <ng-container *ngIf="flow.value !== null; else noFlow">
+                    {{ flow.value | number:'1.2-2' }} <tspan class="value-unit">l/s</tspan>
+                </ng-container>
+                <ng-template #noFlow><tspan class="value-empty-text">tidak tersedia</tspan></ng-template>
+            </text>
+            <text x="398" y="55" class="value-cap">debit · {{ sourceLabel(flow.source) }}</text>
+        </g>
+
+        <!-- kotak nilai: kecepatan -->
+        <g class="value-box" [class.value-empty]="velocity.value === null">
+            <rect x="474" y="236" width="182" height="46" rx="8" />
+            <text x="486" y="259" class="value-num">
+                <ng-container *ngIf="velocity.value !== null; else noVel">
+                    {{ velocity.value | number:'1.2-2' }} <tspan class="value-unit">m/s</tspan>
+                </ng-container>
+                <ng-template #noVel><tspan class="value-empty-text">tidak tersedia</tspan></ng-template>
+            </text>
+            <text x="486" y="275" class="value-cap">kecepatan · {{ sourceLabel(velocity.source) }}</text>
+        </g>
+    </svg>
+
+    <!-- ringkasan angka -->
+    <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small">
+        <div>
+            <span class="text-muted">Total Volume</span>
+            <span class="fw-semibold ms-1">
+                <ng-container *ngIf="volume !== null; else noVolume">
+                    {{ volume | number:'1.0-2' }} {{ volumeUnit }}
+                </ng-container>
+                <ng-template #noVolume><span class="text-muted">-</span></ng-template>
+            </span>
+        </div>
+        <div *ngIf="areaM2 !== null">
+            <span class="text-muted">Luas Penampang</span>
+            <span class="fw-semibold ms-1">{{ areaM2 | number:'1.0-4' }} m²</span>
+        </div>
+        <div *ngIf="updatedAt">
+            <span class="text-muted">Diperbarui</span>
+            <span class="ms-1">{{ updatedAt }}</span>
+        </div>
+        <button *ngIf="diameter.value === null" type="button"
+                class="btn btn-outline-theme btn-sm ms-auto" (click)="onConfigureDiameter()">
+            <i class="fa fa-sliders me-1"></i>Atur diameter pipa
+        </button>
+    </div>
+
+    <div *ngIf="diameter.value === null" class="text-muted small mt-2">
+        <i class="fa fa-circle-info me-1"></i>
+        Debit dan kecepatan tidak bisa saling diverifikasi tanpa diameter pipa.
+        Isi <span class="fw-semibold">Diameter Dalam (ID)</span> pada Context instalasi sensor ini.
+    </div>
+</div>

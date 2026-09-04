@@ -18,6 +18,7 @@ import { NodeModelCommandsService } from '../../../../../sdk/core/services/node-
 import { NodeCommandService } from '../../../../../sdk/core/services/node-command.service';
 import { SensorContextService } from '../../../../../sdk/core/services/sensor-context.service';
 import { NodeModelCommandResponseDto } from '../../../../../sdk/core/models/node-model-command-response-dto';
+import { FlowMeterInput } from './sensor-flow-diagram/sensor-flow-diagram.component';
 
 interface IoTLogItem {
     id: string;
@@ -82,6 +83,8 @@ interface SensorDetail {
     protocolChannel?: string;
     samplingRate?: number | null;
     channels: SensorChannelRow[];
+    /** Terisi hanya untuk sensor flow meter (TUF-2000M dsb) — dipakai diagram hidrolika. */
+    flow?: FlowMeterInput | null;
 }
 
 @Component({
@@ -347,6 +350,9 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
                         .sort((a: any, b: any) => (a.metric || '').localeCompare(b.metric || ''))
                 }));
 
+                // Diagram hidrolika untuk sensor flow meter (debit/kecepatan/volume + diameter pipa)
+                this.buildFlowMeters(node.lastSeenAt);
+
                 // Map telemetry records (from health and stats)
                 const health = dashboard.health || {};
                 const stats = node.stats || {};
@@ -546,6 +552,127 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
             isOpen: true,
             sensorId: '' // Empty = add mode
         };
+    }
+
+    // ===== Diagram hidrolika flow meter (d / Q / V / totalizer) =====
+
+    /** Sensor dianggap flow meter bila katalognya flow meter, atau punya channel debit + kecepatan. */
+    private isFlowMeterSensor(sensor: SensorDetail): boolean {
+        const catalog = (sensor.sensorCatalogLabel || '').toLowerCase();
+        if (/tuf|flow|ultrason|debit/.test(catalog)) return true;
+        return !!this.findChannel(sensor, 'flow') && !!this.findChannel(sensor, 'velocity');
+    }
+
+    private findChannel(sensor: SensorDetail, role: 'flow' | 'velocity' | 'volume' | 'diameter'): SensorChannelRow | null {
+        const patterns: Record<string, RegExp> = {
+            flow: /^(q|debit|flow|flow_?rate|flowrate)$|debit|flow/,
+            velocity: /^(v|velocity|kecepatan)$|veloc|kecepatan/,
+            volume: /^(volume|total|totalizer)$|volume|totali/,
+            diameter: /diameter|^d$/
+        };
+        const re = patterns[role];
+        return sensor.channels.find((channel) => re.test((channel.metric || '').toLowerCase())) || null;
+    }
+
+    /** Normalisasi debit ke l/s dari satuan yang lazim dipakai flow meter. */
+    private toLitersPerSecond(value: number, unit: string): number {
+        const u = (unit || '').toLowerCase().replace('³', '3').replace(/\s/g, '');
+        if (u === 'm3/h' || u === 'm3/jam' || u === 'm3h') return value / 3.6;
+        if (u === 'm3/s') return value * 1000;
+        if (u === 'l/min' || u === 'lpm') return value / 60;
+        if (u === 'l/h' || u === 'l/jam') return value / 3600;
+        return value; // l/s (default)
+    }
+
+    private toMillimeters(value: number, unit: string): number {
+        const u = (unit || '').toLowerCase().trim();
+        if (u === 'm') return value * 1000;
+        if (u === 'cm') return value * 10;
+        if (u === 'inch' || u === 'in' || u === '"') return value * 25.4;
+        return value; // mm (default)
+    }
+
+    /** Susun data diagram untuk tiap sensor flow meter, lalu lengkapi diameter dari context instalasi. */
+    private buildFlowMeters(lastSeenAt?: string | null): void {
+        const updatedAt = lastSeenAt ? new Date(lastSeenAt).toLocaleString('id-ID') : null;
+
+        this.sensors.forEach((sensor) => {
+            if (!this.isFlowMeterSensor(sensor)) {
+                sensor.flow = null;
+                return;
+            }
+
+            const flowCh = this.findChannel(sensor, 'flow');
+            const velocityCh = this.findChannel(sensor, 'velocity');
+            const volumeCh = this.findChannel(sensor, 'volume');
+            const diameterCh = this.findChannel(sensor, 'diameter');
+
+            // satuan totalizer sering ditulis 'm3' atau bahkan 'Volume' — tampilkan m³
+            const rawVolumeUnit = (volumeCh?.unit || '').trim().toLowerCase();
+            const volumeUnit = rawVolumeUnit === 'l' ? 'L' : 'm³';
+
+            sensor.flow = {
+                diameterMm: diameterCh ? this.toMillimeters(diameterCh.latest, diameterCh.unit) : null,
+                diameterSource: diameterCh ? 'device' : null,
+                flowLps: flowCh ? this.toLitersPerSecond(flowCh.latest, flowCh.unit) : null,
+                velocityMs: velocityCh ? velocityCh.latest : null,
+                volumeM3: volumeCh ? volumeCh.latest : null,
+                volumeUnit,
+                updatedAt
+            };
+
+            // Diameter dari alat lebih diutamakan; kalau tidak ada, ambil dari context instalasi.
+            if (!diameterCh) {
+                this.loadDiameterFromContext(sensor);
+            }
+        });
+    }
+
+    /** Ambil diameter pipa dari release context yang sedang berlaku untuk sensor ini. */
+    private loadDiameterFromContext(sensor: SensorDetail): void {
+        this.sensorContextService.sensorContextReleasesList$Response({ id: sensor.id }).subscribe({
+            next: (res) => {
+                let body: any = res.body;
+                if (typeof body === 'string') {
+                    try { body = JSON.parse(body); } catch { body = null; }
+                }
+                const releases: any[] = (body?.data || body || []) as any[];
+                const params = this.activeContextParams(releases);
+                if (!params || !sensor.flow) return;
+
+                const diameterMm = this.diameterFromParams(params);
+                if (diameterMm === null) return;
+
+                // ganti referensi supaya ngOnChanges di komponen diagram ikut jalan
+                sensor.flow = { ...sensor.flow, diameterMm, diameterSource: 'context' };
+            },
+            error: () => { /* diameter opsional — diagram tetap tampil tanpa cek silang */ }
+        });
+    }
+
+    private activeContextParams(releases: any[]): Record<string, any> | null {
+        if (!Array.isArray(releases) || !releases.length) return null;
+        const now = Date.now();
+        const started = releases
+            .filter((r) => !r?.effectiveFrom || new Date(r.effectiveFrom).getTime() <= now)
+            .sort((a, b) => new Date(b.effectiveFrom || 0).getTime() - new Date(a.effectiveFrom || 0).getTime());
+        const active = started.find((r) => !r.effectiveTo || new Date(r.effectiveTo).getTime() > now) || started[0];
+        return active?.params || null;
+    }
+
+    private diameterFromParams(params: Record<string, any>): number | null {
+        const inner = this.numberOrNull(params['inner_diameter_mm']);
+        if (inner !== null) return inner;
+        const dn = this.numberOrNull(params['pipe_diameter_dn']);
+        if (dn !== null) return dn;
+        const inch = this.numberOrNull(params['pipe_diameter_inch']);
+        return inch !== null ? inch * 25.4 : null;
+    }
+
+    private numberOrNull(raw: any): number | null {
+        if (raw === null || raw === undefined || raw === '') return null;
+        const value = typeof raw === 'number' ? raw : parseFloat(String(raw));
+        return Number.isFinite(value) && value > 0 ? value : null;
     }
 
     // Installation Context drawer (per-sensor effective-dated params)

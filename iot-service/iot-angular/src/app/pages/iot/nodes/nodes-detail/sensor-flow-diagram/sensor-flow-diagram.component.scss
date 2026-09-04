@@ -1,0 +1,87 @@
+.flow-diagram {
+    // token dipakai ulang oleh elemen SVG di bawah
+    --fd-shell: rgba(var(--bs-inverse-rgb), .18);
+    --fd-shell-lo: rgba(var(--bs-inverse-rgb), .08);
+    --fd-edge: rgba(var(--bs-inverse-rgb), .30);
+    --fd-line: rgba(var(--bs-inverse-rgb), .45);
+    --fd-muted: rgba(var(--bs-inverse-rgb), .55);
+}
+
+.flow-svg {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    height: auto;
+}
+
+// ===== badan pipa =====
+.pipe-back { fill: var(--fd-shell-lo); stroke: var(--fd-edge); stroke-width: 1.5; }
+.pipe-face { fill: var(--fd-shell); stroke: var(--fd-edge); stroke-width: 1.5; }
+.pipe-edge { stroke: var(--fd-edge); stroke-width: 1.5; }
+
+.shell-stop-1 { stop-color: rgba(var(--bs-inverse-rgb), .06); }
+.shell-stop-2 { stop-color: rgba(var(--bs-inverse-rgb), .16); }
+.shell-stop-3 { stop-color: rgba(var(--bs-inverse-rgb), .06); }
+
+// ===== air =====
+.water-stop-1 { stop-color: var(--bs-theme); stop-opacity: .85; }
+.water-stop-2 { stop-color: #22c55e; stop-opacity: .55; }
+.water-face { stroke: var(--bs-theme); stroke-width: 1.5; }
+.water-face.water-idle { opacity: .35; }
+
+// ===== panah & dimensi =====
+.flow-arrow { stroke: var(--bs-theme); stroke-width: 4; stroke-linecap: round; }
+.arrow-fill { fill: var(--bs-theme); }
+.dim-fill { fill: var(--fd-line); }
+.dim-line { stroke: var(--fd-line); stroke-width: 1.5; }
+.dim-tick { stroke: var(--fd-line); stroke-width: 1; stroke-dasharray: 3 3; }
+.leader { stroke: var(--fd-muted); stroke-width: 1.2; stroke-dasharray: 5 4; fill: none; }
+
+// ===== titik acuan d / Q / V =====
+.point-dot { fill: var(--bs-body-bg); stroke: var(--fd-line); stroke-width: 1.5; }
+.point-text {
+    fill: var(--bs-inverse);
+    font-size: 13px;
+    font-weight: 600;
+    font-style: italic;
+}
+
+// ===== kotak nilai =====
+.value-box {
+    rect {
+        fill: var(--bs-body-bg);
+        stroke: rgba(var(--bs-inverse-rgb), .20);
+        stroke-width: 1;
+    }
+    &.value-empty rect {
+        stroke-dasharray: 5 4;
+        fill: transparent;
+    }
+}
+
+.value-num {
+    fill: var(--bs-inverse);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.value-unit {
+    fill: var(--fd-muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.value-empty-text {
+    fill: var(--fd-muted);
+    font-size: 14px;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.value-cap {
+    fill: var(--fd-muted);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}

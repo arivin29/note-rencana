@@ -241,6 +241,13 @@
                             </button>
                         </div>
                     </div>
+                    <sensor-flow-diagram *ngIf="sensor.flow"
+                        [data]="sensor.flow"
+                        [sensorLabel]="sensor.label"
+                        [catalogLabel]="sensor.sensorCatalogLabel"
+                        (configureDiameter)="openContextDrawer(sensor)">
+                    </sensor-flow-diagram>
+
                     <div class="table-responsive mt-3">
                         <table class="table table-sm align-middle mb-0">
                             <thead class="text-uppercase text-muted small">
