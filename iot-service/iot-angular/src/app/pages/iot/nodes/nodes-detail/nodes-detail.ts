@@ -167,6 +167,8 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
     maintenanceTimeline: MaintenanceEvent[] = [];
 
     channelCharts: ChannelChart[] = [];
+    /** Channel yang sudah diwakili diagram hidrolika — tak perlu kartu tren sendiri. */
+    private diagramChannelIds = new Set<string>();
 
     // IoT Logs
     iotLogs: IoTLogItem[] = [];
@@ -458,8 +460,11 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
             next: (response: any) => {
                 console.log('Telemetry trends:', response);
 
-                // Map telemetry data to charts - show ALL channels (no limit)
-                this.channelCharts = (response.channels || []).map((channel: any) => {
+                // Map telemetry data to charts — semua channel kecuali yang sudah
+                // diwakili diagram hidrolika (mis. diameter pipa).
+                this.channelCharts = (response.channels || [])
+                    .filter((channel: any) => !this.diagramChannelIds.has(channel.idSensorChannel))
+                    .map((channel: any) => {
                     const dataPoints = channel.dataPoints || [];
                     
                     // Calculate decimal places from precision (e.g., 0.01 = 2 decimals, 0.1 = 1 decimal)
@@ -595,6 +600,7 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
     /** Susun data diagram untuk tiap sensor flow meter, lalu lengkapi diameter dari context instalasi. */
     private buildFlowMeters(lastSeenAt?: string | null): void {
         const updatedAt = lastSeenAt ? new Date(lastSeenAt).toLocaleString('id-ID') : null;
+        this.diagramChannelIds.clear();
 
         this.sensors.forEach((sensor) => {
             if (!this.isFlowMeterSensor(sensor)) {
@@ -606,6 +612,11 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
             const velocityCh = this.findChannel(sensor, 'velocity');
             const volumeCh = this.findChannel(sensor, 'volume');
             const diameterCh = this.findChannel(sensor, 'diameter');
+
+            // Diameter adalah parameter pasang, bukan tren — cukup tampil di diagram.
+            if (diameterCh) {
+                this.diagramChannelIds.add(diameterCh.id);
+            }
 
             // satuan totalizer sering ditulis 'm3' atau bahkan 'Volume' — tampilkan m³
             const rawVolumeUnit = (volumeCh?.unit || '').trim().toLowerCase();
