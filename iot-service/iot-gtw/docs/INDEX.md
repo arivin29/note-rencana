@@ -23,6 +23,9 @@ Complete documentation for IoT Gateway service.
 - **[MINIMAL-LOGGING.md](MINIMAL-LOGGING.md)** - Logging optimization & configuration
 - **[LOGGING-QUICK-REF.md](LOGGING-QUICK-REF.md)** - Quick reference for logging modes
 
+### Known Issues
+- **[RS485-CONFIG-DUPLICATE-BUG.md](RS485-CONFIG-DUPLICATE-BUG.md)** - `stream_config` kirim blok RS485 dobel & ikut sensor nonaktif (belum diperbaiki, 4 Sep 2026)
+
 ### Latest Updates
 - **[TODAY-FIXES.md](TODAY-FIXES.md)** - Latest fixes and updates (Nov 22, 2025)
 - **[QUICK-SUMMARY.md](QUICK-SUMMARY.md)** - Quick summary of recent changes
