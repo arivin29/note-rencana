@@ -1,0 +1,95 @@
+<div class="m-card m-flow">
+  <div class="m-flow__head">
+    <div class="m-flow__title"><i class="fa fa-water"></i> {{ sensorLabel || 'Hidrolika Pipa' }}</div>
+    <span [class]="crossCheckClass">
+      {{ crossCheckLabel }}
+      <ng-container *ngIf="view.deviationPct !== null && view.crossCheck !== 'idle' && view.crossCheck !== 'unknown'">
+        · {{ view.deviationPct > 0 ? '+' : '' }}{{ view.deviationPct | number:'1.0-1' }}%
+      </ng-container>
+    </span>
+  </div>
+
+  <svg class="m-flow__svg" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet" role="img"
+       [attr.aria-label]="'Diagram aliran ' + sensorLabel">
+    <defs>
+      <linearGradient id="mFlowWater" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#22d3ee" stop-opacity=".9" />
+        <stop offset="100%" stop-color="#0369a1" stop-opacity=".7" />
+      </linearGradient>
+      <marker id="mFlowHead" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+        <polygon points="0 0, 9 3, 0 6" fill="#22d3ee" />
+      </marker>
+    </defs>
+
+    <!-- badan pipa -->
+    <ellipse cx="96" cy="75" rx="16" ry="46" class="m-flow__shell" />
+    <rect x="96" y="29" width="124" height="92" class="m-flow__body" />
+    <line x1="96" y1="29" x2="220" y2="29" class="m-flow__edge" />
+    <line x1="96" y1="121" x2="220" y2="121" class="m-flow__edge" />
+
+    <!-- penampang + isi air -->
+    <ellipse cx="220" cy="75" rx="16" ry="46" class="m-flow__face" />
+    <ellipse cx="220" cy="75" rx="12" ry="36" fill="url(#mFlowWater)"
+             [attr.opacity]="view.hasFlowMovement ? 1 : 0.4" />
+
+    <!-- dimensi diameter -->
+    <line x1="72" y1="29" x2="96" y2="29" class="m-flow__dim-tick" />
+    <line x1="72" y1="121" x2="96" y2="121" class="m-flow__dim-tick" />
+    <line x1="80" y1="29" x2="80" y2="121" class="m-flow__dim" />
+    <text x="60" y="79" class="m-flow__mark">d</text>
+
+    <!-- arah aliran -->
+    <line x1="240" y1="75" x2="300" y2="75" class="m-flow__arrow" marker-end="url(#mFlowHead)" />
+    <text x="248" y="62" class="m-flow__mark">V</text>
+    <text x="214" y="18" class="m-flow__mark">Q</text>
+  </svg>
+
+  <div class="m-flow__grid">
+    <div class="m-flow__cell">
+      <div class="m-flow__val" [class.m-flow__val--empty]="view.diameter.value === null">
+        <ng-container *ngIf="view.diameter.value !== null; else noD">
+          {{ view.diameter.value | number:'1.0-2' }}<span class="m-flow__unit">mm</span>
+        </ng-container>
+        <ng-template #noD>—</ng-template>
+      </div>
+      <div class="m-flow__cap">diameter dalam · {{ sourceLabel(view.diameter.source) }}</div>
+    </div>
+    <div class="m-flow__cell">
+      <div class="m-flow__val" [class.m-flow__val--empty]="view.flow.value === null">
+        <ng-container *ngIf="view.flow.value !== null; else noQ">
+          {{ view.flow.value | number:'1.2-2' }}<span class="m-flow__unit">l/s</span>
+        </ng-container>
+        <ng-template #noQ>—</ng-template>
+      </div>
+      <div class="m-flow__cap">debit · {{ sourceLabel(view.flow.source) }}</div>
+    </div>
+    <div class="m-flow__cell">
+      <div class="m-flow__val" [class.m-flow__val--empty]="view.velocity.value === null">
+        <ng-container *ngIf="view.velocity.value !== null; else noV">
+          {{ view.velocity.value | number:'1.2-2' }}<span class="m-flow__unit">m/s</span>
+        </ng-container>
+        <ng-template #noV>—</ng-template>
+      </div>
+      <div class="m-flow__cap">kecepatan · {{ sourceLabel(view.velocity.source) }}</div>
+    </div>
+    <div class="m-flow__cell">
+      <div class="m-flow__val" [class.m-flow__val--empty]="view.volume === null">
+        <ng-container *ngIf="view.volume !== null; else noVol">
+          {{ view.volume | number:'1.0-2' }}<span class="m-flow__unit">{{ view.volumeUnit }}</span>
+        </ng-container>
+        <ng-template #noVol>—</ng-template>
+      </div>
+      <div class="m-flow__cap">total volume</div>
+    </div>
+  </div>
+
+  <div class="m-flow__foot" *ngIf="view.areaM2 !== null || view.updatedAt">
+    <span *ngIf="view.areaM2 !== null">Luas penampang {{ view.areaM2 | number:'1.0-4' }} m²</span>
+    <span *ngIf="view.updatedAt">{{ view.updatedAt }}</span>
+  </div>
+
+  <button *ngIf="view.diameter.value === null" type="button" class="m-btn m-btn--ghost m-btn--sm m-flow__cta"
+          (click)="configureDiameter.emit()">
+    <i class="fa fa-sliders"></i> Atur diameter pipa
+  </button>
+</div>

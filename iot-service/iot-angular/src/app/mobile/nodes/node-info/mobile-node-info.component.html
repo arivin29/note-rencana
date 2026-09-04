@@ -37,6 +37,15 @@
     </div>
   </ng-container>
 
+  <ng-container *ngIf="flowCards.length">
+    <div class="m-section">Hidrolika pipa</div>
+    <mobile-flow-diagram *ngFor="let card of flowCards"
+      [data]="card.data"
+      [sensorLabel]="card.label"
+      (configureDiameter)="openCtx({ id: card.sensorId, label: card.label })">
+    </mobile-flow-diagram>
+  </ng-container>
+
   <div class="m-section">Channel · nilai terbaru</div>
   <mobile-channel-list [channels]="channels"></mobile-channel-list>
 

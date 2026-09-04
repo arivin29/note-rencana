@@ -23,6 +23,7 @@ import { MobileChannelListComponent } from './shared/channel-list/mobile-channel
 import { PullRefreshDirective } from './shared/pull-refresh.directive';
 import { MobileNodeInfoComponent } from './nodes/node-info/mobile-node-info.component';
 import { MobileSensorContextComponent } from './nodes/node-info/sensor-context-sheet/mobile-sensor-context.component';
+import { MobileFlowDiagramComponent } from './nodes/node-info/flow-diagram/mobile-flow-diagram.component';
 import { MobileNodeCommandComponent } from './nodes/node-command/mobile-node-command.component';
 import { MobileNodeLogsComponent } from './nodes/node-logs/mobile-node-logs.component';
 import { MobileAlertsComponent } from './alerts/mobile-alerts/mobile-alerts.component';
@@ -41,6 +42,7 @@ import { MobileProfileComponent } from './profile/mobile-profile/mobile-profile.
     MobileDashboardComponent,
     MobileNodesListComponent,
     MobileNodeDetailComponent,
+    MobileFlowDiagramComponent,
     MobileChannelDetailComponent,
     MobileProjectsListComponent,
     MobileProjectDetailComponent,

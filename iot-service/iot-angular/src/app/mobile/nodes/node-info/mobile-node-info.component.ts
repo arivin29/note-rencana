@@ -7,6 +7,10 @@ import { AutoRefreshService } from '@services/auto-refresh.service';
 import { relTime } from '../../shared/util';
 import { ChannelItem, ChStatus } from '../../shared/channel-list/mobile-channel-list.component';
 import { RefreshBusService } from '../../shared/refresh-bus.service';
+import { FlowChannelLike, FlowMeterInput, FlowMeterService } from '@services/flow-meter.service';
+
+/** Satu kartu diagram hidrolika per sensor flow meter. */
+interface FlowCard { sensorId: string; label: string; data: FlowMeterInput; }
 
 type NodeStatus = 'online' | 'offline' | 'degraded';
 interface Row { k: string; v: string; }
@@ -29,6 +33,9 @@ export class MobileNodeInfoComponent implements OnInit, OnDestroy {
   info: Row[] = [];
   health: Row[] = [];
 
+  // diagram hidrolika per sensor flow meter (TUF-2000M dsb)
+  flowCards: FlowCard[] = [];
+
   // installation context (per-sensor)
   sensors: { id: string; label: string }[] = [];
   ctxOpen = false;
@@ -37,7 +44,13 @@ export class MobileNodeInfoComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private nodesSvc: NodesService, private route: ActivatedRoute, private auto: AutoRefreshService, private refreshBus: RefreshBusService) {}
+  constructor(
+    private nodesSvc: NodesService,
+    private route: ActivatedRoute,
+    private auto: AutoRefreshService,
+    private refreshBus: RefreshBusService,
+    private flowMeter: FlowMeterService
+  ) {}
 
   ngOnInit(): void {
     this.nodeId = this.route.parent?.snapshot.paramMap.get('id') || '';
@@ -72,10 +85,24 @@ export class MobileNodeInfoComponent implements OnInit, OnDestroy {
           const sensors = (d?.sensorsWithData || []) as any[];
           const ch: ChannelItem[] = [];
           const sList: { id: string; label: string }[] = [];
+          const cards: FlowCard[] = [];
+          const updatedAt = node.lastSeenAt ? new Date(node.lastSeenAt).toLocaleString('id-ID') : null;
           for (const s of sensors) {
             const sensorLabel = s.sensorCode || s.catalogName || '';
             const sid = s.idSensor || s.id || '';
             if (sid) { sList.push({ id: sid, label: sensorLabel || sid }); }
+
+            // Sensor flow meter dapat kartu diagram d/Q/V + totalizer
+            const flowCh: FlowChannelLike[] = (s.channels || []).map((c: any) => ({
+              id: c.idSensorChannel,
+              metric: c.metricCode,
+              unit: c.unit || '',
+              latest: c.latestValue != null ? Number(c.latestValue) : null
+            }));
+            if (sid && this.flowMeter.isFlowMeter(flowCh, s.catalogName)) {
+              cards.push({ sensorId: sid, label: sensorLabel || s.catalogName || sid, data: this.flowMeter.build(flowCh, updatedAt) });
+            }
+
             for (const c of (s.channels || [])) {
               ch.push({
                 id: c.idSensorChannel, nodeId: this.nodeId, metric: c.metricCode, subtitle: sensorLabel,
@@ -88,6 +115,8 @@ export class MobileNodeInfoComponent implements OnInit, OnDestroy {
           ch.sort((a, b) => (a.metric || '').localeCompare(b.metric || ''));
           this.channels = ch;
           this.sensors = sList;
+          this.flowCards = cards;
+          this.fillDiametersFromContext();
 
           this.info = [
             { k: 'Model', v: node.nodeModel?.modelName || '-' },
@@ -114,6 +143,21 @@ export class MobileNodeInfoComponent implements OnInit, OnDestroy {
           this.loading = false; this.error = null;
         },
         error: (err) => { this.error = err?.message || 'Gagal memuat perangkat'; this.loading = false; }
+      });
+  }
+
+  /** Lengkapi diameter dari release context untuk kartu yang alatnya belum kirim. */
+  private fillDiametersFromContext(): void {
+    this.flowCards
+      .filter((card) => card.data.diameterMm === null)
+      .forEach((card) => {
+        this.flowMeter.diameterFromContext(card.sensorId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((diameterMm) => {
+            if (diameterMm === null) { return; }
+            // ganti referensi supaya ngOnChanges komponen diagram ikut jalan
+            card.data = { ...card.data, diameterMm, diameterSource: 'context' };
+          });
       });
   }
 
