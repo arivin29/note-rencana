@@ -611,9 +611,14 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
             const rawVolumeUnit = (volumeCh?.unit || '').trim().toLowerCase();
             const volumeUnit = rawVolumeUnit === 'l' ? 'L' : 'm³';
 
+            // Channel diameter boleh ada tapi belum pernah terisi (belum dipetakan / alat
+            // belum kirim register-nya) — nilai 0 dianggap tidak ada, bukan diameter nol.
+            const deviceDiameter = diameterCh ? this.toMillimeters(diameterCh.latest, diameterCh.unit) : null;
+            const hasDeviceDiameter = deviceDiameter !== null && Number.isFinite(deviceDiameter) && deviceDiameter > 0;
+
             sensor.flow = {
-                diameterMm: diameterCh ? this.toMillimeters(diameterCh.latest, diameterCh.unit) : null,
-                diameterSource: diameterCh ? 'device' : null,
+                diameterMm: hasDeviceDiameter ? deviceDiameter : null,
+                diameterSource: hasDeviceDiameter ? 'device' : null,
                 flowLps: flowCh ? this.toLitersPerSecond(flowCh.latest, flowCh.unit) : null,
                 velocityMs: velocityCh ? velocityCh.latest : null,
                 volumeM3: volumeCh ? volumeCh.latest : null,
@@ -621,8 +626,8 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
                 updatedAt
             };
 
-            // Diameter dari alat lebih diutamakan; kalau tidak ada, ambil dari context instalasi.
-            if (!diameterCh) {
+            // Diameter dari alat lebih diutamakan; kalau belum ada nilainya, pakai context instalasi.
+            if (!hasDeviceDiameter) {
                 this.loadDiameterFromContext(sensor);
             }
         });
