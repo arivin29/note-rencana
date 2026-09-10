@@ -366,40 +366,51 @@ async function main() {
 
   // nama variabel mengikuti .env gtw (DB_NAME); DB_DATABASE dipakai iot-backend-go
   const database = process.env.DB_NAME || process.env.DB_DATABASE;
-  const pg = new Client({
+  const pgConfig = {
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT || 5432),
     user: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
-  });
-  await pg.connect();
-  console.log(`Postgres  : ${process.env.DB_USERNAME}@${process.env.DB_HOST}:${process.env.DB_PORT}/${database}`);
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    keepAlive: true,
+    statement_timeout: 120000
+  };
+
+  console.log(`Postgres  : ${pgConfig.user}@${pgConfig.host}:${pgConfig.port}/${database}`);
   console.log(`ClickHouse: ${CH.username}@${CH.host}:${CH.port}/${CH.database}`);
+
+  // Koneksi dibuka per siklus: di mode jaga, koneksi yang menganggur lama
+  // diputus firewall/server ('read ETIMEDOUT') dan pg melempar error tak tertangkap.
+  const withPg = async (fn) => {
+    const pg = new Client(pgConfig);
+    pg.on('error', (err) => console.error(`Koneksi Postgres bermasalah: ${err.message}`));
+    await pg.connect();
+    try {
+      return await fn(pg);
+    } finally {
+      await pg.end().catch(() => {});
+    }
+  };
 
   let stop = false;
   const shutdown = () => { stop = true; };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  try {
-    if (args.loop > 0) {
-      console.log(`Mode jaga : ulang tiap ${args.loop} detik (Ctrl-C untuk berhenti)\n`);
-      while (!stop) {
-        try {
-          await runOnce(pg, args);
-        } catch (err) {
-          console.error(`Gagal pada siklus ini: ${err.message}`);
-        }
-        if (stop) break;
-        await new Promise((r) => setTimeout(r, args.loop * 1000));
+  if (args.loop > 0) {
+    console.log(`Mode jaga : ulang tiap ${args.loop} detik (Ctrl-C untuk berhenti)\n`);
+    while (!stop) {
+      try {
+        await withPg((pg) => runOnce(pg, args));
+      } catch (err) {
+        console.error(`[${new Date().toISOString()}] Gagal pada siklus ini: ${err.message}`);
       }
-    } else {
-      await runOnce(pg, args);
+      if (stop) break;
+      await new Promise((r) => setTimeout(r, args.loop * 1000));
     }
-  } finally {
-    await pg.end();
+  } else {
+    await withPg((pg) => runOnce(pg, args));
   }
 }
 
