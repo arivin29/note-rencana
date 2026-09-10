@@ -82,6 +82,16 @@ curl -s ... --data-binary "SELECT count() FROM (SELECT pg_sensor_log_id FROM iot
    yang bertimezone Asia/Jakarta. Jadi isi kolom = jam UTC, tapi ClickHouse memperlakukannya
    sebagai Jakarta → epoch-nya 7 jam di belakang. Semua kueri report memakai `addHours(event_time, 7)`
    untuk menampilkan. Script backfill sudah meniru konvensi ini; **jangan** dikonversi ke lokal.
+
+   Jebakan turunannya: **membandingkan `event_time` dengan `now()`** (server bertimezone
+   Asia/Jakarta) selalu meleset 420 menit. Untuk mengukur keterlambatan ingestion pakai:
+
+   ```sql
+   SELECT dateDiff('minute', addHours(max(event_time), 7), now()) FROM iot.sensor_telemetry;
+   ```
+
+   Tanpa `addHours(...,7)` hasilnya 420 walau data baru masuk sedetik lalu — gampang
+   disalahartikan sebagai "ingestion macet".
 2. **`sensor_telemetry` = MergeTree biasa** (bukan Replacing) → insert ulang = baris dobel.
    Karena itu dedupe wajib lewat `pg_sensor_log_id`.
 3. **`sensor_channel_latest` = ReplacingMergeTree(last_update)** → aman di-insert ulang,
