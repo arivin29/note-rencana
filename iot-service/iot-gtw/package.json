@@ -24,7 +24,9 @@
     "test:teltonika:tcp": "node scripts/test/test-teltonika-tcp.js",
     "test:teltonika:data": "node scripts/test/check-teltonika-data.js",
     "test:clickhouse": "node scripts/test/test-clickhouse.js",
-    "build:bundle": "nest build && node scripts/bundle.js bundle"
+    "build:bundle": "nest build && node scripts/bundle.js bundle",
+    "ch:backfill": "node scripts/clickhouse-backfill.js",
+    "ch:backfill:watch": "node scripts/clickhouse-backfill.js --loop 600 --quiet"
   },
   "keywords": [],
   "author": "",
