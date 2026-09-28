@@ -5,6 +5,7 @@ import { takeUntil } from 'rxjs/operators';
 import { NodesService } from '@sdk/core/services/nodes.service';
 import { WebGisCoreGeoJsonService } from '@sdk/core/services/web-gis-core-geo-json.service';
 import { WebGisLayersService } from '@sdk/core/services/web-gis-layers.service';
+import { BasemapService } from '@services/basemap.service';
 
 interface PNode { id: string; code: string; lat: number; lng: number; status: string; address: string; lastSeenAt: string | null; ago: string; }
 interface PChannel { label: string; metric: string; value: number | null; unit: string; status: string; }
@@ -47,7 +48,8 @@ export class MobileProjectMapComponent implements OnInit, OnDestroy {
     private webgisSvc: WebGisCoreGeoJsonService,
     private layersSvc: WebGisLayersService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private basemap: BasemapService
   ) {}
 
   ngOnInit(): void {
@@ -287,8 +289,8 @@ export class MobileProjectMapComponent implements OnInit, OnDestroy {
     // CARTO Dark Matter base (same as desktop).
     const baseTile = new TileLayer({
       source: new XYZ({
-        url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attributions: '© OpenStreetMap © CARTO'
+        url: this.basemap.carto('dark_all'),
+        attributions: this.basemap.attribution
       })
     });
 

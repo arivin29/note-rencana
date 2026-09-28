@@ -26,6 +26,7 @@ import { AddLayerResult } from '../components/add-layer-drawer/add-layer-drawer'
 import { StyleUpdateEvent, LayerStyle } from '../components/edit-layer-drawer/edit-layer-drawer';
 import { SensorChannelFeature } from '../components/sensor-channel-drawer/sensor-channel-drawer';
 import { AuthService } from '../../../../services/auth.service';
+import { BasemapService } from '../../../../services/basemap.service';
 import { WebGisLayerStateService, SharedLayerState } from '../services/webgis-layer-state.service';
 
 // Core layer definition (static, not from database)
@@ -192,8 +193,8 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
 
   // Base layer options
   baseLayers = [
-    { id: 'dark', name: 'Dark', icon: 'bi-moon-fill', url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
-    { id: 'light', name: 'Light', icon: 'bi-sun-fill', url: 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
+    { id: 'dark', name: 'Dark', icon: 'bi-moon-fill', url: this.basemap.carto('dark_all') },
+    { id: 'light', name: 'Light', icon: 'bi-sun-fill', url: this.basemap.carto('light_all') },
     { id: 'osm', name: 'Street', icon: 'bi-map-fill', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' },
     { id: 'satellite', name: 'Satellite', icon: 'bi-globe-americas', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
     { id: 'topo', name: 'Terrain', icon: 'bi-triangle-fill', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}' }
@@ -210,7 +211,8 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     private nodesService: NodesService,
     private route: ActivatedRoute,
     private authService: AuthService,
-    private layerStateService: WebGisLayerStateService
+    private layerStateService: WebGisLayerStateService,
+    private basemap: BasemapService
   ) {}
 
   ngOnInit(): void {
@@ -307,7 +309,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     // Carto Dark Matter - dark themed base map
     this.baseLayer = new TileLayer({
       source: new XYZ({
-        url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        url: this.basemap.carto('dark_all'),
         attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
       })
     });

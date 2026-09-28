@@ -12,6 +12,7 @@ import KML from 'ol/format/KML';
 import { fromLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import { DocumentsService, WebGisLayersService } from '../../../../../../sdk/core/services';
+import { BasemapService } from '../../../../../services/basemap.service';
 import { DocumentResponseDto } from '../../../../../../sdk/core/models/document-response-dto';
 import { LayerResponseDto } from '../../../../../../sdk/core/models/layer-response-dto';
 
@@ -88,7 +89,8 @@ export class AddLayerDrawerComponent implements OnInit, OnDestroy, AfterViewInit
   constructor(
     private fb: FormBuilder,
     private documentsService: DocumentsService,
-    private layersService: WebGisLayersService
+    private layersService: WebGisLayersService,
+    private basemap: BasemapService
   ) {}
 
   ngOnInit(): void {
@@ -439,7 +441,7 @@ export class AddLayerDrawerComponent implements OnInit, OnDestroy, AfterViewInit
 
     const baseLayer = new TileLayer({
       source: new XYZ({
-        url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        url: this.basemap.carto('dark_all')
       })
     });
 
