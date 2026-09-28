@@ -10,5 +10,5 @@ export const environment = {
   // Basemap CARTO. Sejak 2026 CARTO mewajibkan key: tanpa key tile ditimpa
   // watermark "API KEY REQUIRED". Ambil key gratis (5 jt request/bulan) di
   // https://carto.com/basemaps — cukup masukkan email, tak perlu password.
-  cartoApiKey: '',
+  cartoApiKey: 'cb1_40yq_1_b8ba76a1ffddb130ac686319',
 };
