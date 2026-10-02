@@ -1,0 +1,85 @@
+{
+  "notes": "",
+  "version": 1,
+  "baud_rate": 9600,
+  "data_format": "8N1",
+  "description": "TUF-2000 Ultrasonic Flow Meter with RS485 Modbus-RTU",
+  "device_type": "TUF-2000-FlowMeter",
+  "modbus_address": 2,
+  "scan_interval_ms": 3000,
+  "pipe_material": "",
+  "registers": [
+    {
+      "label": "Flow Rate",
+      "reg": 1,
+      "swap": true,
+      "type": "float32",
+      "unit": "m³/h",
+      "words": 2
+    },
+    {
+      "label": "Flow Velocity",
+      "reg": 5,
+      "swap": true,
+      "type": "float32",
+      "unit": "m/s",
+      "words": 2
+    },
+    {
+      "label": "Positive Totalizer",
+      "reg": 9,
+      "swap": true,
+      "type": "uint32",
+      "unit": "m³",
+      "words": 2
+    },
+    {
+      "label": "Net Totalizer",
+      "reg": 25,
+      "swap": true,
+      "type": "uint32",
+      "unit": "m³",
+      "words": 2
+    },
+    {
+      "label": "Error Code",
+      "reg": 72,
+      "swap": false,
+      "type": "hex16",
+      "unit": "",
+      "words": 1
+    },
+    {
+      "label": "Signal Quality",
+      "reg": 92,
+      "swap": false,
+      "type": "uint16",
+      "unit": "%",
+      "words": 1
+    },
+    {
+      "label": "Temperature T1",
+      "reg": 33,
+      "swap": true,
+      "type": "float32",
+      "unit": "°C",
+      "words": 2
+    },
+    {
+      "label": "Temperature T2",
+      "reg": 35,
+      "swap": true,
+      "type": "float32",
+      "unit": "°C",
+      "words": 2
+    },
+    {
+      "label": "Pipe Inner Diameter",
+      "reg": 221,
+      "swap": true,
+      "type": "float32",
+      "unit": "mm",
+      "words": 2
+    }
+  ]
+}

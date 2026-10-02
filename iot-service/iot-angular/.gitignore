@@ -73,3 +73,6 @@ graphify-out/
 
 # Playwright MCP output (traces/screenshots dari live testing) — server dari .mcp.json
 .playwright-mcp/
+
+# Berkas kerja sementara (screenshot sesi, data uji) — tidak ikut repo
+.scratch/

@@ -2,6 +2,44 @@
 
 A multi-tenant IoT platform: **Owner → Project → Node → Sensor → SensorChannel → SensorLog (telemetry)**, plus alerts, dashboards, SCADA, WebGIS, ML (anomaly/forecast), reports, notifications, audit, and an external tenant API.
 
+
+---
+
+## 0. Indeks Skill & Runbook
+
+Baca skill yang relevan **sebelum** menulis kode atau menyentuh produksi — isinya cara baku
+proyek ini plus jebakan yang sudah pernah menggigit.
+
+### Pola kode (bikin fitur)
+| Skill | Dipakai saat |
+|---|---|
+| `ui-coding-style` | **Wajib dibaca pertama** untuk semua kerja frontend — NgModule non-standalone, penamaan, RxJS, pemakaian SDK, token tema |
+| `ui-list` | Halaman list/index (tabel Bootstrap atau grid kartu) |
+| `ui-detail` | Halaman detail satu entitas |
+| `ui-form` | Form tambah/ubah |
+| `ui-card` | Kartu / widget dashboard / stat card |
+| `backend-module` | Modul CRUD Goravel: Model → DTO → Repository → Service (RBAC) → Controller → route |
+| `scada-view` | Editor diagram SCADA (React + React Flow + zustand v5) di repo `iot-scada` |
+
+### Operasional / pemulihan (produksi bermasalah)
+| Skill | Gejala pemicu |
+|---|---|
+| `clickhouse-backfill` | Report atau Grafana kosong padahal Postgres ada datanya; ClickHouse berhenti menerima data (`TOO_MANY_PARTS`, koneksi gtw putus) |
+| `node-profile-repair` | Channel node tidak terisi padahal device rajin kirim; node memakai profil milik node lain; sesudah pairing/remapping massal |
+
+### Dokumen operasional lain (bukan skill)
+| Dokumen | Isi |
+|---|---|
+| `iot-gtw/docs/INDEX.md` | Indeks dokumentasi gateway |
+| `iot-gtw/docs/RS485-CONFIG-DUPLICATE-BUG.md` | Bug `stream_config` mengirim blok RS485 dobel & ikut sensor nonaktif (belum diperbaiki) |
+| `iot-gtw/docs/devices/` | Spesifikasi register perangkat RS485 (mis. `TUF-2000-FlowMeter.json` — termasuk register 221 diameter pipa) |
+| `client-final/docs/BUILD-TUTORIAL.md` | Cara build rilis on-prem per klien PDAM |
+| `client-final/docs/ONPREM-SPEC.md` | Arsitektur pemasangan on-prem |
+| `iot-angular/docs/DOC-INDEX.md` | Indeks dokumen desain & implementasi frontend |
+| `iot-angular/.claude/DB-SCHEMA.md` | Skema database tingkat kolom |
+
+Berkas kerja sementara (screenshot sesi, data uji) ditaruh di `.scratch/` — sudah di-gitignore.
+
 ---
 
 ## 1. Repos & Roles

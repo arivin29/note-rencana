@@ -9,7 +9,9 @@ Multi-tenant IoT monitoring platform. This repo is the **Angular 20 frontend**. 
 
 ## Standards live in skills — use them before writing code
 Skills in `.claude/skills/`:
-- `ui-coding-style` — Angular conventions & theme.
+
+**Pola kode:**
+- `ui-coding-style` — Angular conventions & theme. Read before any frontend work.
 - `ui-list` — standard list/index page.
 - `ui-detail` — standard detail page.
 - `ui-card` — standard card / dashboard widget.
@@ -17,7 +19,11 @@ Skills in `.claude/skills/`:
 - `backend-module` — standard Goravel CRUD module (for backend work).
 - `scada-view` — how to build/modify the **iot-scada** SCADA diagram view (React + React Flow + zustand v5); read before any SCADA visual-editor change.
 
-Full map: [.claude/PROJECT-MAP.md](.claude/PROJECT-MAP.md).
+**Runbook operasional (produksi):**
+- `clickhouse-backfill` — report/Grafana kosong padahal Postgres ada datanya; ClickHouse berhenti menerima data.
+- `node-profile-repair` — channel node tak terisi padahal device kirim terus; profil dipakai banyak node; sesudah pairing/remapping.
+
+Full map + indeks semua skill/runbook/dokumen: [.claude/PROJECT-MAP.md](.claude/PROJECT-MAP.md) §0.
 
 ## Non-negotiables
 - **API contract is shared & fixed** (camelCase JSON). List = `{ data, meta:{total,page,limit,totalPages} }`; single item returned directly; error = `{ statusCode, message, error }`. Do not invent new envelopes.

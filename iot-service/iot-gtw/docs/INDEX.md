@@ -23,6 +23,9 @@ Complete documentation for IoT Gateway service.
 - **[MINIMAL-LOGGING.md](MINIMAL-LOGGING.md)** - Logging optimization & configuration
 - **[LOGGING-QUICK-REF.md](LOGGING-QUICK-REF.md)** - Quick reference for logging modes
 
+### Device Specs
+- **[devices/](devices/)** - Spesifikasi register RS485 per perangkat. `TUF-2000-FlowMeter.json` (9 register, termasuk reg 221 Pipe Inner Diameter) — isi file ini yang dikirim ke alat lewat `stream_config`, sumbernya `sensor_catalogs.default_channels_json`.
+
 ### Known Issues
 - **[RS485-CONFIG-DUPLICATE-BUG.md](RS485-CONFIG-DUPLICATE-BUG.md)** - `stream_config` kirim blok RS485 dobel & ikut sensor nonaktif (belum diperbaiki, 4 Sep 2026)
 
