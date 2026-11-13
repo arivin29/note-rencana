@@ -2,6 +2,12 @@
   <div #mapEl class="map-canvas" [class.no-basemap]="options.basemap === 'none'"></div>
   <div #tooltipEl class="map-tooltip"></div>
 
+  <!-- Interactive maps: back to the auto-fit view -->
+  <button *ngIf="options.interactive" type="button" class="map-reset" (click)="resetView()"
+          title="Tampilkan seluruh area" aria-label="Tampilkan seluruh area">
+    <i class="fa fa-expand"></i>
+  </button>
+
   <!-- WebGIS sensor value cards (same component as the WebGIS page) -->
   <sensor-labels
     [map]="labelMap"
@@ -38,7 +44,7 @@
   </div>
 
   <!-- Legend: WebGIS layers (name + style colour) and/or SQL status semantics -->
-  <div *ngIf="legendItems.length || alertCount || drawsSql" class="map-legend">
+  <div *ngIf="options.showLegend && (legendItems.length || alertCount || drawsSql)" class="map-legend">
     <span *ngFor="let item of legendItems" class="map-legend-item">
       <span class="swatch" [ngClass]="'swatch-' + item.shape" [style.--swatch]="item.color"></span>{{ item.name }}
     </span>

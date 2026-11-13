@@ -99,3 +99,8 @@ test('map source decides which layers are drawn', () => {
   assert.deepEqual([mapDrawsWebgis(o('sql')), mapDrawsSql(o('sql')), mapDrawsSupportLayers(o('sql'))], [false, true, false]);
   assert.equal(mapDrawsSupportLayers(o('sql', true)), true);
 });
+
+test('showLegend defaults to true and can be turned off', () => {
+  assert.equal(readMapOptions(undefined).showLegend, true);
+  assert.equal(readMapOptions({ showLegend: false }).showLegend, false);
+});

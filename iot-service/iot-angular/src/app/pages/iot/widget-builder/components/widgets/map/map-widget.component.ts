@@ -15,6 +15,7 @@ import GeoJSON from 'ol/format/GeoJSON';
 import { fromLonLat } from 'ol/proj';
 import { createEmpty, extend as extendExtent, isEmpty as isEmptyExtent, Extent } from 'ol/extent';
 import { defaults as defaultInteractions } from 'ol/interaction';
+import Zoom from 'ol/control/Zoom';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { Widget } from '../../../models/widget.models';
 import {
@@ -310,12 +311,20 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.baseLayer.setVisible(true);
   }
 
+  /** "Tampilkan seluruh area" button on interactive maps. */
+  resetView(): void {
+    this.fit();
+  }
+
   private applyInteractions(): void {
     if (!this.map) return;
     const interactions = this.map.getInteractions();
     interactions.clear();
+    const controls = this.map.getControls();
+    controls.clear();
     if (this.options.interactive) {
       defaultInteractions().forEach((i) => interactions.push(i));
+      controls.push(new Zoom({ zoomInTipLabel: 'Perbesar', zoomOutTipLabel: 'Perkecil' }));
     }
   }
 

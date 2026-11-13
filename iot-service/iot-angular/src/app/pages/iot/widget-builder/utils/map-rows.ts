@@ -42,6 +42,7 @@ export interface MapWidgetOptions {
   showLabels: boolean;
   labelMode: MapLabelMode;
   interactive: boolean;
+  showLegend: boolean;
 }
 
 export const DEFAULT_MAP_OPTIONS: MapWidgetOptions = {
@@ -51,6 +52,7 @@ export const DEFAULT_MAP_OPTIONS: MapWidgetOptions = {
   showLabels: true,
   labelMode: 'label-value',
   interactive: false,
+  showLegend: true,
 };
 
 const LAT_KEYS = ['lat', 'latitude'];
@@ -67,6 +69,7 @@ export function readMapOptions(raw: unknown): MapWidgetOptions {
     showLabels: bool(r['showLabels'], DEFAULT_MAP_OPTIONS.showLabels),
     labelMode: (['label-value', 'value', 'label'] as const).includes(r['labelMode']) ? r['labelMode'] : DEFAULT_MAP_OPTIONS.labelMode,
     interactive: bool(r['interactive'], DEFAULT_MAP_OPTIONS.interactive),
+    showLegend: bool(r['showLegend'], DEFAULT_MAP_OPTIONS.showLegend),
   };
 }
 
