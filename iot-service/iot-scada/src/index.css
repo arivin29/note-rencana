@@ -349,3 +349,55 @@
     border-color: #0ea5e9 !important;
   }
 }
+
+/* ── Kiosk mode (embed view ?kiosk=1) — TV / dashboard widget ── */
+@layer components {
+  /* bg=transparent → parent dashboard shows through the iframe */
+  html.scada-kiosk-transparent,
+  html.scada-kiosk-transparent body,
+  html.scada-kiosk-transparent #root {
+    background-color: transparent;
+  }
+
+  /* Corner controls: −  +  [fit · Seluruh bagan], ≥40px touch/TV targets */
+  .react-flow__controls.kiosk-controls {
+    background-color: color-mix(in srgb, var(--surface-bg) 90%, transparent) !important;
+    border: 1px solid var(--surface-border) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    margin: 12px;
+    gap: 0;
+  }
+  .react-flow__controls.kiosk-controls .react-flow__controls-button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background-color: transparent !important;
+    border: none !important;
+    border-right: 1px solid var(--surface-border) !important;
+    color: var(--text-secondary) !important;
+  }
+  .react-flow__controls.kiosk-controls .react-flow__controls-button:last-child {
+    border-right: none !important;
+  }
+  .react-flow__controls.kiosk-controls .react-flow__controls-button:hover,
+  .react-flow__controls.kiosk-controls .react-flow__controls-button:focus-visible {
+    background-color: var(--surface-border) !important;
+    color: var(--text-primary) !important;
+  }
+  .react-flow__controls.kiosk-controls .react-flow__controls-button svg {
+    width: 18px;
+    height: 18px;
+    max-width: none;
+    max-height: none;
+    fill: none !important;
+  }
+  .react-flow__controls.kiosk-controls .react-flow__controls-button.kiosk-controls__fit {
+    width: auto;
+    gap: 8px;
+    padding: 0 14px 0 12px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+}

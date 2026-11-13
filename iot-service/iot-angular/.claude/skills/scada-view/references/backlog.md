@@ -16,7 +16,7 @@ Line numbers are approximate (as of commit cad3e7a).
 ## P1 — polish / consistency
 - Status colors stale/offline/off inconsistent across tailwind / ScadaNodeFrame / ZoneNode → add `--status-stale/offline/off/unknown` vars and one `statusColor()` helper.
 - `PIPE_COLORS` duplicated (PipeEdge vs InspectorPanel w/o `signal`); `SIGNAL_ENDPOINT_TYPES` duplicated (ScadaCanvas vs DiagramSettingsPanel) → single module.
-- Canvas background hardcoded in `ScadaCanvas.tsx:324` and handle CSS hex → use tokens.
+- Handle CSS hex in `index.css` (`#30363d`, `#0ea5e9`, React Flow controls) → use tokens.
 - 83 arbitrary `text-[Npx]` in NodeConfigDrawer, many 7–8px texts → define a type scale (10/11/12/13) in tailwind.
 - `--text-muted` contrast ~4:1 on canvas, below 4.5:1.
 - Handle hover `transform: scale(1.3)` overrides RF translate → handles jump. Use `scale` property or `translate(-50%,-50%) scale(1.3)`.

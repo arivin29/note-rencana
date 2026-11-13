@@ -3,8 +3,8 @@
 // Route: /diagrams/:diagramId/view  dan  /diagrams/:diagramId/edit
 // ============================================================
 
-import React, { useCallback, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ReactFlowProvider } from '@xyflow/react'
 
 import { ScadaCanvas }     from '@/canvas/ScadaCanvas'
@@ -28,14 +28,30 @@ import { useUiStore }      from '@/stores/useUiStore'
 
 import type { ScadaNodeDto } from '@/types/scada'
 import { NODE_LIBRARY } from '@/components/NodeLibraryDrawer'
+import { readKioskConfig, KIOSK_OFF } from '@/kiosk/kiosk'
+import { KioskRuntimeChip } from '@/kiosk/KioskRuntimeChip'
 
 interface DiagramPageProps {
   initialMode?: 'view' | 'edit'
+  /** Only the embed VIEW route honours `?kiosk=1` (see kiosk/kiosk.ts). */
+  allowKiosk?: boolean
 }
 
-export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
+export function DiagramPage({ initialMode = 'view', allowKiosk = false }: DiagramPageProps) {
   const { diagramId }  = useParams<{ diagramId: string }>()
   const navigate        = useNavigate()
+  const location        = useLocation()
+
+  // Kiosk config from query params (embed view route only)
+  const kiosk = useMemo(
+    () => (allowKiosk && initialMode === 'view' ? readKioskConfig(location.search, location.pathname) : KIOSK_OFF),
+    [allowKiosk, initialMode, location.search, location.pathname],
+  )
+  const setKiosk = useUiStore((s) => s.setKiosk)
+  useEffect(() => {
+    setKiosk(kiosk)
+    return () => setKiosk(KIOSK_OFF)
+  }, [kiosk, setKiosk])
 
   const { meta, isLoading, loadError, isSaving, save } = useScadaDiagram(diagramId)
 
@@ -56,8 +72,8 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
   const addNode      = useDiagramStore((s) => s.addNode)
 
   useEffect(() => {
-    setMode(initialMode)
-  }, [initialMode, setMode])
+    setMode(kiosk.enabled ? 'view' : initialMode)
+  }, [initialMode, kiosk.enabled, setMode])
 
   // Warn before page unload if dirty
   useEffect(() => {
@@ -74,6 +90,11 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Kiosk: read-only — only Shift+F (fit view) is honoured
+      if (kiosk.enabled) {
+        if (kiosk.interactive && e.shiftKey && e.key === 'F') useUiStore.getState().triggerFitView()
+        return
+      }
       // Ctrl/Cmd + S → save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
@@ -118,7 +139,7 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [mode, save])
+  }, [mode, save, kiosk.enabled, kiosk.interactive])
 
   // Add node handler
   const handleAddNode = useCallback((type: string, label: string, size: { width: number; height: number }) => {
@@ -135,6 +156,41 @@ export function DiagramPage({ initialMode = 'view' }: DiagramPageProps) {
     }
     addNode(newNode)
   }, [addNode])
+
+  // ── Kiosk loading / error (minimal, Bahasa Indonesia, no navigation) ──
+  if (kiosk.enabled && isLoading) {
+    return (
+      <div className={`h-full w-full flex items-center justify-center ${kiosk.transparent ? '' : 'bg-canvas'}`}>
+        <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
+          <span className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+          Memuat bagan…
+        </div>
+      </div>
+    )
+  }
+  if (kiosk.enabled && loadError) {
+    return (
+      <div className={`h-full w-full flex items-center justify-center p-4 ${kiosk.transparent ? '' : 'bg-canvas'}`}>
+        <div className="text-center max-w-sm">
+          <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Bagan gagal dimuat</p>
+          <p className="text-sm text-[var(--text-secondary)] mb-4 break-words">{loadError}</p>
+          <button onClick={() => window.location.reload()} className="btn-primary min-h-[40px] px-5">Coba lagi</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Kiosk main: canvas only (no TopBar / panels / drawers / toasts) ──
+  if (kiosk.enabled) {
+    return (
+      <div className={`h-full w-full relative flex overflow-hidden ${kiosk.transparent ? '' : 'bg-canvas'}`}>
+        <ReactFlowProvider>
+          <ScadaCanvas />
+        </ReactFlowProvider>
+        <KioskRuntimeChip />
+      </div>
+    )
+  }
 
   // ── Loading state ─────────────────────────────────────────────
   if (isLoading) {

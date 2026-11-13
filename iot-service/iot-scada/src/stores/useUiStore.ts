@@ -4,6 +4,7 @@
 // ============================================================
 
 import { create } from 'zustand'
+import { KIOSK_OFF, type KioskConfig } from '@/kiosk/kiosk'
 
 export type ScadaMode = 'view' | 'edit'
 export type ActiveTool = 'select' | 'add-node' | 'connect'
@@ -76,6 +77,10 @@ export interface UiState {
   // Lock pan (view mode)
   isPanLocked: boolean
   togglePanLock: () => void
+
+  // Kiosk (embed view, query params) — KIOSK_OFF when not in kiosk
+  kiosk: KioskConfig
+  setKiosk: (cfg: KioskConfig) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -168,9 +173,12 @@ export const useUiStore = create<UiState>((set) => ({
   // View-mode tooltip — single active
   activeTooltipNodeId: null,
   setActiveTooltipNodeId: (id) => set({ activeTooltipNodeId: id }),
-  toggleTooltipNodeId: (id) => set((s) => ({
-    activeTooltipNodeId: s.activeTooltipNodeId === id ? null : id,
-  })),
+  // Non-interactive kiosk → tooltips disabled (return same state = no notify)
+  toggleTooltipNodeId: (id) => set((s) => (
+    s.kiosk.enabled && !s.kiosk.interactive
+      ? s
+      : { activeTooltipNodeId: s.activeTooltipNodeId === id ? null : id }
+  )),
 
   // FitView
   fitViewTrigger: 0,
@@ -197,4 +205,8 @@ export const useUiStore = create<UiState>((set) => ({
   // Lock pan
   isPanLocked: false,
   togglePanLock: () => set((s) => ({ isPanLocked: !s.isPanLocked })),
+
+  // Kiosk
+  kiosk: KIOSK_OFF,
+  setKiosk: (cfg) => set({ kiosk: cfg, activeTooltipNodeId: null }),
 }))

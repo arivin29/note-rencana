@@ -7,6 +7,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
+  Controls,
+  ControlButton,
   ConnectionMode,
   BackgroundVariant,
   type Node,
@@ -18,6 +20,7 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
   useReactFlow,
+  useNodesInitialized,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
@@ -26,6 +29,12 @@ import { edgeTypes } from '@/edges/PipeEdge'
 import { useDiagramStore } from '@/stores/useDiagramStore'
 import { useUiStore } from '@/stores/useUiStore'
 import type { ScadaNodeDto, ScadaEdgeDto } from '@/types/scada'
+import {
+  KIOSK_MIN_ZOOM,
+  KIOSK_FIT_PADDING,
+  KIOSK_FIT_MAX_ZOOM,
+  KIOSK_RESIZE_DEBOUNCE_MS,
+} from '@/kiosk/kiosk'
 
 // ── Convert store node/edge to React Flow format ──────────────
 
@@ -83,7 +92,7 @@ function toFlowEdge(e: ScadaEdgeDto): Edge {
 // ── ScadaCanvas inner (needs ReactFlow context) ───────────────
 
 function CanvasInner() {
-  const { fitView } = useReactFlow()
+  const { fitView, zoomIn, zoomOut } = useReactFlow()
 
   const storeNodes   = useDiagramStore((s) => s.nodes)
   const storeEdges   = useDiagramStore((s) => s.edges)
@@ -96,6 +105,9 @@ function CanvasInner() {
   const isPanLocked      = useUiStore((s) => s.isPanLocked)
   const setSelectedNodes = useUiStore((s) => s.setSelectedNodes)
   const setSelectedEdges = useUiStore((s) => s.setSelectedEdges)
+  const kioskEnabled     = useUiStore((s) => s.kiosk.enabled)
+  const kioskInteractive = useUiStore((s) => s.kiosk.interactive)
+  const kioskTransparent = useUiStore((s) => s.kiosk.transparent)
 
   const removeNode = useDiagramStore((s) => s.removeNode)
   const removeEdge = useDiagramStore((s) => s.removeEdge)
@@ -281,7 +293,48 @@ function CanvasInner() {
     }
   }, [fitViewTrigger, fitView])
 
-  const isEditMode = mode === 'edit'
+  // ── Kiosk auto-fit: on data load, on nodes measured, on container resize ──
+  const rfWrapperRef = useRef<HTMLDivElement>(null)
+  const nodesInitialized = useNodesInitialized()
+  const fitKiosk = useCallback(() => {
+    fitView({ padding: KIOSK_FIT_PADDING, minZoom: KIOSK_MIN_ZOOM, maxZoom: KIOSK_FIT_MAX_ZOOM, duration: 0 })
+  }, [fitView])
+
+  // Diagram (re)loaded → fit after RF has adopted the new nodes
+  useEffect(() => {
+    if (!kioskEnabled || storeNodes.length === 0) return
+    const raf = requestAnimationFrame(() => fitKiosk())
+    return () => cancelAnimationFrame(raf)
+  }, [kioskEnabled, storeNodes, fitKiosk])
+
+  // Nodes measured (real DOM sizes) → fit once more
+  useEffect(() => {
+    if (kioskEnabled && nodesInitialized) fitKiosk()
+  }, [kioskEnabled, nodesInitialized, fitKiosk])
+
+  // Iframe / container resized → debounced re-fit
+  useEffect(() => {
+    if (!kioskEnabled) return
+    const el = rfWrapperRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let lastW = 0, lastH = 0
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect
+      if (!r || r.width === 0 || r.height === 0) return
+      if (Math.round(r.width) === lastW && Math.round(r.height) === lastH) return
+      lastW = Math.round(r.width); lastH = Math.round(r.height)
+      clearTimeout(timer)
+      timer = setTimeout(fitKiosk, KIOSK_RESIZE_DEBOUNCE_MS)
+    })
+    ro.observe(el)
+    return () => { ro.disconnect(); clearTimeout(timer) }
+  }, [kioskEnabled, fitKiosk])
+
+  const isEditMode = mode === 'edit' && !kioskEnabled
+  // Kiosk non-interactive = fully static picture; kiosk interactive ignores pan-lock (no UI for it)
+  const kioskStatic = kioskEnabled && !kioskInteractive
+  const allowPanZoom = kioskEnabled ? kioskInteractive : !isPanLocked
 
   // Double-click edge → open edge config drawer
   const onEdgeDoubleClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
@@ -292,6 +345,7 @@ function CanvasInner() {
 
   return (
     <ReactFlow
+      ref={rfWrapperRef}
       nodes={rfNodes}
       edges={rfEdges}
       nodeTypes={nodeTypes as any}
@@ -306,24 +360,66 @@ function CanvasInner() {
       deleteKeyCode={isEditMode ? ['Backspace', 'Delete'] : null}
       nodesDraggable={isEditMode}
       nodesConnectable={isEditMode}
-      panOnDrag={!isPanLocked}
-      zoomOnScroll={!isPanLocked}
-      zoomOnPinch={!isPanLocked}
+      panOnDrag={allowPanZoom}
+      zoomOnScroll={allowPanZoom}
+      zoomOnPinch={allowPanZoom}
       zoomOnDoubleClick={false}
-      elementsSelectable={true}
+      elementsSelectable={!kioskStatic}
+      nodesFocusable={!kioskStatic}
+      edgesFocusable={!kioskStatic}
+      preventScrolling={!kioskStatic}
       fitView
-      fitViewOptions={{ padding: 0.2 }}
-      minZoom={0.1}
+      fitViewOptions={kioskEnabled
+        ? { padding: KIOSK_FIT_PADDING, minZoom: KIOSK_MIN_ZOOM, maxZoom: KIOSK_FIT_MAX_ZOOM }
+        : { padding: 0.2 }}
+      minZoom={kioskEnabled ? KIOSK_MIN_ZOOM : 0.1}
       maxZoom={3}
       proOptions={{ hideAttribution: true }}
+      style={kioskEnabled
+        ? { background: kioskTransparent ? 'transparent' : 'var(--canvas-bg)' }
+        : undefined}
     >
-      <Background
-        variant={BackgroundVariant.Dots}
-        gap={24}
-        size={1}
-        color="#30363d"
-        style={{ backgroundColor: '#0d1117' }}
-      />
+      {/* Kiosk: plain token background (no dot grid — calm TV canvas) or none (transparent) */}
+      {!kioskEnabled && (
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={24}
+          size={1}
+          color="var(--surface-border)"
+          style={{ backgroundColor: 'var(--canvas-bg)' }}
+        />
+      )}
+
+      {/* Kiosk interactive: zoom −/+ and fit, corner, TV-readable */}
+      {kioskEnabled && kioskInteractive && (
+        <Controls
+          className="kiosk-controls"
+          position="bottom-right"
+          orientation="horizontal"
+          showZoom={false}
+          showFitView={false}
+          showInteractive={false}
+          aria-label="Kontrol tampilan bagan"
+        >
+          <ControlButton onClick={() => zoomOut({ duration: 200 })} title="Perkecil" aria-label="Perkecil">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.75}><path d="M3 8h10" strokeLinecap="round" /></svg>
+          </ControlButton>
+          <ControlButton onClick={() => zoomIn({ duration: 200 })} title="Perbesar" aria-label="Perbesar">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.75}><path d="M3 8h10M8 3v10" strokeLinecap="round" /></svg>
+          </ControlButton>
+          <ControlButton
+            onClick={() => fitView({ padding: KIOSK_FIT_PADDING, minZoom: KIOSK_MIN_ZOOM, maxZoom: KIOSK_FIT_MAX_ZOOM, duration: 300 })}
+            title="Tampilkan seluruh bagan"
+            aria-label="Tampilkan seluruh bagan"
+            className="kiosk-controls__fit"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span>Seluruh bagan</span>
+          </ControlButton>
+        </Controls>
+      )}
     </ReactFlow>
   )
 }

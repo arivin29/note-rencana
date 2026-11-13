@@ -10,12 +10,24 @@ interface AuthContextType {
   user: ScadaAuthUser | null
   setUser: (u: ScadaAuthUser | null) => void
   isReady: boolean
+  /** True when a token was received (postMessage) but /auth/me rejected it. */
+  authFailed: boolean
+  /** Embed: ask the parent to (re)send the token — re-posts the same `scada-ready`. */
+  requestToken: () => void
+}
+
+function postReady() {
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'scada-ready' }, '*')
+  }
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: () => {},
   isReady: false,
+  authFailed: false,
+  requestToken: () => {},
 })
 
 export function useAuth() {
@@ -25,6 +37,7 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<ScadaAuthUser | null>(null)
   const [isReady, setIsReady] = useState(false)
+  const [authFailed, setAuthFailed] = useState(false)
 
   // ── Authenticate with a token (called from postMessage or initial check) ──
   const authenticateWithToken = useCallback(async (token: string) => {
@@ -32,8 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const u = await getMe()
       setUser(u)
+      setAuthFailed(false)
     } catch {
       setUser(null)
+      setAuthFailed(true)
     } finally {
       setIsReady(true)
     }
@@ -51,9 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('message', handler)
 
     // Notify parent that SCADA app is ready to receive token (fixes mobile Chrome race condition)
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: 'scada-ready' }, '*')
-    }
+    postReady()
 
     return () => window.removeEventListener('message', handler)
   }, [authenticateWithToken])
@@ -72,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, setUser, isReady }}>
+    <AuthContext.Provider value={{ user, setUser, isReady, authFailed, requestToken: postReady }}>
       {children}
     </AuthContext.Provider>
   )
