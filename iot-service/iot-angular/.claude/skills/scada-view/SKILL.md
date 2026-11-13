@@ -1,77 +1,112 @@
 ---
 name: scada-view
-description: How to build/modify the iot-scada SCADA diagram view (React + React Flow + zustand v5). Architecture map, the hard-won gotchas (zustand v5 selectors, transform-jsonb persistence, getStyleConfig whitelist, node-type registration, backend binding uniqueness), and the systems already built (symbol variants, chart types line/gauge/inline dial, tank fill, icon override, signal edges, zone blocks). Read this before any change to the SCADA visual editor.
+description: How to build/modify the iot-scada SCADA diagram view (React 18 + React Flow 12 + zustand v5 + Tailwind). Architecture map, routes & modes, runtime/trend data flow, design tokens, hard-won gotchas (zustand v5 selectors, transform-jsonb persistence, getStyleConfig whitelist, node-type registration, binding uniqueness, undo history), systems already built (symbol variants, line/gauge/inline dial, tank fill, icon override, signal edges, zone blocks), and a prioritized backlog of known UI/perf debt. Read before ANY change to the SCADA visual editor or a SCADA diagram (bagan).
 ---
 
 # SCADA View (iot-scada)
 
-Separate repo at `../iot-scada` (sibling of iot-angular). **React 18 + Vite 6 + TypeScript + @xyflow/react (React Flow) 12 + zustand v5.0.3 + react-router-dom 7 + Tailwind + orval SDK.** Deploys to Firebase (devetek-helios-scada.web.app). Dark canvas (`--canvas-bg #0d1117`).
+Repo `pra-project/iot-service/iot-scada` (git root = `pra-project`, shared with siblings). **React 18.3 + Vite 6 + TS 5.7 (strict) + @xyflow/react 12.10 + zustand 5.0.3 + react-router-dom 7 + Tailwind 3.4 + orval 7 SDK.** Firebase hosting site `devetek-helios-scada` (project `iot-devetek`, `dist` + SPA rewrite). **Dark only** (`index.html` hardcodes `class="dark"`), fonts Inter + JetBrains Mono.
+
+Design docs: `iot-scada/doc/01..23` — progress log `20-TASK-PROGRESS.md`, roadmap `23-ROADMAP-PDAM-SCADA.md`, spec `22-SPEC-SCADA.md`. Backlog of UI/perf debt: [references/backlog.md](references/backlog.md).
 
 ## Scope (fixed by product owner)
-Web-based only — target tablet / phone / embedded iframe (desktop Analytics tab + mobile Helios SCADA tab). **NOT HMI control-room, NOT device control/command. Alarm & anomaly detection deferred to backlog.** Current focus = **view data + visualization**.
+Web-based only — tablet / phone / embedded iframe (desktop Analytics tab + mobile Helios SCADA tab). **NOT HMI control-room, NOT device control/command. Alarm & anomaly detection deferred.** Focus = **view data + visualization**.
 
-## Run
-- SCADA dev: `cd ../iot-scada && npm run dev` → port **4300**.
-- Backend (Goravel): `cd ../../iot-backend-go && go build -o ./tmp/main.exe . && ./tmp/main.exe` → port **3000** (process reads `.env`). Rebuild after any Go change.
+## Run & verify
+- Dev: `cd iot-scada && npm run dev` → **:4300**, proxies `/api` → `VITE_PROXY_TARGET` or `localhost:3000`.
+- Backend (Goravel) lives OUTSIDE pra-project: `/Users/arivin29macmini/Documents/DEVETEK/iot-backend-go` → `go build -o ./tmp/main.exe . && ./tmp/main.exe` (:3000, reads `.env`). Rebuild after any Go change.
 - Health: `curl -s -o /dev/null -w '%{http_code}' localhost:4300/` and `localhost:3000/api-json` → 200.
-- Typecheck: `cd ../iot-scada && npx tsc --noEmit`. Run after every change.
+- **Typecheck after every change: `npx tsc --noEmit`.** Full build: `npm run build` (`tsc -b && vite build`).
+- No tests. `npm run lint` is BROKEN (eslint not installed, no config) — don't rely on it.
+- Dev auth bypass: `VITE_SCADA_DEV_BEARER` (vite-env.d.ts). Seed script: `scripts/seed-pdam-diagram.py` (needs `TOKEN`, targets :3000).
+- SDK: `npm run sdk:update` (fetch spec → `/tmp/scada-api-spec.json` → orval). Do NOT hand-edit `src/sdk/`.
+- `.firebase/hosting.*.cache` and `tsconfig.tsbuildinfo` are tracked → don't commit their noise with feature work.
 
-## Key files (all under ../iot-scada/src)
-- `nodes/ScadaNodeFrame.tsx` (~2000 lines) — the heart. Renders every equipment node in **card** OR **schematic** mode. Holds live-symbol helpers: `PumpGlyphLive` (spinning impeller), `TankWaterOverlay`+`resolveTankFillPct` (tank level fill), `PressureDialLive`+`resolveDialPct` (live analog dial), glyph maps `SchematicGlyph`/`NodeGlyph`, `TANK_TYPES`/`PUMP_TYPES`/`DIAL_TYPES` sets, `TANK_BODY` geometry.
-- `nodes/schematicVariants.tsx` — `SCHEMATIC_VARIANTS: Record<type, ReactNode[]>` + `SCHEMATIC_VARIANT_LABELS`. Multiple P&ID glyph styles per type. Sensors use `makeInstrumentVariants(tag)` factory. Shared `stubH`/`stubV` connection-stub fragments. All SVGs viewBox `0 0 64 64`, `stroke="currentColor"`.
-- `nodes/registry.ts` — `nodeTypes` map (React Flow). `createScadaNode(type)` generic component (reads glyph from `data.nodeType`). `GENERIC_NODE_TYPES` array auto-registers every union type.
-- `nodes/ZoneNode.tsx` — labeled container/group block (IPA, DMA) with **aggregate status** from nodes geometrically inside it. Renders behind (zIndex −1 via toFlowNode).
-- `nodes/{ValueDisplayNode,TextLabelNode}.tsx` — dedicated non-equipment nodes.
-- `edges/PipeEdge.tsx` — the only edge type. `PIPE_COLORS`/`PIPE_LABELS` per `pipeType` (raw/treated/waste/chemical/electrical/generic/**signal**). `signal` = thin dashed muted "sensor link" (no flow/wall/glow, tap dot at source).
-- `canvas/ScadaCanvas.tsx` — `toFlowNode`/`toFlowEdge` (store↔React Flow). Catch-all: unknown node type → renders via `junction` component but keeps `data.nodeType`. `onConnect` auto-defaults a sensor-touching link to `pipeType:'signal'`.
-- `components/NodeConfigDrawer.tsx` — per-node config (Info / Bindings / Appearance tabs). **`getStyleConfig` whitelist — see gotcha #3.**
-- `components/EdgeConfigDrawer.tsx`, `components/DiagramSettingsPanel.tsx` (has bulk "Jadikan Sinyal" tool), `components/NodeLibraryDrawer.tsx` (`NODE_CATALOG` palette).
-- `hooks/useScadaDiagram.ts` — load (`normalizeNode`) + save. **Folds/unfolds extra binding fields into `transform` jsonb — see gotcha #2.**
-- `stores/{useDiagramStore,useRuntimeStore,useUiStore,useTrendStore}.ts`. `useDiagramStore` owns **undo/redo history** (`past`/`future`, `withHistory` coalescing — gotcha #7). `types/scada.ts` — all types.
-- `components/TopBar.tsx` — undo/redo buttons; `pages/DiagramPage.tsx` — keyboard shortcuts (Cmd+S save, Cmd+Z/Cmd+Shift+Z undo/redo, F fullscreen, Del delete).
-- `components/Gauge.tsx` — standalone radial gauge (chartType `gauge`, floats above node).
+## Routes & modes (`App.tsx`)
+`/login` · `/` DiagramListPage · `/diagrams/:id/view|edit` · `/embed/:projectId/diagrams/:id/view|edit` (projectId unused; embed only changes the auth-wait screen) · `*`→`/`.
+Mode lives in `useUiStore.mode` (initial from route); TopBar toggle switches **without changing the URL** (discard-confirm if dirty).
+- **Edit adds**: ToolRail, InspectorPanel (fixed `w-72` right), node toolbar (configure/duplicate/delete), inline label edit, handles, drag/connect/delete, dbl-click edge → EdgeConfigDrawer, Cmd+S/Z/Shift+Z/Y, empty-canvas hint.
+- **View adds**: click-to-open node tooltip (one at a time, `activeTooltipNodeId`), handles hidden.
+- **No client permission check** — `role` exists in `ScadaAuthUser` but is unused; backend has no edit/view distinction (admin or matching `IDOwner`).
 
-## Non-negotiable gotchas (these cost real debugging time)
+## Key files (under `iot-scada/src`)
+| File | Role |
+|---|---|
+| `nodes/ScadaNodeFrame.tsx` (2400) | Heart. Every equipment node, **card** or **schematic** mode. `SchematicGlyph` (:69) / `NodeGlyph` (:570) maps, `NodeTooltipCard`, `InlineEditLabel`, live symbols `PressureDialLive`/`resolveDialPct`, `PumpGlyphLive`, `TankWaterOverlay`/`resolveTankFillPct` (:1343-1586), `TANK_TYPES/PUMP_TYPES/DIAL_TYPES`, schematic renderer (:1760), card renderer (:2087) |
+| `nodes/schematicVariants.tsx` | `SCHEMATIC_VARIANTS[type]` + labels; sensors via `makeInstrumentVariants(tag)`; `stubH/stubV`. viewBox `0 0 64 64`, `stroke="currentColor"` |
+| `nodes/sensorCategories.tsx` | ~40 sensor categories (icon, hex color, unit). `SensorNode` reads `config.sensorCategory` |
+| `nodes/registry.ts` | `nodeTypes`, `createScadaNode(type)`, `GENERIC_NODE_TYPES` |
+| `nodes/ZoneNode.tsx`, `ValueDisplayNode.tsx`, `TextLabelNode.tsx`, `ScadaNodes.tsx` | dedicated node components |
+| `edges/PipeEdge.tsx` | only edge type; `PIPE_COLORS`/`PIPE_LABELS` per pipeType (raw/treated/waste/chemical/electrical/generic/**signal**) |
+| `canvas/ScadaCanvas.tsx` | `toFlowNode`/`toFlowEdge`, catch-all unknown type → junction, `onConnect` auto-signal, zone move-together in `onNodesChange`, pan lock |
+| `components/NodeConfigDrawer.tsx` (2088) | tabs **General** (:237) / Bindings (:459) / Appearance (:970) ; zone → `ZoneTab` (:1864). `getStyleConfig` whitelist |
+| `components/EdgeConfigDrawer.tsx`, `DiagramSettingsPanel.tsx` (bulk "Jadikan Sinyal"), `NodeLibraryDrawer.tsx` (`NODE_CATALOG`) | config & palette |
+| `components/TopBar.tsx` | RuntimeIndicator (online/total, offline/stale), name → settings, View/Edit toggle, undo/redo. No back-to-list button |
+| `components/ToolRail.tsx`, `InspectorPanel.tsx`, `ViewNavControls.tsx` (zoom/fit/pan-lock/minimap/fullscreen + `FullscreenOverlay` clock), `RuntimeBanner.tsx`, `Toast.tsx` (own store) | chrome |
+| `components/Gauge.tsx`, `TrendCard.tsx` | floating chart cards above a node (TrendCard always `hideHeader transparent compact`). `Sparkline.tsx` component is unused (only its type) |
+| `hooks/useScadaDiagram.ts` | load (`normalizeNode`) + save (fold/unfold `transform`) |
+| `hooks/useRuntimePolling.ts` | runtime poll |
+| `stores/useDiagramStore` (nodes/edges + undo history), `useRuntimeStore` (primary binding + `nodeRuntimeMap`), `useUiStore` (mode, selection, drawers, inspectorPinned, fullscreen), `useTrendStore` (history) | state |
+| `types/scada.ts` | all types |
+| `services/auth.service.ts`, `components/AuthGate.tsx` | token store (memory fallback), embed handshake |
 
-1. **zustand v5 does NOT memoize selectors.** A selector returning a fresh `{}`/`[]`/object each render → "Maximum update depth exceeded" infinite loop. Fix: select the raw ref and coalesce to a **module-level stable constant** OUTSIDE the selector (`EMPTY_STYLE`, `EMPTY_BINDINGS`, etc.). Never `useStore(s => s.x ?? {})`.
+## Data flow
+- **API used** (SDK `sdk/services.gen.ts`): `GET/POST /api/scada/diagrams`, `GET/PUT/DELETE /api/scada/diagrams/{id}` (PUT replaces whole diagram; DELETE = archive), `GET /api/scada/diagrams/{id}/runtime`, `GET /api/scada/binding-options?ownerId=`. Login & `/auth/me` = manual fetch.
+- **Runtime**: `useRuntimePolling` every **5 s** (no backoff, no hidden-tab pause), both modes. Primary binding per node (`useRuntimeStore:31-46`): `isPrimary` (lowest priorityOrder) → `bindingKey==='value'` → lowest priorityOrder.
+- **Status (backend `scada_service.go:1019-1040`)**: no reading→`unknown`; >15 min→`offline`; >5 min→`stale`; value 0 on status/state/boolean/switch/relay/power category→`off`; outside channel min/max→`alert`; quality≠good→`warn`; else `ok`. Summary counts offline+stale only.
+- **Trend** (`useTrendStore`): every **60 s** + on new `showTrend` channel; dedupe by channel (max trendHours); batches of 6; raw `fetch /api/sensor-logs?idSensorChannel&startDate&limit=120` (see backlog: token bypass, null→0 dips).
+- **Access**: `scada_access.go` — admin, or user `IDOwner` == diagram owner.
 
-2. **Persist new binding fields via `transform` jsonb — no DB migration.** New `ScadaNodeBinding` fields that lack a real column (chartType, gaugeMin, gaugeMax, chartTransparent, dialShowLabel) are **folded into `transform`** on save and **unfolded** on load, both in `hooks/useScadaDiagram.ts`. Real columns that persist natively: showTrend, trendHours, isPrimary, priorityOrder, and `style_json`/`config_json` (so `NodeStyleConfig` fields like glyphVariant/glyphKey/showValue/zone* and `config.locked`/`levelMin`/`levelMax` persist natively). To add a new binding display field: add to type → unfold in `normalizeNode` → fold in `save()` → done.
+## Design tokens (use these, don't add new hex)
+- CSS vars `index.css :root`: `--canvas-bg #0d1117`, `--surface-bg #1c2128`, `--surface-border #30363d`, `--text-primary/secondary/muted`, `--accent #0ea5e9`, `--status-ok #22c55e / --status-warn #f59e0b / --status-alert #ef4444`.
+- Tailwind theme (`tailwind.config.js`): canvas/surface/status(7)/accent/brand `#6366f1`/pipe colors + shadows/animations.
+- ⚠️ stale/offline/off have NO CSS var and are inconsistent across files (stale: `#d97706` vs `yellow-600` vs `#eab308`). When touching status color, centralize instead of adding another variant.
+- Never concatenate alpha onto a color that may be a `var(...)` (`accentColor + '15'` → invalid CSS). Use `color-mix(in srgb, <color> 15%, transparent)`.
 
-3. **`getStyleConfig` in NodeConfigDrawer is a WHITELIST.** It rebuilds `NodeStyleConfig` field-by-field. Any new `style` field you add MUST be added here too, or the drawer reads it as `undefined` (the node renders fine because it reads the store directly, but drawer pickers/toggles desync). This bit us with `glyphKey`/`glyphVariant`/`showValue`.
+## Non-negotiable gotchas
 
-4. **Every node type must be registered** in `nodeTypes` (registry.ts) or React Flow logs "type X not found" + renders a blank default. `GENERIC_NODE_TYPES` covers the whole `ScadaNodeType` union; `toFlowNode` has a catch-all for anything still unknown. When adding a union type, add it to `GENERIC_NODE_TYPES` (or a dedicated component).
+1. **zustand v5 does NOT memoize selectors.** Selector returning fresh `{}`/`[]` → "Maximum update depth exceeded". Select raw ref, coalesce to a **module-level constant** outside the selector (`EMPTY_STYLE`, `EMPTY_BINDINGS`). Never `useStore(s => s.x ?? {})`. Use `useShallow` for multi-field picks.
 
-5. **CSS status vars** `--status-ok/warn/alert` are defined in `src/index.css :root` (#22c55e / #f59e0b / #ef4444). Use them for status coloring. (They were missing once → gauge needle/arc rendered invisible.)
+2. **New binding display fields persist via `transform` jsonb — no migration.** Fields without a column (chartType, gaugeMin, gaugeMax, chartTransparent, dialShowLabel) are folded into `transform` on save and unfolded in `normalizeNode` (`useScadaDiagram.ts`). Native columns: showTrend, trendHours, isPrimary, priorityOrder, `style_json`, `config_json` (so `NodeStyleConfig` fields and `config.locked/levelMin/levelMax/sensorCategory` persist natively). Recipe: type → unfold → fold → drawer control.
 
-6. **Backend binding save uniqueness.** `scada_node_bindings` has a unique constraint `(id_scada_node, binding_key, id_sensor_channel)`. `syncBindingsForNode` (iot-backend-go `app/services/scada/scada_service.go`) upserts by binding-id AND falls back to this natural key, so a client-regenerated binding id doesn't 500 with duplicate-key. Keep that fallback if touching save.
+3. **`getStyleConfig` in NodeConfigDrawer is a WHITELIST.** Every new `style` field must be added there or the drawer reads `undefined` (node renders fine, pickers desync). Bit us with glyphKey/glyphVariant/showValue. Zone fields (`zoneColorMode/zoneFill/zoneBorder/zoneBrackets`) are NOT in `NodeStyleConfig` type nor the whitelist — ZoneTab/ZoneNode read them as `Record<string, any>`; add them to the type if you touch zones.
 
-7. **All canvas mutations go through `useDiagramStore` actions, which wrap undo/redo history.** `addNode/updateNode/removeNode/setNodes/addEdge/updateEdge/removeEdge/setEdges` each call `withHistory()` — it snapshots the PRE-change `{nodes,edges}` into `past` and clears `future`. Rapid successive mutations (drag/resize/slider) coalesce into ONE undo step via a 400ms sliding window (`lastPushAt`). If you add a new mutation path, route it through these actions (or wrap with `withHistory`) so it stays undoable. `undo()`/`redo()` restore snapshots; the canvas store→local sync effect repaints. History is cleared on `loadDiagram`/`resetToSaved`/`clearDiagram`. Note the canvas only commits drag positions to the store on drag-END (`dragging:false`), so a drag = one history entry.
+4. **Every node type must be registered** in `nodeTypes` (registry.ts), else blank default + console error. Add union types to `GENERIC_NODE_TYPES`.
 
-## API contract (shared, fixed, camelCase)
-List = `{ data, meta:{total,page,limit,totalPages} }`; single item returned directly; error `{ statusCode, message, error }`. Do NOT hand-edit `src/sdk/`. Runtime status per binding computed by backend: `ok|warn|alert|off|stale|offline|unknown`.
+5. **Status CSS vars must exist** (`--status-*` in `index.css`); missing once → invisible gauge needle/arc.
+
+6. **Backend binding uniqueness** `(id_scada_node, binding_key, id_sensor_channel)`. `syncBindingsForNode` (iot-backend-go `app/services/scada/scada_service.go`) upserts by id and falls back to natural key. Keep the fallback.
+
+7. **All canvas mutations go through `useDiagramStore` actions** (`withHistory()`): snapshot pre-change into `past`, clear `future`. `HISTORY_LIMIT=60`, `COALESCE_MS=400` sliding window → one drag/resize/slider = one undo step. Canvas commits drag positions on drag-END only. History cleared on load/reset/clear.
+
+8. **Glyph precedence in schematic mode**: `catDef?.icon ?? variantGlyph ?? SchematicGlyph[...]` (`ScadaNodeFrame.tsx:~1766`) — a sensor with a category ignores the Symbol Style picker. Behavior (tank fill, pump anim, dial) always keys on real `type`, never `glyphKey`.
+
+9. **Only zones have `NodeResizer`** (hidden when `config.locked`, in ZoneNode). Equipment size is set via drawer. `toFlowNode` sets `draggable:false` for locked zones.
+
+10. **Keyboard handler (`DiagramPage.tsx:~83`) is global** — guard `e.target` is not an input/textarea/contenteditable before handling Cmd+Z/Delete, or you break text editing in drawers.
 
 ## Systems already built (don't reinvent)
-- **Render modes**: `style.renderMode` = `card` (box+icon+border) | `schematic` (P&ID symbol only).
-- **Symbol variants**: `SCHEMATIC_VARIANTS[type]`, chosen by `style.glyphVariant` (index). Picker in Appearance tab. 36 types covered.
-- **Icon override (decoupled from type)**: `style.glyphKey` overrides the *displayed symbol* without changing the node's `type`. **Behavior (tank fill, pump anim, category) follows `type`, never glyphKey.** `glyphType = style.glyphKey ?? nodeType`.
-- **Chart types per binding** (`binding.chartType`): `line` (TrendCard above node, needs history) | `gauge` (radial Gauge card above node) | `inline`. `showTrend` toggles it on. `chartTransparent` = no card box.
-- **Inline (the SCADA-modern bit)**: for TANK types → tank body water-fill (`resolveTankFillPct`, scale from `config.levelMin/levelMax`, unit `%` used directly). For DIAL types (`DIAL_TYPES`: pressure/flow/ph/turbidity/chlorine/temp/conductivity/do) → `PressureDialLive` 270° live analog dial: bright neutral needle (contrasts the status-colored arc), soft glow, tick marks, layered hub, and the numeric value printed inside. Scale from binding `gaugeMin/gaugeMax`. When the dial is active the bottom value label auto-hides (dial already shows the number); `dialShowLabel` re-enables it. Config lives in the Bindings tab inline section.
-- **Live symbols**: pump → animated impeller when `type==='pump'` and variant 0; conventions bindingKey `status`/`pump_status`, `rpm`/`speed`, `head`. Tank → level binding (category `level` or bindingKey matching `/level/`, or explicit `chartType:'inline'`).
-- **Edges**: process pipes (raw/treated/…) vs **signal** links (object↔sensor). Auto-detect on connect; bulk-convert via DiagramSettingsPanel → "Jadikan Sinyal".
-- **Zone/group blocks** (`type:'zone'`, `nodes/ZoneNode.tsx`): labeled container, renders behind (zIndex −1 in `toFlowNode`), **aggregate worst-status** from nodes whose CENTER is inside its rect (geometric containment — no parentId/relative-coords). **Move-together**: dragging a zone moves its contained nodes by the same delta — implemented in `ScadaCanvas.onNodesChange` using the store snapshot (drag-start positions) as a stable reference (never grabs bystanders; skips nodes already carrying their own change). **Lock** (`config.locked`): `toFlowNode` sets `draggable:false` + hides NodeResizer; children still movable. **Config drawer** (`ZoneTab` in NodeConfigDrawer, opened via the gear button; drawer branches on `node.type==='zone'` to a single tab): style fields on `node.style` — `zoneColorMode` (`status`|`fixed`), `accentColor`, `zoneFill` (%), `zoneBorder` (auto/solid/dashed/none), `zoneBrackets`. Frame uses fixed color when set but the status dot + alert halo always show real status. Not built yet: KPI aggregation in header (flow/pressure/MNF for DMA).
-- **Undo/redo** (see gotcha #7): store history + TopBar buttons + Cmd+Z / Cmd+Shift+Z. Coalesced so one drag/resize = one step.
+- **Render modes** `style.renderMode`: `card` | `schematic`.
+- **Symbol variants** `SCHEMATIC_VARIANTS[type]` via `style.glyphVariant`; 36 types.
+- **Icon override** `style.glyphKey` (display only). `glyphType = style.glyphKey ?? nodeType`.
+- **Chart per binding** `binding.chartType`: `line` (TrendCard) | `gauge` | `inline`; `showTrend` toggles; `chartTransparent`.
+- **Inline**: TANK → water fill (`config.levelMin/levelMax`, unit `%` direct). DIAL_TYPES (pressure/flow/ph/turbidity/chlorine/temp/conductivity/do) → `PressureDialLive` 270° dial, scale `gaugeMin/gaugeMax`, bottom label auto-hides unless `dialShowLabel`.
+- **Live symbols**: pump impeller (`type==='pump'` + variant 0; keys `status|pump_status`, `rpm|speed`, `head`); tank level binding (category `level` / key `/level/` / explicit inline).
+- **Edges**: process pipes vs **signal** (object↔sensor, thin dashed, tap dot). Auto on connect; bulk via "Jadikan Sinyal".
+- **Zones** (`type:'zone'`): container behind (zIndex −1), aggregate worst-status from nodes whose CENTER is inside (geometric, no parentId), move-together (store snapshot as reference), lock, ZoneTab style (colorMode status|fixed, accentColor, fill %, border auto/solid/dashed/none, brackets). Not built: KPI aggregation in zone header.
+- **Undo/redo** (gotcha 7). **Fullscreen bridge** (below). **Pan lock**, **MiniMap toggle**.
 
-## How to add things (recipes)
-- **New symbol for a type**: add to `SchematicGlyph`/`NodeGlyph` in ScadaNodeFrame, or add variants to `SCHEMATIC_VARIANTS` + labels (auto-gives a Symbol Style picker). viewBox 64×64, currentColor, connection stubs to edges.
-- **New persisted binding display field**: type → `useScadaDiagram` unfold+fold → drawer control. No migration.
-- **New node type**: `ScadaNodeType` union → `GENERIC_NODE_TYPES` (registry) → optional NODE_CATALOG palette entry → optional glyph/variants.
-- **Aggregate/live behavior**: key it on the real `nodeType`, read runtime from `useRuntimeStore.nodeRuntimeMap[nodeId]`.
-- **Build/seed a diagram programmatically (from real inventory)**: `PUT /api/scada/diagrams/{id}` with body `{ diagram:{name,projectId,diagramCode:null,status,canvasConfig:{},runtimeConfig:{}}, nodes:[...], edges:[...] }` (replaces all). Node = `{id,type,label,position:{x,y},size:{width,height},zIndex,style,config,bindings}`; binding = `{id,bindingKey,sensorChannelId,displayLabel,unitOverride,isPrimary,priorityOrder,showTrend,trendHours,transform:{chartType,gaugeMin,gaugeMax}}` (fold display fields into `transform`). Edge = `{id,source,target,edgeType:'pipe',pipeType,flowDirection,animated,style,config:{pathMode,sourceHandle,targetHandle,strokeWidth}}` — handles are `t/r/b/l`. Auth: `Authorization: Bearer <JWT>` (ask the user for a token; API is 401 without it). Data sources: nodes+GPS via `GET /api/nodes?idProject=<pid>` (`latitude`/`longitude`/`address`), channels via `GET /api/scada/binding-options?ownerId=<oid>` (`idSensorChannel`/`metricCode`/node). Map geo→canvas: `x = lng→right`, `y = lat with NORTH at top` (higher/less-negative lat → smaller y). Verify by DB (creds in iot-backend-go `.env`, Postgres): `SELECT node_type,count(*) FROM scada_nodes WHERE id_scada_diagram=... GROUP BY node_type;`. Note: `crypto.randomUUID()`/`Math.random()` are fine in the app; only workflow-script sandboxes block them.
+## Recipes
+- **New symbol**: add to `SchematicGlyph`/`NodeGlyph` or `SCHEMATIC_VARIANTS` + labels (auto picker). 64×64, currentColor, stubs at edges.
+- **New persisted binding display field**: type → `normalizeNode` unfold → `save()` fold → drawer control.
+- **New style field**: `NodeStyleConfig` type → `getStyleConfig` whitelist → Appearance control → render.
+- **New node type**: `ScadaNodeType` union → `GENERIC_NODE_TYPES` → optional `NODE_CATALOG` entry → optional glyph/variants.
+- **Live/aggregate behavior**: key on real `nodeType`; read `useRuntimeStore.nodeRuntimeMap[nodeId]` with a narrow selector.
+- **Build/seed a diagram (bagan) from real inventory**: `PUT /api/scada/diagrams/{id}` body `{ diagram:{name,projectId,diagramCode:null,status,canvasConfig:{},runtimeConfig:{}}, nodes:[...], edges:[...] }` (replaces all). Node `{id,type,label,position:{x,y},size:{width,height},zIndex,style,config,bindings}`; binding `{id,bindingKey,sensorChannelId,displayLabel,unitOverride,isPrimary,priorityOrder,showTrend,trendHours,transform:{chartType,gaugeMin,gaugeMax}}`; edge `{id,source,target,edgeType:'pipe',pipeType,flowDirection,animated,style,config:{pathMode,sourceHandle,targetHandle,strokeWidth}}`, handles `t/r/b/l`. Auth `Bearer <JWT>` (ask user). Inventory: `GET /api/nodes?idProject=<pid>` (lat/lng/address), channels `GET /api/scada/binding-options?ownerId=<oid>`. Geo→canvas: x = lng→right, y = lat with NORTH up. Verify: `SELECT node_type,count(*) FROM scada_nodes WHERE id_scada_diagram=... GROUP BY 1;` (DB via tailnet — see memory `helios-tailnet-access`). Node labels follow the address rule (memory `node-display-name-rule`).
 
-## Embed auth handshake (Angular ⇄ SCADA iframe)
-The Angular app embeds SCADA in an iframe and passes the JWT via `postMessage({type:'scada-auth',token}, scadaUrl)`. SCADA's `AuthGate` attaches a `message` listener then posts `{type:'scada-ready'}` to the parent. **The parent MUST respond to `scada-ready` by (re)sending the token with force (bypassing any `tokenSent` guard) and target `event.source`** — otherwise the initial on-iframe-load send races ahead of the child listener, is lost, and SCADA hangs on "Waiting for authentication…" until reload. Both embed points fixed: `iot-angular` `pages/.../analytics-page.component.ts` (desktop) and `mobile/projects/tabs/project-scada/project-scada.component.ts` (mobile). SCADA token store (`services/auth.service.ts`) has a memory fallback when localStorage is blocked (cross-origin iframe on mobile Chrome).
-
-**Fullscreen inside the iframe**: the native Fullscreen API (`documentElement.requestFullscreen()` in `ViewNavControls`) is unreliable on mobile/iOS inside an iframe — a CSS "fullscreen" only fills the iframe's box, not the device screen. Fix: SCADA's `EmbedFullscreenBridge` (App.tsx) posts `{type:'scada-fullscreen', value}` to the parent on every `isFullscreen` change; the Angular parent expands the iframe container to `position:fixed; inset:0` over the mobile chrome (`.m-scada-embed--full`, mobile component handles the message). Native FS is kept for desktop.
+## Embed (Angular ⇄ SCADA iframe)
+Angular posts `{type:'scada-auth',token}`; SCADA `AuthGate` attaches listener then posts `{type:'scada-ready'}`. **Parent MUST re-send the token on `scada-ready`, forced (bypass `tokenSent` guard), to `event.source`** — else race → stuck "Waiting for authentication…". Embed points: iot-angular `pages/.../analytics-page.component.ts` (desktop, opens edit-capable) and `mobile/projects/tabs/project-scada/project-scada.component.ts` (mobile, opens `/view`). Token store has memory fallback (localStorage blocked in cross-origin mobile iframe).
+**Fullscreen**: native API unreliable in iOS iframe → `EmbedFullscreenBridge` (App.tsx) posts `{type:'scada-fullscreen', value}`; mobile parent expands to `.m-scada-embed--full` (fixed inset 0). Desktop parent does not handle it (native FS used). No token refresh — expired JWT shows as Runtime Error banner. Listeners don't check `event.origin` (backlog).
 
 ## Related
-Memory: `scada-roadmap.md` (progress log, PDAM domain). Backend SCADA module: iot-backend-go `app/{http/controllers,services,models,dto}/scada/`.
+Memory `scada-roadmap.md`. Backend: iot-backend-go `app/{http/controllers,services,models,dto}/scada/`, `scada_access.go`. Sister skill for Angular dashboards: `widget-builder`.

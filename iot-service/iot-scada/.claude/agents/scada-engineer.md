@@ -1,0 +1,1 @@
+../../../iot-angular/.claude/agents/scada-engineer.md

@@ -1,0 +1,1 @@
+../../../iot-angular/.claude/agents/senior-dev-auditor.md
