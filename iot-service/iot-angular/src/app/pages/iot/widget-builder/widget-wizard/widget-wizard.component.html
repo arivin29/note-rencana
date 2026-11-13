@@ -159,6 +159,12 @@
         </div>
     </div>
 
+    <div *ngIf="saveError" class="alert alert-danger d-flex align-items-center py-2 mb-3" role="alert">
+        <i class="fa fa-exclamation-triangle me-2"></i>
+        <span class="flex-grow-1">{{ saveError }}</span>
+        <button type="button" class="btn-close" (click)="saveError = null" aria-label="Tutup"></button>
+    </div>
+
     <!-- Main Content -->
     <div class="row">
         <!-- Left Column: Preview + Query -->
@@ -327,6 +333,21 @@
                                 </ng-template>
                             </div>
 
+                            <!-- Bagan SCADA: same renderer as the dashboard (embedded iot-scada) -->
+                            <div *ngSwitchCase="'scada'" class="chart-preview" style="height: 420px;">
+                                <div *ngIf="!dashboardProjectResolved && !dashboardProjectError" class="no-data">
+                                    <div class="spinner-border spinner-border-sm text-theme mb-2" role="status"></div>
+                                    <p class="text-muted mb-0">Memuat proyek dashboard…</p>
+                                </div>
+                                <div *ngIf="dashboardProjectError" class="no-data">
+                                    <i class="fa fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                                    <p class="text-muted mb-2">Gagal memuat dashboard</p>
+                                    <button class="btn btn-sm btn-outline-theme" (click)="ensureDashboardProject()">Coba lagi</button>
+                                </div>
+                                <app-scada-widget *ngIf="dashboardProjectResolved && scadaPreviewWidget"
+                                    [widget]="scadaPreviewWidget" [projectId]="dashboardProjectId"></app-scada-widget>
+                            </div>
+
                             <!-- Table Widget - show inline table preview -->
                             <div *ngSwitchCase="'table'" class="table-preview-inline">
                                 <div *ngIf="queryResult && queryResult.rows.length > 0" class="table-responsive" style="max-height: 350px;">
@@ -429,8 +450,8 @@
                 </card-body>
             </card>
 
-            <!-- Query Card -->
-            <card class="mb-3">
+            <!-- Query Card (Bagan SCADA runs no query) -->
+            <card class="mb-3" *ngIf="selectedType !== 'scada'">
                 <card-header class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
                         <i class="fa fa-database text-theme"></i>
@@ -804,7 +825,7 @@
                 </card>
 
                 <!-- Field Mapping Card (hide for table widget) -->
-                <card class="mb-3" *ngIf="selectedType !== 'table' && selectedType !== 'map'">
+                <card class="mb-3" *ngIf="selectedType !== 'table' && selectedType !== 'map' && selectedType !== 'scada'">
                     <card-header>
                         <i class="fa fa-project-diagram me-2 text-theme"></i>
                         <span class="fw-bold">Field Mapping</span>
@@ -1655,6 +1676,68 @@
                                     (ngModelChange)="form.display.mapOptions.showLegend = $event; updatePreview()">
                             </div>
                         </div>
+                    </card-body>
+                </card>
+
+                <!-- Bagan SCADA Options -->
+                <card class="mb-2" *ngIf="selectedType === 'scada'">
+                    <card-header class="py-2">
+                        <i class="fa fa-project-diagram me-2 text-theme"></i>
+                        <span class="fw-bold">Opsi Bagan SCADA</span>
+                    </card-header>
+                    <card-body class="py-2">
+                        <div class="small text-body-secondary py-2" *ngIf="dashboardProjectResolved && !dashboardProjectId">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Dashboard belum terhubung ke proyek — hubungkan dashboard ke proyek agar bagan SCADA bisa dipilih.
+                        </div>
+                        <ng-container *ngIf="dashboardProjectId">
+                            <div class="py-2 border-bottom">
+                                <label class="form-label small mb-1">Bagan <span class="text-danger">*</span></label>
+                                <div *ngIf="scadaDiagramsLoading" class="small text-body-secondary">
+                                    <span class="spinner-border spinner-border-sm me-1"></span> Memuat daftar bagan…
+                                </div>
+                                <div *ngIf="!scadaDiagramsLoading && scadaDiagramsError" class="small text-danger">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>{{ scadaDiagramsError }}
+                                    <button class="btn btn-xs btn-sm btn-outline-theme ms-2" (click)="loadScadaDiagrams()">Coba lagi</button>
+                                </div>
+                                <div *ngIf="!scadaDiagramsLoading && !scadaDiagramsError && scadaDiagrams.length === 0"
+                                    class="small text-body-secondary">
+                                    Proyek ini belum punya bagan SCADA. Buat dulu di menu SCADA proyek.
+                                </div>
+                                <select *ngIf="!scadaDiagramsLoading && !scadaDiagramsError && scadaDiagrams.length > 0"
+                                    class="form-select form-select-sm"
+                                    [(ngModel)]="form.display.scadaOptions.diagramId" (ngModelChange)="onScadaOptionChange()">
+                                    <option value="">— Pilih bagan —</option>
+                                    <option *ngFor="let d of scadaDiagrams" [value]="d.id">
+                                        {{ d.name }}{{ d.status === 'draft' ? ' (draf)' : '' }}
+                                    </option>
+                                </select>
+                                <div *ngIf="scadaDiagramMissing" class="small text-warning mt-1">
+                                    <i class="fa fa-exclamation-triangle me-1"></i>
+                                    Bagan tersimpan tidak ditemukan di proyek ini (dihapus/dipindah) — pilih bagan lain.
+                                </div>
+                            </div>
+                            <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <span>Bisa digeser, zoom &amp; diklik</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        [(ngModel)]="form.display.scadaOptions.interactive" (ngModelChange)="onScadaOptionChange()">
+                                </div>
+                            </div>
+                            <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <span>Tema bagan</span>
+                                <select class="form-select form-select-sm" style="width: 170px;"
+                                    [(ngModel)]="form.display.scadaOptions.theme" (ngModelChange)="onScadaOptionChange()">
+                                    <option value="auto">Ikuti tema aplikasi</option>
+                                    <option value="dark">Gelap</option>
+                                    <option value="light">Terang</option>
+                                </select>
+                            </div>
+                            <div class="small text-body-secondary pt-2">
+                                Bagan memperbarui nilainya sendiri (±5 detik) dan tidak menjalankan query SQL.
+                                Saat dashboard dalam mode ubah tata letak, bagan tidak bisa diklik agar widget mudah digeser.
+                            </div>
+                        </ng-container>
                     </card-body>
                 </card>
 

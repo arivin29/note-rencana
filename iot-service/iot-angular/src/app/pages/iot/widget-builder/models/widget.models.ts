@@ -1,4 +1,5 @@
 import { MapWidgetOptions } from '../utils/map-rows';
+import { ScadaWidgetOptions } from '../utils/scada-options';
 import type { CreateWidgetDto } from 'src/sdk/core/models';
 
 // Widget Builder Models & Interfaces
@@ -171,6 +172,8 @@ export interface WidgetDisplayConfig {
   tooltipMode: 'single' | 'all' | 'hidden';
   /** Map widget ('map') options — see utils/map-rows.ts */
   mapOptions?: MapWidgetOptions;
+  /** "Bagan SCADA" widget ('scada') options — see utils/scada-options.ts */
+  scadaOptions?: ScadaWidgetOptions;
 }
 
 export interface FieldMapping {
@@ -217,6 +220,7 @@ export type WidgetType =
   | 'stat-card'         // KPI card with icon
   | 'table'             // Tabular data
   | 'map'               // Peta titik (OpenLayers) — SQL returns lat, lon, label, value, unit, status, time
+  | 'scada'             // Bagan SCADA tertanam (iot-scada iframe) — no SQL, see utils/scada-options.ts
   | 'heatmap';          // 2D heatmap visualization
 
 /**
@@ -235,6 +239,7 @@ export const WIDGET_TYPES: { type: WidgetType; label: string; icon: string; desc
   { type: 'stat-card', label: 'Stat Card', icon: 'pin', description: 'Display single metric value' },
   { type: 'table', label: 'Table', icon: 'table_chart', description: 'Tabular data display' },
   { type: 'map', label: 'Peta', icon: 'map', description: 'Titik berkoordinat dengan nilai & status' },
+  { type: 'scada', label: 'Bagan SCADA', icon: 'account_tree', description: 'Bagan SCADA proyek (tertanam)' },
   { type: 'heatmap', label: 'Heatmap', icon: 'grid_on', description: '2D heatmap visualization' },
 ];
 

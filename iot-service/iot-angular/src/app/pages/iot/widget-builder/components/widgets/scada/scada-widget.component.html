@@ -1,0 +1,15 @@
+<div class="scada-widget">
+  <div *ngIf="state === 'no-project'" class="scada-widget-msg">
+    <i class="fa fa-project-diagram fa-2x mb-2"></i>
+    <span>Dashboard belum terhubung ke proyek</span>
+  </div>
+  <div *ngIf="state === 'no-diagram'" class="scada-widget-msg">
+    <i class="fa fa-project-diagram fa-2x mb-2"></i>
+    <span>Pilih bagan SCADA di pengaturan widget</span>
+  </div>
+  <ng-container *ngIf="state === 'ok'">
+    <app-scada-embed class="scada-widget-embed" [projectId]="projectId" [diagramId]="options.diagramId"
+      mode="view" [params]="params" [title]="widget?.name || 'Bagan SCADA'"></app-scada-embed>
+    <div *ngIf="blockPointer" class="scada-widget-shield" title="Mode ubah tata letak — bagan tidak bisa diklik"></div>
+  </ng-container>
+</div>

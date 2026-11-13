@@ -3,19 +3,18 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 
 <!-- ── Embedded iframe mode (no header — user clicks SCADA menu to go back) ── -->
-<div *ngIf="embedUrl" class="scada-embed-container">
-  <iframe
-    #scadaIframe
-    [src]="embedUrl"
+<div *ngIf="embedMode !== 'list'" class="scada-embed-container">
+  <app-scada-embed
     class="scada-iframe"
-    (load)="onIframeLoad()"
-    allow="fullscreen"
-    frameborder="0"
-  ></iframe>
+    [projectId]="projectId"
+    [diagramId]="activeDiagramId"
+    [mode]="embedMode === 'edit' ? 'edit' : 'view'"
+    [title]="activeDiagramName"
+  ></app-scada-embed>
 </div>
 
 <!-- ── Diagram list mode ────────────────────────────────────── -->
-<div *ngIf="!embedUrl" class="scada-list-page">
+<div *ngIf="embedMode === 'list'" class="scada-list-page">
   <!-- Header -->
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>

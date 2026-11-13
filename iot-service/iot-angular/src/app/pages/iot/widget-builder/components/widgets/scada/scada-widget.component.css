@@ -1,0 +1,43 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.scada-widget {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.scada-widget-embed {
+  position: absolute;
+  inset: 0;
+  --scada-embed-bg: var(--bs-body-bg);
+}
+
+/* Edit mode: keeps pointer events in the Angular document so gridster drag/resize works */
+.scada-widget-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: transparent;
+  cursor: default;
+}
+
+.scada-widget-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--bs-secondary-color);
+}

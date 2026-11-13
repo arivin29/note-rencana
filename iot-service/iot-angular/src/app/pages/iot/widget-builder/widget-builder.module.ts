@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 // Shared Components
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
 import { WebgisSharedModule } from '../webgis/webgis-shared.module';
+import { ScadaEmbedModule } from '../../../shared/scada-embed/scada-embed.module';
 
 // Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -49,6 +50,7 @@ import { PieChartWidgetComponent } from './components/widgets/pie-chart/pie-char
 import { StatCardWidgetComponent } from './components/widgets/stat-card/stat-card-widget.component';
 import { TableWidgetComponent } from './components/widgets/table/table-widget.component';
 import { MapWidgetComponent } from './components/widgets/map/map-widget.component';
+import { ScadaWidgetComponent } from './components/widgets/scada/scada-widget.component';
 
 // Template System Components
 import { WidgetCreateComponent } from './widget-create/widget-create.component';
@@ -77,6 +79,7 @@ const routes: Routes = [
     StatCardWidgetComponent,
     TableWidgetComponent,
     MapWidgetComponent,
+    ScadaWidgetComponent,
     // Other Components
     TimeRangePickerComponent,
     SqlEditorComponent,
@@ -120,6 +123,8 @@ const routes: Routes = [
     SharedComponentsModule,
     // WebGIS sensor value cards for the map widget
     WebgisSharedModule,
+    // iot-scada iframe + auth handshake for the 'scada' widget
+    ScadaEmbedModule,
   ],
   exports: [
     // Export widget components for reuse in other modules
@@ -131,6 +136,7 @@ const routes: Routes = [
     StatCardWidgetComponent,
     TableWidgetComponent,
     MapWidgetComponent,
+    ScadaWidgetComponent,
     TimeRangePickerComponent,
     GridsterModule,
     DashboardViewComponent, // Export for embedding in other modules

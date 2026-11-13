@@ -27,6 +27,7 @@ import { MobileFlowDiagramComponent } from './nodes/node-info/flow-diagram/mobil
 import { MobileNodeCommandComponent } from './nodes/node-command/mobile-node-command.component';
 import { MobileNodeLogsComponent } from './nodes/node-logs/mobile-node-logs.component';
 import { MobileAlertsComponent } from './alerts/mobile-alerts/mobile-alerts.component';
+import { ScadaEmbedModule } from '../shared/scada-embed/scada-embed.module';
 import { MobileProfileComponent } from './profile/mobile-profile/mobile-profile.component';
 
 /**
@@ -63,7 +64,8 @@ import { MobileProfileComponent } from './profile/mobile-profile/mobile-profile.
     CommonModule,
     FormsModule,
     RouterModule,
-    MobileRoutingModule
+    MobileRoutingModule,
+    ScadaEmbedModule
   ]
 })
 export class MobileModule {}

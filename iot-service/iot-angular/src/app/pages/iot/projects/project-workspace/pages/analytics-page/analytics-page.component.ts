@@ -1,9 +1,7 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ScadaService, ScadaDiagram, CreateScadaDiagramPayload } from '../../../../../../services/scada.service';
 import { AuthService } from '../../../../../../services/auth.service';
-import { environment } from '../../../../../../../environments/environment';
 
 @Component({
   selector: 'app-analytics-page',
@@ -11,21 +9,16 @@ import { environment } from '../../../../../../../environments/environment';
   styleUrls: ['./analytics-page.component.scss'],
   standalone: false
 })
-export class AnalyticsPageComponent implements OnInit, OnDestroy {
-  @ViewChild('scadaIframe') scadaIframe!: ElementRef<HTMLIFrameElement>;
-
+export class AnalyticsPageComponent implements OnInit {
   projectId = '';
   diagrams: ScadaDiagram[] = [];
   loading = true;
   error = '';
 
-  // Embed state
-  embedUrl: SafeResourceUrl | null = null;
+  // Embed state (iframe + auth handshake live in <app-scada-embed>, shared/scada-embed)
   embedMode: 'list' | 'view' | 'edit' = 'list';
   activeDiagramId = '';
   activeDiagramName = '';
-  private tokenSent = false;
-  private messageListener: ((event: MessageEvent) => void) | null = null;
 
   // Add diagram modal
   showAddModal = false;
@@ -38,7 +31,6 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private sanitizer: DomSanitizer,
     private scadaService: ScadaService,
     private authService: AuthService
   ) {}
@@ -50,24 +42,6 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
         this.loadDiagrams();
       }
     });
-
-    // Listen for 'scada-ready' from iframe — the child explicitly asks for the token
-    // once its message listener is attached. ALWAYS (re)send here (force), because the
-    // initial onIframeLoad send can race ahead of the child listener and be lost.
-    this.messageListener = (event: MessageEvent) => {
-      if (event.data?.type === 'scada-ready') {
-        this.sendTokenToIframe(true, event.source as Window | null);
-      }
-    };
-    window.addEventListener('message', this.messageListener);
-  }
-
-  ngOnDestroy(): void {
-    this.embedUrl = null;
-    if (this.messageListener) {
-      window.removeEventListener('message', this.messageListener);
-      this.messageListener = null;
-    }
   }
 
   loadDiagrams(): void {
@@ -91,33 +65,12 @@ export class AnalyticsPageComponent implements OnInit, OnDestroy {
     this.activeDiagramId = diagram.id;
     this.activeDiagramName = diagram.name;
     this.embedMode = mode;
-    this.tokenSent = false;
-
-    const rawUrl = this.scadaService.getEmbedUrl(this.projectId, diagram.id, mode);
-    this.embedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
-  }
-
-  onIframeLoad(): void {
-    // Send token on load (works on desktop), also retry for mobile
-    this.sendTokenToIframe();
-  }
-
-  private sendTokenToIframe(force = false, target?: Window | null): void {
-    if (this.tokenSent && !force) return;
-    const token = this.authService.getAccessToken();
-    const win = target ?? this.scadaIframe?.nativeElement?.contentWindow;
-    if (token && win) {
-      win.postMessage({ type: 'scada-auth', token }, environment.scadaUrl);
-      this.tokenSent = true;
-    }
   }
 
   closeEmbed(): void {
-    this.embedUrl = null;
     this.embedMode = 'list';
     this.activeDiagramId = '';
     this.activeDiagramName = '';
-    this.tokenSent = false;
     // Refresh list in case changes were made
     this.loadDiagrams();
   }

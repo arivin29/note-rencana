@@ -8,3 +8,4 @@ export { PieChartWidgetComponent } from './pie-chart/pie-chart-widget.component'
 export { StatCardWidgetComponent } from './stat-card/stat-card-widget.component';
 export { TableWidgetComponent } from './table/table-widget.component';
 export { MapWidgetComponent } from './map/map-widget.component';
+export { ScadaWidgetComponent } from './scada/scada-widget.component';

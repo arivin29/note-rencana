@@ -128,6 +128,12 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
 
     this.beginLoad();
 
+    // Bagan SCADA embeds iot-scada, which polls its own runtime → no query, nothing to reload.
+    if (this.widget.type === 'scada') {
+      this.finishOk([], []);
+      return;
+    }
+
     const config = this.widget.config || {} as any;
     const queries = config.queries as any[] | undefined;
 

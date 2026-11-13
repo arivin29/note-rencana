@@ -5,6 +5,8 @@ import {
   QueryResult, WidgetQueryDef, toApiWidgetType
 } from '../models/widget.models';
 import { DEFAULT_MAP_OPTIONS, readMapOptions } from '../utils/map-rows';
+import { DEFAULT_SCADA_OPTIONS, readScadaOptions, SCADA_WIDGET_SQL } from '../utils/scada-options';
+import { ScadaService, ScadaDiagram } from '../../../../services/scada.service';
 import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
@@ -184,7 +186,9 @@ export class WidgetWizardComponent implements OnInit {
         subtitleField: ''      // Column shown as a text line under the value (e.g. location)
       },
       // Map widget specific (see utils/map-rows.ts)
-      mapOptions: { ...DEFAULT_MAP_OPTIONS }
+      mapOptions: { ...DEFAULT_MAP_OPTIONS },
+      // "Bagan SCADA" widget (see utils/scada-options.ts)
+      scadaOptions: { ...DEFAULT_SCADA_OPTIONS }
     }
   };
 
@@ -350,6 +354,7 @@ export class WidgetWizardComponent implements OnInit {
     { type: 'table', label: 'Table', icon: 'fa-table', description: 'Supports many column styles' },
     { type: 'pie-chart', label: 'Pie Chart', icon: 'fa-chart-pie', description: 'The new core pie chart visualization' },
     { type: 'map', label: 'Peta', icon: 'fa-map-marked-alt', description: 'Titik berkoordinat (lat, lon) berwarna sesuai status' },
+    { type: 'scada', label: 'Bagan SCADA', icon: 'fa-project-diagram', description: 'Bagan SCADA proyek, tertanam & diperbarui otomatis' },
     { type: 'heatmap', label: 'Heatmap', icon: 'fa-th', description: '2D heatmap visualization' },
   ];
   
@@ -701,7 +706,8 @@ ORDER BY day_of_week, hour`
     private nodesService: NodesService,
     private sensorsService: SensorsService,
     private sensorChannelsService: SensorChannelsService,
-    private sensorTypesService: SensorTypesService
+    private sensorTypesService: SensorTypesService,
+    private scadaService: ScadaService
   ) {}
 
   ngOnInit(): void {
@@ -729,6 +735,7 @@ ORDER BY day_of_week, hour`
     } else {
       // New widget: initialize default query
       this.initDefaultQuery();
+      if (this.selectedType === 'scada') this.updatePreview();
     }
   }
 
@@ -1709,7 +1716,8 @@ ORDER BY day_of_week, hour`
                 backgroundColor: '',
                 subtitleField: ''
               },
-              mapOptions: readMapOptions(config.display.mapOptions)
+              mapOptions: readMapOptions(config.display.mapOptions),
+              scadaOptions: readScadaOptions(config.display.scadaOptions)
             };
           }
           
@@ -1786,8 +1794,10 @@ ORDER BY day_of_week, hour`
           }
         }
         
-        // Run query to show preview if SQL exists
-        if (this.form.sql) {
+        // Run query to show preview if SQL exists (Bagan SCADA runs no query)
+        if (this.selectedType === 'scada') {
+          this.updatePreview();
+        } else if (this.form.sql) {
           this.testQuery();
         }
       },
@@ -2230,6 +2240,7 @@ ORDER BY day_of_week, hour`
 
   updatePreview(): void {
     if (this.selectedType === 'map') this.refreshMapPreview();
+    if (this.selectedType === 'scada') { this.refreshScadaPreview(); return; }
     if (!this.queryResult) return;
     
     const data = this.queryResult.rows;
@@ -3197,6 +3208,10 @@ ORDER BY day_of_week, hour`
 
   // Validation
   canSave(): boolean {
+    if (this.selectedType === 'scada') {
+      // No query: needs a title, the dashboard's project and a chosen diagram
+      return this.form.title.length > 0 && !!this.dashboardProjectId && !!this.form.display.scadaOptions.diagramId;
+    }
     return this.form.title.length > 0 && 
            this.form.sql.length > 0 && 
            this.isValidSelectQuery() &&
@@ -3221,6 +3236,7 @@ ORDER BY day_of_week, hour`
         return !!labelField && !!valueField;
       case 'table':
       case 'map':   // fixed column contract (lat, lon, label, value, unit, status, time)
+      case 'scada': // no query result used
         return true;
       default:
         return false;
@@ -3369,6 +3385,8 @@ ORDER BY day_of_week, hour`
 
   saveWidget(): void {
     if (!this.canSave()) return;
+    this.saveError = null;
+    const isScada = this.selectedType === 'scada';
 
     // Sync current SQL editor to active query
     this.syncFormToActiveQuery();
@@ -3378,7 +3396,7 @@ ORDER BY day_of_week, hour`
       title: this.form.title,
       description: this.form.description,
       // Data source (postgresql or clickhouse) — first query's source for backward compat
-      dataSource: this.queries.length > 0 ? this.queries[0].dataSource : this.selectedDataSource,
+      dataSource: isScada ? 'postgresql' : (this.queries.length > 0 ? this.queries[0].dataSource : this.selectedDataSource),
       // Field mapping for data binding
       mapping: this.form.mapping,
       // Series configuration (multi-line)
@@ -3396,7 +3414,7 @@ ORDER BY day_of_week, hour`
     };
 
     // Save multi-query definitions if more than 1 query
-    if (this.queries.length > 1) {
+    if (!isScada && this.queries.length > 1) {
       widgetConfig.queries = this.queries.map(q => ({
         id: q.id,
         name: q.name,
@@ -3409,7 +3427,8 @@ ORDER BY day_of_week, hour`
     }
 
     // Primary SQL: first query's SQL for backward compat
-    const primarySql = this.queries.length > 0 ? this.queries[0].sql : this.form.sql;
+    // Bagan SCADA: sql_query is NOT NULL but never executed → constant SELECT 1
+    const primarySql = isScada ? SCADA_WIDGET_SQL : (this.queries.length > 0 ? this.queries[0].sql : this.form.sql);
 
     if (this.isEditMode && this.widgetId) {
       // Update existing widget
@@ -3417,7 +3436,7 @@ ORDER BY day_of_week, hour`
         dashboardId: this.dashboardId,
         widgetId: this.widgetId,
         body: {
-          name: this.form.name,
+          name: this.form.title.trim() || this.form.name,  // title input is the widget name
           widgetType: toApiWidgetType(this.selectedType),
           sqlQuery: primarySql,
           config: widgetConfig
@@ -3429,7 +3448,7 @@ ORDER BY day_of_week, hour`
         },
         error: (err: any) => {
           console.error('Failed to update widget:', err);
-          alert('Failed to update widget: ' + (err.error?.message || err.message));
+          this.saveError = 'Gagal menyimpan widget: ' + (err.error?.message || err.message);
         }
       });
     } else {
@@ -3437,7 +3456,7 @@ ORDER BY day_of_week, hour`
       this.widgetBuilderService.widgetBuilderControllerCreateWidget({
         dashboardId: this.dashboardId,
         body: {
-          name: this.form.name,
+          name: this.form.title.trim() || this.form.name,  // title input is the widget name
           widgetType: toApiWidgetType(this.selectedType),
           sqlQuery: primarySql,
           config: widgetConfig,
@@ -3453,7 +3472,7 @@ ORDER BY day_of_week, hour`
         },
         error: (err: any) => {
           console.error('Failed to create widget:', err);
-          alert('Failed to create widget: ' + (err.error?.message || err.message));
+          this.saveError = 'Gagal menyimpan widget: ' + (err.error?.message || err.message);
         }
       });
     }
@@ -3468,19 +3487,91 @@ ORDER BY day_of_week, hour`
   dashboardProjectId: string | null = null;
   private dashboardProjectLoaded = false;
 
+  /** True once the dashboard GET answered (distinguishes "loading" from "no project"). */
+  dashboardProjectResolved = false;
+  dashboardProjectError = false;
+  /** Shown above the editor when saving fails (replaces alert()). */
+  saveError: string | null = null;
+
   refreshMapPreview(): void {
     this.mapPreviewWidget = {
       id: 'preview', dashboardId: this.dashboardId, name: this.form.title, type: 'map',
       config: { display: { mapOptions: { ...this.form.display.mapOptions } } } as any,
       position: { x: 0, y: 0, cols: 6, rows: 4 }, createdAt: new Date(), updatedAt: new Date(),
     };
-    if (!this.dashboardProjectLoaded && this.dashboardId) {
-      this.dashboardProjectLoaded = true;
-      this.widgetBuilderService.widgetBuilderControllerGetDashboard$Response({ id: this.dashboardId }).subscribe({
-        next: (res: any) => this.dashboardProjectId = res?.body?.idProject || null,
-        error: () => this.dashboardProjectLoaded = false,
-      });
+    this.ensureDashboardProject();
+  }
+
+  /** Loads the dashboard's project once (map + scada widgets need it). */
+  ensureDashboardProject(): void {
+    if (this.dashboardProjectLoaded || !this.dashboardId) return;
+    this.dashboardProjectLoaded = true;
+    this.dashboardProjectError = false;
+    this.widgetBuilderService.widgetBuilderControllerGetDashboard$Response({ id: this.dashboardId }).subscribe({
+      next: (res: any) => {
+        this.dashboardProjectId = res?.body?.idProject || null;
+        this.dashboardProjectResolved = true;
+        if (this.selectedType === 'scada') this.loadScadaDiagrams();
+      },
+      error: () => {
+        this.dashboardProjectLoaded = false;
+        this.dashboardProjectError = true;
+      },
+    });
+  }
+
+  // ── Bagan SCADA preview: same <app-scada-widget> as the dashboard ──
+  scadaPreviewWidget: Widget | null = null;
+  scadaDiagrams: ScadaDiagram[] = [];
+  scadaDiagramsLoading = false;
+  scadaDiagramsError: string | null = null;
+  private scadaDiagramsProjectId: string | null = null;
+
+  refreshScadaPreview(): void {
+    this.scadaPreviewWidget = {
+      id: 'preview', dashboardId: this.dashboardId, name: this.form.title, type: 'scada',
+      config: { display: { scadaOptions: { ...this.form.display.scadaOptions } } } as any,
+      position: { x: 0, y: 0, cols: 6, rows: 4 }, createdAt: new Date(), updatedAt: new Date(),
+    };
+    this.ensureDashboardProject();
+    if (this.dashboardProjectId && this.scadaDiagramsProjectId !== this.dashboardProjectId && !this.scadaDiagramsLoading) {
+      this.loadScadaDiagrams();
     }
+  }
+
+  /** Diagrams of the dashboard's project (same call as the project SCADA tab; BE scopes by owner). */
+  loadScadaDiagrams(): void {
+    if (!this.dashboardProjectId) return;
+    const projectId = this.dashboardProjectId;
+    this.scadaDiagramsLoading = true;
+    this.scadaDiagramsError = null;
+    this.scadaService.getDiagramsByProject(projectId).subscribe({
+      next: (list) => {
+        this.scadaDiagrams = list || [];
+        this.scadaDiagramsProjectId = projectId;
+        this.scadaDiagramsLoading = false;
+      },
+      error: (err: any) => {
+        this.scadaDiagramsError = err?.error?.message || 'Gagal memuat daftar bagan SCADA';
+        this.scadaDiagramsLoading = false;
+      },
+    });
+  }
+
+  /** Saved diagramId no longer in the project's list (deleted / moved). */
+  get scadaDiagramMissing(): boolean {
+    const id = this.form.display.scadaOptions.diagramId;
+    return !!id && this.scadaDiagramsProjectId !== null && !this.scadaDiagrams.some(d => d.id === id);
+  }
+
+  onScadaOptionChange(): void {
+    // Default the widget title to the diagram name when empty
+    const id = this.form.display.scadaOptions.diagramId;
+    const d = this.scadaDiagrams.find(x => x.id === id);
+    if (d && !this.form.title) {
+      this.form.title = d.name;
+    }
+    this.updatePreview();
   }
 
   needsXYMapping(): boolean {

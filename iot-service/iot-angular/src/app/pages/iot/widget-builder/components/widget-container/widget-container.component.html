@@ -125,6 +125,14 @@
           [containerHeight]="containerHeight">
         </app-map-widget>
 
+        <!-- Bagan SCADA (iframe; ignores refresh ticks/data) -->
+        <app-scada-widget
+          *ngIf="widget.type === 'scada'"
+          [widget]="widget"
+          [projectId]="projectId"
+          [blockPointer]="editMode">
+        </app-scada-widget>
+
         <!-- Table -->
         <app-table-widget 
           *ngIf="widget.type === 'table'"
