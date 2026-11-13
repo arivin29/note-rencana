@@ -74,6 +74,8 @@
   font-size: calc(11px * var(--map-scale, 1));
   line-height: 1.2;
   border-radius: 4px;
+  max-height: 45%;
+  overflow: hidden;
   background: rgba(var(--bs-body-bg-rgb), 0.85);
   color: var(--bs-body-color);
   pointer-events: none;
@@ -93,6 +95,30 @@
   border-radius: 50%;
   box-sizing: border-box;
 }
+/* WebGIS layer swatches (colour from the layer's saved style) */
+.swatch {
+  display: inline-block;
+  box-sizing: border-box;
+  background: var(--swatch);
+}
+.swatch-dot {
+  width: 0.85em;
+  height: 0.85em;
+  border-radius: 50%;
+  border: 1px solid #ffffff;
+}
+.swatch-line {
+  width: 1.2em;
+  height: 0.22em;
+  border-radius: 1px;
+}
+.swatch-area {
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
 .dot-normal { background: var(--bs-success, #22c55e); }
 .dot-alarm { background: var(--bs-danger, #ef4444); }
 .dot-muted { background: #94a3b8; }

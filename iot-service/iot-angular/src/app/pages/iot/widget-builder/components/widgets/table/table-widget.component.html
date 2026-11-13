@@ -26,7 +26,8 @@
             <ng-container *ngIf="col.type === 'status' || col.type === 'badge'; else normalCell">
               <span *ngIf="getStatusBadge(row[col.field], col) as badge"
                     class="badge"
-                    [ngClass]="badge.colorClass">
+                    [ngClass]="badge.colorClass"
+                    [ngStyle]="badge.style">
                 {{ badge.label }}
               </span>
             </ng-container>
@@ -43,7 +44,7 @@
     <!-- No Data State -->
     <div *ngIf="displayData.length === 0" class="no-data text-center py-4">
       <i class="fa fa-table fa-2x text-muted mb-2"></i>
-      <p class="text-muted mb-0">No data available</p>
+      <p class="text-muted mb-0">Tidak ada data</p>
     </div>
   </div>
 </div>

@@ -11,7 +11,7 @@ import { LayerPanelComponent } from './components/layer-panel/layer-panel';
 import { LayerUploadPage } from './layer-upload/layer-upload';
 import { FeaturePopupComponent } from './components/feature-popup/feature-popup';
 import { NodeDrawerComponent } from './components/node-drawer/node-drawer';
-import { SensorLabelsComponent } from './components/sensor-labels/sensor-labels';
+import { WebgisSharedModule } from './webgis-shared.module';
 import { AddLayerDrawerComponent } from './components/add-layer-drawer/add-layer-drawer';
 import { EditLayerDrawerComponent } from './components/edit-layer-drawer/edit-layer-drawer';
 import { SensorChannelDrawerComponent } from './components/sensor-channel-drawer/sensor-channel-drawer';
@@ -23,7 +23,6 @@ import { SensorChannelDrawerComponent } from './components/sensor-channel-drawer
     LayerUploadPage,
     FeaturePopupComponent,
     NodeDrawerComponent,
-    SensorLabelsComponent,
     AddLayerDrawerComponent,
     EditLayerDrawerComponent,
     SensorChannelDrawerComponent
@@ -35,7 +34,8 @@ import { SensorChannelDrawerComponent } from './components/sensor-channel-drawer
     RouterModule,
     SharedComponentsModule,
     WebgisRoutingModule,
-    NgApexchartsModule
+    NgApexchartsModule,
+    WebgisSharedModule // SensorLabelsComponent (shared with the Widget Builder map widget)
   ],
   exports: [
     WebgisMapPage // Export for embedding in other modules

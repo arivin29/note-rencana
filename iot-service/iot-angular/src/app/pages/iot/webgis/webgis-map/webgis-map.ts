@@ -28,15 +28,11 @@ import { SensorChannelFeature } from '../components/sensor-channel-drawer/sensor
 import { AuthService } from '../../../../services/auth.service';
 import { BasemapService } from '../../../../services/basemap.service';
 import { WebGisLayerStateService, SharedLayerState } from '../services/webgis-layer-state.service';
-
-// Core layer definition (static, not from database)
-interface CoreLayerDef {
-  id: string;
-  name: string;
-  code: 'nodes' | 'sensors' | 'alerts' | 'sensor-channels';
-  visible: boolean;
-  style: any;
-}
+import {
+  WebgisCoreLayerDef as CoreLayerDef, webgisCoreLayerDefs, webgisSensorTypeLayerStyle, webgisLayerColor,
+  sortByDisplayOrder, filterSensorDataByTypes,
+} from '../shared/webgis-layer-config';
+import { createStyleFromLayerStyle, createWebgisLayerStyle } from '../shared/webgis-styles';
 
 // Sensor type info for sensor channel layers
 interface SensorTypeInfo {
@@ -94,22 +90,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
 
   // Core layer definitions (static)
   // Note: Sensors are now dynamic sub-layers based on sensor_types
-  private coreLayerDefs: CoreLayerDef[] = [
-    {
-      id: 'core-nodes',
-      name: 'Nodes',
-      code: 'nodes',
-      visible: false, // Not default visible
-      style: { fill: '#28a745', stroke: '#ffffff', radius: 10 }
-    },
-    {
-      id: 'core-alerts',
-      name: 'Alerts',
-      code: 'alerts',
-      visible: true,
-      style: { fill: '#dc3545', stroke: '#ffffff', radius: 12 }
-    }
-  ];
+  private coreLayerDefs: CoreLayerDef[] = webgisCoreLayerDefs();
 
   // Sensor types (loaded dynamically)
   sensorTypes: SensorTypeInfo[] = [];
@@ -175,15 +156,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
 
   // Filter sensor channel data to only include visible sensor types
   get filteredSensorChannelData(): NodeSensorData[] {
-    const visibleTypes = this.visibleSensorTypeNames;
-    if (visibleTypes.size === 0) return [];
-
-    return this.sensorChannelData
-      .map(node => ({
-        ...node,
-        channels: node.channels.filter(ch => visibleTypes.has(ch.sensorTypeName))
-      }))
-      .filter(node => node.channels.length > 0);
+    return filterSensorDataByTypes(this.sensorChannelData, this.visibleSensorTypeNames);
   }
 
   // Map config
@@ -771,12 +744,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     }));
 
     // Create sensor-type layers from loaded sensor types
-    // Using different colors based on index for each type
-    const sensorTypeColors = [
-      '#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#198754',
-      '#20c997', '#0dcaf0', '#6610f2', '#e83e8c', '#ffc107'
-    ];
-    
+    // Using different colors based on index for each type (shared/webgis-layer-config)
     const sensorTypeLayers: LayerState[] = this.sensorTypes.map((st, index) => ({
       id: `sensor-type-${st.id}`,
       name: st.name,
@@ -784,11 +752,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       code: 'sensor-channels' as const,
       visible: index === 0, // Only first sensor type visible by default
       loading: false,
-      style: { 
-        fill: sensorTypeColors[index % sensorTypeColors.length], 
-        stroke: '#ffffff', 
-        radius: 7 
-      },
+      style: webgisSensorTypeLayerStyle(index),
       sensorType: st
     }));
 
@@ -857,13 +821,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
 
   // Get layers filtered by type, sorted by displayOrder
   getLayersByType(type: 'core' | 'operational' | 'custom' | 'sensor-type'): LayerState[] {
-    return this.layers
-      .filter(l => l.type === type)
-      .sort((a, b) => {
-        const orderA = a.layerData?.displayOrder ?? 999;
-        const orderB = b.layerData?.displayOrder ?? 999;
-        return orderA - orderB;
-      });
+    return sortByDisplayOrder(this.layers.filter(l => l.type === type), l => l.layerData?.displayOrder);
   }
 
   // Toggle group expand/collapse
@@ -907,18 +865,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
 
   // Get layer color from style
   getLayerColor(ls: LayerState): string {
-    if (ls.style?.fillColor) return ls.style.fillColor;
-    if (ls.style?.strokeColor) return ls.style.strokeColor;
-    if (ls.style?.fill) return ls.style.fill;
-    if (ls.style?.stroke) return ls.style.stroke;
-    // Default colors by type
-    const defaults: Record<string, string> = {
-      'core': '#6366f1',
-      'operational': '#22d3ee',
-      'custom': '#f59e0b',
-      'sensor-type': '#10b981'
-    };
-    return defaults[ls.type] || '#6366f1';
+    return webgisLayerColor(ls.style, ls.type);
   }
 
   // Get geometry icon based on layer geometry type
@@ -1044,7 +991,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     if (!layerState?.olLayer) return;
     
     // Apply new style to the OpenLayers layer
-    const style = this.createStyleFromLayerStyle(event.style);
+    const style = createStyleFromLayerStyle(event.style, () => this.map?.getView().getZoom());
     (layerState.olLayer as VectorLayer<any>).setStyle(style);
   }
 
@@ -1131,156 +1078,6 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
         duration: 500
       });
     }
-  }
-
-  // Create OpenLayers style from LayerStyle interface
-  // Returns a style function for data-driven styling with zoom visibility
-  private createStyleFromLayerStyle(layerStyle: LayerStyle): any {
-    // Get zoom visibility settings
-    const minZoom = layerStyle.minZoom ?? 0;
-    const maxZoom = layerStyle.maxZoom ?? 20;
-    const labelMinZoom = layerStyle.labelMinZoom ?? 12;
-
-    // If data-driven styling is enabled, return a function
-    if (layerStyle.strokeWidthByField?.enabled || layerStyle.colorByField?.enabled) {
-      return (feature: Feature<Geometry>, resolution: number) => {
-        // Get current zoom level (default to 10 if undefined)
-        const zoom = this.map?.getView().getZoom() ?? 10;
-        
-        // Hide layer if outside zoom range
-        if (zoom < minZoom || zoom > maxZoom) {
-          return null;
-        }
-
-        const props = feature.getProperties();
-        
-        // Calculate stroke width
-        let strokeWidth = layerStyle.strokeWidth;
-        if (layerStyle.strokeWidthByField?.enabled && layerStyle.strokeWidthByField.field) {
-          const fieldValue = parseFloat(props[layerStyle.strokeWidthByField.field]) || 0;
-          const base = layerStyle.strokeWidthByField.baseWidth;
-          const factor = layerStyle.strokeWidthByField.factor || 1;
-          
-          if (layerStyle.strokeWidthByField.operation === 'multiply') {
-            strokeWidth = base + (fieldValue * factor);
-          } else {
-            strokeWidth = base + (factor > 0 ? fieldValue / factor : 0);
-          }
-          // Clamp to reasonable range
-          strokeWidth = Math.max(0.5, Math.min(20, strokeWidth));
-        }
-        
-        // Calculate fill/stroke color
-        let fillColor = layerStyle.fillColor;
-        let strokeColor = layerStyle.strokeColor;
-        if (layerStyle.colorByField?.enabled && layerStyle.colorByField.field) {
-          const fieldValue = String(props[layerStyle.colorByField.field] || '');
-          const mapping = layerStyle.colorByField.mappings?.find(m => m.value === fieldValue);
-          if (mapping) {
-            fillColor = mapping.color;
-            strokeColor = mapping.color;
-          } else {
-            fillColor = layerStyle.colorByField.defaultColor || layerStyle.fillColor;
-            strokeColor = layerStyle.colorByField.defaultColor || layerStyle.strokeColor;
-          }
-        }
-        
-        const fill = new Fill({
-          color: this.hexToRgba(fillColor, layerStyle.fillOpacity)
-        });
-        
-        const stroke = new Stroke({
-          color: this.hexToRgba(strokeColor, layerStyle.strokeOpacity),
-          width: strokeWidth
-        });
-        
-        // Build label text from multiple fields (only if zoom >= labelMinZoom)
-        let labelText = '';
-        if (zoom >= labelMinZoom && layerStyle.labelFields && layerStyle.labelFields.length > 0) {
-          labelText = layerStyle.labelFields
-            .map(f => props[f] !== undefined ? String(props[f]) : '')
-            .filter(v => v !== '')
-            .join(' | ');
-        }
-        
-        return new Style({
-          fill,
-          stroke,
-          image: new CircleStyle({
-            radius: layerStyle.pointRadius,
-            fill,
-            stroke
-          }),
-          text: labelText ? new Text({
-            text: labelText,
-            font: `${layerStyle.labelSize}px sans-serif`,
-            fill: new Fill({ color: layerStyle.labelColor }),
-            stroke: new Stroke({ color: '#000000', width: 2 }),
-            offsetY: -(layerStyle.pointRadius + 10)
-          }) : undefined
-        });
-      };
-    }
-    
-    // Static style (no data-driven features) - still needs zoom checking
-    const fill = new Fill({
-      color: this.hexToRgba(layerStyle.fillColor, layerStyle.fillOpacity)
-    });
-    
-    const stroke = new Stroke({
-      color: this.hexToRgba(layerStyle.strokeColor, layerStyle.strokeOpacity),
-      width: layerStyle.strokeWidth
-    });
-    
-    // Build label text getter for multiple fields
-    const labelFields = layerStyle.labelFields || [];
-    
-    // Return style function for zoom-aware rendering
-    return (feature: Feature<Geometry>, resolution: number) => {
-      // Get current zoom level (default to 10 if undefined)
-      const zoom = this.map?.getView().getZoom() ?? 10;
-      
-      // Hide layer if outside zoom range
-      if (zoom < minZoom || zoom > maxZoom) {
-        return null;
-      }
-
-      const props = feature.getProperties();
-      
-      // Build label text (only if zoom >= labelMinZoom)
-      let labelText = '';
-      if (zoom >= labelMinZoom && labelFields.length > 0) {
-        labelText = labelFields
-          .map(f => props[f] !== undefined ? String(props[f]) : '')
-          .filter(v => v !== '')
-          .join(' | ');
-      }
-      
-      return new Style({
-        fill,
-        stroke,
-        image: new CircleStyle({
-          radius: layerStyle.pointRadius,
-          fill,
-          stroke
-        }),
-        text: labelText ? new Text({
-          text: labelText,
-          font: `${layerStyle.labelSize}px sans-serif`,
-          fill: new Fill({ color: layerStyle.labelColor }),
-          stroke: new Stroke({ color: '#000000', width: 2 }),
-          offsetY: -(layerStyle.pointRadius + 10)
-        }) : undefined
-      });
-    };
-  }
-
-  // Helper to convert hex color to rgba
-  private hexToRgba(hex: string, opacity: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
 
   toggleLayer(layerState: LayerState): void {
@@ -1518,37 +1315,8 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
     if (layerState.code === 'nodes') {
       styleFunc = this.createNodeStyleFunction();
     } else {
-      // Handle nested styleJson format and use createStyleFromLayerStyle for data-driven styling
-      let styleConfig = layerState.style || {};
-      // Fix nested styleJson (legacy bug)
-      if (styleConfig.styleJson && !styleConfig.fillColor) {
-        styleConfig = styleConfig.styleJson;
-      }
-      
-      // Use createStyleFromLayerStyle for operational/custom layers with new style format
-      if (styleConfig.fillColor || styleConfig.strokeColor) {
-        const layerStyle = {
-          fillColor: styleConfig.fillColor || '#6366f1',
-          fillOpacity: styleConfig.fillOpacity ?? 0.3,
-          strokeColor: styleConfig.strokeColor || '#6366f1',
-          strokeWidth: styleConfig.strokeWidth ?? 2,
-          strokeOpacity: styleConfig.strokeOpacity ?? 1,
-          pointRadius: styleConfig.pointRadius ?? 6,
-          pointShape: styleConfig.pointShape || 'circle',
-          labelFields: styleConfig.labelFields || [],
-          labelColor: styleConfig.labelColor || '#ffffff',
-          labelSize: styleConfig.labelSize ?? 12,
-          strokeWidthByField: styleConfig.strokeWidthByField,
-          colorByField: styleConfig.colorByField,
-          // Zoom visibility settings
-          minZoom: styleConfig.minZoom ?? 0,
-          maxZoom: styleConfig.maxZoom ?? 20,
-          labelMinZoom: styleConfig.labelMinZoom ?? 12
-        };
-        styleFunc = this.createStyleFromLayerStyle(layerStyle);
-      } else {
-        styleFunc = this.createStyleFromConfig(styleConfig);
-      }
+      // Saved style (nested legacy styleJson, LayerStyle data-driven format or simple config) — shared/webgis-styles
+      styleFunc = createWebgisLayerStyle(layerState.style, () => this.map?.getView().getZoom());
     }
 
     const vectorLayer = new VectorLayer({
@@ -1660,47 +1428,6 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       iconCache.set(cacheKey, styles);
       return styles;
     };
-  }
-
-  private createStyleFromConfig(styleJson: any): Style {
-    const config = styleJson || {};
-
-    // Point style
-    if (config.iconUrl) {
-      return new Style({
-        image: new Icon({
-          src: config.iconUrl,
-          scale: config.iconScale || 1
-        })
-      });
-    }
-
-    // Circle marker
-    return new Style({
-      image: new CircleStyle({
-        radius: config.radius || 8,
-        stroke: new Stroke({
-          color: config.stroke || '#ffffff',
-          width: config.strokeWidth || 2
-        }),
-        fill: new Fill({
-          color: config.fill || '#0d6efd'
-        })
-      }),
-      stroke: new Stroke({
-        color: config.stroke || '#3388ff',
-        width: config.strokeWidth || 3
-      }),
-      fill: new Fill({
-        color: config.fill || 'rgba(51, 136, 255, 0.2)'
-      }),
-      text: config.labelField ? new Text({
-        text: '',  // Will be set per feature
-        font: config.labelFont || '12px sans-serif',
-        fill: new Fill({ color: config.labelColor || '#000' }),
-        offsetY: -15
-      }) : undefined
-    });
   }
 
   closePopup(): void {

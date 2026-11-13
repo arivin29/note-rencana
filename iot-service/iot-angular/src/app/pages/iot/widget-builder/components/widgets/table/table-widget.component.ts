@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { Widget } from '../../../models/widget.models';
+import { formatIdNumber, badgeColorStyle } from '../../../utils/format-id';
 
 interface ColumnConfig {
   field: string;
@@ -13,6 +14,13 @@ interface ColumnConfig {
   dateFormat: string;
   thresholds: { value: number; color: string; bgColor: string }[];
   statusMap: { value: string; label: string; color: string }[];
+}
+
+interface StatusBadge {
+  label: string;
+  colorClass: string;
+  /** Inline colours for literal statusMap colours (hex/rgb); null → use colorClass. */
+  style: { [key: string]: string } | null;
 }
 
 interface TableOptions {
@@ -234,7 +242,7 @@ export class TableWidgetComponent implements OnInit, OnChanges {
       case 'number':
         const num = parseFloat(value);
         if (isNaN(num)) return String(value);
-        const formatted = num.toFixed(column.decimals);
+        const formatted = formatIdNumber(num, column.decimals ?? 0);
         return column.unit ? `${formatted} ${column.unit}` : formatted;
 
       case 'date':
@@ -298,35 +306,37 @@ export class TableWidgetComponent implements OnInit, OnChanges {
     return {};
   }
 
-  // Status badge
-  getStatusBadge(value: any, column: ColumnConfig): { label: string; colorClass: string } | null {
+  // Status badge — statusMap colour may be a bootstrap name ('danger') or a literal (#ef4444/rgb()).
+  getStatusBadge(value: any, column: ColumnConfig): StatusBadge | null {
     if (column.type !== 'status' && column.type !== 'badge') return null;
 
     const strValue = String(value);
-    const mapping = column.statusMap?.find(m => 
-      m.value.toLowerCase() === strValue.toLowerCase()
+    const mapping = column.statusMap?.find(m =>
+      String(m.value).toLowerCase() === strValue.toLowerCase()
     );
 
     if (mapping) {
-      return {
-        label: mapping.label,
-        colorClass: `bg-${mapping.color}`
-      };
+      const literal = badgeColorStyle(mapping.color);
+      if (literal) {
+        return { label: mapping.label, colorClass: '', style: { 'background-color': literal.background, color: literal.color } };
+      }
+      const name = (mapping.color || '').trim().replace(/^bg-/, '');
+      return { label: mapping.label, colorClass: /^[a-z][a-z0-9-]*$/i.test(name) ? `bg-${name}` : 'bg-secondary', style: null };
     }
 
     // Default fallback based on common patterns
     const lower = strValue.toLowerCase();
     if (lower === 'normal' || lower === 'ok' || lower === 'online' || lower === 'active') {
-      return { label: strValue, colorClass: 'bg-success' };
+      return { label: strValue, colorClass: 'bg-success', style: null };
     }
     if (lower === 'warning' || lower === 'warn') {
-      return { label: strValue, colorClass: 'bg-warning' };
+      return { label: strValue, colorClass: 'bg-warning', style: null };
     }
     if (lower === 'critical' || lower === 'error' || lower === 'offline' || lower === 'fail') {
-      return { label: strValue, colorClass: 'bg-danger' };
+      return { label: strValue, colorClass: 'bg-danger', style: null };
     }
 
-    return { label: strValue, colorClass: 'bg-secondary' };
+    return { label: strValue, colorClass: 'bg-secondary', style: null };
   }
 
   // Table CSS classes

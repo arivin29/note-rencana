@@ -16,6 +16,14 @@ import { formatIdNumber } from './format-id';
 export type MapPointStatus = 'normal' | 'low' | 'high' | 'nothreshold' | 'nodata';
 export type MapLabelMode = 'label-value' | 'value' | 'label';
 export type MapBasemap = 'auto' | 'light' | 'dark' | 'none';
+/**
+ * What the map draws:
+ * - `webgis` (default): the project's WebGIS layers with WebGIS styles — sensor types + sensor value
+ *   cards, alerts and every operational/custom layer (core "Nodes" excluded). SQL result not drawn.
+ * - `sql`: only the SQL points (+ project layers when `showProjectLayers`).
+ * - `both`: WebGIS layers + SQL points on top.
+ */
+export type MapSource = 'webgis' | 'sql' | 'both';
 
 export interface MapPoint {
   lat: number;
@@ -28,6 +36,7 @@ export interface MapPoint {
 }
 
 export interface MapWidgetOptions {
+  source: MapSource;
   showProjectLayers: boolean;
   basemap: MapBasemap;
   showLabels: boolean;
@@ -36,6 +45,7 @@ export interface MapWidgetOptions {
 }
 
 export const DEFAULT_MAP_OPTIONS: MapWidgetOptions = {
+  source: 'webgis',
   showProjectLayers: true,
   basemap: 'auto',
   showLabels: true,
@@ -51,12 +61,28 @@ export function readMapOptions(raw: unknown): MapWidgetOptions {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const bool = (v: any, d: boolean) => (typeof v === 'boolean' ? v : d);
   return {
+    source: (['webgis', 'sql', 'both'] as const).includes(r['source']) ? r['source'] : DEFAULT_MAP_OPTIONS.source,
     showProjectLayers: bool(r['showProjectLayers'], DEFAULT_MAP_OPTIONS.showProjectLayers),
     basemap: (['auto', 'light', 'dark', 'none'] as const).includes(r['basemap']) ? r['basemap'] : DEFAULT_MAP_OPTIONS.basemap,
     showLabels: bool(r['showLabels'], DEFAULT_MAP_OPTIONS.showLabels),
     labelMode: (['label-value', 'value', 'label'] as const).includes(r['labelMode']) ? r['labelMode'] : DEFAULT_MAP_OPTIONS.labelMode,
     interactive: bool(r['interactive'], DEFAULT_MAP_OPTIONS.interactive),
   };
+}
+
+/** SQL points are drawn (source `sql` or `both`). */
+export function mapDrawsSql(o: Pick<MapWidgetOptions, 'source'>): boolean {
+  return o.source !== 'webgis';
+}
+
+/** WebGIS core layers (sensor types + value cards, alerts) are drawn (source `webgis` or `both`). */
+export function mapDrawsWebgis(o: Pick<MapWidgetOptions, 'source'>): boolean {
+  return o.source !== 'sql';
+}
+
+/** Operational/custom map layers: always with WebGIS; with `sql` only when `showProjectLayers`. */
+export function mapDrawsSupportLayers(o: Pick<MapWidgetOptions, 'source' | 'showProjectLayers'>): boolean {
+  return o.source !== 'sql' || o.showProjectLayers;
 }
 
 /** Number from number or numeric string (accepts decimal comma when there is no dot). */

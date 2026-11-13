@@ -2,6 +2,9 @@
   display: block;
   width: 100%;
   height: 100%;
+  /* Size container → cqw/cqh below are the card's own cell. Host font-size = 16px × fontScale
+     (HostBinding), so every size here is em-relative and grows with the TV/dashboard scale. */
+  container-type: size;
 }
 
 .stat-card-widget {
@@ -9,43 +12,62 @@
   flex-direction: column;
   justify-content: center;
   height: 100%;
-  padding: 12px;
+  min-height: 0;
+  padding: 0.75em;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Value styling */
+/*
+ * Value size = configured size (--sv-size), clamped so the whole card fits its cell:
+ *  - height: cell height − padding − lines under the value (--sv-reserve, set from TS in em)
+ *  - width:  (cell width − side reserve) ÷ estimated value width in em (--sv-chars)
+ */
 .stat-value {
   font-weight: 700;
   line-height: 1;
+  white-space: nowrap;
+  font-size: var(--sv-size, 2.5em); /* fallback: browsers without container units (old TV webviews) */
+  font-size: max(0.9em, min(
+    var(--sv-size, 2.5em),
+    calc(100cqh - var(--sv-reserve, 1.5em)),
+    calc((100cqw - var(--sv-wreserve, 1.5em)) / var(--sv-chars, 4))
+  ));
 }
+.sv-small { --sv-size: 1.5em; }
+.sv-medium { --sv-size: 2em; }
+.sv-large { --sv-size: 2.5em; }
+.sv-xlarge { --sv-size: 3.5em; }
 
 .stat-value-compact {
-  font-size: 1.5rem;
+  --sv-size: 1.5em;
 }
 
 .stat-unit {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-left: 4px;
+  font-size: 0.875em;
+  color: var(--bs-secondary-color);
+  margin-left: 0.25em;
+  white-space: nowrap;
 }
 
 .stat-prefix {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-right: 2px;
+  font-size: 1em;
+  color: var(--bs-secondary-color);
+  margin-right: 0.125em;
 }
 
 .stat-suffix {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75em;
+  color: var(--bs-secondary-color);
 }
 
 /* Trend styling */
 .stat-trend {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.875rem;
-  margin-top: 6px;
+  gap: 0.25em;
+  font-size: 0.875em;
+  margin-top: 0.375em;
 }
 
 .stat-trend.trend-up {
@@ -57,8 +79,8 @@
 }
 
 .stat-trend-inline {
-  font-size: 0.75rem;
-  margin-left: 8px;
+  font-size: 0.75em;
+  margin-left: 0.5em;
 }
 
 .stat-trend-inline.trend-up {
@@ -71,21 +93,39 @@
 
 /* Icon styling */
 .stat-icon {
-  font-size: 2.5rem;
-  margin-right: 16px;
+  font-size: 2.5em;
+  margin-right: 0.4em;
+  flex-shrink: 0;
 }
 
+/* Centered layout: icon on top only when the cell is tall enough, else small beside the value */
 .stat-icon-top {
-  margin-bottom: 8px;
+  font-size: 2em;
+  line-height: 1;
+  margin-bottom: 0.25em;
+}
+.stat-icon-beside {
+  display: none;
+  font-size: 1.25em;
+  margin-right: 0.35em;
+  align-self: center;
+}
+/* Top icon (2em + 0.25em gap) is part of the value's height budget only while it is shown. */
+@container (min-height: 10.001em) {
+  .stat-card-widget { --sv-icon-top: 2.25em; }
+}
+@container (max-height: 10em) {
+  .stat-icon-top { display: none; }
+  .stat-icon-beside { display: inline-block; }
 }
 
 .stat-icon-inline {
-  margin-right: 8px;
+  margin-right: 0.5em;
 }
 
 .stat-icon-small {
-  font-size: 1rem;
-  margin-right: 6px;
+  font-size: 1em;
+  margin-right: 0.375em;
 }
 
 /* Layout: Centered */
@@ -95,17 +135,20 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: 100%;
 }
 
 .layout-centered .stat-value-row {
   display: flex;
   align-items: baseline;
   justify-content: center;
+  max-width: 100%;
 }
 
 .layout-centered .stat-suffix-row {
-  margin-top: 4px;
+  margin-top: 0.25em;
 }
 
 /* Layout: Left Aligned */
@@ -114,7 +157,9 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: 100%;
 }
 
 .layout-left-aligned .stat-value-row {
@@ -127,12 +172,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .layout-with-icon .stat-content {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .layout-with-icon .stat-value-row {
@@ -145,21 +192,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* Sparkline */
 .stat-sparkline {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex: none;
+  margin-top: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--bs-border-color);
+}
+.stat-sparkline-chart {
+  width: 100%;
+  height: 2.5em;
 }
 
-/* Text line under the value (statCardOptions.subtitleField) */
+/* Text line under the value (statCardOptions.subtitleField) — always one line, never clipped away */
 .stat-subtitle {
+  flex: none;
   max-width: 100%;
-  margin-top: 4px;
-  font-size: 0.8125rem;
+  margin-top: 0.25em;
+  font-size: 0.8125em;
   line-height: 1.25;
   color: var(--bs-secondary-color);
   overflow: hidden;
@@ -167,18 +221,3 @@
   white-space: nowrap;
 }
 
-/* TV mode (fontScale != 1): host font-size = 16px × scale, so rem sizes become em-relative. */
-:host(.scaled) .stat-value-compact { font-size: 1.5em; }
-:host(.scaled) .stat-unit { font-size: 0.875em; }
-:host(.scaled) .stat-prefix { font-size: 1em; }
-:host(.scaled) .stat-suffix { font-size: 0.75em; }
-:host(.scaled) .stat-trend { font-size: 0.875em; }
-:host(.scaled) .stat-trend-inline { font-size: 0.75em; }
-:host(.scaled) .stat-icon { font-size: 2.5em; }
-:host(.scaled) .stat-icon-small { font-size: 1em; }
-:host(.scaled) .stat-card-widget { padding: 0.75em; }
-:host(.scaled) .fs-4 { font-size: 1.5em !important; }
-:host(.scaled) .fs-2 { font-size: 2em !important; }
-:host(.scaled) .fs-1 { font-size: 2.5em !important; }
-:host(.scaled) .display-4 { font-size: 3.5em !important; }
-:host(.scaled) .stat-subtitle { font-size: 0.8125em; margin-top: 0.25em; }

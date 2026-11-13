@@ -316,8 +316,8 @@
 
                             <!-- Peta: same renderer as the dashboard -->
                             <div *ngSwitchCase="'map'" class="chart-preview" style="height: 360px;">
-                                <app-map-widget *ngIf="mapPreviewWidget && queryResult; else mapNoData"
-                                    [widget]="mapPreviewWidget" [data]="queryResult.rows"
+                                <app-map-widget *ngIf="mapPreviewWidget && (queryResult || form.display.mapOptions.source === 'webgis'); else mapNoData"
+                                    [widget]="mapPreviewWidget" [data]="queryResult?.rows || []"
                                     [projectId]="dashboardProjectId"></app-map-widget>
                                 <ng-template #mapNoData>
                                     <div class="no-data">
@@ -1586,12 +1586,27 @@
                         <span class="fw-bold">Opsi Peta</span>
                     </card-header>
                     <card-body class="py-2">
-                        <div class="small text-body-secondary mb-2">
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span>Sumber data peta</span>
+                            <select class="form-select form-select-sm" style="width: 170px;"
+                                [(ngModel)]="form.display.mapOptions.source" (ngModelChange)="updatePreview()">
+                                <option value="webgis">Lapisan WebGIS proyek</option>
+                                <option value="sql">Titik dari query SQL</option>
+                                <option value="both">WebGIS + titik SQL</option>
+                            </select>
+                        </div>
+                        <div class="small text-body-secondary py-2" *ngIf="form.display.mapOptions.source !== 'sql'">
+                            Menampilkan semua lapisan WebGIS proyek dengan gaya yang sama: sensor + kartu nilai, alarm,
+                            dan seluruh lapisan operasional/kustom (lapisan Node tidak ditampilkan).
+                            <span *ngIf="form.display.mapOptions.source === 'webgis'">Query tetap dijalankan tetapi tidak digambar — cukup <code>SELECT 1</code>.</span>
+                        </div>
+                        <div class="small text-body-secondary mb-2" *ngIf="form.display.mapOptions.source !== 'webgis'">
                             Kolom query: <code>lat</code>, <code>lon</code> (WGS84), <code>label</code>, <code>value</code>,
                             <code>unit</code>, <code>status</code> (normal / low / high / nothreshold / nodata), <code>time</code>.
                             Wajib terskop <code>${{ '{' }}ownerId{{ '}' }}</code> atau channel terpilih.
                         </div>
-                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom"
+                            *ngIf="form.display.mapOptions.source === 'sql'">
                             <span>Lapisan peta proyek (mis. jaringan pipa)</span>
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch"
@@ -1609,15 +1624,15 @@
                             </select>
                         </div>
                         <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span>Tampilkan label</span>
+                            <span>Tampilkan label &amp; kartu nilai sensor</span>
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch"
                                     [(ngModel)]="form.display.mapOptions.showLabels" (ngModelChange)="updatePreview()">
                             </div>
                         </div>
                         <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom"
-                            *ngIf="form.display.mapOptions.showLabels">
-                            <span>Isi label</span>
+                            *ngIf="form.display.mapOptions.showLabels && form.display.mapOptions.source !== 'webgis'">
+                            <span>Isi label titik SQL</span>
                             <select class="form-select form-select-sm" style="width: 170px;"
                                 [(ngModel)]="form.display.mapOptions.labelMode" (ngModelChange)="updatePreview()">
                                 <option value="label-value">Nama · nilai</option>

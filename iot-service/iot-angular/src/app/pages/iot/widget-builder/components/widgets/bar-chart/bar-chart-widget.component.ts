@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, AfterViewInit, NgZone } from '@angular/core';
 import { scaleChartFonts } from '../../../utils/chart-scale';
+import { formatIdNumber } from '../../../utils/format-id';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
 import { Widget } from '../../../models/widget.models';
@@ -29,6 +30,10 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
   /** TV mode text scale (box width / 1920); applied to every option build via the setter below. */
   @Input() fontScale = 1;
   private _chartOptions: any = null;
+  /** fontScale guarded for geometry (grid/legend/label widths), which scaleChartFonts doesn't touch. */
+  private get geomScale(): number {
+    return Number.isFinite(this.fontScale) && this.fontScale > 0 ? this.fontScale : 1;
+  }
   set chartOptions(value: any) {
     this._chartOptions = value ? scaleChartFonts(value, this.fontScale) : value;
   }
@@ -120,6 +125,7 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
     const unit = yAxisConfig.unit || '';
     const isHorizontal = display.barOrientation === 'horizontal';
     const showDataLabels = display.showDataLabels === true;
+    const s = this.geomScale;
     
     const xField = mapping.xField || mapping.labelField || this.columns[0] || 'label';
     const yField = mapping.yField || mapping.yFields?.[0] || mapping.valueField || this.columns[1] || 'value';
@@ -178,7 +184,7 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
             position: isHorizontal ? 'right' : 'top',
             color: textColor,
             fontSize: 10,
-            formatter: (p: any) => (p.data as number).toFixed(decimals)
+            formatter: (p: any) => formatIdNumber(Number(p.data), decimals)
           } : { show: false }
         };
       });
@@ -200,7 +206,7 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
           position: isHorizontal ? 'right' : 'top',
           color: textColor,
           fontSize: 10,
-          formatter: (p: any) => (p.data as number).toFixed(decimals)
+          formatter: (p: any) => formatIdNumber(Number(p.data), decimals)
         } : { show: false }
       }];
     }
@@ -215,9 +221,10 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
           [isHorizontal ? 'xAxis' : 'yAxis']: t.value,
           label: { 
             show: true, 
-            formatter: t.label || `${t.value}`,
+            formatter: t.label || formatIdNumber(Number(t.value), decimals),
             color: t.color || '#f2495c',
-            position: 'end'
+            fontSize: 11,
+            position: 'insideEndTop'
           },
           lineStyle: {
             color: t.color || '#f2495c',
@@ -242,7 +249,7 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
         fontSize: 10,
         interval: this.calcLabelInterval(categoryData.length, isHorizontal),
         rotate: this.shouldRotateLabels(categoryData.length, isHorizontal),
-        width: isHorizontal ? 100 : 80,
+        width: (isHorizontal ? 100 : 80) * s,
         overflow: 'truncate',
         hideOverlap: true
       },
@@ -262,7 +269,7 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
       axisLabel: { 
         color: textColor,
         fontSize: 10,
-        formatter: (value: number) => value?.toFixed(decimals) || '0'
+        formatter: (value: number) => formatIdNumber(Number(value), decimals)
       },
       axisLine: { show: true, lineStyle: { color: axisLineColor } },
       splitLine: { 
@@ -287,7 +294,8 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
               const sc: any = seriesConfig.find((s: any) => s.field === item.seriesName || s.label === item.seriesName) || {};
               const d = sc.decimals ?? decimals;
               const u = sc.unit || unit;
-              const val = typeof item.data === 'number' ? item.data.toFixed(d) : (parseFloat(item.data)?.toFixed(d) || item.data);
+              const num = typeof item.data === 'number' ? item.data : parseFloat(item.data);
+              const val = Number.isFinite(num) ? formatIdNumber(num, d) : item.data;
               html += `<div style="display:flex;justify-content:space-between;gap:20px;padding:2px 0">
                 <span>${item.marker} ${item.seriesName}</span>
                 <span style="font-weight:600">${val}${u ? ' ' + u : ''}</span>
@@ -302,20 +310,20 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
         type: 'scroll', // Enable scroll for many legends
         data: legendData,
         // Position legend properly based on settings
-        top: display.legendPosition === 'bottom' ? undefined : 8,
+        top: display.legendPosition === 'bottom' ? undefined : 8 * s,
         bottom: display.legendPosition === 'bottom' ? 0 : undefined,
         left: display.legendPosition === 'right' ? undefined : 'center',
-        right: display.legendPosition === 'right' ? 10 : undefined,
+        right: display.legendPosition === 'right' ? 10 * s : undefined,
         orient: display.legendPosition === 'right' ? 'vertical' : 'horizontal',
         textStyle: { 
           color: textColor, 
           fontSize: 11,
-          width: 120,
+          width: 120 * s,
           overflow: 'truncate',
           ellipsis: '...'
         },
-        itemWidth: 14,
-        itemHeight: 10,
+        itemWidth: 14 * s,
+        itemHeight: 10 * s,
         pageButtonItemGap: 5,
         pageButtonGap: 10,
         pageIconColor: '#73bf69',
@@ -327,16 +335,16 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
         }
       } : { show: false },
       grid: { 
-        left: isHorizontal ? 100 : (showValueAxis && valueAxisPosition === 'left' ? 55 : 12), 
+        left: isHorizontal ? 100 * s : (showValueAxis && valueAxisPosition === 'left' ? 55 * s : 12 * s), 
         right: isHorizontal 
-          ? (showDataLabels ? 50 : 20) 
-          : (display.legendPosition === 'right' && display.showLegend !== false && legendData.length > 1 ? 140 : (showValueAxis && valueAxisPosition === 'right' ? 55 : 12)), 
+          ? (showDataLabels ? 50 * s : 20 * s) 
+          : (display.legendPosition === 'right' && display.showLegend !== false && legendData.length > 1 ? 140 * s : (showValueAxis && valueAxisPosition === 'right' ? 55 * s : 12 * s)), 
         // Top: add space for legend at top
-        top: display.legendPosition !== 'bottom' && display.showLegend !== false && legendData.length > 1 ? 35 : 20, 
+        top: display.legendPosition !== 'bottom' && display.showLegend !== false && legendData.length > 1 ? 35 * s : 20 * s, 
         // Bottom: add space for legend at bottom + x-axis labels
         bottom: display.legendPosition === 'bottom' && display.showLegend !== false && legendData.length > 1
-          ? (this.shouldRotateLabels(categoryData.length, isHorizontal) ? 75 : 50)
-          : (this.shouldRotateLabels(categoryData.length, isHorizontal) ? 50 : 30), 
+          ? (this.shouldRotateLabels(categoryData.length, isHorizontal) ? 75 * s : 50 * s)
+          : (this.shouldRotateLabels(categoryData.length, isHorizontal) ? 50 * s : 30 * s), 
         containLabel: false 
       },
       // For horizontal: xAxis is value, yAxis is category
@@ -356,10 +364,10 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
     
     // Calculate based on available space
     const availableSpace = isHorizontal 
-      ? (this.containerHeight > 0 ? this.containerHeight - 80 : 200)  // vertical space for horizontal bars
-      : (this.containerWidth > 0 ? this.containerWidth - 80 : 300);   // horizontal space for vertical bars
+      ? (this.containerHeight > 0 ? this.containerHeight - 80 * this.geomScale : 200)  // vertical space for horizontal bars
+      : (this.containerWidth > 0 ? this.containerWidth - 80 * this.geomScale : 300);   // horizontal space for vertical bars
     
-    const labelSize = isHorizontal ? 20 : 50; // approx pixels per label
+    const labelSize = (isHorizontal ? 20 : 50) * this.geomScale; // approx pixels per label
     const maxLabels = Math.floor(availableSpace / labelSize);
     
     if (maxLabels <= 0) return totalLabels - 1; // show only first and last
@@ -375,8 +383,8 @@ export class BarChartWidgetComponent implements OnInit, OnDestroy, OnChanges, Af
   private shouldRotateLabels(totalLabels: number, isHorizontal: boolean): number {
     if (isHorizontal) return 0; // horizontal bars don't need rotated labels
     
-    const availableWidth = this.containerWidth > 0 ? this.containerWidth - 80 : 300;
-    const avgLabelWidth = 50; // estimated pixels per label
+    const availableWidth = this.containerWidth > 0 ? this.containerWidth - 80 * this.geomScale : 300;
+    const avgLabelWidth = 50 * this.geomScale; // estimated pixels per label
     const maxLabels = Math.floor(availableWidth / avgLabelWidth);
     
     // Rotate 30° if we have more labels than can fit comfortably

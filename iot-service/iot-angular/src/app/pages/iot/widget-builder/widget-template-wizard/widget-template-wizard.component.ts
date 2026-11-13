@@ -17,6 +17,7 @@ import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-bu
 import { NodeDetailedResponseDto } from '../../../../../sdk/core/models/node-detailed-response-dto';
 import { SensorResponseDto } from '../../../../../sdk/core/models/sensor-response-dto';
 import { SensorChannelResponseDto } from '../../../../../sdk/core/models/sensor-channel-response-dto';
+import { formatHm } from '../utils/format-id';
 
 @Component({
   selector: 'app-widget-template-wizard',
@@ -969,8 +970,7 @@ export class WidgetTemplateWizardComponent implements OnInit, OnDestroy {
       xAxis: {
         type: 'category',
         data: data.map(d => {
-          const date = new Date(d[xField]);
-          return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          return formatHm(new Date(d[xField]));
         }),
         axisLabel: { color: 'rgba(255,255,255,0.6)' },
         axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }

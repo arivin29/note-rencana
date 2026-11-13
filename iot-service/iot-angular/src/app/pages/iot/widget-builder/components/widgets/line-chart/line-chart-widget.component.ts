@@ -3,6 +3,7 @@ import { scaleChartFonts } from '../../../utils/chart-scale';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
 import { Widget } from '../../../models/widget.models';
+import { formatIdNumber, formatHm, formatHms } from '../../../utils/format-id';
 
 @Component({
   selector: 'app-line-chart-widget',
@@ -29,6 +30,10 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
   /** TV mode text scale (box width / 1920); applied to every option build via the setter below. */
   @Input() fontScale = 1;
   private _chartOptions: any = null;
+  /** fontScale guarded for geometry multiplication. */
+  private get geomScale(): number {
+    return Number.isFinite(this.fontScale) && this.fontScale > 0 ? this.fontScale : 1;
+  }
   set chartOptions(value: any) {
     this._chartOptions = value ? scaleChartFonts(value, this.fontScale) : value;
   }
@@ -120,6 +125,11 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     const seriesConfig: any[] = config.series || [];
     const display: any = config.display || {};
     const decimals = config.yAxis?.decimals ?? 2;
+    // Geometry (grid margins, legend widths) is NOT touched by scaleChartFonts → scale it here.
+    const s = this.geomScale;
+    const legendOn = display.showLegend !== false;
+    const legendPos = display.legendPosition || 'top';
+    const hasYName = !!config.yAxis?.label;
     
     // Get smoothing config
     const smoothingConfig = display.smoothing || {
@@ -238,9 +248,12 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
         symbol: 'none',
         data: thresholds.map((t: any) => ({
           yAxis: t.value,
-          label: { 
-            show: true, 
-            formatter: t.label || `${t.value}`,
+          label: {
+            show: true,
+            // inside the plot (above the line, right end) so it's never clipped by grid.right
+            position: 'insideEndTop',
+            fontSize: 12,
+            formatter: t.label || formatIdNumber(Number(t.value), decimals),
             color: t.color || '#f2495c'
           },
           lineStyle: {
@@ -270,7 +283,7 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
           if (dataIndex !== undefined && rawXValues[dataIndex]) {
             const date = new Date(rawXValues[dataIndex]);
             if (!isNaN(date.getTime())) {
-              timeLabel = `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${date.toLocaleTimeString('id-ID')}`;
+              timeLabel = `${date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${formatHms(date)}`;
             }
           }
           let html = `<div style="font-weight:600;margin-bottom:4px">${timeLabel}</div>`;
@@ -278,7 +291,8 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
           params.forEach((item: any) => {
             if (item.data !== undefined && item.data !== null) {
               const d = getSeriesDecimals(item.seriesName);
-              const val = typeof item.data === 'number' ? item.data.toFixed(d) : (parseFloat(item.data)?.toFixed(d) || item.data);
+              const num = typeof item.data === 'number' ? item.data : parseFloat(item.data);
+              const val = Number.isFinite(num) ? formatIdNumber(num, d) : item.data;
               html += `<div style="display:flex;justify-content:space-between;gap:16px">
                 <span>${item.marker} ${item.seriesName}</span>
                 <span style="font-weight:600">${val}${unit ? ' ' + unit : ''}</span>
@@ -288,65 +302,66 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
           return html;
         }
       },
-      legend: display.showLegend !== false ? {
+      legend: legendOn ? {
         show: true,
         type: 'scroll', // Enable scroll for many legends
         // Position legend properly based on settings
-        top: display.legendPosition === 'bottom' ? undefined : 8,
-        bottom: display.legendPosition === 'bottom' ? 0 : undefined,
-        left: display.legendPosition === 'right' ? undefined : 'center',
-        right: display.legendPosition === 'right' ? 10 : undefined,
-        orient: display.legendPosition === 'right' ? 'vertical' : 'horizontal',
-        textStyle: { 
+        top: legendPos === 'bottom' ? undefined : 6 * s,
+        bottom: legendPos === 'bottom' ? 0 : undefined,
+        left: legendPos === 'right' ? undefined : 'center',
+        right: legendPos === 'right' ? 10 * s : undefined,
+        orient: legendPos === 'right' ? 'vertical' : 'horizontal',
+        itemWidth: 22 * s,
+        itemHeight: 12 * s,
+        itemGap: 12 * s,
+        textStyle: {
           color: textColor,
-          fontSize: 11,
-          width: 120, // Max width for legend text
+          fontSize: 12,
+          width: 140 * s, // Max width for legend text (geometry → scaled by hand)
           overflow: 'truncate',
-          ellipsis: '...'
+          ellipsis: '…'
         },
-        pageButtonItemGap: 5,
-        pageButtonGap: 10,
+        pageButtonItemGap: 5 * s,
+        pageButtonGap: 10 * s,
+        pageIconSize: 12 * s,
         pageIconColor: '#73bf69',
         pageIconInactiveColor: '#555',
-        pageTextStyle: { color: textColor },
-        tooltip: { show: true }, // Show full name on hover
-        formatter: (name: string) => {
-          // Truncate long legend names
-          return name.length > 18 ? name.substring(0, 15) + '...' : name;
-        }
+        pageTextStyle: { color: textColor, fontSize: 11 },
+        tooltip: { show: true } // Show full name on hover
       } : { show: false },
-      grid: { 
-        left: 45, 
-        right: display.legendPosition === 'right' && display.showLegend !== false ? 140 : 12, 
-        // Top: add space for legend at top
-        top: display.legendPosition !== 'bottom' && display.showLegend !== false ? 35 : 20,
-        // Bottom: add space for legend at bottom + x-axis labels
-        bottom: display.legendPosition === 'bottom' && display.showLegend !== false 
-          ? (this.shouldRotateLabels() ? 75 : 50)  // More space for legend + labels
-          : (this.shouldRotateLabels() ? 45 : 24), 
-        containLabel: false 
+      grid: {
+        // containLabel: margins are measured outside the axis labels, so they never clip at any font size
+        containLabel: true,
+        left: 8 * s,
+        right: legendOn && legendPos === 'right' ? 160 * s : 16 * s,
+        top: (legendOn && legendPos !== 'bottom' ? 34 : 14) * s + (hasYName ? 16 * s : 0),
+        bottom: (legendOn && legendPos === 'bottom' ? 30 : 6) * s
       },
       xAxis: {
         type: 'category',
         data: xAxisData,
         axisLabel: {
           color: textColor,
-          fontSize: 10,
+          fontSize: 12,
           rotate: this.shouldRotateLabels() ? 45 : 0,
           interval: this.calcLabelInterval(xAxisData.length),
           showMinLabel: true,
-          showMaxLabel: true,
+          // last label collides with its neighbour when the interval doesn't land on it
+          showMaxLabel: false,
           hideOverlap: true
         },
         axisLine: { lineStyle: { color: axisLineColor } },
         splitLine: { show: false }
       },
-      yAxis: { 
+      yAxis: {
         type: 'value',
         name: config.yAxis?.label || '',
-        axisLabel: { 
+        nameTextStyle: { color: textColor, fontSize: 12, align: 'left' },
+        nameGap: 8 * s,
+        axisLabel: {
           color: textColor,
-          formatter: (value: number) => value?.toFixed(decimals) || '0'
+          fontSize: 12,
+          formatter: (value: number) => formatIdNumber(Number(value), decimals)
         },
         axisLine: { lineStyle: { color: axisLineColor } },
         splitLine: { lineStyle: { color: axisLineColor } }
@@ -368,18 +383,14 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     // Detect time span from data to choose format
     const span = this.getDataTimeSpanHours();
 
-    if (span <= 6) {
-      // Within 6 hours: show HH:mm
-      return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    } else if (span <= 24) {
-      // Within 1 day: show HH:mm
-      return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (span <= 24) {
+      // Within 1 day: HH:mm (colon — id-ID locale would give "22.20")
+      return formatHm(date);
     } else if (span <= 168) {
       // Within 1 week: show DD MMM HH:mm
       const day = date.getDate().toString().padStart(2, '0');
       const month = date.toLocaleDateString('id-ID', { month: 'short' });
-      const time = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      return `${day} ${month}\n${time}`;
+      return `${day} ${month}\n${formatHm(date)}`;
     } else if (span <= 2160) {
       // Within ~3 months: show DD/MM
       return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
@@ -420,8 +431,9 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     if (totalPoints <= 6) return 0; // show all for small datasets
     
     // Calculate based on available width
-    const availableWidth = this.containerWidth > 0 ? this.containerWidth - 60 : 300; // subtract axis margins
-    const labelWidth = this.estimateLabelWidth();
+    const s = this.geomScale;
+    const availableWidth = this.containerWidth > 0 ? this.containerWidth - 60 * s : 300; // subtract axis margins
+    const labelWidth = this.estimateLabelWidth() * s;
     const maxLabels = Math.floor(availableWidth / labelWidth);
     
     if (maxLabels <= 0) return totalPoints - 1; // show only first and last
@@ -452,8 +464,9 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
    */
   private shouldRotateLabels(): boolean {
     if (this.containerWidth <= 0) return false;
-    const availableWidth = this.containerWidth - 60;
-    const labelWidth = this.estimateLabelWidth();
+    const s = this.geomScale;
+    const availableWidth = this.containerWidth - 60 * s;
+    const labelWidth = this.estimateLabelWidth() * s;
     const maxLabels = Math.floor(availableWidth / labelWidth);
     // Rotate if we have significantly more points than can fit comfortably
     return this.data.length > maxLabels * 2 && this.containerWidth < 400;

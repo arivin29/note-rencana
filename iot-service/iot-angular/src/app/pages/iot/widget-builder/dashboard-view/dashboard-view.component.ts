@@ -135,6 +135,14 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     return this.widgetFontScale;
   }
 
+  /**
+   * Panel-title base size before --wb-scale. TV mode uses 15px so titles reach ≥ 22 design-px at
+   * "Ukuran huruf" 1.5 (read from ~3 m); normal dashboards keep the compact 12px Grafana look.
+   */
+  @HostBinding('style.--wb-title-px') get hostTitlePx(): string {
+    return this.tvMode ? '15px' : '12px';
+  }
+
   /** Explicit stage height in TV edit mode: screen rows + 12 spare rows to drag into. */
   get editStageHeight(): number {
     const m = this.gridsterOptions.margin ?? 4;
@@ -230,6 +238,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy(): void {
+    clearTimeout(this.scrollFitTimer);
     this.refreshTimer$.next();
     this.refreshTimer$.complete();
     this.destroy$.next();
@@ -748,7 +757,40 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
 
   @HostListener('window:resize')
   onWindowResize(): void {
-    if (this.tvMode) this.measureStage();
+    if (!this.tvMode) return;
+    // Viewport/chrome changed → re-learn how much page content sits below the stage.
+    this.tvBottomSlack = 0;
+    this.tvSlackTries = 0;
+    this.measureStage();
+  }
+
+  /**
+   * Pixels of page content found *below* the TV stage (container padding/margins of the
+   * embedding page, which differ between Monitor, standalone route and Layar Penuh).
+   * Learned by measuring the document overflow after a layout, so stage + header fit exactly.
+   */
+  private tvBottomSlack = 0;
+  private tvSlackTries = 0;
+  private scrollFitTimer: any = null;
+
+  private queuePageScrollFit(): void {
+    if (!this.tvMode || this.editMode) return;
+    clearTimeout(this.scrollFitTimer);
+    this.zone.runOutsideAngular(() => {
+      // after gridster has applied the new row height
+      this.scrollFitTimer = setTimeout(() => this.fitPageScroll(), 80);
+    });
+  }
+
+  private fitPageScroll(): void {
+    if (!this.tvMode || this.editMode || !this.areaEl) return;
+    const doc = document.scrollingElement ?? document.documentElement;
+    const over = Math.ceil(doc.scrollHeight - window.innerHeight);
+    // Small overflow only (page padding); a big one is real content (e.g. normal page below) — leave it.
+    if (over <= 0 || this.tvSlackTries >= 2 || this.tvBottomSlack + over > 80) return;
+    this.tvSlackTries++;
+    this.tvBottomSlack += over;
+    this.zone.run(() => this.measureStage());
   }
 
   /** Fit the target-screen box into the space left below the area's top edge. */
@@ -756,12 +798,13 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     if (!this.tvMode || !this.areaEl) return;
     const rect = this.areaEl.getBoundingClientRect();
     const availW = this.areaEl.clientWidth;
-    const availH = Math.max(0, window.innerHeight - rect.top - 4);
+    const availH = Math.max(0, window.innerHeight - rect.top - 4 - this.tvBottomSlack);
     const box = fitBox(availW, availH, this.screen.width, this.screen.height);
     if (box.width === this.stageBox.width && box.height === this.stageBox.height) return;
     this.stageBox = box;
     this.wbScale = fontScale(box.width, this.screen.width);
     this.applyGridMode();
+    this.queuePageScrollFit();
   }
 
   /** Switch gridster between normal scrolling grid and fixed-row TV grid. */

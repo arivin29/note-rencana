@@ -42,9 +42,17 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
   @HostBinding('class.scaled') get scaled(): boolean {
     return this.fontScale !== 1;
   }
-  @HostBinding('style.font-size.px') get hostFontPx(): number | null {
-    return this.fontScale !== 1 ? 16 * this.fontScale : null;
+  /** Always set: every size in the CSS is em-relative to this (16px = 1rem at scale 1). */
+  @HostBinding('style.font-size.px') get hostFontPx(): number {
+    return 16 * (Number.isFinite(this.fontScale) && this.fontScale > 0 ? this.fontScale : 1);
   }
+
+  /**
+   * Fit inputs for the value-size clamp in CSS (all in em of the host font):
+   * reserve = vertical space NOT available to the value (padding + lines under it + top icon),
+   * wreserve = horizontal space not available, chars = value width in value-ems.
+   */
+  fit = { reserve: '1.5em', wreserve: '1.5em', chars: 4 };
 
   displayData: {
     value: number;
@@ -148,6 +156,31 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
       fontSize: options.fontSize || 'large',
       subtitle: this.subtitleText(options.subtitleField)
     };
+    this.fit = this.computeFit(this.displayData, !!options.showSparkline);
+  }
+
+  private computeFit(d: NonNullable<StatCardWidgetComponent['displayData']>, sparkline: boolean) {
+    const layout = d.layout || 'centered';
+    // Vertical: card padding 2×0.75em + 0.2em slack, then each extra line (font × line-height + margin).
+    let reserve = 1.7;
+    if (d.subtitle) reserve += 0.8125 * 1.25 + 0.25;
+    if (d.trend && layout !== 'compact') reserve += 0.875 * 1.5 + 0.375;
+    if (d.suffix && (layout === 'centered' || !layout)) reserve += 0.75 * 1.5 + 0.25;
+    if (sparkline) reserve += 2.5 + 1;
+    // Horizontal: padding + icon column (with-icon) + prefix.
+    let wreserve = 1.5;
+    if (d.icon && layout === 'with-icon') wreserve += 2.5 + 0.4;
+    if (d.prefix) wreserve += d.prefix.length * 0.6;
+    // Bold digits ≈ 0.58em each (separators narrower); unit is 0.875em of the row font, not of the value.
+    const valueChars = Math.max(1, d.formattedValue.length) * 0.58;
+    const sideChars = d.unit ? ((d.unit.length + 1) * 0.5 * 0.875) : 0;
+    const iconBeside = d.icon && (layout === 'centered' || layout === 'left-aligned') ? 1.6 : 0;
+    wreserve += sideChars + iconBeside;
+    return {
+      reserve: `calc(${reserve.toFixed(3)}em${d.icon && layout === 'centered' ? ' + var(--sv-icon-top, 0em)' : ''})`,
+      wreserve: `${wreserve.toFixed(3)}em`,
+      chars: Math.round((valueChars + 0.1) * 100) / 100
+    };
   }
 
   private subtitleText(field: string | undefined): string {
@@ -210,11 +243,10 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
 
   getFontSizeClass(): string {
     switch (this.displayData?.fontSize) {
-      case 'small': return 'fs-4';
-      case 'medium': return 'fs-2';
-      case 'large': return 'fs-1';
-      case 'xlarge': return 'display-4';
-      default: return 'fs-1';
+      case 'small': return 'sv-small';
+      case 'medium': return 'sv-medium';
+      case 'xlarge': return 'sv-xlarge';
+      default: return 'sv-large';
     }
   }
 

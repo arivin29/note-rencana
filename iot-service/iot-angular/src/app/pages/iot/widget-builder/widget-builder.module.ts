@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // Shared Components
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { WebgisSharedModule } from '../webgis/webgis-shared.module';
 
 // Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -117,6 +118,8 @@ const routes: Routes = [
     
     // Shared Components (Card, etc.)
     SharedComponentsModule,
+    // WebGIS sensor value cards for the map widget
+    WebgisSharedModule,
   ],
   exports: [
     // Export widget components for reuse in other modules

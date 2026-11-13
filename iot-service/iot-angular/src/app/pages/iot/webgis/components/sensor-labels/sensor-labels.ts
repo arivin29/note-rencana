@@ -35,6 +35,8 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
   @Input() map: OlMap | null = null;
   @Input() visible = false;
   @Input() sensorData: NodeSensorData[] = [];
+  /** Size multiplier for card text & offset (1 = WebGIS look; the dashboard map widget passes its fontScale). */
+  @Input() scale = 1;
 
   private overlays: globalThis.Map<string, Overlay> = new globalThis.Map();
   labelContainers: { nodeId: string; element: HTMLElement; data: NodeSensorData }[] = [];
@@ -44,6 +46,11 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
       this.updateOverlays();
     }
     if (changes['map'] && this.map) {
+      this.updateOverlays();
+    }
+    if (changes['scale'] && !changes['scale'].firstChange) {
+      // Offset is fixed per overlay → rebuild them at the new size
+      this.clearOverlays();
       this.updateOverlays();
     }
   }
@@ -84,7 +91,7 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
         overlay = new Overlay({
           element,
           positioning: 'bottom-center',
-          offset: [0, -15], // Position above the node marker
+          offset: [0, -15 * this.scale], // Position above the node marker
           stopEvent: false,
            
           className: 'sensor-label-overlay'
@@ -106,6 +113,7 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
   private createLabelElement(nodeData: NodeSensorData): HTMLElement {
     const container = document.createElement('div');
     container.className = 'sensor-label-container';
+    if (this.scale !== 1) container.style.setProperty('--sl-scale', String(this.scale));
     this.updateLabelElement(container, nodeData);
     return container;
   }

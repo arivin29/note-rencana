@@ -845,7 +845,7 @@ gridster-item,
 }
 .grid-stage ::ng-deep .panel-label,
 .fullscreen-widget-container ::ng-deep .panel-label {
-  font-size: calc(12px * var(--wb-scale, 1));
+  font-size: calc(var(--wb-title-px, 12px) * var(--wb-scale, 1));
 }
 .grid-stage ::ng-deep .panel-status,
 .fullscreen-widget-container ::ng-deep .panel-status {

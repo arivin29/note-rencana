@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeMapRows, mapPointText, formatMapValue, readMapOptions, toNumber, DEFAULT_MAP_OPTIONS } from './map-rows';
+import {
+  normalizeMapRows, mapPointText, formatMapValue, readMapOptions, toNumber, DEFAULT_MAP_OPTIONS,
+  mapDrawsSql, mapDrawsWebgis, mapDrawsSupportLayers,
+} from './map-rows';
 import { formatIdNumber } from './format-id';
 
 test('maps columns by name, case-insensitive, with aliases', () => {
@@ -80,4 +83,19 @@ test('readMapOptions defaults & validation', () => {
     ...DEFAULT_MAP_OPTIONS, basemap: 'dark', labelMode: 'value', interactive: true,
   });
   assert.equal(readMapOptions({ basemap: 'satellite' }).basemap, 'auto');
+});
+
+test('map source: legacy configs (no source) draw WebGIS layers', () => {
+  assert.equal(readMapOptions({ showLabels: true }).source, 'webgis');
+  assert.equal(readMapOptions({ source: 'sql' }).source, 'sql');
+  assert.equal(readMapOptions({ source: 'both' }).source, 'both');
+  assert.equal(readMapOptions({ source: 'geojson' }).source, 'webgis');
+});
+
+test('map source decides which layers are drawn', () => {
+  const o = (source: any, showProjectLayers = false) => ({ source, showProjectLayers });
+  assert.deepEqual([mapDrawsWebgis(o('webgis')), mapDrawsSql(o('webgis')), mapDrawsSupportLayers(o('webgis'))], [true, false, true]);
+  assert.deepEqual([mapDrawsWebgis(o('both')), mapDrawsSql(o('both')), mapDrawsSupportLayers(o('both'))], [true, true, true]);
+  assert.deepEqual([mapDrawsWebgis(o('sql')), mapDrawsSql(o('sql')), mapDrawsSupportLayers(o('sql'))], [false, true, false]);
+  assert.equal(mapDrawsSupportLayers(o('sql', true)), true);
 });
