@@ -982,3 +982,12 @@
     color: rgba(255, 255, 255, 0.7);
   }
 }
+
+.workspace-toolbar {
+  min-height: 32px;
+
+  .breadcrumb {
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+}

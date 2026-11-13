@@ -174,39 +174,7 @@ export class OwnersDetailPage implements OnInit {
     }
   ];
 
-  // TODO: Dummy data - hidden in template until real endpoint implemented
-  // forwardingLogs: ForwardingLog[] = [
-  //   {
-  //     id: 'LOG-20240526-01',
-  //     target: 'Command Center Webhook',
-  //     type: 'webhook',
-  //     status: 'success',
-  //     timestamp: '2024-05-26 09:12',
-  //     attempts: 1,
-  //     message: 'Delivered 37 telemetry rows',
-  //     durationMs: 220
-  //   },
-  //   {
-  //     id: 'LOG-20240526-02',
-  //     target: 'MySQL Warehouse',
-  //     type: 'mysql',
-  //     status: 'success',
-  //     timestamp: '2024-05-26 09:10',
-  //     attempts: 1,
-  //     message: 'Batch insert (200 rows)',
-  //     durationMs: 410
-  //   },
-  //   {
-  //     id: 'LOG-20240526-03',
-  //     target: 'PostgreSQL Ops DB',
-  //     type: 'postgres',
-  //     status: 'failed',
-  //     timestamp: '2024-05-26 08:55',
-  //     attempts: 3,
-  //     message: 'Target disabled – skipping execution',
-  //     durationMs: 35
-  //   }
-  // ];
+  // No endpoint yet: stays empty (no placeholder data)
   forwardingLogs: ForwardingLog[] = []; // Empty until real endpoint ready
 
   // User Management

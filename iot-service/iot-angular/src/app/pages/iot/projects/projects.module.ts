@@ -19,6 +19,7 @@ import { WidgetBuilderModule } from '../widget-builder/widget-builder.module';
 
 // Import WebgisModule for map page integration
 import { WebgisModule } from '../webgis/webgis.module';
+import { GuideModule } from '../../../shared/guide/guide.module';
 
 // New workspace components
 import { ProjectWorkspaceComponent } from './project-workspace/project-workspace.component';
@@ -51,6 +52,7 @@ import { ConfigPageComponent } from './project-workspace/pages/config-page/confi
     ConfigPageComponent
   ],
   imports: [
+    GuideModule,
     CommonModule, 
     FormsModule, 
     ReactiveFormsModule, 

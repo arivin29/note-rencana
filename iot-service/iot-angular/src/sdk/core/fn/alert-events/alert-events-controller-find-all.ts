@@ -23,6 +23,11 @@ export interface AlertEventsControllerFindAll$Params {
  * Filter by owner UUID
  */
   ownerId?: string;
+
+/**
+   * Filter by project (backend: p.id_project). Added by hand — SDK regen is broken.
+   */
+  idProject?: string;
 }
 
 export function alertEventsControllerFindAll(http: HttpClient, rootUrl: string, params?: AlertEventsControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -37,6 +42,7 @@ export function alertEventsControllerFindAll(http: HttpClient, rootUrl: string, 
     rb.query('startDate', params.startDate, {});
     rb.query('endDate', params.endDate, {});
     rb.query('ownerId', params.ownerId, {});
+    rb.query('idProject', params.idProject, {});
   }
 
   return http.request(

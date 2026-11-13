@@ -2,7 +2,9 @@
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { NgModule } from '@angular/core';
+import { LOCALE_ID, NgModule } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeId from '@angular/common/locales/id';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule, Title } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -78,8 +80,13 @@ import { IotDashboardModule } from './pages/iot/dashboard/dashboard.module';
 import { DashboardKeduaModule } from './pages/iot/dashboard-kedua/dashboard-kedua.module';
 
 import { SharedComponentsModule } from './shared/shared-components.module';
+import { GuideModule } from './shared/guide/guide.module';
 import { AlertService } from './service/alert.service';
  
+// Indonesian number/date formatting app-wide (owner decision 13 Nov 2026):
+// | number → "5.384" / "1,79", | date month names → Mei, Agu, Okt, Des.
+registerLocaleData(localeId, 'id-ID');
+
 @NgModule({
     declarations: [
         AppComponent,
@@ -110,6 +117,7 @@ import { AlertService } from './service/alert.service';
         JsonPipe,
         SharedComponentsModule,
         WidgetsModule,
+        GuideModule,
 
         // IoT Dashboard Module
         IotDashboardModule,
@@ -138,6 +146,7 @@ import { AlertService } from './service/alert.service';
         QuillModule.forRoot()
     ],
     providers: [
+        { provide: LOCALE_ID, useValue: 'id-ID' },
         Title,
         AuthGuard,
         GuestGuard,

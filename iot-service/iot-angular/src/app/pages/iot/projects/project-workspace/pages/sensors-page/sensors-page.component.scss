@@ -1,3 +1,53 @@
-.cursor-pointer {
+th.sortable {
   cursor: pointer;
+  user-select: none;
+}
+
+.sensor-row {
+  cursor: pointer;
+}
+
+.cell-mw {
+  max-width: 240px;
+}
+
+.kpi-link {
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--bs-theme);
+  }
+}
+
+// No horizontal scroll: text cells wrap; numbers, badges and times stay on one line.
+.sensors-table {
+  td,
+  th {
+    white-space: normal;
+  }
+
+  .badge,
+  .value-line .fw-semibold {
+    white-space: nowrap;
+  }
+
+  td:nth-child(3),
+  td:nth-child(5) {
+    white-space: nowrap; // value + updated columns
+  }
+
+  .value-line .small {
+    white-space: normal;
+  }
+}
+
+.trend-line {
+  white-space: nowrap;
+
+  .spark {
+    color: var(--bs-theme);
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
 }

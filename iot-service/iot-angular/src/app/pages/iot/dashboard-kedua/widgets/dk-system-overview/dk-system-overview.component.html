@@ -7,7 +7,14 @@
       </div>
       <span class="badge bg-light text-theme">{{ timeRange }}</span>
     </div>
-    <div class="row g-3">
+<div *ngIf="loading" class="text-center text-muted small py-4">
+      <span class="spinner-border spinner-border-sm me-2"></span>Memuat data...
+    </div>
+    <div *ngIf="!loading && error" class="text-center text-muted small py-4">
+      <i class="fa fa-exclamation-triangle fa-fw me-1"></i>{{ error }}
+      <div class="mt-2"><button type="button" class="btn btn-sm btn-outline-default" (click)="loadData()">Coba lagi</button></div>
+    </div>
+    <div class="row g-3" *ngIf="!loading && !error">
       <div class="col-12" *ngFor="let metric of metrics">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -24,10 +31,6 @@
             }">
               {{ metric.delta }}
             </span>
-          </div>
-        </div>
-        <div class="progress progress-xs mt-2">
-          <div class="progress-bar" role="progressbar" [style.width]="(metric.trend === 'down' ? 40 : metric.trend === 'flat' ? 60 : 80) + '%'">
           </div>
         </div>
       </div>

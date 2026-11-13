@@ -24,6 +24,7 @@ export class DkSystemOverviewComponent implements OnChanges, OnInit {
   metrics: OverviewMetric[] = [];
   subtitle = '';
   loading = false;
+  error = '';
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -52,7 +53,9 @@ export class DkSystemOverviewComponent implements OnChanges, OnInit {
     return response;
   }
 
-  private loadData(): void {
+  loadData(): void {
+    this.error = '';
+    this.metrics = [];
     this.subtitle = this.ownerId ? 'Tenant specific snapshot' : 'Global snapshot';
     this.loading = true;
 
@@ -75,13 +78,6 @@ export class DkSystemOverviewComponent implements OnChanges, OnInit {
             delta: data.nodesOnline.delta,
           },
           {
-            label: 'Online Sensors',
-            value: data.nodesOnline.current * 4, // Approximation based on backend logic
-            suffix: '',
-            trend: 'flat',
-            delta: '+1%',
-          },
-          {
             label: 'Critical Alerts',
             value: data.activeAlerts.criticalCount,
             suffix: '',
@@ -101,20 +97,9 @@ export class DkSystemOverviewComponent implements OnChanges, OnInit {
       error: (err) => {
         console.error('Error loading KPI stats:', err);
         this.loading = false;
-        // Fallback to dummy data on error
-        this.loadFallbackData();
+        this.error = 'Gagal memuat data.';
       },
     });
-  }
-
-  private loadFallbackData(): void {
-    const multiplier = this.timeRange === '24h' ? 1 : this.timeRange === '7d' ? 4 : 8;
-    this.metrics = [
-      { label: 'Active Nodes', value: 182 * multiplier, suffix: '', trend: 'up', delta: '+4%' },
-      { label: 'Online Sensors', value: 1240 * multiplier, suffix: '', trend: 'flat', delta: '+1%' },
-      { label: 'Critical Alerts', value: 7 * multiplier, suffix: '', trend: 'down', delta: '-9%' },
-      { label: 'Data Throughput', value: `${(12.4 * multiplier).toFixed(1)}K`, suffix: '/min', trend: 'up', delta: '+12%' },
-    ];
   }
 
   private formatNumber(num: number): string {

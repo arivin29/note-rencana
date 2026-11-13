@@ -7,20 +7,23 @@
       </div>
       <span class="badge bg-light text-theme">{{ timeRange }}</span>
     </div>
-    <apx-chart
-      #chart
-      [series]="chartOptions.series"
-      [chart]="chartOptions.chart"
-      [dataLabels]="chartOptions.dataLabels"
-      [stroke]="chartOptions.stroke"
-      [xaxis]="chartOptions.xaxis"
-      [legend]="chartOptions.legend"
-    ></apx-chart>
+<div *ngIf="loading" class="text-center text-muted small py-4">
+      <span class="spinner-border spinner-border-sm me-2"></span>Memuat data...
+    </div>
+    <div *ngIf="!loading && error" class="text-center text-muted small py-4">
+      <i class="fa fa-exclamation-triangle fa-fw me-1"></i>{{ error }}
+      <div class="mt-2"><button type="button" class="btn btn-sm btn-outline-default" (click)="loadData()">Coba lagi</button></div>
+    </div>
+    <ng-container *ngIf="!loading && !error">
+    <div class="text-center text-muted small py-3">
+      <i class="fa fa-chart-line fa-fw me-1"></i>Riwayat belum tersedia
+    </div>
     <div class="row text-center mt-3">
       <div class="col" *ngFor="let summary of statusSummary">
         <div class="text-muted text-uppercase small">{{ summary.label }}</div>
         <div class="fw-bold" [ngClass]="summary.class">{{ summary.value }}</div>
       </div>
     </div>
+    </ng-container>
   </div>
 </div>

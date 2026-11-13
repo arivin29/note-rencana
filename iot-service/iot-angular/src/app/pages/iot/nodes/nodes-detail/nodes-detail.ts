@@ -423,6 +423,17 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
         });
     }
 
+    /**
+     * Canonical sensor URL (sensor id + ?channel=). Inside the project workspace (embedded)
+     * stay in the workspace; standalone keeps the global /iot/nodes route.
+     */
+    channelLink(sensor: { id: string }): any[] {
+        const projectId = this.nodeMeta?.projectId;
+        return this.embedded && projectId
+            ? ['/iot/projects', projectId, 'node', this.nodeUuid, 'sensor', sensor.id]
+            : ['/iot/nodes', this.nodeUuid, 'sensor', sensor.id];
+    }
+
     private mapSensorStatus(status: string): SensorHealth {
         if (status === 'active' || status === 'online') return 'active';
         if (status === 'maintenance') return 'maintenance';
@@ -433,16 +444,6 @@ export class NodesDetailPage implements OnInit, OnDestroy, OnChanges {
         if (status === 'active' || status === 'ok') return 'ok';
         if (status === 'warning' || status === 'degraded') return 'warning';
         return 'critical';
-    }
-
-    private generateSampleData(baseValue: number): number[] {
-        // Generate 7 sample points around the base value
-        const data: number[] = [];
-        for (let i = 0; i < 7; i++) {
-            const variance = (Math.random() - 0.5) * 0.2 * baseValue;
-            data.push(parseFloat((baseValue + variance).toFixed(2)));
-        }
-        return data;
     }
 
     loadTelemetryTrends() {

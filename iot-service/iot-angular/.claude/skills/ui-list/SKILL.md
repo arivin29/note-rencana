@@ -9,6 +9,8 @@ Reference impls: `pages/iot/nodes/nodes-list/` (table) and `pages/iot/projects/p
 
 ## Component (TS)
 ```typescript
+import { fetchAll } from '@app/shared/utils/fetch-all';
+
 @Component({ selector: 'nodes-list', templateUrl: './nodes-list.html',
             styleUrls: ['./nodes-list.scss'], standalone: false })
 export class NodesListPage implements OnInit {
@@ -27,14 +29,14 @@ export class NodesListPage implements OnInit {
   ngOnInit() { this.loadNodes(); }
 
   loadNodes() {
-    this.loading = true;
-    const params: any = { page: this.currentPage, limit: 100, search: this.searchTerm || undefined };
-    if (this.filters.ownerId) params.ownerId = this.filters.ownerId;
-    if (this.filters.projectId) params.idProject = this.filters.projectId;
-    this.nodesService.nodesControllerFindAll$Response(params).subscribe({
-      next: (res) => { let b: any = res.body; if (typeof b === 'string') b = JSON.parse(b);
-                       this.nodes = (b.data || []) as NodeResponseDto[]; this.loading = false; },
-      error: (err) => { this.error = err?.message || 'Failed to load'; this.loading = false; }
+    this.loading = true; this.error = null;
+    this.loadSub?.unsubscribe();                      // cancel an in-flight load
+    // fetchAll pages through meta.total — never a single limit:100 call (data silently cut)
+    this.loadSub = fetchAll(p => this.nodesService.nodesControllerFindAll$Response({
+      idProject: this.filters.projectId || undefined, ownerId: this.filters.ownerId || undefined, ...p
+    })).subscribe({
+      next: (nodes) => { this.nodes = nodes as NodeResponseDto[]; this.loading = false; },
+      error: () => { this.error = 'Gagal memuat data.'; this.loading = false; }
     });
   }
   onSearchChange(v: string) { this.searchTerm = v; this.currentPage = 1;
@@ -148,4 +150,11 @@ Replace the `<table>` with `<div class="row g-3"><div class="col-xl-4 col-md-6" 
 - Debounce search 400ms; reset to page 1 on filter/search change.
 - Status badges via a `badgeClass()` map (`bg-*-subtle text-*`).
 - Handle loading / error / empty. Support `embedded` mode so the list can be reused inside a detail/workspace page.
-- Fetch with the SDK and read `body.data` per the shared `{ data, meta }` contract.
+- Fetch with the SDK via `fetchAll` (`shared/utils/fetch-all.ts`); one project/parent-scoped request, never one per row (N+1). Tab counts/totals from the full dataset, not the current page.
+- **Sort the whole filtered set before paginating** (so "highest value" means highest in the data, not on this page); rows with no value sink to the bottom in both directions.
+- Status badges from `getFreshness()` + `FRESHNESS_BADGE` (`shared/utils/telemetry-freshness.ts`), with a `title` tooltip explaining the thresholds. Node column: address first, code underneath.
+- Refresh button: `btn btn-sm btn-outline-default` + `title`/`aria-label` (not `btn-outline-light`, invisible in light theme).
+- Monitoring lists: optional silent auto-refresh (e.g. 60 s, only when `document.visibilityState === 'visible'`, keep last good data on failure, show "updated HH:mm:ss"); clear the interval in `ngOnDestroy`.
+- Error state: `alert alert-danger d-flex` + `Coba lagi` button. Empty state distinguishes "Belum ada data" vs "Tidak ada … sesuai filter". No inline `style=` — add a class in the component SCSS.
+- Row navigation stays inside the current workspace (relative to `route.parent`); never link to a route that doesn't exist (it falls to `**` → dashboard).
+- Reference impl: `src/app/pages/iot/projects/project-workspace/pages/sensors-page/`.

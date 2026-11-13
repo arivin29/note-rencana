@@ -1,159 +1,298 @@
-<!-- Loading State -->
-<div *ngIf="loading" class="text-center py-4">
-    <div class="spinner-border spinner-border-sm text-theme" role="status">
-        <span class="visually-hidden">Loading...</span>
+<!-- Embedded header (same pattern as the Nodes tab) -->
+<div class="d-flex align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">Sensors</h2>
+        <span class="text-muted small">
+            {{ totalSensors }} sensors across {{ nodes.length }} nodes
+            <ng-container *ngIf="lastRefreshedAt"> · updated {{ lastRefreshedAt | date:'HH:mm:ss' }} (auto every 60s)</ng-container>
+            <span *ngIf="trendsError" class="text-warning"> · {{ trendsError }}</span>
+        </span>
     </div>
-    <div class="mt-2 text-muted small">Loading sensors...</div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-default" (click)="loadData(); loadTrends()" [disabled]="loading"
+            title="Muat ulang (daftar + tren 24 jam)" aria-label="Muat ulang data sensor dan tren">
+            <i class="fa fa-sync-alt" [class.fa-spin]="loading"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-theme" (click)="exportExcel()"
+            [disabled]="loading || exporting || !filteredSensors.length || !latestAvailable"
+            title="Ekspor daftar sesuai filter & urutan saat ini (semua halaman)">
+            <i class="fa fa-fw me-1" [ngClass]="exporting ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i>
+            Ekspor Excel
+        </button>
+    </div>
 </div>
 
-<!-- Error State -->
-<div *ngIf="error && !loading" class="alert alert-danger py-2">
+<div *ngIf="exportError" class="alert alert-danger d-flex align-items-center py-2">
     <i class="fa fa-exclamation-triangle me-2"></i>
-    {{ error }}
-    <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">Retry</button>
+    <span>{{ exportError }}</span>
+    <button class="btn btn-sm btn-outline-danger ms-auto" (click)="exportExcel()">Coba lagi</button>
 </div>
 
-<!-- Sensors Content -->
-<div *ngIf="!loading && !error">
+<!-- KPI summary (all from loaded data; nothing estimated) -->
+<div class="row row-cols-2 row-cols-lg-5 g-3 mb-3" *ngIf="!loading && !error && totalSensors > 0 && latestAvailable">
+    <div class="col">
+        <card class="h-100 kpi-link" (click)="onStatusFilter('fresh')" title="Tampilkan yang mengirim data">
+            <card-body class="p-3">
+                <div class="text-muted text-uppercase small">Mengirim data</div>
+                <div class="fs-3 fw-bold text-success lh-1 mt-1">{{ freshCount }}<span class="fs-6 text-muted fw-normal"> / {{ totalSensors }}</span></div>
+                <div class="text-muted small mt-1">sesuai interval lapor</div>
+            </card-body>
+        </card>
+    </div>
+    <div class="col">
+        <card class="h-100 kpi-link" (click)="onStatusFilter('stale')" title="Tampilkan yang terlambat">
+            <card-body class="p-3">
+                <div class="text-muted text-uppercase small">Terlambat</div>
+                <div class="fs-3 fw-bold lh-1 mt-1" [class.text-warning]="staleCount > 0">{{ staleCount }}</div>
+                <div class="text-muted small mt-1">data mulai tertunda</div>
+            </card-body>
+        </card>
+    </div>
+    <div class="col">
+        <card class="h-100 kpi-link" (click)="onStatusFilter('dead')" title="Tampilkan yang mati / belum pernah kirim">
+            <card-body class="p-3">
+                <div class="text-muted text-uppercase small">Mati / belum pernah kirim</div>
+                <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="offlineCount + noDataCount > 0">{{ offlineCount + noDataCount }}</div>
+                <div class="text-muted small mt-1 text-truncate" *ngIf="longestDead as d; else noDead"
+                    [title]="(d.node?.address || d.node?.code) + ' — sejak ' + (d.lastValueAt | date:'dd MMM yyyy HH:mm')">
+                    terlama: {{ d.node?.address || d.node?.code }} · {{ d.lastValueAt | date:'dd MMM yyyy' }}
+                </div>
+                <ng-template #noDead><div class="text-muted small mt-1">{{ noDataCount ? noDataCount + ' belum pernah kirim' : 'semua aktif' }}</div></ng-template>
+            </card-body>
+        </card>
+    </div>
+    <div class="col">
+        <card class="h-100 kpi-link" (click)="onStatusFilter('outofrange')" title="Tampilkan nilai di luar ambang">
+            <card-body class="p-3">
+                <div class="text-muted text-uppercase small">Di luar ambang</div>
+                <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="outOfRangeCount > 0">{{ outOfRangeCount }}</div>
+                <div class="text-muted small mt-1">
+                    {{ thresholdConfiguredCount }} dari {{ totalSensors }} sensor punya ambang
+                </div>
+            </card-body>
+        </card>
+    </div>
+    <div class="col">
+        <card class="h-100">
+            <card-body class="p-3">
+                <div class="text-muted text-uppercase small">Nilai terendah saat ini</div>
+                <ng-container *ngIf="lowestFresh as low; else noLow">
+                    <div class="fs-3 fw-bold lh-1 mt-1">{{ low.value | number:'1.2-2' }}<span class="fs-6 text-muted fw-normal"> {{ low.unit }}</span></div>
+                    <div class="text-muted small mt-1 text-truncate" [title]="low.sensor.node?.address || low.sensor.node?.code || ''">
+                        {{ low.sensor.node?.address || low.sensor.node?.code }}
+                    </div>
+                </ng-container>
+                <ng-template #noLow>
+                    <div class="fs-3 fw-bold lh-1 mt-1 text-muted">—</div>
+                    <div class="text-muted small mt-1">tidak ada data segar satu satuan</div>
+                </ng-template>
+            </card-body>
+        </card>
+    </div>
+</div>
 
-    <!-- Status Summary - Compact Inline -->
-    <div class="d-flex flex-wrap gap-2 mb-3">
-        <button class="btn btn-sm" 
-                [class.btn-theme]="statusFilter === 'all'"
-                [class.btn-outline-default]="statusFilter !== 'all'"
-                (click)="onStatusFilter('all')">
-            All <span class="badge bg-body text-muted border ms-1">{{ totalSensors }}</span>
-        </button>
-        <button class="btn btn-sm" 
-                [class.btn-success]="statusFilter === 'fresh'"
-                [class.btn-outline-default]="statusFilter !== 'fresh'"
-                (click)="onStatusFilter('fresh')">
-            <i class="fa fa-circle me-1" style="font-size: 6px;"></i>Fresh <span class="badge bg-body text-muted border ms-1">{{ freshCount }}</span>
-        </button>
-        <button class="btn btn-sm" 
-                [class.btn-warning]="statusFilter === 'stale'"
-                [class.btn-outline-default]="statusFilter !== 'stale'"
-                (click)="onStatusFilter('stale')">
-            <i class="fa fa-circle me-1" style="font-size: 6px;"></i>Stale <span class="badge bg-body text-muted border ms-1">{{ staleCount }}</span>
-        </button>
-        <button class="btn btn-sm" 
-                [class.btn-danger]="statusFilter === 'offline'"
-                [class.btn-outline-default]="statusFilter !== 'offline'"
-                (click)="onStatusFilter('offline')">
-            <i class="fa fa-circle me-1" style="font-size: 6px;"></i>Offline <span class="badge bg-body text-muted border ms-1">{{ offlineCount }}</span>
-        </button>
-        <button class="btn btn-sm" 
-                [class.btn-secondary]="statusFilter === 'nodata'"
-                [class.btn-outline-default]="statusFilter !== 'nodata'"
-                (click)="onStatusFilter('nodata')">
-            No Data <span class="badge bg-body text-muted border ms-1">{{ noDataCount }}</span>
-        </button>
+<!-- Error -->
+<div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    <span>{{ error }}</span>
+    <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadData()">Coba lagi</button>
+</div>
 
-        <!-- Search - right aligned -->
-        <div class="ms-auto d-flex align-items-center gap-2">
-            <div class="input-group input-group-sm" style="width: 200px;">
-                <span class="input-group-text bg-transparent border-end-0 py-1"><i class="fa fa-search text-muted small"></i></span>
-                <input type="text" class="form-control border-start-0 py-1" placeholder="Search..."
-                       [(ngModel)]="searchText" (ngModelChange)="onSearchChange()">
-            </div>
-            <button class="btn btn-sm btn-outline-default py-1" (click)="loadData()" title="Refresh">
-                <i class="fa fa-sync-alt"></i>
-            </button>
+<!-- Latest values source unavailable: say so instead of showing every sensor as "No Data" -->
+<div *ngIf="!error && !loading && !latestAvailable" class="alert alert-warning d-flex align-items-center">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    <span>Nilai terakhir sensor sedang tidak dapat dibaca dari server data. Status "No Data" di bawah belum tentu berarti alat mati.</span>
+    <button class="btn btn-sm btn-outline-warning ms-auto" (click)="loadData()">Coba lagi</button>
+</div>
+
+<card class="shadow-sm" *ngIf="!error">
+    <!-- Status tabs -->
+    <ul class="nav nav-tabs nav-tabs-v2 px-4">
+        <li class="nav-item me-3" *ngFor="let opt of statusOptions">
+            <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+                [class.active]="statusFilter === opt.key" (click)="onStatusFilter(opt.key)">
+                <span>{{ opt.label }}</span>
+                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">
+                    {{ statusCount(opt.key) }}
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="p-4">
+        <!-- Active filter from a KPI card that has no tab of its own -->
+        <div class="mb-3" *ngIf="statusFilter === 'dead'">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-normal fs-6">
+                Filter: Mati / belum pernah kirim ({{ statusCount('dead') }})
+                <a href="javascript:;" class="text-danger ms-2 text-decoration-none" (click)="onStatusFilter('all')"
+                    title="Hapus filter" aria-label="Hapus filter">&times;</a>
+            </span>
         </div>
-    </div>
 
-    <!-- Empty State -->
-    <div *ngIf="filteredSensors.length === 0 && !loading" class="text-center py-4 text-muted">
-        <i class="fa fa-microchip fa-2x mb-2 opacity-50"></i>
-        <div class="small" *ngIf="totalSensors === 0">No sensors found in this project</div>
-        <div class="small" *ngIf="totalSensors > 0">No sensors match the current filter</div>
-    </div>
+        <!-- Filter row -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted">
+                        <i class="fa fa-search opacity-50"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0"
+                        placeholder="Search sensor, code, node, address, PIC..."
+                        [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
+                </div>
+            </div>
+        </div>
 
-    <!-- Sensors Table -->
-    <card *ngIf="filteredSensors.length > 0">
-        <card-body class="p-0">
+        <!-- Loading -->
+        <div *ngIf="loading" class="text-center py-5">
+            <div class="spinner-border spinner-border-sm text-theme" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-2 text-muted small">Loading sensors...</div>
+        </div>
+
+        <ng-container *ngIf="!loading">
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0 align-middle">
-                    <thead>
-                        <tr class="text-muted small">
-                            <th class="cursor-pointer" (click)="onSort('label')">
-                                Sensor <i class="fa ms-1 small" [ngClass]="getSortIcon('label')"></i>
+                <table class="table table-hover align-middle sensors-table">
+                    <thead class="text-uppercase text-muted small">
+                        <tr>
+                            <th class="pt-0 pb-2 sortable" (click)="onSort('label')">
+                                Sensor <i class="fa ms-1" [ngClass]="getSortIcon('label')"></i>
                             </th>
-                            <th>Type</th>
-                            <th class="cursor-pointer text-end" (click)="onSort('value')">
-                                Value <i class="fa ms-1 small" [ngClass]="getSortIcon('value')"></i>
+                            <th class="pt-0 pb-2 sortable" (click)="onSort('node')">
+                                Node <i class="fa ms-1" [ngClass]="getSortIcon('node')"></i>
                             </th>
-                            <th class="text-center">Status</th>
-                            <th class="cursor-pointer text-center" (click)="onSort('lastUpdate')">
-                                Updated <i class="fa ms-1 small" [ngClass]="getSortIcon('lastUpdate')"></i>
+                            <th class="pt-0 pb-2 text-end sortable" (click)="onSort('value')">
+                                Last Value <i class="fa ms-1" [ngClass]="getSortIcon('value')"></i>
                             </th>
-                            <th class="cursor-pointer" (click)="onSort('node')">
-                                Node <i class="fa ms-1 small" [ngClass]="getSortIcon('node')"></i>
+                            <th class="pt-0 pb-2">Status</th>
+                            <th class="pt-0 pb-2 text-end sortable" (click)="onSort('lastUpdate')">
+                                Updated <i class="fa ms-1" [ngClass]="getSortIcon('lastUpdate')"></i>
                             </th>
-                            <th class="text-center" style="width: 40px;"></th>
+                            <th class="pt-0 pb-2 w-10px"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let sensor of filteredSensors" class="cursor-pointer" (click)="navigateToSensor(sensor)">
+                        <tr *ngFor="let sensor of paginatedSensors" class="sensor-row" (click)="navigateToSensor(sensor)">
                             <!-- Sensor -->
                             <td>
-                                <div class="fw-semibold text-truncate" style="max-width: 160px;" [title]="sensor.label">
-                                    {{ sensor.label }}
+                                <div class="d-flex align-items-center">
+                                    <div class="w-40px h-40px bg-inverse bg-opacity-25 rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fa fa-wave-square text-theme"></i>
+                                    </div>
+                                    <div class="ms-3 text-truncate cell-mw">
+                                        <div class="text-inverse text-opacity-75 fw-semibold text-truncate" [title]="sensor.label">
+                                            {{ sensor.label || '-' }}
+                                        </div>
+                                        <div class="text-muted small text-truncate">
+                                            {{ sensor.sensorCode || '-' }}<ng-container *ngIf="firstMetric(sensor) !== '-'"> · {{ firstMetric(sensor) }}</ng-container><ng-container *ngIf="channelCount(sensor) > 1"> · {{ channelCount(sensor) }} channel</ng-container>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-muted small text-truncate" style="max-width: 160px; font-size: 11px;" *ngIf="sensor.sensorCode">
-                                    {{ sensor.sensorCode }}
-                                </div>
-                            </td>
-                            <!-- Type -->
-                            <td class="small">
-                                <span *ngIf="sensor.sensorCatalog" class="text-truncate d-inline-block" style="max-width: 120px;"
-                                      [title]="sensor.sensorCatalog.vendor + ' ' + sensor.sensorCatalog.modelName">
-                                    {{ sensor.sensorCatalog.modelName }}
-                                </span>
-                                <span *ngIf="!sensor.sensorCatalog && getChannelUnit(sensor)" class="text-muted">
-                                    {{ sensor.channels[0].metricCode }}
-                                </span>
-                                <span *ngIf="!sensor.sensorCatalog && !getChannelUnit(sensor)" class="text-muted">-</span>
-                            </td>
-                            <!-- Value -->
-                            <td class="text-end">
-                                <span class="fw-semibold" [class.text-muted]="sensor.lastValue === null">
-                                    {{ formatValue(sensor.lastValue, getChannelUnit(sensor)) }}
-                                </span>
-                            </td>
-                            <!-- Status -->
-                            <td class="text-center">
-                                <span class="badge" [ngClass]="getStatusBadgeClass(sensor)" style="font-size: 10px;">
-                                    {{ getStatusLabel(sensor) }}
-                                </span>
-                            </td>
-                            <!-- Last Update -->
-                            <td class="text-center small text-muted">
-                                {{ formatTimeAgo(sensor.lastValueAt) }}
                             </td>
                             <!-- Node -->
                             <td>
-                                <div *ngIf="sensor.node">
-                                    <a class="fw-semibold small text-decoration-none" 
-                                       (click)="navigateToNode(sensor.node.idNode, $event)">
-                                        {{ sensor.node.name || sensor.node.code }}
+                                <ng-container *ngIf="sensor.node; else noNode">
+                                    <a href="javascript:;" class="fw-semibold text-decoration-none d-inline-block text-truncate cell-mw" [title]="sensor.node.address || sensor.node.code"
+                                        (click)="navigateToNode(sensor.node.idNode, $event)">
+                                        {{ sensor.node.address || sensor.node.code }}
                                     </a>
-                                    <div class="text-muted" style="font-size: 11px;" *ngIf="sensor.node.city || sensor.node.picName">
-                                        <span *ngIf="sensor.node.city"><i class="fa fa-map-marker-alt me-1"></i>{{ sensor.node.city }}</span>
-                                        <span *ngIf="sensor.node.city && sensor.node.picName"> · </span>
-                                        <span *ngIf="sensor.node.picName"><i class="fa fa-user me-1"></i>{{ sensor.node.picName }}</span>
-                                    </div>
-                                </div>
-                                <span *ngIf="!sensor.node" class="text-muted">-</span>
+                                    <div class="text-muted small" *ngIf="sensor.node.address">{{ sensor.node.code }}</div>
+                                    <a *ngIf="isProblem(sensor) && sensor.node.picPhone" class="small text-decoration-none d-inline-block text-truncate cell-mw"
+                                        [href]="telHref(sensor.node.picPhone)" (click)="stop($event)"
+                                        [title]="'Telepon PIC ' + (sensor.node.picName || '') + ' · ' + sensor.node.picPhone">
+                                        <i class="fa fa-phone fa-fw"></i>{{ sensor.node.picName || 'Telepon PIC' }}
+                                    </a>
+                                </ng-container>
+                                <ng-template #noNode><span class="text-muted">-</span></ng-template>
                             </td>
-                            <!-- Action -->
-                            <td class="text-center">
-                                <i class="fa fa-chevron-right text-muted small"></i>
+                            <!-- Value: one line per channel, marked against CONFIGURED thresholds only -->
+                            <td class="text-end">
+                                <ng-container *ngFor="let ch of sensor.channels">
+                                    <a href="javascript:;" class="d-block text-decoration-none text-inverse value-line"
+                                        *ngIf="channelState(sensor, ch) as st"
+                                        (click)="openChannel(sensor, ch.idSensorChannel, $event)"
+                                        [title]="ch.metricCode + ' · ' + thresholdText(ch)">
+                                        <span class="text-muted small me-1" *ngIf="channelCount(sensor) > 1">{{ ch.metricCode }}</span>
+                                        <span class="fw-semibold"
+                                            [class.text-muted]="ch.lastValue === null"
+                                            [class.text-danger]="isChannelOut(sensor, ch)"
+                                            [class.text-warning]="(st === 'below' || st === 'above') && !isChannelOut(sensor, ch)">
+                                            <i *ngIf="st === 'below'" class="fa fa-arrow-down fa-fw small"></i>
+                                            <i *ngIf="st === 'above'" class="fa fa-arrow-up fa-fw small"></i>
+                                            {{ formatValue(ch.lastValue, ch.unit, ch.precision) }}
+                                        </span>
+                                        <div class="d-flex align-items-center justify-content-end gap-1 trend-line" *ngIf="hasSpark(ch) || rangeText(ch)">
+                                            <svg *ngIf="hasSpark(ch)" class="spark" viewBox="0 0 72 20" width="72" height="20" aria-hidden="true">
+                                                <path [attr.d]="sparkPath(ch)" fill="none" stroke="currentColor" stroke-width="1.5" />
+                                            </svg>
+                                            <span class="small text-muted">{{ rangeText(ch) }}</span>
+                                        </div>
+                                        <div class="small" *ngIf="st === 'below' || st === 'above'"
+                                            [class.text-danger]="isChannelOut(sensor, ch)" [class.text-muted]="!isChannelOut(sensor, ch)">
+                                            {{ outOfRangeText(ch, st) }}<span *ngIf="!isChannelOut(sensor, ch)"> · data terlambat</span>
+                                        </div>
+                                    </a>
+                                </ng-container>
+                                <span *ngIf="!channelCount(sensor)" class="text-muted">-</span>
                             </td>
+                            <!-- Status -->
+                            <td>
+                                <span class="badge" [ngClass]="getStatusBadgeClass(sensor)" [title]="getStatusTitle(sensor)">
+                                    {{ getStatusLabel(sensor) }}
+                                </span>
+                                <div class="text-muted small mt-1" *ngIf="formatInterval(sensor.node?.telemetryIntervalSec) as iv">{{ iv }}</div>
+                            </td>
+                            <!-- Updated -->
+                            <td class="text-end">
+                                <!-- Offline / never: say since when, explicitly -->
+                                <ng-container *ngIf="getSensorStatus(sensor) === 'offline' || getSensorStatus(sensor) === 'nodata'; else normalUpdated">
+                                    <div class="text-danger fw-semibold text-nowrap">{{ deadSinceText(sensor) }}</div>
+                                    <div class="text-muted small" *ngIf="sensor.lastValueAt">sejak {{ sensor.lastValueAt | date:'dd MMM yyyy, HH:mm' }}</div>
+                                    <div class="text-muted small" *ngIf="!sensor.lastValueAt && nodeSeenText(sensor) as seen">{{ seen }}</div>
+                                </ng-container>
+                                <ng-template #normalUpdated>
+                                    <div>{{ formatTimeAgo(sensor.lastValueAt) }}</div>
+                                    <div class="text-muted small" *ngIf="sensor.lastValueAt">{{ sensor.lastValueAt | date:'dd MMM, HH:mm' }}</div>
+                                </ng-template>
+                            </td>
+                            <td class="w-10px text-muted"><i class="fa fa-chevron-right small"></i></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </card-body>
-    </card>
-</div>
+
+            <!-- Empty -->
+            <div *ngIf="!filteredSensors.length" class="text-center text-muted py-5 border-top">
+                <i class="fa fa-microchip fa-2x mb-2 opacity-50 d-block"></i>
+                {{ totalSensors === 0 ? 'Belum ada sensor di project ini.' : 'Tidak ada sensor sesuai filter.' }}
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-md-flex align-items-center mt-3" *ngIf="filteredSensors.length">
+                <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+                    Showing {{ paginationStart }} to {{ paginationEnd }} of {{ filteredSensors.length }} sensors
+                </div>
+                <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
+                    <span class="text-muted small me-2 text-uppercase">Rows</span>
+                    <select class="form-select form-select-sm w-auto" [ngModel]="pageSize"
+                        (ngModelChange)="changePageSize($event)">
+                        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+                    </select>
+                </div>
+                <ul class="pagination mb-0 justify-content-center">
+                    <li class="page-item" [class.disabled]="currentPage === 1">
+                        <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
+                    </li>
+                    <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+                        <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+                    </li>
+                    <li class="page-item" [class.disabled]="currentPage === totalPages">
+                        <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </div>
+        </ng-container>
+    </div>
+</card>

@@ -5,6 +5,9 @@ import { catchError, map } from 'rxjs/operators';
 import { AppSettings } from '../../../../service/app-settings.service';
 import { ProjectsService } from '../../../../../sdk/core/services/projects.service';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
+import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
+import { fetchAll } from '../../../../shared/utils/fetch-all';
+import { Freshness, getFreshness } from '../../../../shared/utils/telemetry-freshness';
 import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
 import { WebGisLayerStateService, LayerGroup } from '../../webgis/services/webgis-layer-state.service';
 
@@ -70,6 +73,7 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
     private appSettings: AppSettings,
     private projectsService: ProjectsService,
     private nodesService: NodesService,
+    private sensorsService: SensorsService,
     private widgetBuilderService: WidgetBuilderService,
     public layerStateService: WebGisLayerStateService,
     private cdr: ChangeDetectorRef
@@ -179,135 +183,102 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
       });
   }
   
+  /**
+   * Tree = nodes + their sensors. 2 project-scoped requests (paged), not one per node.
+   * Node AND sensor status use the shared freshness rule; a sensor's status is its own
+   * (lastValueAt), not inherited from the node.
+   */
   buildAssetTree(project: any) {
-    // Load nodes for this project (limit 30 to get all nodes)
-    this.nodesService.nodesControllerFindAll$Response({ idProject: this.projectId, limit: 30 })
-      .subscribe({
-        next: (res) => {
-          // Handle different response formats
-          const body: any = res.body;
-          let nodes: any[] = [];
-          
-          try {
-            if (Array.isArray(body)) {
-              nodes = body;
-            } else if (body && typeof body === 'object') {
-              nodes = body.data || [];
-            } else if (typeof body === 'string') {
-              const parsed = JSON.parse(body);
-              nodes = Array.isArray(parsed) ? parsed : (parsed?.data || []);
-            }
-          } catch (e) {
-            console.error('Error parsing nodes response:', e);
-            nodes = [];
-          }
-          
-          console.log('Loaded nodes:', nodes.length, nodes);
-          
-          if (nodes.length === 0) {
-            this.assetTree = [];
-            return;
-          }
-          
-          // Load sensors for each node
-          const sensorRequests = nodes.map(node => {
-            const nodeId = node.idNode || node.id;
-            return this.nodesService.nodesControllerGetSensors$Response({ id: nodeId }).pipe(
-              map((sRes: any) => {
-                // Handle different response formats for sensors
-                const sBody = sRes.body;
-                let sensors: any[] = [];
-                try {
-                  if (Array.isArray(sBody)) {
-                    sensors = sBody;
-                  } else if (sBody && typeof sBody === 'object') {
-                    sensors = (sBody as any).data || [];
-                  } else if (typeof sBody === 'string') {
-                    const parsed = JSON.parse(sBody);
-                    sensors = Array.isArray(parsed) ? parsed : (parsed?.data || []);
-                  }
-                } catch (e) {
-                  sensors = [];
-                }
-                return { nodeId, sensors };
-              }),
-              catchError(err => {
-                console.warn(`Failed to load sensors for node ${nodeId}:`, err);
-                return of({ nodeId, sensors: [] });
-              })
-            );
-          });
-          
-          forkJoin(sensorRequests).subscribe({
-            next: (sensorResults) => {
-              // Build sensor map
-              const sensorMap = new Map<string, any[]>();
-              sensorResults.forEach(r => sensorMap.set(r.nodeId, r.sensors));
-              
-              // Build asset tree - just nodes without project wrapper
-              this.assetTree = nodes.map(node => {
-                const nodeId = node.idNode || node.id;
-                const nodeSensors = sensorMap.get(nodeId) || [];
-                
-                // Prefer address, then name, then code/serialNumber
-                const nodeName = node.address || node.name || node.code || node.serialNumber || 'Node';
-                
-                return {
-                  id: nodeId,
-                  name: nodeName,
-                  type: 'node' as const,
-                  status: this.getNodeStatus(node),
-                  expanded: false,
-                  data: node,
-                  children: nodeSensors.map((sensor: any) => ({
-                    id: sensor.idSensor || sensor.id,
-                    name: sensor.label || sensor.code || sensor.name || 'Sensor',
-                    type: 'sensor' as const,
-                    status: this.getNodeStatus(node),
-                    data: sensor
-                  }))
-                };
-              });
-              
-              console.log('Asset tree built:', this.assetTree);
-            },
-            error: (err) => {
-              console.error('Failed to load sensors:', err);
-              // Build tree without sensors
-              this.assetTree = nodes.map(node => ({
-                id: node.idNode || node.id,
-                name: node.name || node.nodeCode || 'Node',
-                type: 'node' as const,
-                status: this.getNodeStatus(node),
-                expanded: false,
-                data: node,
-                children: []
-              }));
-            }
-          });
-        },
-        error: (err) => {
-          console.error('Failed to load nodes:', err);
-          this.assetTree = [];
-        }
-      });
+    forkJoin({
+      nodes: fetchAll(p => this.nodesService.nodesControllerFindAll$Response({ idProject: this.projectId, ...p })),
+      // Sensors failing must not hide the nodes: fall back to "no sensors" for the tree only.
+      sensors: fetchAll(p => this.sensorsService.sensorsControllerFindAll$Response({ idProject: this.projectId, ...p }))
+        .pipe(catchError(err => {
+          console.warn('Failed to load sensors for asset tree:', err);
+          return of(null);
+        }))
+    }).subscribe({
+      next: ({ nodes, sensors }) => {
+        const sensorsByNode = new Map<string, any[]>();
+        (sensors || []).forEach((sensor: any) => {
+          const nodeId = sensor.idNode || sensor.node?.idNode;
+          if (!nodeId) return;
+          if (!sensorsByNode.has(nodeId)) sensorsByNode.set(nodeId, []);
+          sensorsByNode.get(nodeId)!.push(sensor);
+        });
+
+        this.assetTree = nodes.map((node: any) => {
+          const nodeId = node.idNode || node.id;
+          return {
+            id: nodeId,
+            // Node label rule: address first, fallback code
+            name: node.address || node.code || node.serialNumber || 'Node',
+            type: 'node' as const,
+            status: this.getNodeStatus(node),
+            expanded: false,
+            data: node,
+            children: (sensorsByNode.get(nodeId) || []).map((sensor: any) => ({
+              id: sensor.idSensor || sensor.id,
+              name: sensor.label || sensor.sensorCode || 'Sensor',
+              type: 'sensor' as const,
+              status: this.toTreeStatus(getFreshness(sensor.lastValueAt, node.telemetryIntervalSec)),
+              data: sensor
+            }))
+          };
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load nodes:', err);
+        this.assetTree = [];
+      }
+    });
   }
-  
+
+  /** Shared freshness rule (shared/utils/telemetry-freshness.ts) — same as Overview & Sensors tab. */
   getNodeStatus(node: any): 'online' | 'warning' | 'offline' | 'unknown' {
-    if (!node.lastSeenAt) return 'unknown';
-    
-    const lastSeen = new Date(node.lastSeenAt);
-    const now = new Date();
-    const diffMinutes = (now.getTime() - lastSeen.getTime()) / (1000 * 60);
-    
-    if (diffMinutes < 5) return 'online';
-    if (diffMinutes < 30) return 'warning';
-    return 'offline';
+    return this.toTreeStatus(getFreshness(node.lastSeenAt, node.telemetryIntervalSec));
   }
-  
+
+  private toTreeStatus(f: Freshness): 'online' | 'warning' | 'offline' | 'unknown' {
+    switch (f) {
+      case 'fresh': return 'online';
+      case 'stale': return 'warning';
+      case 'offline': return 'offline';
+      default: return 'unknown';
+    }
+  }
+
+  /**
+   * Breadcrumb trail for the workspace toolbar, derived from the URL
+   * (…/:projectId/<section>[/…]). Node/sensor names come from the asset tree (address first).
+   */
+  get breadcrumb(): { label: string; link?: any[] }[] {
+    const parts = this.router.url.split('?')[0].split('/');
+    const i = parts.indexOf(this.projectId);
+    const section = i > -1 ? parts[i + 1] : '';
+    const base = ['/iot/projects', this.projectId];
+    const nav = this.navItems.find(n => n.path === section);
+    if (nav) return [{ label: nav.label }];
+    if (section === 'node') {
+      const nodeId = parts[i + 2];
+      const node = this.assetTree.find(n => n.id === nodeId);
+      const trail: { label: string; link?: any[] }[] = [
+        { label: 'Nodes', link: [...base, 'nodes'] },
+        { label: node?.name || 'Node', link: parts[i + 3] === 'sensor' ? [...base, 'node', nodeId] : undefined }
+      ];
+      if (parts[i + 3] === 'sensor') {
+        const sensor = node?.children?.find(c => c.id === parts[i + 4]);
+        trail.push({ label: sensor?.name || 'Sensor' });
+      }
+      return trail;
+    }
+    return [];
+  }
+
   updateSelectedAsset() {
     // Parse current route to determine selected asset
-    const urlParts = this.router.url.split('/');
+    // Strip ?query (e.g. ?channel=) so the last segment is a clean id
+    const urlParts = this.router.url.split('?')[0].split('/');
     const nodeIndex = urlParts.indexOf('node');
     const sensorIndex = urlParts.indexOf('sensor');
     
@@ -362,7 +333,12 @@ export class ProjectWorkspaceComponent implements OnInit, OnDestroy {
         // Find parent node and navigate to sensor detail
         const parentNode = this.findParentNode(node.id);
         if (parentNode) {
-          this.router.navigate(['node', parentNode.id, 'sensor', node.id], { relativeTo: this.route });
+          // Canonical sensor URL: sensor id + ?channel=<first channel> (detail page shows a channel picker)
+          const channelId = node.data?.channels?.[0]?.idSensorChannel;
+          this.router.navigate(['node', parentNode.id, 'sensor', node.id], {
+            relativeTo: this.route,
+            queryParams: channelId ? { channel: channelId } : {}
+          });
         }
         break;
     }

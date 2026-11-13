@@ -264,7 +264,7 @@
                             <tbody>
                                 <tr *ngFor="let channel of sensor.channels">
                                     <td class="fw-semibold">
-                                        <a [routerLink]="['/iot/nodes', nodeUuid, 'sensor', channel.id]"
+                                        <a [routerLink]="channelLink(sensor)" [queryParams]="{ channel: channel.id }"
                                             class="text-decoration-none text-theme">
                                             <i class="fa fa-chart-line me-1"></i>
                                             {{ channel.sensorTypeLabel }}

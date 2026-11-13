@@ -7,7 +7,17 @@
       </div>
       <span class="badge bg-light text-theme">{{ timeRange }}</span>
     </div>
-    <ul class="timeline">
+<div *ngIf="loading" class="text-center text-muted small py-4">
+      <span class="spinner-border spinner-border-sm me-2"></span>Memuat data...
+    </div>
+    <div *ngIf="!loading && error" class="text-center text-muted small py-4">
+      <i class="fa fa-exclamation-triangle fa-fw me-1"></i>{{ error }}
+      <div class="mt-2"><button type="button" class="btn btn-sm btn-outline-default" (click)="loadData()">Coba lagi</button></div>
+    </div>
+<div *ngIf="!loading && !error && !activities.length" class="text-center text-muted small py-4">
+      <i class="fa fa-inbox fa-fw me-1"></i>Belum ada aktivitas
+    </div>
+    <ul class="timeline" *ngIf="!loading && !error">
       <li *ngFor="let activity of activities">
         <span class="timeline-badge" [ngClass]="badgeClass(activity.type)"></span>
         <div class="timeline-panel">

@@ -17,11 +17,17 @@ Skills in `.claude/skills/`:
 - `ui-card` — standard card / dashboard widget.
 - `ui-form` — standard create/edit form.
 - `backend-module` — standard Goravel CRUD module (for backend work).
+- `page-guide` — Panduan (guide drawer) per halaman: `data.guide` + `src/assets/guides/<key>.md`; WAJIB diperbarui di setiap perubahan halaman.
 - `scada-view` — how to build/modify the **iot-scada** SCADA diagram view (React + React Flow + zustand v5); read before any SCADA visual-editor change.
+- `widget-builder` — widget dinamis (Widget Builder: dashboard kustom SQL + ECharts + gridster, juga Monitor proyek); sistem mana yang live, resep tipe widget/template, bug & risiko SQL. Read before any dashboard/widget work.
+  Tim agen SCADA/widget: `scada-engineer`, `widget-engineer`, `scada-diagram-author`, `scada-visual-auditor` (alur kerja di `../iot-scada/CLAUDE.md`).
 
 **Runbook operasional (produksi):**
 - `clickhouse-backfill` — report/Grafana kosong padahal Postgres ada datanya; ClickHouse berhenti menerima data.
 - `node-profile-repair` — channel node tak terisi padahal device kirim terus; profil dipakai banyak node; sesudah pairing/remapping.
+
+**Demo ke calon pelanggan:**
+- `demo-tenant` — buat tenant demo PDAM + simulator device (`iot-device-sim`): seed pairing lengkap, cek masuk gtw, pm2, teardown.
 
 Full map + indeks semua skill/runbook/dokumen: [.claude/PROJECT-MAP.md](.claude/PROJECT-MAP.md) §0.
 
@@ -31,6 +37,10 @@ Full map + indeks semua skill/runbook/dokumen: [.claude/PROJECT-MAP.md](.claude/
 - All components are **NgModule, `standalone: false`**. Match existing module structure.
 - Use the shared `<card>` / `<card-header>` / `<card-body>` components and Bootstrap utility classes; theme via `--bs-theme`.
 - Multi-tenancy: `admin` sees all, `tenant` scoped to its `idOwner`. Respect role checks.
+- **No fake data, ever.** Never show generated/random/simulated/placeholder values as if real (`Math.random`, `generateDummyData`, "estimated" uptime/latency, default thresholds like 0/100). If data is missing or a request fails, show an honest empty/error state with a retry. If a metric has no real source yet, don't show the metric.
+- **Device/sensor status** comes from one rule: `src/app/shared/utils/telemetry-freshness.ts` (`getFreshness`). Don't invent local minute thresholds.
+- **Node label**: primary = node **address** (fallback node code); second line = node code.
+- **Team workflow for page work** (agents in `.claude/agents/`): audit (`pdam-operator`, `enterprise-ux-auditor`, `senior-dev-auditor`) → implement → `senior-dev-auditor` review → `guide-writer` updates the page's Panduan. Audits live in `docs/audit/`.
 
 ## Common commands
 - Dev: `npm start` (ng serve). Build: `npm run build`. SDK regen: `npx ng-openapi-gen`.

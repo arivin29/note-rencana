@@ -333,7 +333,11 @@ export class NodesListPage implements OnInit, OnChanges, OnDestroy {
     if (this.sortField) {
       nodes = [...nodes].sort((a: any, b: any) => {
         let valA: any, valB: any;
-        if (this.sortField === 'project') {
+        if (this.sortField === 'code') {
+          // Node column shows address first (fallback code) — sort by what is shown
+          valA = a.address || a.code || '';
+          valB = b.address || b.code || '';
+        } else if (this.sortField === 'project') {
           valA = (a.project as any)?.name || '';
           valB = (b.project as any)?.name || '';
         } else {

@@ -22,13 +22,13 @@
                 <card-header class="d-flex align-items-center bg-inverse bg-opacity-10 fw-400">
                     <i class="fa fa-heartbeat text-theme me-2"></i>
                     System Health
-                    <span class="badge bg-success-subtle text-success ms-2" *ngIf="systemHealth.onlineDevices === systemHealth.totalDevices">
+                    <span class="badge bg-success-subtle text-success ms-2" *ngIf="systemHealth.totalDevices > 0 && systemHealth.onlineDevices === systemHealth.totalDevices">
                         All Systems Operational
                     </span>
-                    <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="systemHealth.onlineDevices < systemHealth.totalDevices && systemHealth.onlineDevices > 0">
+                    <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="systemHealth.totalDevices > 0 && systemHealth.onlineDevices < systemHealth.totalDevices && systemHealth.offlineDevices < systemHealth.totalDevices">
                         {{ systemHealth.offlineDevices + systemHealth.warningDevices }} Issues Detected
                     </span>
-                    <span class="badge bg-danger-subtle text-danger ms-2" *ngIf="systemHealth.onlineDevices === 0 && systemHealth.totalDevices > 0">
+                    <span class="badge bg-danger-subtle text-danger ms-2" *ngIf="systemHealth.totalDevices > 0 && systemHealth.offlineDevices === systemHealth.totalDevices">
                         System Offline
                     </span>
                 </card-header>
@@ -62,19 +62,19 @@
                                     <i class="fa fa-clock"></i>
                                 </div>
                                 <div class="health-stat-content">
-                                    <div class="fs-3 fw-bold text-info">{{ systemHealth.avgUptime }}%</div>
-                                    <div class="text-muted small">Avg Uptime (24h)</div>
+                                    <div class="fs-3 fw-bold text-info">{{ systemHealth.lastDataAt ? lastDataAgo : '—' }}</div>
+                                    <div class="text-muted small" [title]="systemHealth.lastDataAt ? (systemHealth.lastDataAt | date:'dd MMM yyyy HH:mm:ss') : ''">Last Data Received</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3 col-6">
                             <div class="health-stat">
                                 <div class="health-stat-icon bg-warning-subtle text-warning">
-                                    <i class="fa fa-bolt"></i>
+                                    <i class="fa fa-exclamation-triangle"></i>
                                 </div>
                                 <div class="health-stat-content">
-                                    <div class="fs-3 fw-bold text-warning">{{ systemHealth.avgLatency }}ms</div>
-                                    <div class="text-muted small">Avg Latency</div>
+                                    <div class="fs-3 fw-bold text-warning">{{ systemHealth.warningDevices }}</div>
+                                    <div class="text-muted small">Stale Devices</div>
                                 </div>
                             </div>
                         </div>
@@ -119,15 +119,14 @@
                             <div class="text-muted small">{{ project.areaType || 'Unknown Type' }}</div>
                         </div>
                         <div class="col-md-4">
-                            <div class="text-uppercase text-muted small">Data Window</div>
-                            <div class="fw-semibold">Streaming · MQTT</div>
-                            <div class="text-muted small">Retention 30 days</div>
+                            <div class="text-uppercase text-muted small">Data Terakhir</div>
+                            <div class="fw-semibold">{{ systemHealth.lastDataAt ? (systemHealth.lastDataAt | date:'dd MMM yyyy, HH:mm') : 'Belum ada data' }}</div>
+                            <div class="text-muted small">{{ systemHealth.lastDataAt ? lastDataAgo : '—' }}</div>
                         </div>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <card class="stat-link h-100" [routerLink]="['/iot/nodes']"
-                                [queryParams]="{ projectId: projectId }">
+                            <card class="stat-link h-100" [routerLink]="['/iot/projects', projectId, 'nodes']">
                                 <div class="text-uppercase text-muted small">Devices</div>
                                 <div class="fs-3 fw-bold lh-1 mb-1">{{ nodes.length }}</div>
                                 <div class="fw-semibold" [class.text-success]="systemHealth.onlineDevices > 0"
@@ -138,29 +137,33 @@
                             </card>
                         </div>
                         <div class="col-md-3">
-                            <card class="stat-link h-100" [routerLink]="['/iot/sensors']"
-                                [queryParams]="{ projectId: projectId }">
+                            <card class="stat-link h-100" [routerLink]="['/iot/projects', projectId, 'sensors']">
                                 <div class="text-uppercase text-muted small">Sensors</div>
                                 <div class="fs-3 fw-bold lh-1 mb-1">{{ sensors.length }}</div>
-                                <div class="text-muted">{{ systemHealth.offlineDevices }} offline</div>
+                                <div class="text-muted">{{ sensorsNotFresh }} tidak update</div>
                                 <div class="stat-meta">Open sensor explorer</div>
                             </card>
                         </div>
                         <div class="col-md-3">
-                            <card class="stat-link h-100" [routerLink]="['/iot/telemetry']"
-                                [queryParams]="{ projectId: projectId }">
+                            <card class="stat-link h-100" [routerLink]="['/iot/projects', projectId, 'map']">
                                 <div class="text-uppercase text-muted small">Locations</div>
                                 <div class="fs-3 fw-bold lh-1 mb-1">{{ mapNodes.length }}</div>
                                 <div class="text-muted">Deployment sites</div>
-                                <div class="stat-meta">Jump to telemetry</div>
+                                <div class="stat-meta">Open project map</div>
                             </card>
                         </div>
                         <div class="col-md-3">
                             <card class="stat-link h-100" [routerLink]="['/iot/alerts']"
                                 [queryParams]="{ projectId: projectId }">
                                 <div class="text-uppercase text-muted small">Alerts</div>
-                                <div class="fs-3 fw-bold lh-1 mb-1 text-danger">{{ alerts.length }}</div>
-                                <div class="text-muted">{{ alerts.length === 0 ? 'No active alerts' : 'Active alerts' }}
+                                <div class="fs-3 fw-bold lh-1 mb-1" [class.text-danger]="(openAlertCount || 0) > 0">
+                                    {{ openAlertCount === null ? '—' : openAlertCount }}
+                                </div>
+                                <div class="text-muted">
+                                    <ng-container *ngIf="alertsError">Gagal memuat alert</ng-container>
+                                    <ng-container *ngIf="!alertsError && openAlertCount !== null">
+                                        {{ openAlertCount === 0 ? 'Tidak ada alert terbuka' : 'Alert terbuka' }}<span *ngIf="ackAlertCount"> · {{ ackAlertCount }} di-acknowledge</span>
+                                    </ng-container>
                                 </div>
                                 <div class="stat-meta">Review alert queue</div>
                             </card>
@@ -218,8 +221,7 @@
                     <span class="badge bg-body text-muted border">Latest telemetry values</span>
                     <span class="badge bg-theme ms-1" *ngIf="sensors.length > 0">{{ sensors.length }}</span>
                     <div class="ms-auto">
-                        <button class="btn btn-sm btn-outline-default" [routerLink]="['/iot/sensors']"
-                            [queryParams]="{ projectId: projectId }">
+                        <button class="btn btn-sm btn-outline-default" [routerLink]="['/iot/projects', projectId, 'sensors']">
                             View All Sensors
                         </button>
                     </div>
@@ -277,20 +279,14 @@
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge" 
-                                              [class.bg-success-subtle]="!isDataStale(sensor.lastValueAt) && sensor.lastValueAt"
-                                              [class.text-success]="!isDataStale(sensor.lastValueAt) && sensor.lastValueAt"
-                                              [class.bg-danger-subtle]="isDataStale(sensor.lastValueAt)"
-                                              [class.text-danger]="isDataStale(sensor.lastValueAt)"
-                                              [class.bg-secondary-subtle]="!sensor.lastValueAt"
-                                              [class.text-secondary]="!sensor.lastValueAt">
+                                        <span class="badge" [ngClass]="sensorBadgeClass(sensor)">
                                             {{ formatLastValueAt(sensor.lastValueAt) }}
                                         </span>
                                     </td>
                                     <td>
                                         <div *ngIf="sensor.node">
-                                            <div class="fw-semibold small">{{ sensor.node.code }}</div>
-                                            <div class="text-muted small" *ngIf="sensor.node.address">{{ sensor.node.address }}</div>
+                                            <div class="fw-semibold small">{{ sensor.node.address || sensor.node.code }}</div>
+                                            <div class="text-muted small" *ngIf="sensor.node.address">{{ sensor.node.code }}</div>
                                         </div>
                                         <span *ngIf="!sensor.node" class="text-muted">-</span>
                                     </td>
@@ -311,7 +307,7 @@
                     <i class="fa fa-server text-theme me-2"></i>
                     Device Status Grid
                     <span class="badge bg-body text-muted border ms-2">{{ deviceHealthList.length }} devices</span>
-                    <a [routerLink]="['/iot/nodes']" [queryParams]="{ projectId: projectId }" 
+                    <a [routerLink]="['/iot/projects', projectId, 'nodes']" 
                        class="ms-auto btn btn-sm btn-outline-theme">
                         View All Nodes
                     </a>
@@ -338,14 +334,12 @@
                                     <th scope="col">Device</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Last Seen</th>
-                                    <th scope="col" class="text-center">Uptime (24h)</th>
-                                    <th scope="col" class="text-end">Latency</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr *ngFor="let device of deviceHealthList" class="device-row">
                                     <td>
-                                        <a [routerLink]="['/iot/nodes', device.nodeId]" class="text-decoration-none">
+                                        <a [routerLink]="['/iot/projects', projectId, 'node', device.nodeId]" class="text-decoration-none">
                                             <div class="d-flex align-items-center">
                                                 <div class="device-icon me-3" 
                                                      [class.online]="device.status === 'online'"
@@ -354,8 +348,8 @@
                                                     <i class="fa fa-microchip"></i>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-semibold">{{ device.nodeName || device.nodeCode }}</div>
-                                                    <div class="text-muted small">{{ device.address || device.nodeCode }}</div>
+                                                    <div class="fw-semibold">{{ device.nodeName }}</div>
+                                                    <div class="text-muted small" *ngIf="device.address">{{ device.nodeCode }}</div>
                                                 </div>
                                             </div>
                                         </a>
@@ -366,24 +360,6 @@
                                         </span>
                                     </td>
                                     <td class="text-muted">{{ formatLastSeen(device.lastSeen) }}</td>
-                                    <td class="text-center">
-                                        <div class="uptime-bar">
-                                            <div class="uptime-fill" 
-                                                 [style.width.%]="device.uptimePercent"
-                                                 [class.bg-success]="device.uptimePercent >= 90"
-                                                 [class.bg-warning]="device.uptimePercent >= 70 && device.uptimePercent < 90"
-                                                 [class.bg-danger]="device.uptimePercent < 70">
-                                            </div>
-                                        </div>
-                                        <div class="small text-muted">{{ device.uptimePercent }}%</div>
-                                    </td>
-                                    <td class="text-end">
-                                        <span [class.text-success]="device.latencyMs < 100"
-                                              [class.text-warning]="device.latencyMs >= 100 && device.latencyMs < 200"
-                                              [class.text-danger]="device.latencyMs >= 200">
-                                            {{ device.latencyMs }}ms
-                                        </span>
-                                    </td>
                                 </tr>
                             </tbody>
                         </table>

@@ -40,16 +40,33 @@ export class NodesListPage implements OnInit, OnDestroy {
 
 ## Data / API
 - Use the **generated SDK** in `src/sdk/core/` — never hand-edit it; regenerate with `npx ng-openapi-gen` (input `http://localhost:3000/api-json`).
-- Call `xxxService.xControllerFindAll$Response(params)`, then in `next` read `response.body`, JSON.parse if it's a string, then take `.data` (list) per the shared contract `{ data, meta }`.
+- Lists: **never rely on the default page size** (backend defaults to 10/20 and caps at 100). Use `fetchAll` from `src/app/shared/utils/fetch-all.ts` — it pages through `meta.total` (or flat `total`) so nothing is silently cut. `parseBody` / `listOf` / `totalOf` handle string bodies and both envelopes.
 ```typescript
-this.nodesService.nodesControllerFindAll$Response({ page: 1, limit: 100, search }).subscribe({
-  next: (res) => { let b: any = res.body; if (typeof b === 'string') b = JSON.parse(b);
-                   this.nodes = (b.data || []) as NodeResponseDto[]; this.loading = false; },
-  error: (err) => { this.error = err?.message || 'Failed to load'; this.loading = false; }
-});
+import { fetchAll } from '@app/shared/utils/fetch-all';
+
+fetchAll(p => this.sensorsService.sensorsControllerFindAll$Response({ idProject: this.projectId, ...p }))
+  .pipe(takeUntil(this.destroy$))
+  .subscribe({
+    next: (sensors) => { this.sensors = sensors; this.loading = false; },
+    error: () => { this.error = 'Gagal memuat data sensor.'; this.loading = false; }
+  });
 ```
+- **One scoped request, not N+1.** Filter by parent on the server (`?idProject=`, `?idNode=`) instead of one request per node/sensor. If the SDK fn lacks the param, add it by hand (regen is broken) AND confirm the Go controller reads the **same name** (`ctx.Request().Query("idProject")`) — a mismatched name silently returns unfiltered data.
+- **Counts come from `meta.total`**, never `array.length` of a page.
 - State: RxJS `BehaviorSubject` exposed as `public x$: Observable<…>`. **No NgRx, no Signals.** Unsubscribe with `takeUntil(this.destroy$)` + `ngOnDestroy`.
 - Auth/token is handled globally by `JwtInterceptor` + `AuthService`; don't add Authorization headers manually.
+
+## Data honesty & shared rules (non-negotiable)
+| Rule | Use |
+|---|---|
+| **No fake data** — no `Math.random`, `generateDummyData`, "estimated" uptime/latency, default thresholds (0/100), invented quality % | On failure: empty/error state + **Coba lagi**. No real source for a metric → don't show the metric |
+| Device/sensor status (fresh/stale/offline/nodata) | `getFreshness(lastAt, node.telemetryIntervalSec)` + `FRESHNESS_BADGE` / `FRESHNESS_LABEL` / `timeAgo` from `src/app/shared/utils/telemetry-freshness.ts`. Never local minute thresholds |
+| Node label | primary = `node.address \|\| node.code`; second line = `node.code` only when the address is shown |
+| Unset numbers (thresholds, precision) | keep `null` → render "—" / "Belum diatur"; never `parseFloat(x) \|\| 0` |
+| Decimals from `sensor_channels.precision` | `decimalsFromPrecision()` in `src/app/shared/utils/threshold.ts` (two meanings: p<1 = step → count its fraction digits, p>=1 = decimal count). Never `log10`/`toFixed(2)` locally. Test such rules against the **required** result (e.g. `String(step).split('.')[1].length`), not a hand-written expectation list — that's how 0.25 → "0.3" slipped through |
+| Response flags | respect backend availability flags (e.g. `/sensors` `latestAvailable:false` → warning banner, not "No Data") |
+| Displaying numbers | App locale is `id-ID` (`LOCALE_ID` in `app.module.ts`): use `| number:'1.2-2'` in templates or `formatNumber(v, locale, '1.2-2')` with `@Inject(LOCALE_ID)` in TS. `toFixed()`, template `${n}`, `String(n)` and JSON always print a dot — a page mixing both shows "1.79" next to "1,79". Keep the dot only for machine strings (SVG paths, CSV/Excel numeric cells, API params) |
+| Excel export | `exceljs` + `file-saver` (see `report/report-page`). Excel has no timezone: shift `Date` by the local offset before writing or WIB times show 7 h early |
 
 ## Styling & theme
 - Prefer Bootstrap 5 utility classes (`d-flex align-items-center`, `row g-3`, `col-lg-4`, `mb-3`, `text-muted`, `shadow-sm`). Add component SCSS only for what utilities can't do.
@@ -64,5 +81,9 @@ this.nodesService.nodesControllerFindAll$Response({ page: 1, limit: 100, search 
 - [ ] `standalone: false`, registered in the feature NgModule
 - [ ] Uses generated SDK + shared contract parsing
 - [ ] `<card>` wrappers + Bootstrap utilities + `--bs-theme`
-- [ ] loading / error / empty states handled
-- [ ] subscriptions cleaned up
+- [ ] loading / error / empty states handled (loading ≠ "Tidak ada data")
+- [ ] subscriptions, timers, debounces cleaned up in `ngOnDestroy`
+- [ ] lists via `fetchAll` / scoped single request; counts from `meta.total`
+- [ ] no fabricated values (`grep -nE "Math\.random|[dD]ummy|Simulat"` clean)
+- [ ] status via `telemetry-freshness.ts`; node label = address
+- [ ] page has `data.guide` + its Panduan updated (skill `page-guide`)

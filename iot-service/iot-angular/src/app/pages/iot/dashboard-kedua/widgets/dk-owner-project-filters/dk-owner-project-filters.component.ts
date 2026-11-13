@@ -22,6 +22,8 @@ export class DkOwnerProjectFiltersComponent implements OnInit {
     projectOptions: SelectOption[] = [];
     loadingOwners = false;
     loadingProjects = false;
+    ownerError = '';
+    projectError = '';
 
     constructor(
         private ownersService: OwnersService,
@@ -48,8 +50,9 @@ export class DkOwnerProjectFiltersComponent implements OnInit {
         return response;
     }
 
-    private loadOwners(): void {
+    loadOwners(): void {
         this.loadingOwners = true;
+        this.ownerError = '';
         this.ownersService.ownersControllerFindAll({ page: 1, limit: 100 }).subscribe({
             next: (response: any) => {
                 const data = this.safeJsonParse(response);
@@ -65,18 +68,15 @@ export class DkOwnerProjectFiltersComponent implements OnInit {
             error: (err: any) => {
                 console.error('Error loading owners:', err);
                 this.loadingOwners = false;
-                // Fallback to dummy data
-                this.ownerOptions = [
-                    { label: 'PT Adhi Tirta', value: 'owner-adhi' },
-                    { label: 'PT Garuda Energi', value: 'owner-garuda' },
-                    { label: 'Pemda Kota Mataram', value: 'owner-mataram' },
-                ];
+                this.ownerOptions = [];
+                this.ownerError = 'Gagal memuat owner.';
             },
         });
     }
 
-    private loadProjects(idOwner?: string): void {
+    loadProjects(idOwner?: string): void {
         this.loadingProjects = true;
+        this.projectError = '';
 
         // Build params with optional owner filter
         const params: any = { page: 1, limit: 100 };
@@ -88,7 +88,6 @@ export class DkOwnerProjectFiltersComponent implements OnInit {
             next: (response: any) => {
                 const data = this.safeJsonParse(response);
                 // Map API response to select options
-                console.log('Projects response:', data.data);
                 if (data && data.data && Array.isArray(data.data)) {
                     this.projectOptions = data.data.map((project: any) => ({
                         label: project.name,
@@ -100,12 +99,8 @@ export class DkOwnerProjectFiltersComponent implements OnInit {
             error: (err: any) => {
                 console.error('Error loading projects:', err);
                 this.loadingProjects = false;
-                // Fallback to dummy data
-                this.projectOptions = [
-                    { label: 'Plant Alpha', value: 'proj-alpha' },
-                    { label: 'Pipeline South', value: 'proj-pipeline' },
-                    { label: 'Smart Factory', value: 'proj-factory' },
-                ];
+                this.projectOptions = [];
+                this.projectError = 'Gagal memuat project.';
             },
         });
     }

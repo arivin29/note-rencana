@@ -24,6 +24,7 @@ export class DkRecentActivitiesComponent implements OnChanges, OnInit {
 
   activities: ActivityItem[] = [];
   loading = false;
+  error = '';
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -52,8 +53,9 @@ export class DkRecentActivitiesComponent implements OnChanges, OnInit {
     return response;
   }
 
-  private loadData(): void {
+  loadData(): void {
     this.loading = true;
+    this.error = '';
 
     const params: any = {};
     if (this.ownerId) params.ownerId = this.ownerId; // ✅ Fixed: use ownerId
@@ -76,8 +78,7 @@ export class DkRecentActivitiesComponent implements OnChanges, OnInit {
       error: (err) => {
         console.error('Error loading activity log:', err);
         this.loading = false;
-        // Fallback to dummy data
-        this.buildDummyTimeline();
+        this.error = 'Gagal memuat data.';
       },
     });
   }
@@ -98,16 +99,6 @@ export class DkRecentActivitiesComponent implements OnChanges, OnInit {
       default:
         return 'sync';
     }
-  }
-
-  private buildDummyTimeline(): void {
-    const prefix = this.ownerId ? 'Tenant' : 'Global';
-    this.activities = [
-      { type: 'alert', title: `${prefix} alert resolved`, description: 'Pressure threshold normalized on Node A1', timestamp: '2 mins ago' },
-      { type: 'node', title: 'Node coming online', description: 'Gateway X3 reconnected', timestamp: '12 mins ago' },
-      { type: 'deployment', title: 'Firmware rollout scheduled', description: 'Release 1.14 for 38 devices', timestamp: '1 hour ago' },
-      { type: 'sync', title: 'Data delivery retried', description: 'Webhook – Smart Factory', timestamp: '3 hours ago' },
-    ];
   }
 
   badgeClass(type: ActivityType): string {

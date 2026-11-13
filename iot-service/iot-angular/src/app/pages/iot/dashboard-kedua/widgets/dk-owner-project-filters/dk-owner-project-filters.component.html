@@ -8,6 +8,8 @@
                     <option *ngFor="let owner of ownerOptions" [ngValue]="owner.value">{{ owner.label }}</option>
                 </select>
                 <small *ngIf="loadingOwners" class="text-muted">Loading owners...</small>
+                <small *ngIf="!loadingOwners && ownerError" class="text-muted"><i class="fa fa-exclamation-triangle fa-fw me-1"></i>{{ ownerError }}
+                    <button type="button" class="btn btn-sm btn-outline-default ms-1" (click)="loadOwners()">Coba lagi</button></small>
             </div>
             <div class="col-md-4">
                 <label class="form-label text-muted text-uppercase small">Project</label>
@@ -17,6 +19,8 @@
                     </option>
                 </select>
                 <small *ngIf="loadingProjects" class="text-muted">Loading projects...</small>
+                <small *ngIf="!loadingProjects && projectError" class="text-muted"><i class="fa fa-exclamation-triangle fa-fw me-1"></i>{{ projectError }}
+                    <button type="button" class="btn btn-sm btn-outline-default ms-1" (click)="loadProjects(ownerId)">Coba lagi</button></small>
             </div>
             <div class="col-md-4">
                 <label class="form-label text-muted text-uppercase small">Time Range</label>

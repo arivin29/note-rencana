@@ -184,16 +184,15 @@
                                     <div class="ms-3">
                                         <a (click)="navigateToNode(node.idNode)" style="cursor: pointer;"
                                             class="text-inverse text-opacity-75 text-decoration-none fw-semibold">
-                                            {{ node.name || node.code }}
+                                            {{ node.address || node.code }}
                                         </a>
-                                        <div class="text-muted small">{{ node.code }}</div>
+                                        <div class="text-muted small" *ngIf="node.address">{{ node.code }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
                                 <div class="fw-semibold" *ngIf="node.city">{{ node.city }}</div>
                                 <div class="fw-semibold" *ngIf="!node.city">-</div>
-                                <div class="text-muted small" *ngIf="node.address">{{ node.address | slice:0:30 }}{{ node.address && node.address.length > 30 ? '...' : '' }}</div>
                             </td>
                             <td *ngIf="!embedded">
                                 <div class="fw-semibold">{{ getOwnerName(node) }}</div>

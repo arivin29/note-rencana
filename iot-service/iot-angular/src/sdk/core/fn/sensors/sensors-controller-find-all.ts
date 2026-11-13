@@ -14,6 +14,7 @@ export interface SensorsControllerFindAll$Params {
   limit?: number;
   search?: string;
   idNode?: string;
+  idProject?: string;
   idSensorCatalog?: string;
 }
 
@@ -24,6 +25,7 @@ export function sensorsControllerFindAll(http: HttpClient, rootUrl: string, para
     rb.query('limit', params.limit, {});
     rb.query('search', params.search, {});
     rb.query('idNode', params.idNode, {});
+    rb.query('idProject', params.idProject, {});
     rb.query('idSensorCatalog', params.idSensorCatalog, {});
   }
 

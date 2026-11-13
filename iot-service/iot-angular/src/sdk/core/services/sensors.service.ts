@@ -14,6 +14,8 @@ import { StrictHttpResponse } from '../strict-http-response';
 import { SensorDetailedResponseDto } from '../models/sensor-detailed-response-dto';
 import { SensorResponseDto } from '../models/sensor-response-dto';
 import { sensorsControllerCreate } from '../fn/sensors/sensors-controller-create';
+import { sensorsControllerTrends } from '../fn/sensors/sensors-controller-trends';
+import { SensorsControllerTrends$Params } from '../fn/sensors/sensors-controller-trends';
 import { SensorsControllerCreate$Params } from '../fn/sensors/sensors-controller-create';
 import { sensorsControllerFindAll } from '../fn/sensors/sensors-controller-find-all';
 import { SensorsControllerFindAll$Params } from '../fn/sensors/sensors-controller-find-all';
@@ -73,6 +75,14 @@ export class SensorsService extends BaseService {
     return this.sensorsControllerFindAll$Response(params, context).pipe(
       map((r: StrictHttpResponse<void>): void => r.body)
     );
+  }
+
+  /** Path part for operation `sensorsControllerTrends()` (added by hand) */
+  static readonly SensorsControllerTrendsPath = '/api/sensors/trends';
+
+  /** Hourly avg/min/max per channel for a project — full response (body is JSON text). */
+  sensorsControllerTrends$Response(params: SensorsControllerTrends$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+    return sensorsControllerTrends(this.http, this.rootUrl, params, context);
   }
 
   /** Path part for operation `sensorsControllerCreate()` */

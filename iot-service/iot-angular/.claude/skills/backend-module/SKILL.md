@@ -128,3 +128,13 @@ Paths kebab-case, params `{id}`. Admin-only routes add `middleware.AdminOnly()`.
 - [ ] Controller embeds BaseController, uses Paginated/Success/Created/Error
 - [ ] Routes registered with `JwtAuth()` (and `AdminOnly()` where needed)
 - [ ] Path + JSON shape match the existing contract; `go build ./...` passes
+
+## Hard-won rules (from the 2026-11 workspace audit)
+- **Read the query param the SDK sends.** Check `src/sdk/core/fn/<x>/*-find-all.ts` `rb.query('<name>')` vs `ctx.Request().Query("<name>")`. Accept the legacy alias too: `Query("idProject", Query("projectId", ""))`. Every list filter a page needs must exist server-side (e.g. alert-events `idProject` via `p.id_project`) — don't let the UI filter a global top-10.
+- **List contract**: `{ data, meta:{total,page,limit,totalPages} }`; default limit is small and capped (100) — callers page through `meta.total`.
+- **Never swallow upstream failures into empty data.** If ClickHouse/an external call fails or is disabled, return a flag (e.g. `/sensors` → `"latestAvailable": false`) so the UI can say "source unavailable" instead of showing "No Data" for everything. Log the error too.
+- **No hardcoded hosts/credentials** (the retired public IP `109.105.194.174` lived in `sensor_service.go`). Read `facades.Config()` (`clickhouse.host/port/database/username/password`) and honour `clickhouse.enabled` — return immediately when disabled instead of waiting for a timeout.
+- **Adding a column to a shared row struct:** grep EVERY query that scans that struct (e.g. `sensor_channel_service.go` has `List`, `Overview`, `findChannelRow` with the same `n.code AS node_code` pattern) and add it where the endpoint you care about actually reads — make the replacement anchor unique and assert the count.
+- Additive response fields only; don't change existing keys' meaning (mobile + external API consume them).
+- After a backend change, rebuild AND restart the running binary before declaring it fixed (`./tmp/main.exe` is not hot-reloaded unless `air` runs), then verify with a real request.
+

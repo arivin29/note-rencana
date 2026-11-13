@@ -111,3 +111,17 @@ Use the `*Detailed` SDK endpoint when present (returns nested relations). A sing
 - Load main entity from route `paramMap`, then load child collections by parent id (read `body.data`).
 - Expandable child rows via `list-group-item-action` + an `expandedXId` toggle.
 - Handle loading / error states.
+
+## Hard-won rules (from the 2026-11 workspace audit)
+- **One id type per route.** Sensor detail = `node/:nodeId/sensor/<idSensor>?channel=<idSensorChannel>` (channel picker when >1 channel). Never let the same param carry a sensor id from one caller and a channel id from another (→ 404 probe + fallback).
+- **Load from `route.snapshot`, not `@Input`/fields, when a navigation changes path AND query.** `ngOnChanges` runs before `ngOnInit` and `queryParams` can emit before the child `@Input` updates → first load uses an empty/stale id (404 banner next to correct data, or previous sensor's channels).
+- **Cancel stale loads**: `switchMap` or a `loadSeq` counter + `takeUntil(destroy$)`; one load path (don't load in both `ngOnChanges` and `ngOnInit`).
+- **Links and post-delete navigation stay in the workspace** when embedded (`/iot/projects/:pid/...`), standalone uses the global route.
+- Title = node **address** (fallback code), code as subtitle. Unset thresholds show "Belum diatur"; readings are flagged only against thresholds that exist.
+- **Charts — Y axis follows the DATA.** Include a threshold in the axis range only when it is near the data (within ~10% of the data span); a far threshold (e.g. max 5 bar on 0–3.5 bar data) pinned into the axis makes every period look identical and squashes the curve. Don't draw a far threshold at the axis edge (operators read it as the real position) — show a note under the chart: "Di luar rentang tampilan: ambang maks 5 bar".
+- On zoom/scroll (`chart.events.zoomed` / `scrolled`) recompute the Y range from the visible points, inside `NgZone.run`. ApexCharts `updateOptions(opts, redraw, animate, updateSynced, overwriteInitialConfig)` — the 5th arg defaults to **true**, which makes reset-zoom restore the zoomed range; call `updateOptions(opts, false, false, false, false)`.
+- **Periods**: "Kemarin"/"Bulan lalu" end at the start of today/this month; custom "Sampai" is inclusive to 23:59:59 local; parse custom dates as LOCAL, not UTC.
+- Never stamp a missing/invalid timestamp as `new Date()` — drop the point.
+- Exports: Excel (two sheets: Ringkasan with identity + stats + chart image via `chart.dataURI()`, Data with frozen header + autoFilter), timezone-shifted dates. Disabled when there is no real data.
+- Reference impl: `src/app/pages/iot/nodes/nodes-detail/sensor-chanel-detail/`.
+

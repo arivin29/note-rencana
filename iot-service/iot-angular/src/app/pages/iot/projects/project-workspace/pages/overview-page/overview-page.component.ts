@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, LOCALE_ID, OnInit } from '@angular/core';
+import { formatNumber } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { fetchAll, parseBody, totalOf } from '../../../../../../shared/utils/fetch-all';
 import { ProjectMapNode } from '../../../projects-detail/project-map-widget/project-map-widget.component';
 import { ProjectsService } from '../../../../../../../sdk/core/services/projects.service';
 import { NodesService } from '../../../../../../../sdk/core/services/nodes.service';
 import { SensorsService } from '../../../../../../../sdk/core/services/sensors.service';
 import { AlertEventsService } from '../../../../../../../sdk/core/services/alert-events.service';
-import { SensorLogsService } from '../../../../../../../sdk/core/services/sensor-logs.service';
-import { EChartsOption } from 'echarts';
+import { FRESHNESS_BADGE, Freshness, getFreshness, timeAgo } from '../../../../../../shared/utils/telemetry-freshness';
 
 // Interface for sensor channel from backend
 export interface SensorChannelData {
@@ -62,26 +63,13 @@ interface ProjectDetail {
   locations: any[];
 }
 
-interface KeyMetric {
-  label: string;
-  metric: string;
-  value: string;
-  unit: string;
-  trend: 'up' | 'down' | 'stable';
-  trendValue: number;
-  chartOption: EChartsOption;
-  color: string;
-}
-
 interface DeviceHealth {
   nodeId: string;
   nodeName: string;
   nodeCode: string;
   address: string;
-  status: 'online' | 'warning' | 'offline';
+  status: 'online' | 'warning' | 'offline' | 'unknown';
   lastSeen: Date | null;
-  uptimePercent: number;
-  latencyMs: number;
 }
 
 @Component({
@@ -101,13 +89,15 @@ export class OverviewPageComponent implements OnInit {
   // Additional data from separate endpoints
   nodes: any[] = [];
   sensors: SensorWithLastValue[] = [];
-  alerts: any[] = [];
+  /** Alert counts scoped to THIS project (backend idProject filter). null = not loaded / failed. */
+  openAlertCount: number | null = null;
+  ackAlertCount: number | null = null;
+  alertsError = false;
   
   // Loading states for each section
   loadingNodes = false;
   loadingSensors = false;
   loadingAlerts = false;
-  loadingTrends = false;
   
   // Map nodes for widget
   mapNodes: ProjectMapNode[] = [];
@@ -118,15 +108,13 @@ export class OverviewPageComponent implements OnInit {
     onlineDevices: 0,
     offlineDevices: 0,
     warningDevices: 0,
-    avgUptime: 0,
-    avgLatency: 0
+    /** Most recent lastSeenAt across all nodes (real, not estimated). */
+    lastDataAt: null as Date | null
   };
 
   // Device Health Grid
   deviceHealthList: DeviceHealth[] = [];
 
-  // Key Metrics Cards with sparklines
-  keyMetrics: KeyMetric[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -134,7 +122,7 @@ export class OverviewPageComponent implements OnInit {
     private nodesService: NodesService,
     private sensorsService: SensorsService,
     private alertEventsService: AlertEventsService,
-    private sensorLogsService: SensorLogsService
+    @Inject(LOCALE_ID) private locale: string
   ) {}
 
   ngOnInit(): void {
@@ -207,17 +195,10 @@ export class OverviewPageComponent implements OnInit {
   loadNodes() {
     this.loadingNodes = true;
     
-    this.nodesService.nodesControllerFindAll$Response({ idProject: this.projectId })
+    fetchAll(p => this.nodesService.nodesControllerFindAll$Response({ idProject: this.projectId, ...p }))
       .subscribe({
-        next: (res) => {
-          let response: any = res.body;
-          
-          // Parse JSON string if needed
-          if (typeof response === 'string') {
-            try { response = JSON.parse(response); } catch (e) { /* ignore */ }
-          }
-          
-          this.nodes = response?.data || response || [];
+        next: (nodes) => {
+          this.nodes = nodes;
           
           // Ensure nodes is an array
           if (!Array.isArray(this.nodes)) {
@@ -232,7 +213,7 @@ export class OverviewPageComponent implements OnInit {
             .filter((n: any) => n.latitude && n.longitude)
             .map((n: any) => ({
               id: n.idNode || n.id,
-              name: n.name || n.nodeCode,
+              name: n.address || n.code || n.nodeCode,
               coords: [parseFloat(n.longitude), parseFloat(n.latitude)] as [number, number]
             }));
           
@@ -242,8 +223,6 @@ export class OverviewPageComponent implements OnInit {
           // Build device health list
           this.buildDeviceHealthList();
           
-          // Load telemetry trends for key metrics
-          this.loadKeyMetricsTrends();
           
           // Load sensors for all nodes
           this.loadSensors();
@@ -255,34 +234,25 @@ export class OverviewPageComponent implements OnInit {
       });
   }
 
+  /**
+   * Counts from REAL node lastSeenAt + interval (shared freshness rule).
+   * Uptime/latency are not shown: there is no backend metric for them yet, and we never estimate.
+   */
   computeSystemHealth() {
-    const now = new Date();
     let onlineCount = 0;
     let warningCount = 0;
     let offlineCount = 0;
-    let totalUptime = 0;
-    let totalLatency = 0;
-    let latencyCount = 0;
+    let lastDataAt: Date | null = null;
 
     this.nodes.forEach((node: any) => {
       const status = this.getNodeStatus(node);
       if (status === 'online') onlineCount++;
       else if (status === 'warning') warningCount++;
-      else offlineCount++;
+      else offlineCount++; // offline + never reported
 
-      // Estimate uptime based on connectivity status
-      if (node.connectivityStatus === 'online') {
-        totalUptime += 100;
-      } else if (status === 'warning') {
-        totalUptime += 70;
-      } else {
-        totalUptime += 0;
-      }
-
-      // Use telemetry interval as proxy for latency (simulated)
-      if (node.telemetryIntervalSec) {
-        totalLatency += Math.max(50, Math.min(500, node.telemetryIntervalSec * 2));
-        latencyCount++;
+      if (node.lastSeenAt) {
+        const t = new Date(node.lastSeenAt);
+        if (!isNaN(t.getTime()) && (!lastDataAt || t > lastDataAt)) lastDataAt = t;
       }
     });
 
@@ -291,176 +261,36 @@ export class OverviewPageComponent implements OnInit {
       onlineDevices: onlineCount,
       offlineDevices: offlineCount,
       warningDevices: warningCount,
-      avgUptime: this.nodes.length > 0 ? Math.round(totalUptime / this.nodes.length) : 0,
-      avgLatency: latencyCount > 0 ? Math.round(totalLatency / latencyCount) : 0
+      lastDataAt
     };
   }
 
+  /** All devices, problems first (offline → stale → never → online), then by address. */
   buildDeviceHealthList() {
-    this.deviceHealthList = this.nodes.map((node: any) => {
-      const status = this.getNodeStatus(node);
-      let uptimePercent = 0;
-      if (status === 'online') uptimePercent = 95 + Math.random() * 5;
-      else if (status === 'warning') uptimePercent = 60 + Math.random() * 30;
-      else uptimePercent = Math.random() * 30;
-
-      return {
-        nodeId: node.idNode || node.id,
-        nodeName: node.name || node.code,
-        nodeCode: node.code,
-        address: node.address || '',
-        status: status as 'online' | 'warning' | 'offline',
-        lastSeen: node.lastSeenAt ? new Date(node.lastSeenAt) : null,
-        uptimePercent: Math.round(uptimePercent),
-        latencyMs: Math.round(50 + Math.random() * 200)
-      };
-    }).slice(0, 8); // Show top 8 devices
+    const rank: Record<string, number> = { offline: 0, warning: 1, unknown: 2, online: 3 };
+    this.deviceHealthList = this.nodes.map((node: any) => ({
+      nodeId: node.idNode || node.id,
+      nodeName: node.address || node.code,
+      nodeCode: node.code,
+      address: node.address || '',
+      status: this.getNodeStatus(node),
+      lastSeen: node.lastSeenAt ? new Date(node.lastSeenAt) : null
+    })).sort((a, b) => (rank[a.status] - rank[b.status]) || a.nodeName.localeCompare(b.nodeName));
   }
 
-  loadKeyMetricsTrends() {
-    if (this.nodes.length === 0) {
-      this.keyMetrics = [];
-      return;
-    }
-
-    this.loadingTrends = true;
-
-    // Load trends from ALL nodes and aggregate by metric type
-    const trendRequests = this.nodes.map(node => 
-      this.sensorLogsService.sensorLogsControllerGetTelemetryTrends({
-        nodeId: node.idNode || node.id,
-        hours: 24
-      })
-    );
-
-    forkJoin(trendRequests).subscribe({
-      next: (responses: any[]) => {
-        // Aggregate channels by metric type across all nodes
-        const metricMap = new Map<string, {
-          label: string;
-          metric: string;
-          unit: string;
-          values: number[];
-          latestValues: number[];
-          nodeCount: number;
-        }>();
-
-        responses.forEach((res: any) => {
-          let response = res;
-          if (typeof response === 'string') {
-            try { response = JSON.parse(response); } catch (e) { /* ignore */ }
-          }
-          
-          const channels = response?.channels || [];
-          if (!Array.isArray(channels)) return;
-
-          channels.forEach((channel: any) => {
-            const metricKey = channel.sensorTypeLabel || channel.metricCode || 'Unknown';
-            const dataPoints = channel.dataPoints || [];
-            const values = dataPoints.map((dp: any) => parseFloat(dp.value) || 0);
-            const lastValue = channel.statistics?.lastValue || values[values.length - 1] || 0;
-
-            if (!metricMap.has(metricKey)) {
-              metricMap.set(metricKey, {
-                label: channel.sensorTypeLabel || channel.metricCode || 'Metric',
-                metric: channel.metricCode || 'value',
-                unit: channel.unit || '',
-                values: [],
-                latestValues: [],
-                nodeCount: 0
-              });
-            }
-
-            const existing = metricMap.get(metricKey)!;
-            existing.values.push(...values);
-            existing.latestValues.push(parseFloat(lastValue) || 0);
-            existing.nodeCount++;
-          });
-        });
-
-        // Build key metrics from aggregated data (top 4 metrics)
-        const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1'];
-        let colorIndex = 0;
-
-        this.keyMetrics = Array.from(metricMap.entries())
-          .slice(0, 4)
-          .map(([_, data]) => {
-            const avgLatest = data.latestValues.reduce((a, b) => a + b, 0) / data.latestValues.length || 0;
-            const avgOverall = data.values.reduce((a, b) => a + b, 0) / data.values.length || 0;
-            
-            const trendValue = avgLatest - avgOverall;
-            const trend: 'up' | 'down' | 'stable' = Math.abs(trendValue) < 0.5 ? 'stable' : (trendValue > 0 ? 'up' : 'down');
-
-            const color = colors[colorIndex++ % colors.length];
-
-            return {
-              label: `${data.label} (${data.nodeCount} node${data.nodeCount > 1 ? 's' : ''})`,
-              metric: data.metric,
-              value: avgLatest.toFixed(2),
-              unit: data.unit,
-              trend: trend,
-              trendValue: Math.abs(parseFloat(trendValue.toFixed(2))),
-              color: color,
-              chartOption: this.buildSparklineChart(data.values.slice(-30), color)
-            };
-          });
-
-        this.loadingTrends = false;
-      },
-      error: (err) => {
-        console.error('Error loading telemetry trends:', err);
-        this.loadingTrends = false;
-        this.keyMetrics = [];
-      }
-    });
-  }
-
-  buildSparklineChart(data: number[], color: string): EChartsOption {
-    return {
-      grid: { top: 5, right: 5, bottom: 5, left: 5 },
-      xAxis: { type: 'category', show: false, data: data.map((_, i) => i) },
-      yAxis: { type: 'value', show: false },
-      series: [{
-        type: 'line',
-        data: data,
-        smooth: true,
-        symbol: 'none',
-        lineStyle: { width: 2, color: color },
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: color + '40' },
-              { offset: 1, color: color + '05' }
-            ]
-          }
-        }
-      }]
-    };
+  get lastDataAgo(): string {
+    return timeAgo(this.systemHealth.lastDataAt);
   }
 
   loadSensors() {
     if (this.nodes.length === 0) return;
-    
     this.loadingSensors = true;
-    
-    const sensorRequests = this.nodes.map(node => 
-      this.sensorsService.sensorsControllerFindAll$Response({ idNode: node.idNode || node.id })
-    );
-    
-    if (sensorRequests.length > 0) {
-      forkJoin(sensorRequests).subscribe({
-        next: (responses) => {
-          this.sensors = responses.flatMap((res: any) => {
-            let data = res.body;
-            // Parse JSON string if needed
-            if (typeof data === 'string') {
-              try { data = JSON.parse(data); } catch (e) { /* ignore */ }
-            }
-            const items = data?.data || data || [];
-            return Array.isArray(items) ? items : [];
-          });
+
+    // Single project-scoped request (paged), not one per node.
+    fetchAll(p => this.sensorsService.sensorsControllerFindAll$Response({ idProject: this.projectId, ...p }))
+      .subscribe({
+        next: (sensors) => {
+          this.sensors = sensors;
           this.loadingSensors = false;
         },
         error: (err) => {
@@ -468,88 +298,71 @@ export class OverviewPageComponent implements OnInit {
           this.loadingSensors = false;
         }
       });
-    }
   }
 
   formatLastValueAt(timestamp: string | null): string {
-    if (!timestamp) return 'Never';
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    
-    if (seconds < 60) return `${seconds}s ago`;
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+    return timeAgo(timestamp);
   }
 
-  isDataStale(timestamp: string | null): boolean {
-    if (!timestamp) return true;
-    const diff = new Date().getTime() - new Date(timestamp).getTime();
-    const hours = diff / (1000 * 60 * 60);
-    return hours >= 1; // Stale if more than 1 hour
+  /** Shared freshness rule for a sensor row (interval comes from its node). */
+  sensorFreshness(sensor: any): Freshness {
+    return getFreshness(sensor.lastValueAt, sensor.node?.telemetryIntervalSec);
+  }
+
+  sensorBadgeClass(sensor: any): string {
+    return FRESHNESS_BADGE[this.sensorFreshness(sensor)];
+  }
+
+  /** Sensors not reporting on time (stale + offline + never). */
+  get sensorsNotFresh(): number {
+    return this.sensors.filter(s => this.sensorFreshness(s) !== 'fresh').length;
   }
 
   formatSensorValue(value: number | null, unit?: string): string {
     if (value === null || value === undefined) return '-';
     const numVal = typeof value === 'number' ? value : parseFloat(value);
     if (isNaN(numVal)) return '-';
-    return unit ? `${numVal.toFixed(2)} ${unit}` : numVal.toFixed(2);
+    const txt = formatNumber(numVal, this.locale, '1.2-2'); // locale-aware, not toFixed
+    return unit ? `${txt} ${unit}` : txt;
   }
 
+  /** Open + acknowledged alert counts for THIS project only (limit 1 → read meta.total). */
   loadAlerts() {
     this.loadingAlerts = true;
-    
-    // AlertEventsService doesn't have projectId filter, just get recent alerts
-    this.alertEventsService.alertEventsControllerFindAll$Response({ 
-      limit: 10
-    }).subscribe({
-      next: (res) => {
-        let response: any = res.body;
-        // Parse JSON string if needed
-        if (typeof response === 'string') {
-          try { response = JSON.parse(response); } catch (e) { /* ignore */ }
-        }
-        const items = response?.data || response || [];
-        this.alerts = Array.isArray(items) ? items : [];
+    this.alertsError = false;
+    const count = (status: string) =>
+      this.alertEventsService.alertEventsControllerFindAll$Response({ idProject: this.projectId, status, limit: 1 });
+
+    forkJoin({ open: count('open'), ack: count('acknowledged') }).subscribe({
+      next: ({ open, ack }) => {
+        this.openAlertCount = totalOf(parseBody(open.body)) ?? 0;
+        this.ackAlertCount = totalOf(parseBody(ack.body)) ?? 0;
         this.loadingAlerts = false;
       },
       error: (err) => {
         console.error('Error loading alerts:', err);
+        this.openAlertCount = null;
+        this.ackAlertCount = null;
+        this.alertsError = true;
         this.loadingAlerts = false;
       }
     });
   }
 
+  /** Shared freshness rule (shared/utils/telemetry-freshness.ts) mapped to this page's labels. */
   getNodeStatus(node: any): 'online' | 'warning' | 'offline' | 'unknown' {
-    if (!node.lastSeenAt) return 'unknown';
-    
-    const lastSeen = new Date(node.lastSeenAt);
-    const now = new Date();
-    const diffMinutes = (now.getTime() - lastSeen.getTime()) / (1000 * 60);
-    
-    if (diffMinutes < 5) return 'online';
-    if (diffMinutes < 30) return 'warning';
-    return 'offline';
+    switch (getFreshness(node.lastSeenAt, node.telemetryIntervalSec)) {
+      case 'fresh': return 'online';
+      case 'stale': return 'warning';
+      case 'offline': return 'offline';
+      default: return 'unknown';
+    }
   }
 
   // Getters for template
+  /** Derived from the most recent node lastSeenAt (the project endpoint has no lastSync field). */
   get lastSyncFormatted(): string {
-    if (!this.project?.lastSync) return 'Never';
-    const date = new Date(this.project.lastSync);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return date.toLocaleDateString();
+    return this.systemHealth.lastDataAt ? timeAgo(this.systemHealth.lastDataAt) : 'Belum ada data';
   }
 
   get deploymentDate(): string {

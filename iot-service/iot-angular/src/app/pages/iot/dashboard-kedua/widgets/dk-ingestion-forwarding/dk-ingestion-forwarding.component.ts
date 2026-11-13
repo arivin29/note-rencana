@@ -16,12 +16,9 @@ export class DkIngestionForwardingComponent implements OnChanges, OnInit {
   ingestionRate = 0;
   forwardingRate = 0;
   successRate = 0;
-  channelBreakdown = [
-    { label: 'Webhook', percent: 58 },
-    { label: 'MySQL', percent: 27 },
-    { label: 'PostgreSQL', percent: 15 },
-  ];
+  channelBreakdown: { label: string; percent: number }[] = [];
   loading = false;
+  error = '';
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -50,8 +47,9 @@ export class DkIngestionForwardingComponent implements OnChanges, OnInit {
     return response;
   }
 
-  private loadData(): void {
+  loadData(): void {
     this.loading = true;
+    this.error = '';
 
     const params: any = {};
     if (this.ownerId) params.ownerId = this.ownerId; // ✅ Fixed: use ownerId
@@ -66,21 +64,15 @@ export class DkIngestionForwardingComponent implements OnChanges, OnInit {
         this.forwardingRate = data.stats.totalForwarded;
         this.successRate = data.stats.successRate;
 
-        // Calculate channel breakdown percentages
+        // Channel breakdown from real counts only (no invented split)
         const totalForwarded = data.stats.forwarding.totalForwarded;
         if (totalForwarded > 0) {
-          const webhookPercent = (data.stats.forwarding.webhookCount / totalForwarded) * 100;
-          const dbPercent = (data.stats.forwarding.dbBatchCount / totalForwarded) * 100;
-
-          // Distribute database percentage between MySQL and PostgreSQL (approximate)
-          const mysqlPercent = dbPercent * 0.6; // 60% MySQL
-          const postgresPercent = dbPercent * 0.4; // 40% PostgreSQL
-
           this.channelBreakdown = [
-            { label: 'Webhook', percent: Math.round(webhookPercent) },
-            { label: 'MySQL', percent: Math.round(mysqlPercent) },
-            { label: 'PostgreSQL', percent: Math.round(postgresPercent) },
+            { label: 'Webhook', percent: Math.round((data.stats.forwarding.webhookCount / totalForwarded) * 100) },
+            { label: 'Database (batch)', percent: Math.round((data.stats.forwarding.dbBatchCount / totalForwarded) * 100) },
           ];
+        } else {
+          this.channelBreakdown = [];
         }
 
         this.loading = false;
@@ -88,16 +80,8 @@ export class DkIngestionForwardingComponent implements OnChanges, OnInit {
       error: (err) => {
         console.error('Error loading telemetry streams:', err);
         this.loading = false;
-        // Fallback to dummy data
-        this.recalculateDummy();
+        this.error = 'Gagal memuat data.';
       },
     });
-  }
-
-  private recalculateDummy(): void {
-    const factor = this.timeRange === '24h' ? 1 : this.timeRange === '7d' ? 5 : 10;
-    this.ingestionRate = 12_400 * factor;
-    this.forwardingRate = 11_950 * factor;
-    this.successRate = Math.min(100, 98 + factor);
   }
 }

@@ -27,6 +27,7 @@ export class DkPlatformStatisticsComponent implements OnChanges, OnInit {
 
   statistics: StatisticCard[] = [];
   loading = false;
+  error = '';
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -55,8 +56,10 @@ export class DkPlatformStatisticsComponent implements OnChanges, OnInit {
     return response;
   }
 
-  private loadStatistics(): void {
+  loadStatistics(): void {
     this.loading = true;
+    this.error = '';
+    this.statistics = [];
 
     const params: any = {};
     if (this.ownerId) params.ownerId = this.ownerId;
@@ -174,151 +177,9 @@ export class DkPlatformStatisticsComponent implements OnChanges, OnInit {
       error: (err) => {
         console.error('Error loading platform statistics:', err);
         this.loading = false;
-        // Fallback to dummy data on error
-        this.loadFallbackData();
+        this.error = 'Gagal memuat data.';
       },
     });
-  }
-
-  private loadFallbackData(): void {
-    // Apply multiplier based on filters
-    const multiplier = this.getMultiplier();
-
-    // Owners Statistics
-    const totalOwners = Math.round(48 * multiplier);
-    const activeOwners = Math.round(42 * multiplier);
-    const inactiveOwners = totalOwners - activeOwners;
-
-    // Projects Statistics
-    const totalProjects = Math.round(156 * multiplier);
-    const activeProjects = Math.round(142 * multiplier);
-    const inactiveProjects = totalProjects - activeProjects;
-
-    // Nodes Statistics
-    const totalNodes = Math.round(1240 * multiplier);
-    const onlineNodes = Math.round(1082 * multiplier);
-    const degradedNodes = Math.round(98 * multiplier);
-    const offlineNodes = totalNodes - onlineNodes - degradedNodes;
-
-    // Sensors Statistics
-    const totalSensors = Math.round(4850 * multiplier);
-    const activeSensors = Math.round(4520 * multiplier);
-    const calibrationDue = Math.round(240 * multiplier);
-    const faultySensors = totalSensors - activeSensors - calibrationDue;
-
-    this.statistics = [
-      {
-        title: 'Total Owners',
-        icon: 'bi-briefcase',
-        iconBg: 'bg-primary bg-opacity-25 text-primary',
-        total: totalOwners,
-        breakdown: [
-          {
-            label: 'Active',
-            value: activeOwners,
-            percentage: Math.round((activeOwners / totalOwners) * 100),
-            class: 'text-success',
-          },
-          {
-            label: 'Inactive',
-            value: inactiveOwners,
-            percentage: Math.round((inactiveOwners / totalOwners) * 100),
-            class: 'text-muted',
-          },
-        ],
-      },
-      {
-        title: 'Total Projects',
-        icon: 'bi-diagram-3',
-        iconBg: 'bg-info bg-opacity-25 text-info',
-        total: totalProjects,
-        breakdown: [
-          {
-            label: 'Active',
-            value: activeProjects,
-            percentage: Math.round((activeProjects / totalProjects) * 100),
-            class: 'text-success',
-          },
-          {
-            label: 'Inactive',
-            value: inactiveProjects,
-            percentage: Math.round((inactiveProjects / totalProjects) * 100),
-            class: 'text-muted',
-          },
-        ],
-      },
-      {
-        title: 'Total Nodes',
-        icon: 'bi-hdd-stack',
-        iconBg: 'bg-success bg-opacity-25 text-success',
-        total: totalNodes,
-        breakdown: [
-          {
-            label: 'Online',
-            value: onlineNodes,
-            percentage: Math.round((onlineNodes / totalNodes) * 100),
-            class: 'text-success',
-          },
-          {
-            label: 'Degraded',
-            value: degradedNodes,
-            percentage: Math.round((degradedNodes / totalNodes) * 100),
-            class: 'text-warning',
-          },
-          {
-            label: 'Offline',
-            value: offlineNodes,
-            percentage: Math.round((offlineNodes / totalNodes) * 100),
-            class: 'text-danger',
-          },
-        ],
-      },
-      {
-        title: 'Total Sensors',
-        icon: 'bi-cpu',
-        iconBg: 'bg-warning bg-opacity-25 text-warning',
-        total: totalSensors,
-        breakdown: [
-          {
-            label: 'Active',
-            value: activeSensors,
-            percentage: Math.round((activeSensors / totalSensors) * 100),
-            class: 'text-success',
-          },
-          {
-            label: 'Calib. Due',
-            value: calibrationDue,
-            percentage: Math.round((calibrationDue / totalSensors) * 100),
-            class: 'text-warning',
-          },
-          {
-            label: 'Faulty',
-            value: faultySensors,
-            percentage: Math.round((faultySensors / totalSensors) * 100),
-            class: 'text-danger',
-          },
-        ],
-      },
-    ];
-  }
-
-  private getMultiplier(): number {
-    // If specific owner/project selected, reduce numbers
-    if (this.ownerId || this.projectId) {
-      return 0.15; // Show ~15% of global stats
-    }
-
-    // Time range doesn't affect totals much (just slight variance)
-    switch (this.timeRange) {
-      case '24h':
-        return 1.0;
-      case '7d':
-        return 1.02;
-      case '30d':
-        return 1.05;
-      default:
-        return 1.0;
-    }
   }
 
   formatNumber(num: number): string {

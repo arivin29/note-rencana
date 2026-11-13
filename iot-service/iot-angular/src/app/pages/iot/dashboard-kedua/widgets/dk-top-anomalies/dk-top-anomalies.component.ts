@@ -23,6 +23,7 @@ export class DkTopAnomaliesComponent implements OnChanges, OnInit {
 
   anomalies: AnomalyItem[] = [];
   loading = false;
+  error = '';
 
   constructor(private dashboardService: DashboardService) {}
 
@@ -51,8 +52,9 @@ export class DkTopAnomaliesComponent implements OnChanges, OnInit {
     return response;
   }
 
-  private loadData(): void {
+  loadData(): void {
     this.loading = true;
+    this.error = '';
 
     const params: any = {};
     if (this.ownerId) params.ownerId = this.ownerId; // ✅ Fixed: use ownerId
@@ -98,19 +100,9 @@ export class DkTopAnomaliesComponent implements OnChanges, OnInit {
       error: (err) => {
         console.error('Error loading alert stream:', err);
         this.loading = false;
-        // Fallback to dummy data
-        this.generateDummyData();
+        this.error = 'Gagal memuat data.';
       },
     });
-  }
-
-  private generateDummyData(): void {
-    const factor = this.timeRange === '24h' ? 1 : this.timeRange === '7d' ? 2 : 3;
-    this.anomalies = [
-      { sensor: 'Pressure Sensor A1', location: 'Plant Alpha', severity: 'critical', occurrences: 5 * factor, lastTriggered: '10m ago' },
-      { sensor: 'Flow Meter S7', location: 'Pipeline South', severity: 'warning', occurrences: 3 * factor, lastTriggered: '1h ago' },
-      { sensor: 'Temperature Node K3', location: 'Smart Factory', severity: 'warning', occurrences: 2 * factor, lastTriggered: '3h ago' },
-    ];
   }
 
   private formatTimestamp(timestamp: string): string {

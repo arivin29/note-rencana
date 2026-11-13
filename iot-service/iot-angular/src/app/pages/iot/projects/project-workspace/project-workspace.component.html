@@ -236,6 +236,22 @@
   
   <!-- Main Content Area -->
   <main class="workspace-content">
+    <!-- Workspace toolbar: breadcrumb + page actions (Panduan is always the left-most action) -->
+    <div class="workspace-toolbar d-flex align-items-center gap-2 mb-3">
+      <ul class="breadcrumb mb-0 small text-truncate">
+        <li class="breadcrumb-item"><a [routerLink]="['/iot/projects']">Projects</a></li>
+        <li class="breadcrumb-item">
+          <a [routerLink]="['/iot/projects', projectId, 'overview']">{{ projectName || 'Project' }}</a>
+        </li>
+        <li class="breadcrumb-item" *ngFor="let crumb of breadcrumb; let last = last" [class.active]="last">
+          <a *ngIf="crumb.link && !last; else plainCrumb" [routerLink]="crumb.link">{{ crumb.label }}</a>
+          <ng-template #plainCrumb>{{ crumb.label }}</ng-template>
+        </li>
+      </ul>
+      <div class="ms-auto d-flex align-items-center gap-2 flex-shrink-0">
+        <page-guide-button></page-guide-button>
+      </div>
+    </div>
     <router-outlet></router-outlet>
   </main>
   
