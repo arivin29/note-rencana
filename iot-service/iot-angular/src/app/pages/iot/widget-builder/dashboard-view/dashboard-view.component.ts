@@ -265,7 +265,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
               config: {
                 ...w.config,
                 sqlQuery: w.sqlQuery,  // Also store in config as fallback
-                dataSource: w.dataSource || 'postgresql'  // Carry data source into config
+                // config.dataSource wins: older Expert widgets were saved with column default 'postgresql'
+                // while their config says 'clickhouse'.
+                dataSource: w.config?.dataSource ?? w.dataSource ?? 'postgresql'
               },
               position: {
                 x: w.positionX || 0,
