@@ -11,7 +11,27 @@
 }
 
 .table-widget .table {
-  color: #e5e5e5;
+  color: var(--bs-body-color);
+  /* columns size to their content; only .cell-flex gives way (see flexField in the .ts) */
+  table-layout: auto;
+  width: 100%;
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--bs-body-color);
+}
+
+/* Short columns (numbers, units, dates, badges): as wide as their content, never clipped */
+.table-widget .table .cell-fit {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* The first text column absorbs the shortage and ellipsizes (full text in title) */
+.table-widget .table .cell-flex {
+  width: 100%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Header styling */
@@ -19,10 +39,12 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #1a1a2e;
-  border-bottom: 2px solid #3a3a5a;
+  /* headerBackground option → --wb-table-head-bg; default follows the theme */
+  background: var(--wb-table-head-bg, var(--bs-tertiary-bg, #1a1a2e));
+  color: var(--bs-emphasis-color, inherit);
+  border-bottom: 2px solid var(--bs-border-color, #3a3a5a);
   /* em (not rem): padding grows with the table font (fontSize × TV scale) */
-  padding: 0.6em 0.9em;
+  padding: 0.6em 0.6em;
   font-weight: 600;
   white-space: nowrap;
   user-select: none;
@@ -34,7 +56,7 @@
 }
 
 .table-widget .table thead th.sortable:hover {
-  background: #2a2a4e;
+  background: var(--bs-secondary-bg, #2a2a4e);
 }
 
 .table-widget .table thead th .fa {
@@ -48,15 +70,15 @@
 
 /* Body styling */
 .table-widget .table tbody td {
-  padding: 0.45em 0.9em;
+  padding: 0.45em 0.6em;
   white-space: nowrap;
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--bs-border-color-translucent, rgba(255, 255, 255, 0.1));
   vertical-align: middle;
 }
 
 /* Striped rows override for dark theme */
 .table-widget .table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(var(--bs-emphasis-color-rgb, 255, 255, 255), 0.03);
 }
 
 .table-widget .table-striped tbody tr:nth-of-type(even) {
@@ -70,12 +92,12 @@
 
 /* Bordered table */
 .table-widget .table-bordered {
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.2));
 }
 
 .table-widget .table-bordered td,
 .table-widget .table-bordered th {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--bs-border-color-translucent, rgba(255, 255, 255, 0.1));
 }
 
 /* Compact mode */
@@ -119,7 +141,7 @@
 
 /* No data state */
 .table-widget .no-data {
-  color: #888;
+  color: var(--bs-secondary-color, #888);
 }
 
 .table-widget .no-data i {

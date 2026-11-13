@@ -17,7 +17,8 @@ import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-bu
 import { NodeDetailedResponseDto } from '../../../../../sdk/core/models/node-detailed-response-dto';
 import { SensorResponseDto } from '../../../../../sdk/core/models/sensor-response-dto';
 import { SensorChannelResponseDto } from '../../../../../sdk/core/models/sensor-channel-response-dto';
-import { formatHm } from '../utils/format-id';
+import { buildLineChartOptions } from '../utils/line-chart-options';
+import { readChartTheme } from '../utils/chart-theme';
 
 @Component({
   selector: 'app-widget-template-wizard',
@@ -683,18 +684,7 @@ export class WidgetTemplateWizardComponent implements OnInit, OnDestroy {
         }),
         
         // Chart-specific config
-        ...(this.selectedTemplate.categoryId === 'timeseries' && {
-          mapping: {
-            xField: 'time',
-            yField: 'value',
-            seriesField: 'metric'
-          },
-          display: {
-            showLegend: this.templateSettings['showLegend'] ?? true,
-            lineStyle: this.templateSettings['smoothCurve'] ? 'smooth' : 'straight',
-            fillOpacity: this.templateSettings['fillOpacity'] || 0
-          }
-        })
+        ...(this.selectedTemplate.categoryId === 'timeseries' && this.timeseriesChartConfig())
       };
       
       if (this.isEditMode && this.widgetId) {
@@ -949,59 +939,27 @@ export class WidgetTemplateWizardComponent implements OnInit, OnDestroy {
     };
   }
   
-  private buildTimeseriesOptions(data: any[]): any {
-    const xField = 'time';
-    const yField = 'value';
-    
+  /** Saved line-chart config of a "timeseries" template (also fed to the preview). */
+  private timeseriesChartConfig(): { mapping: any; display: any } {
     return {
-      tooltip: { 
-        trigger: 'axis',
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        textStyle: { color: '#fff' }
+      mapping: {
+        xField: 'time',
+        yField: 'value',
+        seriesField: 'metric'
       },
-      grid: { 
-        left: '3%', 
-        right: '4%', 
-        bottom: '3%', 
-        top: '10%', 
-        containLabel: true 
-      },
-      xAxis: {
-        type: 'category',
-        data: data.map(d => {
-          return formatHm(new Date(d[xField]));
-        }),
-        axisLabel: { color: 'rgba(255,255,255,0.6)' },
-        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
-      },
-      yAxis: { 
-        type: 'value',
-        axisLabel: { color: 'rgba(255,255,255,0.6)' },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
-      },
-      series: [{
-        type: 'line',
-        data: data.map(d => d[yField]),
-        smooth: true,
-        symbol: 'circle',
-        symbolSize: 6,
-        lineStyle: { width: 2, color: '#3b82f6' },
-        itemStyle: { color: '#3b82f6' },
-        areaStyle: { 
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(59,130,246,0.4)' },
-              { offset: 1, color: 'rgba(59,130,246,0.05)' }
-            ]
-          }
-        }
-      }]
+      display: {
+        showLegend: this.templateSettings['showLegend'] ?? true,
+        lineStyle: this.templateSettings['smoothCurve'] ? 'smooth' : 'straight',
+        fillOpacity: this.templateSettings['fillOpacity'] || 0
+      }
     };
   }
-  
+
+  /** Preview = the dashboard renderer's pure builder with the config saveWidget() stores. */
+  private buildTimeseriesOptions(data: any[]): any {
+    return buildLineChartOptions(this.timeseriesChartConfig(), data, { theme: readChartTheme() });
+  }
+
   private buildStatOptions(data: any[]): any {
     const value = data[0]?.value ?? 0;
     const unit = this.templateSettings['unit'] || '';

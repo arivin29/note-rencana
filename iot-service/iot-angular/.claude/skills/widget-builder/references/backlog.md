@@ -19,7 +19,7 @@ Prioritized. Delete an item when fixed. Paths: WB = `iot-angular/src/app/pages/i
 - PG columns alphabetized → table column order ≠ SELECT.
 
 ## P1 — visual / UX
-- Hardcoded Grafana-dark palette; widgets don't follow `data-bs-theme` (light mode broken); ECharts no theme.
+- Hardcoded Grafana-dark palette; widgets don't follow `data-bs-theme` (light mode broken); ECharts no theme. **Done for line chart + table** (`utils/chart-theme.ts`); bar/gauge/pie/stat-card, panel chrome and wizard CSS still hex.
 - CSS mixes hex & `var(--bs-*)` (dashboard-view 32 hex, wizard 22).
 - `alert()/confirm()` + console logging everywhere.
 - Icons mix Material names and FontAwesome.
@@ -27,7 +27,7 @@ Prioritized. Delete an item when fixed. Paths: WB = `iot-angular/src/app/pages/i
 
 ## P2 — structure
 - Wizard component 3693 ts + 1739 html; Grafana time-picker + calendar copy-pasted in `dashboard-view.component.ts:541-878` → extract a `TimeRangePickerComponent` (one exists, unused!).
-- Chart option builders duplicated 3× (renderer, expert preview, template preview).
+- Chart option builders duplicated 3× (renderer, expert preview, template preview) — **line chart done** (`utils/line-chart-options.ts`); bar, gauge (and template gauge/stat previews) remain. Bar chart still uses a category axis for timestamps (gaps compressed).
 - Templates defined twice (template.models.ts + wizard `sqlTemplates` :367); BE `widget_query_templates` + `GET /templates` unused.
 - `TimeRangePickerComponent`, `FieldMappingComponent` declared but unused. `toPromise()` usage.
 - Demo `components/widgets` + `WidgetsModule` imported by 4 modules without use; showcase route has no AuthGuard.

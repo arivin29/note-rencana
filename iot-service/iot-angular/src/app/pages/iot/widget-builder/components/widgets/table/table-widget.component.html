@@ -2,10 +2,13 @@
   <div class="table-responsive console-table">
     <table [ngClass]="getTableClasses()" 
            [style.font-size.px]="tableOptions.fontSize * fontScale">
-      <thead [style.background]="tableOptions.headerBackground">
+      <thead [style.--wb-table-head-bg]="tableOptions.headerBackground || null">
         <tr>
           <th *ngFor="let col of displayColumns"
               [style.text-align]="col.align"
+              [class.cell-flex]="col.field === flexField"
+              [class.cell-fit]="col.field !== flexField && (!col.width || col.width === 'auto')"
+              [attr.title]="col.field === flexField ? col.displayName : null"
               [style.width]="col.width !== 'auto' ? col.width : null"
               [class.sortable]="tableOptions.sortable"
               (click)="onHeaderClick(col)">
@@ -20,6 +23,9 @@
         <tr *ngFor="let row of displayData">
           <td *ngFor="let col of displayColumns"
               [style.text-align]="col.align"
+              [class.cell-flex]="col.field === flexField"
+              [class.cell-fit]="col.field !== flexField && (!col.width || col.width === 'auto')"
+              [attr.title]="col.field === flexField ? formatValue(row[col.field], col) : null"
               [ngStyle]="getCellStyle(row[col.field], col)">
             
             <!-- Status/Badge Column -->

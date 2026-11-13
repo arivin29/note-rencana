@@ -54,12 +54,18 @@ export class TableWidgetComponent implements OnInit, OnChanges {
     compact: false,
     sortable: true,
     fontSize: 12,
-    headerBackground: '#1a1a2e',
+    headerBackground: '',
     columns: []
   };
 
   displayColumns: ColumnConfig[] = [];
   displayData: any[] = [];
+  /**
+   * The one column that gives way when the table is wider than the panel: the first auto-width
+   * text column (e.g. "Kanal") ellipsizes; every other column sizes to its content and never clips
+   * a number or unit mid-word ("ba", "m/"). Null for single-column tables.
+   */
+  flexField: string | null = null;
   
   // Sorting state
   sortColumn: string | null = null;
@@ -94,7 +100,8 @@ export class TableWidgetComponent implements OnInit, OnChanges {
       compact: tableOpts.compact ?? false,
       sortable: tableOpts.sortable ?? true,
       fontSize: tableOpts.fontSize ?? 12,
-      headerBackground: tableOpts.headerBackground ?? '#1a1a2e',
+      // '#1a1a2e' was the old hard-coded dark default → treat as "follow the theme"
+      headerBackground: tableOpts.headerBackground && tableOpts.headerBackground !== '#1a1a2e' ? tableOpts.headerBackground : '',
       columns: tableOpts.columns || []
     };
 
@@ -109,6 +116,11 @@ export class TableWidgetComponent implements OnInit, OnChanges {
       // Auto-generate columns from data keys
       this.displayColumns = dataKeys.map(key => this.generateColumnConfig(key));
     }
+
+    const flex = this.displayColumns.length > 1
+      ? this.displayColumns.find(c => (c.type || 'text') === 'text' && (!c.width || c.width === 'auto'))
+      : undefined;
+    this.flexField = flex ? flex.field : null;
 
     // Copy data for sorting
     this.displayData = [...this.data];

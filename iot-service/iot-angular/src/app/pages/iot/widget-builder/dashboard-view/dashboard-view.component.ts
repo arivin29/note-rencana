@@ -712,9 +712,17 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     this.lastRefresh = new Date();
   }
 
+  /**
+   * Widgets may emit `loadResult` synchronously while THIS view is being checked (the scada widget
+   * short-circuits in the child's ngOnInit) → updating `lastSuccessAt` right away flips
+   * `lastSuccessAt && !dataDelayed` null → true after the check (NG0100 on every fullscreen/load).
+   * Apply the result in a microtask instead; it runs inside the zone, so a new CD pass picks it up.
+   */
   onWidgetLoad(widgetId: string, result: { ok: boolean; at: Date }): void {
-    this.widgetStatus.set(widgetId, result.ok);
-    if (result.ok) this.lastSuccessAt = result.at;
+    Promise.resolve().then(() => {
+      this.widgetStatus.set(widgetId, result.ok);
+      if (result.ok && (!this.lastSuccessAt || result.at >= this.lastSuccessAt)) this.lastSuccessAt = result.at;
+    });
   }
 
   /** Widgets whose latest load failed (each also shows its own badge). */
