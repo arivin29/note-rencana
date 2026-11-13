@@ -27,6 +27,8 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   @Input() dashboardVariables: Record<string, string> = {};
   /** Changes on every dashboard-level refresh → reload even when from/to are unchanged */
   @Input() refreshNonce = 0;
+  /** TV mode text scale (box width / 1920) for chart renderers */
+  @Input() fontScale = 1;
   /** Hide destructive/edit actions (embedded Monitor, fullscreen) */
   @Input() readOnly = false;
   /** Enable debug mode to show container dimensions */

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, HostBinding } from '@angular/core';
 import { Widget } from '../../../models/widget.models';
 
 interface StatCardOptions {
@@ -33,6 +33,15 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
   @Input() widget!: Widget;
   @Input() data: any[] = [];
   @Input() columns: string[] = [];
+  /** TV mode text scale (box width / 1920). */
+  @Input() fontScale = 1;
+
+  @HostBinding('class.scaled') get scaled(): boolean {
+    return this.fontScale !== 1;
+  }
+  @HostBinding('style.font-size.px') get hostFontPx(): number | null {
+    return this.fontScale !== 1 ? 16 * this.fontScale : null;
+  }
 
   displayData: {
     value: number;

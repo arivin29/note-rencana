@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, AfterViewInit, NgZone } from '@angular/core';
+import { scaleChartFonts } from '../../../utils/chart-scale';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
 import { Widget } from '../../../models/widget.models';
@@ -23,7 +24,15 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
   @Output() chartInit = new EventEmitter<any>();
 
   echartsInstance: any = null;
-  chartOptions: any = null;
+  /** TV mode text scale (box width / 1920); applied to every option build via the setter below. */
+  @Input() fontScale = 1;
+  private _chartOptions: any = null;
+  set chartOptions(value: any) {
+    this._chartOptions = value ? scaleChartFonts(value, this.fontScale) : value;
+  }
+  get chartOptions(): any {
+    return this._chartOptions;
+  }
 
   constructor(
     private elementRef: ElementRef,
@@ -40,6 +49,9 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges, After
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['fontScale'] && !changes['fontScale'].firstChange) {
+      this.buildChartOptions();
+    }
     if (changes['data'] && !changes['data'].firstChange) {
       this.buildChartOptions();
     }

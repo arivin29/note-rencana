@@ -65,6 +65,7 @@
         <app-line-chart-widget 
           *ngIf="widget.type === 'line-chart' || widget.type === 'multi-line-chart'"
           [widget]="widget"
+          [fontScale]="fontScale"
           [data]="chartData"
           [columns]="columns"
           [containerWidth]="containerWidth"
@@ -75,6 +76,7 @@
         <app-bar-chart-widget 
           *ngIf="widget.type === 'bar-chart'"
           [widget]="widget"
+          [fontScale]="fontScale"
           [data]="chartData"
           [columns]="columns"
           [containerWidth]="containerWidth"
@@ -85,6 +87,7 @@
         <app-gauge-widget 
           *ngIf="widget.type === 'gauge'"
           [widget]="widget"
+          [fontScale]="fontScale"
           [data]="chartData"
           [columns]="columns"
           [containerWidth]="containerWidth"
@@ -95,6 +98,7 @@
         <app-pie-chart-widget 
           *ngIf="widget.type === 'pie-chart'"
           [widget]="widget"
+          [fontScale]="fontScale"
           [data]="chartData"
           [columns]="columns">
         </app-pie-chart-widget>
@@ -103,6 +107,7 @@
         <app-stat-card-widget 
           *ngIf="widget.type === 'stat-card'"
           [widget]="widget"
+          [fontScale]="fontScale"
           [data]="chartData"
           [columns]="columns">
         </app-stat-card-widget>
@@ -111,6 +116,7 @@
         <app-table-widget 
           *ngIf="widget.type === 'table'"
           [widget]="widget"
+          [fontScale]="fontScale"
           [data]="chartData"
           [columns]="columns">
         </app-table-widget>

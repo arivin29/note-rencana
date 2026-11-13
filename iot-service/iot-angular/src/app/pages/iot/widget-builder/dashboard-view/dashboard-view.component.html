@@ -317,20 +317,35 @@
         </div>
     </div>
 
-    <!-- Gridster Dashboard -->
-
-    <gridster [options]="gridsterOptions" class="dashboard-gridster">
-        <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
-            <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
-                [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
-                [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="widgetsReadOnly"
-                (loadResult)="onWidgetLoad($event)"
-                (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
-                (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
-                (duplicate)="duplicateWidget(item['id'])">
-            </app-widget-container>
-        </gridster-item>
-    </gridster> 
+    <!-- Gridster Dashboard (TV mode: fixed 16:9 stage, no scroll) -->
+    <div #gridArea class="grid-area" [class.tv-area]="tvMode" [class.tv-area-edit]="tvMode && editMode">
+        <div *ngIf="tvMode && editMode && overflowWidgetIds.size > 0" class="tv-overflow-banner">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            {{ overflowWidgetIds.size }} widget berada di luar layar TV (di bawah garis kuning) — geser ke atas atau perkecil.
+        </div>
+        <div class="grid-stage" [class.tv-stage]="tvMode"
+            [style.width.px]="tvMode ? stageBox.width : null"
+            [style.height.px]="tvMode ? (editMode ? null : stageBox.height) : null"
+            [style.--wb-scale]="tvMode ? wbScale : null">
+            <gridster [options]="gridsterOptions" class="dashboard-gridster">
+                <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item"
+                    [class.tv-overflow]="editMode && overflowWidgetIds.has(item['id'])">
+                    <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
+                        [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
+                        [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="widgetsReadOnly"
+                        [fontScale]="widgetFontScale"
+                        (loadResult)="onWidgetLoad($event)"
+                        (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
+                        (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
+                        (duplicate)="duplicateWidget(item['id'])">
+                    </app-widget-container>
+                </gridster-item>
+            </gridster>
+            <div *ngIf="tvMode && editMode" class="tv-screen-edge" [style.top.px]="screenEdgeTop">
+                <span>Batas layar TV ({{ screen.rows }} baris)</span>
+            </div>
+        </div>
+    </div> 
 
 </div>
 

@@ -154,3 +154,18 @@
   padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* TV mode (fontScale != 1): host font-size = 16px × scale, so rem sizes become em-relative. */
+:host(.scaled) .stat-value-compact { font-size: 1.5em; }
+:host(.scaled) .stat-unit { font-size: 0.875em; }
+:host(.scaled) .stat-prefix { font-size: 1em; }
+:host(.scaled) .stat-suffix { font-size: 0.75em; }
+:host(.scaled) .stat-trend { font-size: 0.875em; }
+:host(.scaled) .stat-trend-inline { font-size: 0.75em; }
+:host(.scaled) .stat-icon { font-size: 2.5em; }
+:host(.scaled) .stat-icon-small { font-size: 1em; }
+:host(.scaled) .stat-card-widget { padding: 0.75em; }
+:host(.scaled) .fs-4 { font-size: 1.5em !important; }
+:host(.scaled) .fs-2 { font-size: 2em !important; }
+:host(.scaled) .fs-1 { font-size: 2.5em !important; }
+:host(.scaled) .display-4 { font-size: 3.5em !important; }

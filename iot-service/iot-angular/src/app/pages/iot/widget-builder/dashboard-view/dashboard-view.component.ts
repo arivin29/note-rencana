@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges, NgZone, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem, DisplayGrid, GridType, CompactType } from 'angular-gridster2';
 import { 
@@ -11,6 +11,7 @@ import { WidgetBuilderService } from 'src/sdk/core/services';
 import { AppSettings } from '../../../../service/app-settings.service';
 import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset } from '../utils/dashboard-time';
 import { LayoutStateService } from '../../../../service/layout-state.service';
+import { ScreenConfig, readScreenConfig, fitBox, rowHeight, fontScale, overflowIds } from '../utils/screen-fit';
 
 interface DashboardResponse {
   idDashboard?: string;
@@ -96,6 +97,37 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   loading = true;
   editMode = false;
   fullscreenWidget: string | null = null;
+  // ── Layar target (TV) ──────────────────────────────────────
+  screen: ScreenConfig = readScreenConfig(undefined);
+  /** 16:9 (or custom) box fitted into the available area. */
+  stageBox = { width: 0, height: 0 };
+  /** Text scale = stage width / design width (1 at 1920 px). */
+  wbScale = 1;
+  /** Widgets extending below the last screen row (highlighted in edit mode). */
+  overflowWidgetIds = new Set<string>();
+  private areaEl: HTMLElement | null = null;
+  private areaObserver: ResizeObserver | null = null;
+
+  @ViewChild('gridArea') set gridAreaRef(ref: ElementRef<HTMLElement> | undefined) {
+    this.observeArea(ref?.nativeElement ?? null);
+  }
+
+  get tvMode(): boolean {
+    return this.screen.preset !== 'auto';
+  }
+
+  /** Text scale passed to widgets (1 outside TV mode). */
+  get widgetFontScale(): number {
+    return this.tvMode ? this.wbScale : 1;
+  }
+
+  /** Pixel offset of the bottom edge of the last screen row (edit-mode guide line). */
+  get screenEdgeTop(): number {
+    const m = this.gridsterOptions.margin ?? 4;
+    const rh = (this.gridsterOptions.fixedRowHeight as number) || 0;
+    return m + this.screen.rows * (rh + m);
+  }
+
   /** Clock shown in the immersive header. */
   now = new Date();
   /** Exit button / header controls in immersive mode — visible briefly after mouse movement. */
@@ -184,6 +216,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     // Leave fullscreen (restores app chrome), then restore sidebar state
     this.layoutState.exit();
     this.setActivityListener(false);
+    this.areaObserver?.disconnect();
     clearTimeout(this.immersiveControlsTimer);
     if (!this.embeddedMode) {
       this.appSettings.appSidebarMinified = this.prevSidebarMinified;
@@ -254,6 +287,10 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
         // Dashboard defaults (time range + auto refresh). Toolbar changes are session-only.
         this.applyDashboardDefaults(data.timeRange, data.refreshInterval);
 
+        // Target screen (TV) — layout_config.screen
+        this.screen = readScreenConfig(data.layoutConfig);
+        this.measureStage();
+
         // Extract dashboard-level variables from layoutConfig
         if (data.layoutConfig?.['variables']) {
           this.dashboardVariables = data.layoutConfig['variables'];
@@ -303,6 +340,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
           });
         }
         
+        this.updateOverflow();
+        this.applyGridMode();
         this.loading = false;
       },
       error: (err: any) => {
@@ -322,6 +361,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
       this.gridsterOptions.resizable.enabled = this.editMode;
     }
     this.gridsterOptions.displayGrid = this.editMode ? DisplayGrid.Always : DisplayGrid.None;
+    this.applyGridMode(false);
     
     // Trigger gridster update
     if (this.gridsterOptions.api?.optionsChanged) {
@@ -608,8 +648,74 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   // Gridster callbacks
-  onItemChange(item: GridsterItem): void {
-    console.log('Item changed:', item);
+  onItemChange(_item: GridsterItem): void {
+    this.updateOverflow();
+  }
+
+  // ── Layar target (TV) ──────────────────────────────────────
+
+  private observeArea(el: HTMLElement | null): void {
+    if (el === this.areaEl) return;
+    this.areaObserver?.disconnect();
+    this.areaObserver = null;
+    this.areaEl = el;
+    if (el) {
+      this.zone.runOutsideAngular(() => {
+        this.areaObserver = new ResizeObserver(() => this.zone.run(() => this.measureStage()));
+        this.areaObserver.observe(el);
+      });
+      this.measureStage();
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.tvMode) this.measureStage();
+  }
+
+  /** Fit the target-screen box into the space left below the area's top edge. */
+  measureStage(): void {
+    if (!this.tvMode || !this.areaEl) return;
+    const rect = this.areaEl.getBoundingClientRect();
+    const availW = this.areaEl.clientWidth;
+    const availH = Math.max(0, window.innerHeight - rect.top - 4);
+    const box = fitBox(availW, availH, this.screen.width, this.screen.height);
+    if (box.width === this.stageBox.width && box.height === this.stageBox.height) return;
+    this.stageBox = box;
+    this.wbScale = fontScale(box.width, this.screen.width);
+    this.applyGridMode();
+  }
+
+  /** Switch gridster between normal scrolling grid and fixed-row TV grid. */
+  applyGridMode(notify = true): void {
+    const o = this.gridsterOptions;
+    if (this.tvMode) {
+      const bottomMost = this.widgets.reduce((max, w) => Math.max(max, (w.y || 0) + (w.rows || 0)), 0);
+      o.gridType = GridType.VerticalFixed;
+      o.fixedRowHeight = rowHeight(this.stageBox.height || 600, this.screen.rows, o.margin ?? 4);
+      o.minRows = this.screen.rows;
+      o.maxRows = this.editMode ? this.screen.rows + 12 : Math.max(this.screen.rows, bottomMost);
+      o.maxItemRows = Math.max(10, this.screen.rows);
+    } else {
+      o.gridType = GridType.ScrollVertical;
+      o.fixedRowHeight = undefined;
+      o.minRows = 1;
+      o.maxRows = 100;
+      o.maxItemRows = 10;
+    }
+    if (notify) o.api?.optionsChanged?.();
+  }
+
+  private updateOverflow(): void {
+    if (!this.tvMode) {
+      this.overflowWidgetIds = new Set();
+      return;
+    }
+    const ids = overflowIds(
+      this.widgets.map(w => ({ id: w['id'] as string, y: w.y || 0, rows: w.rows || 0 })),
+      this.screen.rows,
+    );
+    this.overflowWidgetIds = new Set(ids);
   }
 
   onItemResize(item: GridsterItem): void {

@@ -1,7 +1,7 @@
 <div class="table-widget" [class.compact]="tableOptions.compact">
   <div class="table-responsive console-table">
     <table [ngClass]="getTableClasses()" 
-           [style.font-size.px]="tableOptions.fontSize">
+           [style.font-size.px]="tableOptions.fontSize * fontScale">
       <thead [style.background]="tableOptions.headerBackground">
         <tr>
           <th *ngFor="let col of displayColumns"

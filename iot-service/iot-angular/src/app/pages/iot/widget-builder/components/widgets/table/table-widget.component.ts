@@ -36,6 +36,8 @@ export class TableWidgetComponent implements OnInit, OnChanges {
   @Input() widget!: Widget;
   @Input() data: any[] = [];
   @Input() columns: string[] = [];
+  /** TV mode text scale (box width / 1920). */
+  @Input() fontScale = 1;
 
   tableOptions: TableOptions = {
     striped: true,
