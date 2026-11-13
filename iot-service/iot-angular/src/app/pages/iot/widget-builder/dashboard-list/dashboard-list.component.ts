@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Dashboard } from '../models/widget.models';
 import { DashboardModalComponent } from '../components/dashboard-modal/dashboard-modal.component';
 import { WidgetBuilderService } from 'src/sdk/core/services';
+import { buildDashboardSettingsBody, DashboardSettingsResult, screenBadge } from '../utils/dashboard-settings';
 
 interface DashboardResponse {
   idDashboard: string;  // Backend uses idDashboard
@@ -17,6 +18,9 @@ interface DashboardResponse {
   owner?: { name: string };
   project?: { name: string };
   widgetCount?: number;
+  layoutConfig?: Record<string, any>;
+  timeRange?: string;
+  refreshInterval?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,6 +69,9 @@ export class DashboardListComponent implements OnInit {
           projectId: d.idProject,
           projectName: d.projectName || d.project?.name || undefined,
           widgetCount: d.widgetCount || 0,
+          layoutConfig: d.layoutConfig || {},
+          timeRange: d.timeRange,
+          refreshInterval: d.refreshInterval,
           createdAt: new Date(d.createdAt),
           updatedAt: new Date(d.updatedAt)
         }));
@@ -87,14 +94,18 @@ export class DashboardListComponent implements OnInit {
       data: { mode: 'create' }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result: DashboardSettingsResult | undefined) => {
       if (result) {
+        const settings = buildDashboardSettingsBody({}, result);
         this.widgetBuilderService.widgetBuilderControllerCreateDashboard({
           body: {
-            name: result.name,
-            description: result.description || '',
-            idProject: result.idProject || undefined
-          }
+            name: settings.name,
+            description: settings.description || '',
+            idProject: settings.idProject || undefined,
+            timeRange: settings.timeRange,
+            refreshInterval: settings.refreshInterval,
+            layoutConfig: settings.layoutConfig
+          } as any
         }).subscribe({
           next: () => {
             this.loadDashboards(); // Reload list
@@ -115,15 +126,12 @@ export class DashboardListComponent implements OnInit {
       data: { mode: 'edit', dashboard }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result: DashboardSettingsResult | undefined) => {
       if (result) {
         this.widgetBuilderService.widgetBuilderControllerUpdateDashboard({
           id: dashboard.id,
-          body: {
-            name: result.name,
-            description: result.description,
-            idProject: result.idProject
-          }
+          // layoutConfig is merged with the current one (keeps `variables`)
+          body: buildDashboardSettingsBody(dashboard.layoutConfig, result) as any
         }).subscribe({
           next: () => {
             this.loadDashboards(); // Reload list
@@ -169,6 +177,10 @@ export class DashboardListComponent implements OnInit {
         console.error('Failed to set as default:', err);
       }
     });
+  }
+
+  screenBadge(dashboard: Dashboard): string | null {
+    return screenBadge(dashboard.layoutConfig);
   }
 
   getWidgetCount(dashboard: Dashboard): number {

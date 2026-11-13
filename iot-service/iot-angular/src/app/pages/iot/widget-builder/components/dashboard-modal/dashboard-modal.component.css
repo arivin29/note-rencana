@@ -5,3 +5,9 @@
 mat-dialog-content {
   min-width: 400px;
 }
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+}

@@ -31,6 +31,48 @@
       </mat-select>
       <mat-hint>Associate this dashboard with a specific project</mat-hint>
     </mat-form-field>
+
+    <h6 class="settings-section-title mt-4 mb-2">Tampilan &amp; data</h6>
+
+    <mat-form-field appearance="outline" class="w-100 mb-2">
+      <mat-label>Layar target</mat-label>
+      <mat-select formControlName="screenPreset">
+        <mat-option *ngFor="let p of screenPresets" [value]="p.value">{{ p.label }}</mat-option>
+      </mat-select>
+      <mat-hint>{{ screenHint }}</mat-hint>
+    </mat-form-field>
+
+    <div class="d-flex gap-2" *ngIf="screenPreset === 'custom'">
+      <mat-form-field appearance="outline" class="flex-fill">
+        <mat-label>Lebar (px)</mat-label>
+        <input matInput type="number" formControlName="screenWidth" min="320">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="flex-fill">
+        <mat-label>Tinggi (px)</mat-label>
+        <input matInput type="number" formControlName="screenHeight" min="240">
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-100 mb-2" *ngIf="screenPreset !== 'auto'">
+      <mat-label>Jumlah baris layar</mat-label>
+      <input matInput type="number" formControlName="screenRows" min="4" max="48">
+      <mat-hint>Tinggi layar dibagi rata ke baris ini (default 12). Widget di bawah baris terakhir tidak tampil.</mat-hint>
+    </mat-form-field>
+
+    <div class="d-flex gap-2 mt-2">
+      <mat-form-field appearance="outline" class="flex-fill">
+        <mat-label>Rentang waktu default</mat-label>
+        <mat-select formControlName="timeRange">
+          <mat-option *ngFor="let t of timePresets" [value]="t.value">{{ t.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="flex-fill">
+        <mat-label>Auto-refresh default</mat-label>
+        <mat-select formControlName="refreshInterval">
+          <mat-option *ngFor="let r of refreshIntervals" [value]="r.value">{{ r.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
   </form>
 </mat-dialog-content>
 

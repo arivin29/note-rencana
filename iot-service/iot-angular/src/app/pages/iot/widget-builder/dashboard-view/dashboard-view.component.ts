@@ -11,6 +11,9 @@ import { WidgetBuilderService } from 'src/sdk/core/services';
 import { AppSettings } from '../../../../service/app-settings.service';
 import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset } from '../utils/dashboard-time';
 import { LayoutStateService } from '../../../../service/layout-state.service';
+import { MatDialog } from '@angular/material/dialog';
+import { DashboardModalComponent } from '../components/dashboard-modal/dashboard-modal.component';
+import { buildDashboardSettingsBody, DashboardSettingsResult } from '../utils/dashboard-settings';
 import { ScreenConfig, readScreenConfig, fitBox, rowHeight, fontScale, overflowIds } from '../utils/screen-fit';
 
 interface DashboardResponse {
@@ -21,6 +24,8 @@ interface DashboardResponse {
   isDefault: boolean;
   idOwner?: string;
   ownerId?: string;
+  idProject?: string | null;
+  projectName?: string;
   layoutConfig?: Record<string, any>;
   timeRange?: string;
   refreshInterval?: number;
@@ -163,7 +168,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     private widgetBuilderService: WidgetBuilderService,
     private appSettings: AppSettings,
     private layoutState: LayoutStateService,
-    private zone: NgZone
+    private zone: NgZone,
+    private dialog: MatDialog
   ) {}
 
   /** "Layar Penuh" — shared immersive state (hides app + workspace chrome). */
@@ -277,6 +283,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
           description: data.description,
           isDefault: data.isDefault,
           ownerName: data.owner?.name || 'Unknown',
+          projectId: data.idProject || undefined,
+          projectName: data.projectName,
           createdAt: new Date(data.createdAt),
           updatedAt: new Date(data.updatedAt),
           timeRange: data.timeRange,
@@ -348,6 +356,29 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
         console.error('Failed to load dashboard:', err);
         this.loading = false;
       }
+    });
+  }
+
+  /** "Pengaturan Dashboard" — name, project, target screen (TV), default range & refresh. */
+  openSettings(): void {
+    if (!this.dashboard) return;
+    const current = this.dashboard;
+    this.dialog.open(DashboardModalComponent, {
+      width: '520px',
+      data: { mode: 'edit', dashboard: current }
+    }).afterClosed().subscribe((result: DashboardSettingsResult | undefined) => {
+      if (!result) return;
+      this.widgetBuilderService.widgetBuilderControllerUpdateDashboard({
+        id: current.id,
+        // layoutConfig merged with the current one (keeps `variables`)
+        body: buildDashboardSettingsBody(current.layoutConfig, result) as any
+      }).subscribe({
+        next: () => this.loadDashboard(),
+        error: (err: any) => {
+          console.error('Failed to save dashboard settings:', err);
+          alert('Gagal menyimpan pengaturan dashboard: ' + (err.error?.message || err.message));
+        }
+      });
     });
   }
 

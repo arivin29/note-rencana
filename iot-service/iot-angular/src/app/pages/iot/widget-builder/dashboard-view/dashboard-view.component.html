@@ -247,6 +247,9 @@
                     <a *ngIf="embeddedMode && dashboard" class="dropdown-item" [routerLink]="['/iot/widget-builder', dashboard.id]">
                         <i class="bi bi-pencil-square me-2"></i>Buka di Widget Builder
                     </a>
+                    <a class="dropdown-item" href="javascript:;" (click)="openSettings()">
+                        <i class="bi bi-sliders me-2"></i>Pengaturan Dashboard
+                    </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="javascript:;" (click)="toggleKioskMode()">
                         <i class="bi bi-arrows-fullscreen me-2"></i>
