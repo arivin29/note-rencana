@@ -750,7 +750,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       name: st.name,
       type: 'sensor-type' as const,
       code: 'sensor-channels' as const,
-      visible: index === 0, // Only first sensor type visible by default
+      visible: true, // All sensor types visible on first open
       loading: false,
       style: webgisSensorTypeLayerStyle(index),
       sensorType: st
