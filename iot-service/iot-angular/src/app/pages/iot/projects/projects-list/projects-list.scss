@@ -1,0 +1,13 @@
+:host {
+    // Kartu di dalam satu baris grid harus setinggi baris, bukan setinggi isinya,
+    // supaya tombol aksi di bawah rata antar kartu.
+    .card.h-100 {
+        height: 100%;
+    }
+
+    // text-truncate tidak bekerja di dalam flex item tanpa min-width:0 —
+    // nama project panjang akan memaksa kartu melebar, bukan terpotong.
+    .min-width-0 {
+        min-width: 0;
+    }
+}

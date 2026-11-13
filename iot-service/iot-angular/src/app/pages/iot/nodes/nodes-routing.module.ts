@@ -11,7 +11,7 @@ const routes: Routes = [
   { path: '', component: NodesListPage, data: { title: 'IoT Nodes' } },
   { path: 'new', component: NodesAddPage, data: { title: 'Deploy Node' } },
   { path: ':nodeId/edit', component: NodesEditPage, data: { title: 'Edit Node' } },
-  { path: ':nodeId/sensor/:sensorId', component: SensorChanelDetail, data: { title: 'Sensor Detail' } },
+  { path: ':nodeId/sensor/:sensorId', component: SensorChanelDetail, data: { title: 'Sensor Detail', guide: 'sensor-channel-detail' } },
   { path: ':nodeId', component: NodesDetailPage, data: { title: 'IoT Node Detail' } }
 ];
 

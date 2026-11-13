@@ -1,0 +1,32 @@
+<div class="guide-backdrop" *ngIf="open" (click)="close()"></div>
+
+<div class="offcanvas offcanvas-end guide-drawer" [class.show]="open"
+    [style.visibility]="open ? 'visible' : 'hidden'" tabindex="-1" aria-label="Panduan halaman">
+    <div class="offcanvas-header border-bottom">
+        <div class="min-w-0">
+            <div class="guide-eyebrow text-muted">Panduan</div>
+            <h5 class="offcanvas-title text-truncate mb-0">
+                {{ content?.meta?.title || 'Panduan halaman' }}
+            </h5>
+        </div>
+        <button type="button" class="btn-close" aria-label="Tutup" (click)="close()"></button>
+    </div>
+
+    <div class="offcanvas-body">
+        <div class="text-center text-muted small py-5" *ngIf="loading">
+            <span class="spinner-border spinner-border-sm me-2"></span> Memuat panduan…
+        </div>
+
+        <!-- Jujur saat panduan belum ditulis — jangan mengarang isi. -->
+        <div class="text-center text-muted small py-5" *ngIf="!loading && !content">
+            <i class="fa fa-circle-question fa-2x d-block mb-3 opacity-25"></i>
+            Panduan untuk halaman ini belum tersedia.
+        </div>
+
+        <div class="guide-body" *ngIf="!loading && content" [innerHTML]="html"></div>
+    </div>
+
+    <div class="offcanvas-footer border-top px-3 py-2 text-muted small" *ngIf="content">
+        Versi {{ content.meta.version }} · diperbarui {{ content.meta.updatedAt }}
+    </div>
+</div>

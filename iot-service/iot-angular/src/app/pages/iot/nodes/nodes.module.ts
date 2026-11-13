@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { GuideModule } from '../../../shared/guide/guide.module';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
@@ -39,6 +40,7 @@ import { SensorFlowDiagramComponent } from './nodes-detail/sensor-flow-diagram/s
     ReactiveFormsModule,
     RouterModule, 
     NgApexchartsModule,
+    GuideModule,
     DragDropModule,
     SharedComponentsModule, 
     NodesRoutingModule
