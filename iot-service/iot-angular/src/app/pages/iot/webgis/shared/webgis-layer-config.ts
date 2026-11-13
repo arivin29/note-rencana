@@ -52,6 +52,15 @@ export function webgisSensorTypeLayerStyle(index: number): { fill: string; strok
   };
 }
 
+/** sensorTypeName → marker colour of its sensor-type layer (same index rule as the layers). */
+export function webgisSensorTypeColorMap(types: readonly { name?: string | null }[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  types.forEach((t, i) => {
+    if (t?.name && !(t.name in out)) out[t.name] = webgisSensorTypeLayerStyle(i).fill;
+  });
+  return out;
+}
+
 /** '#rrggbb' + opacity → 'rgba(r, g, b, a)' (same as the WebGIS page; 6-digit hex only). */
 export function hexToRgba(hex: string, opacity: number): string {
   const r = parseInt(hex.slice(1, 3), 16);

@@ -25,10 +25,10 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
     padding: calc(4px * var(--sl-scale, 1)) calc(6px * var(--sl-scale, 1));
     min-width: calc(80px * var(--sl-scale, 1));
-    max-width: calc(140px * var(--sl-scale, 1));
+    max-width: calc((140px + 10 * var(--sl-boost, 0px)) * var(--sl-scale, 1));
     overflow: hidden;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: calc(9px * var(--sl-scale, 1));
+    font-size: calc((9px + var(--sl-boost, 0px)) * var(--sl-scale, 1));
     color: #e0e0e0;
     line-height: 1.3;
     position: relative;
@@ -63,9 +63,8 @@
 ::ng-deep .sensor-name {
     color: #00E396;
     font-weight: 600;
-    font-size: calc(9px * var(--sl-scale, 1));
+    font-size: calc((9px + var(--sl-boost, 0px)) * var(--sl-scale, 1));
     margin-bottom: calc(1px * var(--sl-scale, 1));
-    text-transform: capitalize;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -106,7 +105,7 @@
 
 ::ng-deep .channel-name {
     color: rgba(255, 255, 255, 0.55);
-    font-size: calc(8px * var(--sl-scale, 1));
+    font-size: calc((8px + var(--sl-boost, 0px)) * var(--sl-scale, 1));
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -116,7 +115,7 @@
 
 ::ng-deep .channel-value {
     font-weight: 600;
-    font-size: calc(10px * var(--sl-scale, 1));
+    font-size: calc((10px + var(--sl-boost, 0px)) * var(--sl-scale, 1));
     font-variant-numeric: tabular-nums;
     font-family: 'Roboto Mono', 'SF Mono', monospace;
     white-space: nowrap;
@@ -151,18 +150,34 @@
 }
 // Merged card (cards that would overlap at this zoom) — same glass card, one row per channel
 ::ng-deep .sensor-label-card.sensor-label-group {
-    max-width: calc(180px * var(--sl-scale, 1));
+    max-width: calc((180px + 10 * var(--sl-boost, 0px)) * var(--sl-scale, 1));
 }
 
 ::ng-deep .group-row {
     .group-name {
         color: #00E396;
         font-weight: 600;
-        font-size: calc(9px * var(--sl-scale, 1));
+        font-size: calc((9px + var(--sl-boost, 0px)) * var(--sl-scale, 1));
         flex: 1;
         min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
+}
+
+::ng-deep .group-row .group-dot {
+    flex: 0 0 auto;
+    width: calc(6px * var(--sl-scale, 1));
+    height: calc(6px * var(--sl-scale, 1));
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+    margin-right: calc(-2px * var(--sl-scale, 1));
+}
+
+// No value → muted dash (tooltip "tidak ada data"), regardless of status colour
+::ng-deep .channel-row .channel-value.no-data {
+    color: rgba(255, 255, 255, 0.35) !important;
+    font-weight: 400;
 }

@@ -29,7 +29,7 @@ import { AuthService } from '../../../../services/auth.service';
 import { BasemapService } from '../../../../services/basemap.service';
 import { WebGisLayerStateService, SharedLayerState } from '../services/webgis-layer-state.service';
 import {
-  WebgisCoreLayerDef as CoreLayerDef, webgisCoreLayerDefs, webgisSensorTypeLayerStyle, webgisLayerColor,
+  WebgisCoreLayerDef as CoreLayerDef, webgisCoreLayerDefs, webgisSensorTypeLayerStyle, webgisSensorTypeColorMap, webgisLayerColor,
   sortByDisplayOrder, filterSensorDataByTypes,
 } from '../shared/webgis-layer-config';
 import { createStyleFromLayerStyle, createWebgisLayerStyle } from '../shared/webgis-styles';
@@ -94,6 +94,8 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
 
   // Sensor types (loaded dynamically)
   sensorTypes: SensorTypeInfo[] = [];
+  /** sensorTypeName → marker colour (row dots in grouped value cards). */
+  sensorTypeColors: Record<string, string> = {};
 
   // Layer management
   layers: LayerState[] = [];
@@ -399,7 +401,7 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
           id: props.id || feature.getId() as string,
           nodeId: props.nodeId,
           nodeCode: props.nodeCode,
-          nodeName: props.nodeName || props.nodeCode,
+          nodeName: props.nodeAddress || props.nodeCode,
           metricCode: props.metricCode,
           unit: props.unit || '',
           value: props.value !== undefined ? props.value : null,
@@ -721,11 +723,13 @@ export class WebgisMapPage implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({
         next: (sensorTypesResponse: any[]) => {
           this.sensorTypes = sensorTypesResponse;
+          this.sensorTypeColors = webgisSensorTypeColorMap(this.sensorTypes);
           this.buildLayerList();
         },
         error: (err: any) => {
           console.error('Failed to load sensor types:', err);
           this.sensorTypes = [];
+          this.sensorTypeColors = {};
           this.buildLayerList();
         }
       });

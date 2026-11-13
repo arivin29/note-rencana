@@ -27,7 +27,7 @@ import { BasemapService } from '../../../../../../services/basemap.service';
 import { fetchAll } from '../../../../../../shared/utils/fetch-all';
 import {
   WEBGIS_CORE_LAYER_DEFS, WebgisLayerRow, filterSensorDataByTypes, unwrapData, webgisLayerColor,
-  webgisSensorTypeLayerStyle, webgisSupportLayers,
+  webgisSensorTypeLayerStyle, webgisSupportLayers, webgisSensorTypeColorMap,
 } from '../../../../webgis/shared/webgis-layer-config';
 import { createWebgisLayerStyle } from '../../../../webgis/shared/webgis-styles';
 import { NodeSensorData } from '../../../../webgis/components/sensor-labels/sensor-labels';
@@ -131,6 +131,8 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
   private alertSource = new VectorSource<Feature>();
   private alertEntry: WebgisLayerEntry | null = null;
   private sensorTypeNames = new Set<string>();
+  /** sensorTypeName → marker colour (row dots in grouped value cards). */
+  sensorTypeColors: Record<string, string> = {};
   private palette: MapPalette | null = null;
   private styleCache = new Map<string, Style>();
   private resizeObserver: ResizeObserver | null = null;
@@ -561,6 +563,7 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
           }
         });
         this.sensorTypeNames = new Set(types.map((t) => t.name).filter(Boolean));
+        this.sensorTypeColors = webgisSensorTypeColorMap(types);
         this.failedLayers = failed;
         this.legendItems = legend;
         this.layersLoading = false;
@@ -670,6 +673,7 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.sensorLabelData = [];
     this.labelsFitted = false;
     this.sensorTypeNames = new Set();
+    this.sensorTypeColors = {};
     this.legendItems = [];
     this.webgisFeatureCount = 0;
     this.alertCount = 0;

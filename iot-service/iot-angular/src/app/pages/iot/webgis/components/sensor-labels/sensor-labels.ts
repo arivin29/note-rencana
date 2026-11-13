@@ -23,6 +23,8 @@ export interface NodeSensorData {
   nodeId: string;
   nodeCode: string;
   nodeName: string;
+  /** Node address (primary label per naming rule); older backends omit it. */
+  nodeAddress?: string;
   latitude: number;
   longitude: number;
   hasCoordinates: boolean;
@@ -45,6 +47,8 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
   @Input() sensorData: NodeSensorData[] = [];
   /** Size multiplier for card text & offset (1 = WebGIS look; the dashboard map widget passes its fontScale). */
   @Input() scale = 1;
+  /** sensorTypeName → marker colour; grouped-card rows get a dot in that colour (row ↔ marker link). */
+  @Input() typeColors: Record<string, string> = {};
 
   /**
    * One overlay per screen-space cluster (key = sorted member node ids). Cards that would overlap at
@@ -72,7 +76,8 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
       this.cardSizes.clear();
       this.listenMoves();
     }
-    if (changes['visible'] || changes['sensorData'] || changes['map'] || changes['scale']) {
+    if (changes['typeColors'] && !changes['typeColors'].firstChange) this.clearOverlays();
+    if (changes['visible'] || changes['sensorData'] || changes['map'] || changes['scale'] || changes['typeColors']) {
       this.updateOverlays();
     }
   }
@@ -140,7 +145,12 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
       if (!overlay) {
         const element = document.createElement('div');
         element.className = 'sensor-label-container';
-        if (this.scale !== 1) element.style.setProperty('--sl-scale', String(this.scale));
+        if (this.scale !== 1) {
+          element.style.setProperty('--sl-scale', String(this.scale));
+          // Dashboard/TV path only: slightly larger base text (WebGIS at scale 1 unchanged)
+          element.style.setProperty('--sl-boost', '2px');
+          element.classList.add('sl-scaled');
+        }
         overlay = new Overlay({
           element,
           positioning: 'bottom-center',
@@ -191,20 +201,24 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
     return n.channels.reduce((p, c) => Math.max(p, STATUS_PRIORITY[c.status] ?? 0), 0);
   }
 
-  /** Merged card: one row per channel (name · value unit), alarm rows first, max 5 then "+N lainnya". */
+  /** Node primary label: address, fallback node code (project naming rule). */
+  private nodeLabel(node: NodeSensorData): string {
+    return (node.nodeAddress || '').trim() || node.nodeCode || node.nodeName || '';
+  }
+
+  /**
+   * Merged card: one row per channel (● address [· metric]  value unit), alarm rows first, max 5
+   * then "+N lainnya". The dot has the colour of the sensor-type layer the row's marker is drawn in.
+   */
   private updateGroupElement(element: HTMLElement, members: NodeSensorData[]): void {
-    const rows: { name: string; channel: SensorChannelValue; rank: number; order: number }[] = [];
+    const rows: { name: string; color: string; channel: SensorChannelValue; rank: number; order: number }[] = [];
     for (const node of members) {
-      const perLabel = new globalThis.Map<string, number>();
+      const base = this.nodeLabel(node) || '—';
+      const multi = node.channels.length > 1;
       for (const ch of node.channels) {
-        const key = ch.sensorLabel || node.nodeCode;
-        perLabel.set(key, (perLabel.get(key) || 0) + 1);
-      }
-      for (const ch of node.channels) {
-        const base = ch.sensorLabel || node.nodeCode || ch.metricCode;
-        const multi = (perLabel.get(ch.sensorLabel || node.nodeCode) || 0) > 1;
         rows.push({
           name: multi ? `${base} · ${this.formatMetricCode(ch.metricCode)}` : base,
+          color: this.typeColors[ch.sensorTypeName] || '',
           channel: ch,
           rank: STATUS_PRIORITY[ch.status] ?? 0,
           order: rows.length,
@@ -216,10 +230,13 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
 
     let html = '<div class="sensor-label-card sensor-label-group">';
     for (const r of shown) {
+      const dot = /^#[0-9a-f]{3,8}$/i.test(r.color)
+        ? `<span class="group-dot" style="background:${r.color}"></span>`
+        : '<span class="group-dot"></span>';
       html += `
         <div class="channel-row group-row ${this.getStatusClass(r.channel.status)}">
-          <span class="group-name">${this.escapeHtml(r.name)}</span>
-          <span class="channel-value">${this.valueText(r.channel)}</span>
+          ${dot}<span class="group-name">${this.escapeHtml(r.name)}</span>
+          ${this.valueHtml(r.channel)}
         </div>
       `;
     }
@@ -230,6 +247,14 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
     element.innerHTML = html;
   }
 
+  /** Value cell; no value → muted "—" (tooltip "tidak ada data"). */
+  private valueHtml(channel: SensorChannelValue): string {
+    const text = this.valueText(channel);
+    return text === '—'
+      ? '<span class="channel-value no-data" title="tidak ada data">—</span>'
+      : `<span class="channel-value">${text}</span>`;
+  }
+
   /** "1,23 bar" (id-ID, 2 decimals); no value → "—". HTML-escaped. */
   private valueText(channel: SensorChannelValue): string {
     const num = channel.value === null || channel.value === undefined ? NaN : Number(channel.value);
@@ -238,52 +263,25 @@ export class SensorLabelsComponent implements OnChanges, OnDestroy {
       : '—';
   }
 
+  /** Single card: title = node address (fallback code), then channel rows (max 4, "+N lainnya"). */
   private updateLabelElement(element: HTMLElement, nodeData: NodeSensorData): void {
-    // Group channels by sensor label
-    const channelsByLabel = new Map<string, SensorChannelValue[]>();
-    for (const channel of nodeData.channels) {
-      const label = channel.sensorLabel || channel.metricCode;
-      if (!channelsByLabel.has(label)) {
-        channelsByLabel.set(label, []);
-      }
-      channelsByLabel.get(label)!.push(channel);
-    }
-
-    // Take only first 3 sensors to avoid clutter
-    const sensorLabels = Array.from(channelsByLabel.keys()).slice(0, 3);
-    const hasMore = channelsByLabel.size > 3;
-
+    const multiSensor = new Set(nodeData.channels.map(c => c.sensorLabel)).size > 1;
+    const shown = nodeData.channels.slice(0, 4);
     let html = '<div class="sensor-label-card">';
-    
-    for (const sensorLabel of sensorLabels) {
-      const channels = channelsByLabel.get(sensorLabel)!;
-      
-      html += `<div class="sensor-group">`;
-      html += `<div class="sensor-name">${this.escapeHtml(this.formatMetricCode(sensorLabel))}</div>`;
-      
-      for (const channel of channels.slice(0, 2)) { // Max 2 channels per sensor
-        const statusClass = this.getStatusClass(channel.status);
-        const valueDisplay = this.valueText(channel);
-        
-        html += `
-          <div class="channel-row ${statusClass}">
-            <span class="channel-name">${this.escapeHtml(this.formatMetricCode(channel.metricCode))}</span>
-            <span class="channel-value">${valueDisplay}</span>
-          </div>
-        `;
-      }
-      
-      if (channels.length > 2) {
-        html += `<div class="more-channels">+${channels.length - 2}</div>`;
-      }
-      
-      html += `</div>`;
+    html += `<div class="sensor-name">${this.escapeHtml(this.nodeLabel(nodeData) || '—')}</div>`;
+    for (const channel of shown) {
+      const metric = this.formatMetricCode(channel.metricCode);
+      const name = multiSensor && channel.sensorLabel ? `${channel.sensorLabel} · ${metric}` : metric;
+      html += `
+        <div class="channel-row ${this.getStatusClass(channel.status)}">
+          <span class="channel-name">${this.escapeHtml(name)}</span>
+          ${this.valueHtml(channel)}
+        </div>
+      `;
     }
-
-    if (hasMore) {
-      html += `<div class="more-indicator">+${channelsByLabel.size - 3} sensor lainnya</div>`;
+    if (nodeData.channels.length > shown.length) {
+      html += `<div class="more-indicator">+${nodeData.channels.length - shown.length} lainnya</div>`;
     }
-
     html += '</div>';
     element.innerHTML = html;
   }
