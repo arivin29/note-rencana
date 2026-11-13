@@ -14,7 +14,7 @@ Aplikasi NestJS untuk IoT Gateway telah berhasil diimplementasikan dan berjalan 
 
 ### 2. ✅ Database Configuration
 - [x] TypeORM configuration
-- [x] PostgreSQL connection (109.105.194.174:54366)
+- [x] PostgreSQL connection (10-0-15-66-via-4:5432)
 - [x] Database: `iot`
 - [x] SSL enabled
 
@@ -35,7 +35,7 @@ Aplikasi NestJS untuk IoT Gateway telah berhasil diimplementasikan dan berjalan 
 
 ### 4. ✅ MQTT Integration
 - [x] MQTT Service implementation
-- [x] Connect ke broker: mqtt://109.105.194.174:8366
+- [x] Connect ke broker: mqtt://10-0-15-66-via-4:1883
 - [x] Subscribe ke topic: `sensor`
 - [x] Auto reconnection logic
 - [x] Error handling

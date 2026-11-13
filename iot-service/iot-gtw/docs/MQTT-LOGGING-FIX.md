@@ -185,7 +185,7 @@ npm run start:dev
 ### Step 2: Publish Test Message
 **Option A - Manual MQTT Client (jika sudah install):**
 ```bash
-mosquitto_pub -h 109.105.194.174 -p 8366 -t sensor -m '{"deviceId":"TEST-001","temperature":25.5,"humidity":60}'
+mosquitto_pub -h 10-0-15-66-via-4 -p 1883 -t sensor -m '{"deviceId":"TEST-001","temperature":25.5,"humidity":60}'
 ```
 
 **Option B - Use Test Script:**
@@ -272,10 +272,10 @@ curl http://localhost:5001/api/iot-logs/by-label/TELEMETRY
 3. **MQTT message tidak sampai**
    ```bash
    # Test dengan mosquitto_sub (subscribe)
-   mosquitto_sub -h 109.105.194.174 -p 8366 -t sensor -v
+   mosquitto_sub -h 10-0-15-66-via-4 -p 1883 -t sensor -v
    
    # Di terminal lain, publish
-   mosquitto_pub -h 109.105.194.174 -p 8366 -t sensor -m "test"
+   mosquitto_pub -h 10-0-15-66-via-4 -p 1883 -t sensor -m "test"
    ```
 
 4. **Topic salah**
@@ -291,7 +291,7 @@ curl http://localhost:5001/api/iot-logs/by-label/TELEMETRY
 **Solutions:**
 1. Check broker URL dan port di `.env`
 2. Check network/firewall
-3. Test dengan MQTT client: `mosquitto_sub -h 109.105.194.174 -p 8366 -t test`
+3. Test dengan MQTT client: `mosquitto_sub -h 10-0-15-66-via-4 -p 1883 -t test`
 
 ### ❌ Error saat save ke database
 

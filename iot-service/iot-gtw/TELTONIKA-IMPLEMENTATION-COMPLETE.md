@@ -113,14 +113,14 @@ npm run pm2:logs
 **Expected output:**
 ```
 ✅ Application is running on: http://localhost:5001/api
-📡 MQTT Broker: mqtt://109.105.194.174:8366
+📡 MQTT Broker: mqtt://10-0-15-66-via-4:1883
 📡 TCP server listening on port 5027
 ```
 
 ### Step 2: Setup Database
 ```bash
 # Run SQL script
-psql -h 109.105.194.174 -p 54366 -U postgres -d iot -f setup-teltonika.sql
+psql -h 10-0-15-66-via-4 -p 5432 -U postgres -d iot -f setup-teltonika.sql
 
 # OR manually edit setup-teltonika.sql and run the DO block
 ```
@@ -147,7 +147,7 @@ In Teltonika Configurator:
 ```
 Server Settings:
   Protocol: TCP
-  Server IP: 109.105.194.174 (or your server IP)
+  Server IP: <IP publik server gateway>  # perangkat lapangan tak bisa lewat tailnet
   Server Port: 5027
   Data Format: JSON
   

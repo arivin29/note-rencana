@@ -6,8 +6,9 @@
  */
 
 const mqtt = require('mqtt');
+const { mqttBrokerUrl } = require('../lib/env-config');
 
-const BROKER_URL = 'mqtt://109.105.194.174:8366';
+const BROKER_URL = mqttBrokerUrl();
 
 console.log('🚀 Quick MQTT Test Publisher');
 console.log('📡 Broker:', BROKER_URL);

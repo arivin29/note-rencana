@@ -11,7 +11,7 @@ Migrasi ini perlu dijalankan menggunakan **admin user** ClickHouse.
 
 ```bash
 # Ganti ADMIN_USER dan ADMIN_PASSWORD dengan credential admin
-curl -s "http://ADMIN_USER:ADMIN_PASSWORD@109.105.194.174:8123/" --data-binary @clickhouse/migrations/001_create_iot_schema.sql
+curl -s "http://ADMIN_USER:ADMIN_PASSWORD@10-0-15-67-via-4:8123/" --data-binary @clickhouse/migrations/001_create_iot_schema.sql
 ```
 
 ### Option 2: Via clickhouse-client (jika terinstall)

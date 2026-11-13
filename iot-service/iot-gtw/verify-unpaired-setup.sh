@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Host & kredensial dibaca dari .env — jangan ditulis langsung di skrip ini.
+source "$(dirname "$0")/scripts/lib/env.sh"
+
 # Verify Unpaired Device Detection Implementation
 # Check if all components are properly configured
 
@@ -10,13 +13,13 @@ echo ""
 
 # Check 1: Owner exists with owner_code
 echo "1️⃣  Checking Owner Configuration..."
-OWNER_CHECK=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "
+OWNER_CHECK=$(pg_t -c "
     SELECT COUNT(*) FROM owners WHERE owner_code = 'DEMO1';
 " | tr -d ' ')
 
 if [ "$OWNER_CHECK" = "1" ]; then
     echo "   ✅ Owner DEMO1 exists"
-    PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -c "
+    pg -c "
         SELECT owner_code, name, email FROM owners WHERE owner_code = 'DEMO1';
     "
 else
@@ -28,7 +31,7 @@ echo ""
 
 # Check 2: Device NOT in nodes table
 echo "2️⃣  Checking Device Pairing Status..."
-NODE_CHECK=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "
+NODE_CHECK=$(pg_t -c "
     SELECT COUNT(*) FROM nodes 
     WHERE serial_number = 'DEMO1-00D42390A994' 
        OR dev_eui = 'DEMO1-00D42390A994' 
@@ -39,7 +42,7 @@ if [ "$NODE_CHECK" = "0" ]; then
     echo "   ✅ Device NOT paired (correct - should go to unpaired_devices)"
 else
     echo "   ⚠️  Device IS PAIRED (will go to iot_log, not unpaired_devices)"
-    PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -c "
+    pg -c "
         SELECT id_node, code, serial_number FROM nodes 
         WHERE serial_number = 'DEMO1-00D42390A994' 
            OR dev_eui = 'DEMO1-00D42390A994' 
@@ -112,13 +115,13 @@ echo ""
 
 # Check 6: Recent logs
 echo "6️⃣  Checking Recent Logs..."
-RECENT_UNPAIRED=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "
+RECENT_UNPAIRED=$(pg_t -c "
     SELECT COUNT(*) FROM node_unpaired_devices 
     WHERE hardware_id = 'DEMO1-00D42390A994' 
       AND last_seen_at > NOW() - INTERVAL '5 minutes';
 " | tr -d ' ')
 
-RECENT_IOT_LOG=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "
+RECENT_IOT_LOG=$(pg_t -c "
     SELECT COUNT(*) FROM iot_log 
     WHERE device_id = 'DEMO1-00D42390A994' 
       AND created_at > NOW() - INTERVAL '5 minutes';

@@ -1,13 +1,9 @@
 const { Client } = require('pg');
+const { pgConfig, describeTarget } = require('./scripts/lib/env-config');
 
 async function checkNode() {
-  const client = new Client({
-    host: '109.105.194.174',
-    port: 54366,
-    database: 'iot',
-    user: 'iot_user',
-    password: 'Bonsai.iot.db.2023!',
-  });
+  console.log(`🔌 ${describeTarget()}`);
+  const client = new Client(pgConfig());
 
   await client.connect();
   
@@ -25,7 +21,7 @@ async function checkNode() {
   const nodeResult = await client.query(nodeQuery);
   
   if (nodeResult.rows.length === 0) {
-    console. Node NOT FOUND in database');log('
+    console.log('❌ Node NOT FOUND in database');
     console.log('   → Server will send minimal config with rs485.devices: []');
   } else {
     const node = nodeResult.rows[0];

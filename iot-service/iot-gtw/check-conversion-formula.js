@@ -1,13 +1,9 @@
 const { Client } = require('pg');
+const { pgConfig, describeTarget } = require('./scripts/lib/env-config');
 
 async function checkConversionFormula() {
-  const client = new Client({
-    host: '109.105.194.174',
-    port: 54366,
-    database: 'iot',
-    user: 'postgres',
-    password: 'Pantek123',
-  });
+  console.log(`🔌 ${describeTarget()}`);
+  const client = new Client(pgConfig());
 
   await client.connect();
   

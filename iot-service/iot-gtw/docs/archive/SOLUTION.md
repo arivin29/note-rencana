@@ -61,7 +61,7 @@ npm run start:dev
 
 **Option A: Dari MQTTX (screenshot Anda)**
 1. Buka MQTTX
-2. Connect ke `iot@109.105.194.174...`
+2. Connect ke `iot@10-0-15-66-via-4...`
 3. Publish message ke topic `sensor` atau `sensor/test`:
 ```json
 {

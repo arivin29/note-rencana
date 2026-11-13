@@ -6,10 +6,11 @@
  */
 
 const mqtt = require('mqtt');
+const { mqttBrokerUrl, mqttTopic } = require('../lib/env-config');
 
-// MQTT Configuration (update if needed)
-const BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://109.105.194.174:8366';
-const TOPIC = process.env.MQTT_TOPIC || 'sensor';
+// Konfigurasi MQTT dibaca dari .env — jangan ditulis langsung di sini.
+const BROKER_URL = mqttBrokerUrl();
+const TOPIC = mqttTopic('sensor');
 
 // Sample payloads
 const samplePayloads = [

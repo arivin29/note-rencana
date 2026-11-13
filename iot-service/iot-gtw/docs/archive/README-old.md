@@ -32,16 +32,16 @@ NODE_ENV=development
 PORT=5001
 
 # Database Configuration
-DATABASE_URL=postgresql://postgres:Pantek123@109.105.194.174:54366/iot
-DB_HOST=109.105.194.174
+DATABASE_URL=postgresql://postgres:$DB_PASSWORD@10-0-15-66-via-4:5432/iot
+H-0-15-66-via-4
 DB_PORT=54366
 DB_USERNAME=postgres
-DB_PASSWORD=Pantek123
+DB_PASSWORD=<isi dari .env>
 DB_NAME=iot
 DB_SSL=true
 
 # MQTT Configuration
-MQTT_BROKER_URL=mqtt://109.105.194.174:8366
+MQTT_BROKER_URL=mqtt://10-0-15-66-via-4:1883
 MQTT_TOPIC=sensor
 MQTT_CLIENT_ID=iot-gtw-service
 ```

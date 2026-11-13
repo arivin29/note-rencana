@@ -111,7 +111,7 @@ SYNC_RETRY_DELAY_MS=5000
 
 ```bash
 # ===== CLICKHOUSE =====
-CLICKHOUSE_URL=http://109.105.194.174:8123
+CLICKHOUSE_URL=http://10-0-15-67-via-4:8123
 CLICKHOUSE_USER=iot_ingest
 CLICKHOUSE_PASSWORD=<secret>
 CLICKHOUSE_DATABASE=iot
@@ -233,7 +233,7 @@ DATABASE_SYNC=false
 DATABASE_LOGGING=true
 
 # ----- CLICKHOUSE -----
-CLICKHOUSE_URL=http://109.105.194.174:8123
+CLICKHOUSE_URL=http://10-0-15-67-via-4:8123
 CLICKHOUSE_USER=iot_ingest
 CLICKHOUSE_PASSWORD=your_password_here
 CLICKHOUSE_DATABASE=iot
@@ -338,7 +338,7 @@ DASHBOARD_URL=https://dashboard.iot.pdam.id
 CORS_ORIGINS=https://dashboard.iot.pdam.id,http://localhost:4200
 
 # ----- CLICKHOUSE (Read-only for API queries) -----
-CLICKHOUSE_URL=http://109.105.194.174:8123
+CLICKHOUSE_URL=http://10-0-15-67-via-4:8123
 CLICKHOUSE_USER=iot_ingest
 CLICKHOUSE_PASSWORD=your_password_here
 CLICKHOUSE_DATABASE=iot

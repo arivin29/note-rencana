@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# Broker dibaca dari .env — jangan ditulis langsung di skrip ini.
+source "$(dirname "$0")/../lib/env.sh"
+
 # Single message test untuk debug
 echo "🧪 Single Message Test for Debugging"
 echo "====================================="
 echo ""
 
-BROKER="mqtt://109.105.194.174:8366"
+BROKER="$MQTT_BROKER_URL"
 
 echo "Publishing single test message..."
 echo ""

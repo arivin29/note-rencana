@@ -9,7 +9,7 @@ node check-mqtt-config.js
 ```
 
 **What to verify:**
-- Broker URL is correct: `mqtt://109.105.194.174:8366`
+- Broker URL is correct: `mqtt://10-0-15-66-via-4:1883`
 - Topic is correct: `sensor` (dari screenshot Anda terlihat ada topic `sensor/#`)
 - Database credentials are set
 
@@ -177,10 +177,10 @@ MQTT_TOPIC=sensor/#
 **B. Test with mosquitto client:**
 ```bash
 # Subscribe to ALL topics to see what's coming
-mosquitto_sub -h 109.105.194.174 -p 8366 -t '#' -v
+mosquitto_sub -h 10-0-15-66-via-4 -p 1883 -t '#' -v
 
 # In another terminal, publish
-mosquitto_pub -h 109.105.194.174 -p 8366 -t 'sensor' -m 'test'
+mosquitto_pub -h 10-0-15-66-via-4 -p 1883 -t 'sensor' -m 'test'
 ```
 
 ---

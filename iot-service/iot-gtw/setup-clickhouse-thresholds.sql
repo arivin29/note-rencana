@@ -1,6 +1,7 @@
 -- ============================================
 -- Add min_threshold & max_threshold to all ClickHouse tables
--- Run against ClickHouse: http://109.105.194.174:8123 (database: iot)
+-- Run against ClickHouse: http://$CLICKHOUSE_HOST:8123 (database: iot) — lihat .env;
+-- akses lewat tailnet (10-0-15-67-via-4), bukan jalur publik.
 -- Date: 2026-03-03
 -- ============================================
 

@@ -1,13 +1,8 @@
 const { DataSource } = require('typeorm');
+const { typeormConfig, describeTarget } = require('../lib/env-config');
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  host: '109.105.194.174',
-  port: 54366,
-  username: 'postgres',
-  password: 'Pantek123',
-  database: 'iot',
-});
+console.log(`🔌 ${describeTarget()}`);
+const dataSource = new DataSource(typeormConfig());
 
 (async () => {
   try {

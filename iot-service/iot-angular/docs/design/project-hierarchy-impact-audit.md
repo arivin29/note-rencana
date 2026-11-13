@@ -336,7 +336,7 @@ jadi TIDAK ada kode existing yang pecah. Dampaknya desain ke depan:
 ## 5. Rencana migrasi data
 
 Konteks: 15 projects live; **tidak ada runner migration** — SQL dijalankan manual (psql ke
-`host=109.105.194.174 ... dbname=iot`, kreds `iot-backend-go/.env`). Project Tenggarong sudah
+`host=10-0-15-66-via-4 ... dbname=iot` lewat tailnet, kreds `iot-backend-go/.env`). Project Tenggarong sudah
 punya diagram SCADA (`scada_diagrams.id_project` menunjuk ke sana).
 
 **Langkah (urut, tiap langkah aman berdiri sendiri):**

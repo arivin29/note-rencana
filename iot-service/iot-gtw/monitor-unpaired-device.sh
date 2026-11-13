@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Host & kredensial dibaca dari .env — jangan ditulis langsung di skrip ini.
+source "$(dirname "$0")/scripts/lib/env.sh"
+
 # Monitor Unpaired Device Detection
 # Watch logs and database for unpaired device tracking
 
@@ -12,7 +15,7 @@ echo ""
 # Function to check unpaired devices
 check_unpaired() {
     echo "📊 Checking node_unpaired_devices table..."
-    PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -c "
+    pg -c "
         SELECT 
             hardware_id,
             suggested_owner,
@@ -30,7 +33,7 @@ check_unpaired() {
 # Function to check latest iot_log
 check_iot_log() {
     echo "📝 Checking latest iot_log entries..."
-    PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -c "
+    pg -c "
         SELECT 
             label,
             device_id,
@@ -57,17 +60,17 @@ echo "=========================================="
 echo ""
 
 # Monitor loop
-LAST_COUNT=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "SELECT COALESCE(seen_count, 0) FROM node_unpaired_devices WHERE hardware_id = 'DEMO1-00D42390A994';" | tr -d ' ')
-LAST_LOG_COUNT=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "SELECT COUNT(*) FROM iot_log WHERE device_id = 'DEMO1-00D42390A994';" | tr -d ' ')
+LAST_COUNT=$(pg_t -c "SELECT COALESCE(seen_count, 0) FROM node_unpaired_devices WHERE hardware_id = 'DEMO1-00D42390A994';" | tr -d ' ')
+LAST_LOG_COUNT=$(pg_t -c "SELECT COUNT(*) FROM iot_log WHERE device_id = 'DEMO1-00D42390A994';" | tr -d ' ')
 
 while true; do
     sleep 10
     
     # Check unpaired_devices
-    CURRENT_COUNT=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "SELECT COALESCE(seen_count, 0) FROM node_unpaired_devices WHERE hardware_id = 'DEMO1-00D42390A994';" | tr -d ' ')
+    CURRENT_COUNT=$(pg_t -c "SELECT COALESCE(seen_count, 0) FROM node_unpaired_devices WHERE hardware_id = 'DEMO1-00D42390A994';" | tr -d ' ')
     
     # Check iot_log
-    CURRENT_LOG_COUNT=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "SELECT COUNT(*) FROM iot_log WHERE device_id = 'DEMO1-00D42390A994';" | tr -d ' ')
+    CURRENT_LOG_COUNT=$(pg_t -c "SELECT COUNT(*) FROM iot_log WHERE device_id = 'DEMO1-00D42390A994';" | tr -d ' ')
     
     if [ "$CURRENT_COUNT" != "$LAST_COUNT" ] && [ -n "$CURRENT_COUNT" ] && [ "$CURRENT_COUNT" != "0" ]; then
         echo ""

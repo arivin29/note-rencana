@@ -82,7 +82,7 @@ node quick-test.js
 ### Option B: Test dari MQTTX (GUI)
 
 1. Open MQTTX
-2. Connect to: `iot@109.105.194.174...`
+2. Connect to: `iot@10-0-15-66-via-4...`
 3. Publish ke topic `sensor` atau `device/control` dengan payload:
    ```json
    {
@@ -248,7 +248,7 @@ curl http://localhost:5001/api/iot-logs/by-device/SENSOR-001
 ## 🔄 Complete Flow Diagram
 
 ```
-1. MQTT Broker (109.105.194.174:8366)
+1. MQTT Broker (10-0-15-66-via-4:1883)
    ↓
    ↓ (publish to topic: sensor, sensor/*, device/*)
    ↓

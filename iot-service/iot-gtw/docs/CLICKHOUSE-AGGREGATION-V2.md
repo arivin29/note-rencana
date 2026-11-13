@@ -161,7 +161,7 @@ ORDER BY event_date DESC, sensor_label;
 
 ### Data Source
 - Type: ClickHouse
-- Host: 109.105.194.174:8123
+- Host: 10-0-15-67-via-4:8123
 - Database: iot
 - User: iot_ingest (atau read-only user)
 

@@ -36,4 +36,4 @@ owners ─< projects ─< nodes ─< sensors ─< sensor_channels ─< sensor_lo
 ## Practical notes for dev
 - Multi-tenant scoping: filter by `id_owner` (directly or via project/node). `sensor_logs` already carries `id_owner`/`id_project`/`id_node` so telemetry queries can scope without joins.
 - Heavy tables: `sensor_logs` ~685k, `iot_log` ~568k, `owner_forwarding_logs` ~123k, `anomaly_results` ~60k, `audit_logs` ~16k. Current scale: 18 owners, 15 projects, 43 nodes, 70 sensors, 144 channels.
-- To re-introspect: `psql "host=109.105.194.174 port=54366 user=postgres dbname=iot sslmode=disable"` (creds in `iot-backend-go/.env`).
+- To re-introspect: `psql "host=10-0-15-66-via-4 port=5432 user=postgres dbname=iot sslmode=disable"` (creds in `iot-backend-go/.env`; tailnet only — the old public host is retired).

@@ -7,10 +7,10 @@
  */
 
 const mqtt = require('mqtt');
-require('dotenv').config();
+const { mqttBrokerUrl, mqttTopic } = require('../lib/env-config');
 
-const BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://109.105.194.174:8366';
-const TOPIC = process.env.MQTT_TOPIC || 'sensor';
+const BROKER_URL = mqttBrokerUrl();
+const TOPIC = mqttTopic('sensor');
 
 console.log('🔍 MQTT Debug Listener');
 console.log('='.repeat(60));

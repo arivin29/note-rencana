@@ -393,7 +393,7 @@ while true; do
     echo -n "."
     
     # Check unpaired_devices table
-    NEW_COUNT=$(PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -t -c "
+    NEW_COUNT=$(PGPASSWORD="$DB_PASSWORD" psql -h 10-0-15-66-via-4 -p 5432 -U postgres -d iot -t -c "
         SELECT seen_count FROM node_unpaired_devices 
         WHERE hardware_id = 'DEMO1-00D42390A994';
     " | tr -d ' ')
@@ -403,7 +403,7 @@ while true; do
         echo "🎉 Device tracked! Seen count: $NEW_COUNT"
         
         # Show details with owner info
-        PGPASSWORD='Pantek123' psql -h 109.105.194.174 -p 54366 -U postgres -d iot -c "
+        PGPASSWORD="$DB_PASSWORD" psql -h 10-0-15-66-via-4 -p 5432 -U postgres -d iot -c "
             SELECT 
                 np.hardware_id,
                 o.owner_code,

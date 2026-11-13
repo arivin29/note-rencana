@@ -43,7 +43,7 @@ ERROR [SyncService] ClickHouse query failed: Unknown expression identifier
 
 #### Verify Table Schema
 ```bash
-curl -s "http://109.105.194.174:8123" --user "iot_ingest:Pantek123" \
+curl -s "http://10-0-15-67-via-4:8123" --user "iot_ingest:$CLICKHOUSE_PASSWORD" \
   -d "DESCRIBE TABLE iot.sensor_telemetry_10min FORMAT Pretty"
 ```
 
@@ -187,7 +187,7 @@ curl http://localhost:3000/api/health
 curl -sk -u admin:password https://iot-open-api.demo.vm.devetek.com/_cluster/health
 
 # ClickHouse
-curl "http://109.105.194.174:8123" -d "SELECT 1"
+curl "http://10-0-15-67-via-4:8123" -d "SELECT 1"
 ```
 
 ## Support

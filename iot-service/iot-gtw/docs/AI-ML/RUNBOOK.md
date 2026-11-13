@@ -197,20 +197,20 @@ curl -sk -u admin:Dev3tek#Helios2026! \
 ### Test Connection
 
 ```bash
-curl -s "http://109.105.194.174:8123" --user "iot_ingest:Pantek123" -d "SELECT 1"
+curl -s "http://10-0-15-67-via-4:8123" --user "iot_ingest:$CLICKHOUSE_PASSWORD" -d "SELECT 1"
 ```
 
 ### Check Record Count
 
 ```bash
-curl -s "http://109.105.194.174:8123" --user "iot_ingest:Pantek123" \
+curl -s "http://10-0-15-67-via-4:8123" --user "iot_ingest:$CLICKHOUSE_PASSWORD" \
   -d "SELECT count() FROM iot.sensor_telemetry"
 ```
 
 ### Query 10-Min Aggregation
 
 ```bash
-curl -s "http://109.105.194.174:8123" --user "iot_ingest:Pantek123" -d "
+curl -s "http://10-0-15-67-via-4:8123" --user "iot_ingest:$CLICKHOUSE_PASSWORD" -d "
 SELECT 
     time_bucket,
     node_code,
@@ -226,7 +226,7 @@ FORMAT Pretty"
 ### Check Active Sensors (Last 24h)
 
 ```bash
-curl -s "http://109.105.194.174:8123" --user "iot_ingest:Pantek123" -d "
+curl -s "http://10-0-15-67-via-4:8123" --user "iot_ingest:$CLICKHOUSE_PASSWORD" -d "
 SELECT DISTINCT
     node_code,
     toString(channel_id) AS channel_id

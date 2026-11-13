@@ -124,7 +124,7 @@
 
 | Service | Host | Port | Protocol | Notes |
 |---------|------|------|----------|-------|
-| ClickHouse | 109.105.194.174 | 8123 | HTTP | iot_ingest user |
+| ClickHouse | 10-0-15-67-via-4 | 8123 | HTTP | iot_ingest user |
 | **OpenSearch** | **iot-open-api.demo.vm.devetek.com** | **443** | **HTTPS** | Valid SSL, Basic Auth |
 | OpenSearch (internal) | 10.0.15.69 | 9200 | HTTPS | Self-signed cert |
 | OpenSearch Dashboard | 10.0.15.69 | 5601 | HTTPS | Admin UI |
