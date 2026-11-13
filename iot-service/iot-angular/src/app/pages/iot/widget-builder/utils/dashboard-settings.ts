@@ -4,6 +4,7 @@
  */
 import { ScreenConfig, readScreenConfig } from './screen-fit';
 import { defaultPresetFrom, normalizeRefresh } from './dashboard-time';
+import { readFontScale } from './font-scale';
 
 export interface DashboardSettingsResult {
   name: string;
@@ -12,6 +13,8 @@ export interface DashboardSettingsResult {
   timeRange: string;
   refreshInterval: number;
   screen: ScreenConfig;
+  /** Ukuran huruf (layout_config.fontScale) — one of FONT_SCALE_OPTIONS; invalid → 1. */
+  fontScale: number;
 }
 
 export interface DashboardSettingsBody {
@@ -37,6 +40,7 @@ export function buildDashboardSettingsBody(
     layoutConfig: {
       ...(currentLayout || {}),
       screen: { preset: s.preset, width: s.width, height: s.height, rows: s.rows },
+      fontScale: readFontScale({ fontScale: r.fontScale }),
     },
   };
 }

@@ -9,6 +9,7 @@ import {
   getTemplateById,
   getTemplatesByCategory
 } from '../models/template.models';
+import { toApiWidgetType } from '../models/widget.models';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
 import { SensorChannelsService } from '../../../../../sdk/core/services/sensor-channels.service';
@@ -702,7 +703,7 @@ export class WidgetTemplateWizardComponent implements OnInit, OnDestroy {
           widgetId: this.widgetId,
           body: {
             name: this.widgetName,
-            widgetType: this.selectedTemplate.widgetType,
+            widgetType: toApiWidgetType(this.selectedTemplate.widgetType),
             sqlQuery: sqlForSave,
             dataSource: this.selectedDataSource,
             config: widgetConfig
@@ -714,7 +715,7 @@ export class WidgetTemplateWizardComponent implements OnInit, OnDestroy {
           dashboardId: this.dashboardId,
           body: {
             name: this.widgetName,
-            widgetType: this.selectedTemplate.widgetType,
+            widgetType: toApiWidgetType(this.selectedTemplate.widgetType),
             sqlQuery: sqlForSave,
             dataSource: this.selectedDataSource,
             config: widgetConfig,

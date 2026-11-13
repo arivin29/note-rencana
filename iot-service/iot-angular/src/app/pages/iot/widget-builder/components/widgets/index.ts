@@ -7,3 +7,4 @@ export { PieChartWidgetComponent } from './pie-chart/pie-chart-widget.component'
 // Display Widgets
 export { StatCardWidgetComponent } from './stat-card/stat-card-widget.component';
 export { TableWidgetComponent } from './table/table-widget.component';
+export { MapWidgetComponent } from './map/map-widget.component';

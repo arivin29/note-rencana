@@ -47,6 +47,7 @@ import { GaugeWidgetComponent } from './components/widgets/gauge/gauge-widget.co
 import { PieChartWidgetComponent } from './components/widgets/pie-chart/pie-chart-widget.component';
 import { StatCardWidgetComponent } from './components/widgets/stat-card/stat-card-widget.component';
 import { TableWidgetComponent } from './components/widgets/table/table-widget.component';
+import { MapWidgetComponent } from './components/widgets/map/map-widget.component';
 
 // Template System Components
 import { WidgetCreateComponent } from './widget-create/widget-create.component';
@@ -74,6 +75,7 @@ const routes: Routes = [
     PieChartWidgetComponent,
     StatCardWidgetComponent,
     TableWidgetComponent,
+    MapWidgetComponent,
     // Other Components
     TimeRangePickerComponent,
     SqlEditorComponent,
@@ -125,6 +127,7 @@ const routes: Routes = [
     PieChartWidgetComponent,
     StatCardWidgetComponent,
     TableWidgetComponent,
+    MapWidgetComponent,
     TimeRangePickerComponent,
     GridsterModule,
     DashboardViewComponent, // Export for embedding in other modules

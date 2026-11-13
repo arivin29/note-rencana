@@ -35,6 +35,14 @@
     <h6 class="settings-section-title mt-4 mb-2">Tampilan &amp; data</h6>
 
     <mat-form-field appearance="outline" class="w-100 mb-2">
+      <mat-label>Ukuran huruf</mat-label>
+      <mat-select formControlName="fontScale">
+        <mat-option *ngFor="let f of fontScaleOptions" [value]="f.value">{{ f.label }} ({{ f.value * 100 | number:'1.0-0' }}%)</mat-option>
+      </mat-select>
+      <mat-hint>Berlaku untuk judul &amp; isi semua widget di dashboard ini (juga mode TV)</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-100 mb-2">
       <mat-label>Layar target</mat-label>
       <mat-select formControlName="screenPreset">
         <mat-option *ngFor="let p of screenPresets" [value]="p.value">{{ p.label }}</mat-option>

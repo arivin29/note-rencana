@@ -328,15 +328,14 @@
         </div>
         <div class="grid-stage" [class.tv-stage]="tvMode"
             [style.width.px]="tvMode ? stageBox.width : null"
-            [style.height.px]="tvMode ? (editMode ? editStageHeight : stageBox.height) : null"
-            [style.--wb-scale]="tvMode ? wbScale : null">
+            [style.height.px]="tvMode ? (editMode ? editStageHeight : stageBox.height) : null">
             <gridster [options]="gridsterOptions" class="dashboard-gridster">
                 <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item"
                     [class.tv-overflow]="editMode && overflowWidgetIds.has(item['id'])">
                     <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
                         [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
                         [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="widgetsReadOnly"
-                        [fontScale]="widgetFontScale"
+                        [fontScale]="widgetFontScale" [projectId]="dashboard.projectId || null"
                         (loadResult)="onWidgetLoad(item['id'], $event)"
                         (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
                         (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
@@ -354,14 +353,15 @@
 
 <!-- Fullscreen Overlay -->
 <div *ngIf="fullscreenWidget" class="fullscreen-overlay" (click)="toggleFullscreen(fullscreenWidget)">
-    <div class="fullscreen-widget-container" (click)="$event.stopPropagation()">
+    <div class="fullscreen-widget-container" (click)="$event.stopPropagation()" [style.--wb-scale]="dashboardFontScale">
         <button class="btn btn-light position-absolute top-0 end-0 m-3" (click)="toggleFullscreen(fullscreenWidget!)">
             <i class="bi bi-fullscreen-exit"></i>
         </button>
         <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" 
             [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()"
             [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="true"
-            [isFullscreen]="true" (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
+            [isFullscreen]="true" [fontScale]="dashboardFontScale" [projectId]="dashboard?.projectId || null"
+            (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
         </app-widget-container>
     </div>
 </div>

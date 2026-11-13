@@ -1,3 +1,6 @@
+import { MapWidgetOptions } from '../utils/map-rows';
+import type { CreateWidgetDto } from 'src/sdk/core/models';
+
 // Widget Builder Models & Interfaces
 
 export interface Dashboard {
@@ -166,6 +169,8 @@ export interface WidgetDisplayConfig {
   fillOpacity: number;
   showPoints: 'never' | 'always' | 'auto';
   tooltipMode: 'single' | 'all' | 'hidden';
+  /** Map widget ('map') options — see utils/map-rows.ts */
+  mapOptions?: MapWidgetOptions;
 }
 
 export interface FieldMapping {
@@ -211,7 +216,16 @@ export type WidgetType =
   | 'gauge'             // Single value with ranges
   | 'stat-card'         // KPI card with icon
   | 'table'             // Tabular data
+  | 'map'               // Peta titik (OpenLayers) — SQL returns lat, lon, label, value, unit, status, time
   | 'heatmap';          // 2D heatmap visualization
+
+/**
+ * widget_type as sent to the API. The generated SDK DTO unions (src/sdk, regen broken) don't list newer
+ * types such as 'map'; the backend stores widget_type as free text, so we widen here instead of editing src/sdk.
+ */
+export function toApiWidgetType(t: WidgetType): CreateWidgetDto['widgetType'] {
+  return t as CreateWidgetDto['widgetType'];
+}
 
 export const WIDGET_TYPES: { type: WidgetType; label: string; icon: string; description: string }[] = [
   { type: 'line-chart', label: 'Time Series', icon: 'show_chart', description: 'Time based line, area and bar charts (single & multi-line)' },
@@ -220,6 +234,7 @@ export const WIDGET_TYPES: { type: WidgetType; label: string; icon: string; desc
   { type: 'pie-chart', label: 'Pie Chart', icon: 'pie_chart', description: 'Show proportions of a whole' },
   { type: 'stat-card', label: 'Stat Card', icon: 'pin', description: 'Display single metric value' },
   { type: 'table', label: 'Table', icon: 'table_chart', description: 'Tabular data display' },
+  { type: 'map', label: 'Peta', icon: 'map', description: 'Titik berkoordinat dengan nilai & status' },
   { type: 'heatmap', label: 'Heatmap', icon: 'grid_on', description: '2D heatmap visualization' },
 ];
 

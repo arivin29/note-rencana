@@ -1,0 +1,81 @@
+---
+name: widget-builder
+description: How the Angular dynamic-widget system ("Widget Builder" — custom dashboards with SQL-driven ECharts widgets on a gridster grid, also embedded as project workspace Monitor) works, and how to add/modify widget types, templates, renderers and dashboard view. Covers which of the 3 widget systems is live, data model (custom_dashboards/custom_widgets), query execution (/api/widget-builder/query/execute, ${fromTime} placeholders, PG vs ClickHouse), rendering dispatch, theming rules, known bugs and SQL-safety risks. Read before ANY dashboard/widget work in iot-angular.
+---
+
+# Widget Builder (widget dinamis) — iot-angular
+
+Read `ui-coding-style` + `ui-card` first. Known bugs/debt: [references/backlog.md](references/backlog.md).
+
+Paths: FE = `iot-angular/src`, WB = `FE/app/pages/iot/widget-builder`, BE = `/Users/arivin29macmini/Documents/DEVETEK/iot-backend-go`.
+
+## Which system is live (don't build on the wrong one)
+| System | Where | Status |
+|---|---|---|
+| **Widget Builder** | `WB/**` + BE `/api/widget-builder/*`, tables `custom_dashboards`, `custom_widgets` | **LIVE** — menu + project workspace Monitor. **All new widget work goes here.** |
+| Catalog/Factory | `FE/app/components/widgets/**` (`WidgetsModule`, `WidgetFactoryService`, `WidgetCatalogService`), `FE/app/models/widgets/*` | Demo only (`/iot/widgets-showcase`, static props, ApexCharts). Don't extend. |
+| dashboard-kedua | `FE/app/pages/iot/dashboard-kedua/**` (route `iot/dashboard-admin`, admin) | Live but hand-coded `dk-*` cards over `/api/dashboard/*` — not part of widget system; follow `ui-card` |
+| Legacy APIs | BE `/api/dashboard-widgets`, `/api/user-dashboards` | No FE callers. Don't use. |
+
+Two different classes are both called `WidgetContainerComponent` (`widget-container` in components/widgets vs `app-widget-container` in WB). Use the WB one.
+
+Design docs in `iot-service/desain_widget_dinamis/` (07, 13, 15, 19) and root `WIDGET-*.md` describe a planned registry/WebSocket architecture that **was never built** — trust code over docs.
+
+## Routes & flow (`WB/widget-builder.module.ts:54-61`, lazy at `iot/widget-builder`, AuthGuard)
+`''` DashboardList → `:id` DashboardView (gridster, time picker, kiosk, edit layout) → `:id/widget/new` WidgetCreate (choose mode) → `:id/widget/template` **Template wizard** (no-code: category → template → node/sensor/channel → options → preview) or `:id/add-widget` / `:id/edit-widget/:widgetId` **Expert wizard** (SQL, multi-query, mapping, Grafana-style option panels). **Editing always opens Expert**, even for template widgets.
+Embedded: project workspace `monitor` / `monitor/:dashboardId` → `<app-dashboard-view [dashboardId] [embeddedMode]="true">` (`monitor-page.component.html:25`); `ProjectsModule` imports `WidgetBuilderModule`. Sidebar list from `GetDashboardsByProject`.
+
+## Data model
+- FE types `WB/models/widget.models.ts`: `Dashboard`, `Widget`, `WidgetPosition{x,y,cols,rows}`, `WidgetConfig` (title, dataSource, refreshInterval, mapping, series[], xAxis, yAxis, thresholds[], display, creationMode `template|expert`, templateId, templateConfig{nodeId,sensorId,channelId(s),settings}, variables, `queries: WidgetQueryDef[]`), `WidgetType` = `line-chart|multi-line-chart(deprecated)|bar-chart|pie-chart|gauge|stat-card|table|map|heatmap`, `TIME_RANGE_PRESETS`, `REFRESH_INTERVALS`.
+- The saved config is built in `widget-wizard.component.ts:~3368-3400`; full form shape (incl. `display.tableOptions/statCardOptions/smoothing`, which are NOT in the typed interface) at `:56-185`. If you add display options, **type them** in `WidgetDisplayConfig`.
+- Templates hardcoded in `WB/models/template.models.ts` (4 categories, 12 templates) with `sqlTemplate.{postgresql,clickhouse}` using `${channelId}`, `${channelIds}`, `${fromTime}`, `${toTime}`, options with `autoFrom:'channel.unit'`.
+- BE (inline structs in `BE/app/http/controllers/widgetbuilder/widget_builder_controller.go`):
+  - `custom_dashboards`: id_dashboard, id_owner NOT NULL, id_project, name, description, `layout_config` jsonb (only `.variables` used), time_range ('6h'), refresh_interval (60), is_default, is_active, created_by.
+  - `custom_widgets`: id_widget, id_dashboard, name, `widget_type` varchar free text, position_x/y, cols(6), rows(4), `sql_query` NOT NULL, `data_source` ('postgresql', CHECK), `config` jsonb, is_active.
+  - No Go migrations — DDL from legacy NestJS entities (`iot-service/iot-backend/src/entities/custom-*.entity.ts`).
+- Layout: `angular-gridster2` ^20.2 (`dashboard-view.component.ts:160-195`): 12 cols, ScrollVertical, pushItems, margin 4, item 2–12 × 2–10, default 6×4, drag handle `.panel-head`. Save via `PATCH .../widgets/positions`.
+- SDK `FE/sdk/core/services/widget-builder.service.ts` (17 methods). Regen is broken → edit DTO unions by hand (`create-widget-dto.ts:51`, `custom-widget-response-dto.ts:71`, `update-widget-dto.ts`).
+
+## Data path — every widget is raw SQL
+`app-widget-container.loadWidgetData` (`WB/components/widget-container/widget-container.component.ts:99-160`) → `POST /api/widget-builder/query/execute {sql, dataSource, variables, from, to}` (epoch ms) or `{timeRange}`. Variables = dashboard-level then widget-level. `config.queries.length > 1` → parallel, rows concatenated with `_source` column (:163-227).
+BE `prepareSQL` (:486-529) string-replaces `${fromTime}/${toTime}` (UTC `YYYY-MM-DD HH:MM:SS`), `${timeRange}`, `${ownerId}`, `${ownerCode}`, and variable keys → ClickHouse `ExecuteQuery` or PG `Raw().Scan()`. **PG result columns come back alphabetized** (:398-403) — never rely on SELECT order; map by name.
+Common tables: PG `sensor_logs`, `nodes`; CH `iot.sensor_telemetry*`, `iot.sensor_channel_latest`, `iot.node_latest`.
+**Tenant isolation depends on the SQL containing `${ownerId}` / channel ids** — every template/default SQL you write MUST scope by owner or by explicit channel ids the user is allowed to see.
+
+## Rendering
+- Dispatch: hardcoded `*ngIf` chain in `widget-container.component.html:53-107` (no factory). `heatmap` has no branch (renders blank).
+- Renderers `WB/components/widgets/{line-chart,bar-chart,gauge,pie-chart,stat-card,table}`: `@Input widget, data, columns, containerWidth, containerHeight` (pie/stat/table lack size inputs) → `ngOnChanges` builds ECharts options → `<div echarts [options] (chartInit)>` + ResizeObserver + `instance.resize()`.
+- Chart lib: **ECharts 5.6 + ngx-echarts 20** (global `provideEchartsCore`, app.module:155). ApexCharts/chart.js also installed but used only by demo/dashboard-kedua — **new widgets use ECharts**.
+- Option-building logic is duplicated 3× (runtime renderer, Expert preview `buildChartOptions` :2231 etc., Template preview :849-950). When changing a renderer's look, update previews too — or better, extract a shared `buildXOptions(widget, data)` pure function in the renderer folder and call it from all three.
+
+## Text scale (fontScale)
+`dashboard-view.widgetFontScale` = (TV ? screen-fit `wbScale` : 1) × `layout_config.fontScale` ("Ukuran huruf", `utils/font-scale.ts`, options 0.85–2). Passed as `[fontScale]` to every renderer and exposed as CSS var `--wb-scale` on the dashboard-view host (panel titles, immersive header). New renderers MUST take `@Input() fontScale` (charts: `scaleChartFonts`; HTML: `calc(Npx * scale)`).
+
+## Map widget (`map`, OpenLayers 9)
+`components/widgets/map/` + pure `utils/map-rows.ts` (column contract lat/lon/label/value/unit/status/time, lenient names, numeric strings). Options in `config.display.mapOptions`. Container passes `[projectId]` (dashboard's project) → non-core, visible-by-default `map_layer`s drawn under the points. Map is created once; refresh only swaps point features. OL 9.2 generics: `VectorLayer<Feature>` (feature type, NOT source type). The wizard preview reuses the same component (no option-builder duplication).
+
+## Theming rules (enforce on every touch)
+- App supports light/dark via `data-bs-theme`; widgets currently hardcode Grafana-dark hex (`#73bf69`, `#5794f2`, stat-card value `#ffffff`, table header `#1a1a2e`) → invisible/ugly in light mode. New/changed code: read colors from CSS vars (`getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color')`, `--bs-border-color`, `--bs-primary`…) and rebuild options on theme change; series palette from one shared constant.
+- Status colors: green/amber/red semantics only for thresholds, consistent with `shared/utils/telemetry-freshness.ts`.
+- Follow project rules: **no fake data** (error/empty state + "Coba lagi", never random/dummy), node label = **address** (fallback node code), Bahasa Indonesia UI text, `<card>` wrappers, FontAwesome icons (not Material names) in new UI. Replace `alert()/confirm()` with app toasts/modals when touching that code.
+
+## Recipe — add a new widget type (e.g. `heatmap`)
+BE: nothing (widget_type free text, config jsonb). New *data source* would need DB CHECK `chk_data_source` + `ExecuteQuery` branch (:386).
+1. `widget.models.ts` union (:200) + `WIDGET_TYPES` (:210); type any new `display.<x>Options`.
+2. SDK DTO unions don't list new types — don't edit `src/sdk`; send `toApiWidgetType(type)` (`widget.models.ts`, a widening cast; BE widget_type is free text).
+3. Renderer `WB/components/widgets/<type>/<type>-widget.component.{ts,html,css}` (`standalone:false`), copy line-chart pattern; export a pure options builder.
+4. Declare+export in `widget-builder.module.ts`.
+5. `*ngIf` branch in `widget-container.component.html`.
+6. Expert wizard: `widgetTypes` (:341), `selectWidgetType` category (:1318), `needsXYMapping/needsValueMapping/needsLabelValueMapping` (:3457), `isMappingValid/canSave` (:3191), `autoMapFields` (:2118), preview `buildChartOptions` (:2231), defaults (:115-184), `loadWidget` hydration (:1564-1800), `expandedSections` key (:38) + options panel in html.
+7. Optional Template mode: template + category in `template.models.ts`, template-wizard preview, `getDefaultCols/Rows` (:765), category switch (:849).
+8. Verify: `npx ng build` (or `npx tsc -p tsconfig.app.json --noEmit`), open `http://localhost:4200/iot/widget-builder/<id>` in both light & dark theme, check embedded Monitor page too.
+
+## Recipe — add a template (most common user ask)
+Add to `template.models.ts` with BOTH `postgresql` and `clickhouse` SQL, scoped by `${channelId(s)}`, using `${fromTime}/${toTime}` (the template wizard substitutes them client-side for preview, :540-547). Prefer CH for time-series over long ranges. Set sensible default size.
+
+## Backend endpoints (`BE/routes/api.go:437-459`, all JWT)
+Dashboards: `GET|POST /api/widget-builder/dashboards[?projectId=]`, `GET|PUT|DELETE /dashboards/{id}` (GET includes widgets[] + projectName), `GET /projects/{projectId}/dashboards`. Widgets: `GET|POST /dashboards/{id}/widgets`, `GET|PUT|DELETE /dashboards/{id}/widgets/{widgetId}`, `PATCH /dashboards/{id}/widgets/positions` `{positions:[{idWidget,positionX,positionY,cols,rows}]}`. Query: `GET /datasources`, `POST /query/validate` (unused), `POST /query/execute`. Templates `GET /templates[/{id}]` (unused by FE).
+Bodies are `map[string]interface{}` (no DTO). Scoping in `findDashboard` (:428-437) — admin sees all; see backlog for holes.
+
+## Related
+Skills `ui-card`, `ui-coding-style`, `backend-module`, sister `scada-view`. Memories `no-fake-data-rule`, `node-display-name-rule`, `api-response-contract`, `sdk-regen-gotcha`.

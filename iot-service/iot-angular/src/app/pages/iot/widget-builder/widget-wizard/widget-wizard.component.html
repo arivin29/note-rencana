@@ -314,6 +314,19 @@
                                 <p class="text-muted mb-0">Switch to "Table" tab to see data</p>
                             </div>
 
+                            <!-- Peta: same renderer as the dashboard -->
+                            <div *ngSwitchCase="'map'" class="chart-preview" style="height: 360px;">
+                                <app-map-widget *ngIf="mapPreviewWidget && queryResult; else mapNoData"
+                                    [widget]="mapPreviewWidget" [data]="queryResult.rows"
+                                    [projectId]="dashboardProjectId"></app-map-widget>
+                                <ng-template #mapNoData>
+                                    <div class="no-data">
+                                        <i class="fa fa-map-marked-alt fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted mb-0">Belum ada data — jalankan query dulu</p>
+                                    </div>
+                                </ng-template>
+                            </div>
+
                             <!-- Table Widget - show inline table preview -->
                             <div *ngSwitchCase="'table'" class="table-preview-inline">
                                 <div *ngIf="queryResult && queryResult.rows.length > 0" class="table-responsive" style="max-height: 350px;">
@@ -791,7 +804,7 @@
                 </card>
 
                 <!-- Field Mapping Card (hide for table widget) -->
-                <card class="mb-3" *ngIf="selectedType !== 'table'">
+                <card class="mb-3" *ngIf="selectedType !== 'table' && selectedType !== 'map'">
                     <card-header>
                         <i class="fa fa-project-diagram me-2 text-theme"></i>
                         <span class="fw-bold">Field Mapping</span>
@@ -1492,6 +1505,16 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Subtitle (text under the value) -->
+                        <div class="option-row py-2 border-bottom">
+                            <label class="form-label small mb-1 text-white-50">Teks di bawah nilai</label>
+                            <select class="form-select form-select-sm"
+                                [(ngModel)]="form.display.statCardOptions.subtitleField" (ngModelChange)="updatePreview()">
+                                <option value="">Tidak ada</option>
+                                <option *ngFor="let col of availableColumns" [value]="col">{{ col }}</option>
+                            </select>
+                            <div class="form-text">Isi kolom ini (baris pertama) tampil di bawah nilai, mis. lokasi atau "dari 11 titik".</div>
+                        </div>
                         <!-- Font Size -->
                         <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
                             <span class="text-white-50">Value Font Size</span>
@@ -1552,6 +1575,62 @@
                             <span class="text-white-50">Default Value Color</span>
                             <input type="color" class="form-control form-control-color p-0" style="width: 40px; height: 28px;"
                                 [(ngModel)]="form.display.statCardOptions.valueColor" (ngModelChange)="updatePreview()">
+                        </div>
+                    </card-body>
+                </card>
+
+                <!-- Map (Peta) Options -->
+                <card class="mb-2" *ngIf="selectedType === 'map'">
+                    <card-header class="py-2">
+                        <i class="fa fa-map-marked-alt me-2 text-theme"></i>
+                        <span class="fw-bold">Opsi Peta</span>
+                    </card-header>
+                    <card-body class="py-2">
+                        <div class="small text-body-secondary mb-2">
+                            Kolom query: <code>lat</code>, <code>lon</code> (WGS84), <code>label</code>, <code>value</code>,
+                            <code>unit</code>, <code>status</code> (normal / low / high / nothreshold / nodata), <code>time</code>.
+                            Wajib terskop <code>${{ '{' }}ownerId{{ '}' }}</code> atau channel terpilih.
+                        </div>
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span>Lapisan peta proyek (mis. jaringan pipa)</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                    [(ngModel)]="form.display.mapOptions.showProjectLayers" (ngModelChange)="updatePreview()">
+                            </div>
+                        </div>
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span>Peta dasar</span>
+                            <select class="form-select form-select-sm" style="width: 170px;"
+                                [(ngModel)]="form.display.mapOptions.basemap" (ngModelChange)="updatePreview()">
+                                <option value="auto">Ikuti tema aplikasi</option>
+                                <option value="light">Terang</option>
+                                <option value="dark">Gelap</option>
+                                <option value="none">Tanpa peta dasar</option>
+                            </select>
+                        </div>
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span>Tampilkan label</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                    [(ngModel)]="form.display.mapOptions.showLabels" (ngModelChange)="updatePreview()">
+                            </div>
+                        </div>
+                        <div class="option-row d-flex justify-content-between align-items-center py-2 border-bottom"
+                            *ngIf="form.display.mapOptions.showLabels">
+                            <span>Isi label</span>
+                            <select class="form-select form-select-sm" style="width: 170px;"
+                                [(ngModel)]="form.display.mapOptions.labelMode" (ngModelChange)="updatePreview()">
+                                <option value="label-value">Nama · nilai</option>
+                                <option value="value">Nilai saja</option>
+                                <option value="label">Nama saja</option>
+                            </select>
+                        </div>
+                        <div class="option-row d-flex justify-content-between align-items-center py-2">
+                            <span>Bisa digeser &amp; zoom <span class="small text-body-secondary">(matikan untuk TV)</span></span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                    [(ngModel)]="form.display.mapOptions.interactive" (ngModelChange)="updatePreview()">
+                            </div>
                         </div>
                     </card-body>
                 </card>

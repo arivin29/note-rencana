@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges, HostBinding } from '@angular/core';
 import { Widget } from '../../../models/widget.models';
+import { formatIdNumber } from '../../../utils/format-id';
 
 interface StatCardOptions {
   layout: 'centered' | 'left-aligned' | 'with-icon' | 'compact';
@@ -15,6 +16,8 @@ interface StatCardOptions {
   fontSize: 'small' | 'medium' | 'large' | 'xlarge';
   valueColor: string;
   backgroundColor: string;
+  /** Column whose first-row text is shown under the value (e.g. location, "dari 11 titik"). */
+  subtitleField?: string;
 }
 
 interface Threshold {
@@ -58,6 +61,7 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
     iconColor: string;
     layout: string;
     fontSize: string;
+    subtitle: string;
   } | null = null;
 
   sparklineData: number[] = [];
@@ -86,7 +90,8 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
     const thresholds: Threshold[] = config.thresholds || [];
 
     const valueField = mapping.valueField || 'value';
-    const currentValue = parseFloat(this.data[0]?.[valueField]) || 0;
+    // Missing/non-numeric value stays NaN → shown as "—" (never a fabricated 0)
+    const currentValue = parseFloat(this.data[0]?.[valueField]);
     const unit = config.yAxis?.unit || '';
     const decimals = config.yAxis?.decimals ?? 2;
 
@@ -103,7 +108,7 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
         const diff = currentValue - previousValue;
         trendValue = diff;
         const percent = (diff / Math.abs(previousValue)) * 100;
-        trendPercent = Math.abs(percent).toFixed(1) + '%';
+        trendPercent = formatIdNumber(Math.abs(percent), 1) + '%';
         trend = diff > 0 ? 'up' : diff < 0 ? 'down' : null;
       }
     }
@@ -128,7 +133,7 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
 
     this.displayData = {
       value: currentValue,
-      formattedValue: currentValue.toFixed(decimals),
+      formattedValue: formatIdNumber(currentValue, decimals),
       title: config.title || this.widget?.name || '',
       unit: unit,
       prefix: options.prefix || '',
@@ -140,8 +145,15 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
       icon: options.icon || '',
       iconColor: options.iconColor || '#73bf69',
       layout: options.layout || 'centered',
-      fontSize: options.fontSize || 'large'
+      fontSize: options.fontSize || 'large',
+      subtitle: this.subtitleText(options.subtitleField)
     };
+  }
+
+  private subtitleText(field: string | undefined): string {
+    if (!field) return '';
+    const v = this.data[0]?.[field];
+    return v === null || v === undefined ? '' : String(v).trim();
   }
 
   private getDefaultOptions(): StatCardOptions {

@@ -1,0 +1,27 @@
+<div class="map-widget" [style.--map-scale]="fontScale">
+  <div #mapEl class="map-canvas" [class.no-basemap]="options.basemap === 'none'"></div>
+  <div #tooltipEl class="map-tooltip"></div>
+
+  <div *ngIf="points.length === 0" class="map-empty">
+    <i class="fa fa-map-marker-alt mb-1"></i>
+    <div class="fw-semibold">Tidak ada titik berkoordinat</div>
+    <div class="small text-body-secondary">Query harus mengembalikan kolom <code>lat</code> &amp; <code>lon</code> yang terisi.</div>
+  </div>
+
+  <div class="map-legend">
+    <span class="map-legend-item"><span class="dot dot-normal"></span>Normal</span>
+    <span class="map-legend-item"><span class="dot dot-alarm"></span>Di luar ambang</span>
+    <span class="map-legend-item"><span class="dot dot-muted"></span>Tanpa ambang</span>
+    <span class="map-legend-item"><span class="dot dot-nodata"></span>Tidak ada data</span>
+  </div>
+
+  <div *ngIf="layersError" class="map-layer-warn">
+    <i class="fa fa-exclamation-triangle me-1"></i>{{ layersError }}
+    <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" (click)="retryLayers()">Coba lagi</button>
+  </div>
+  <div *ngIf="layersLoading" class="map-layer-loading" title="Memuat lapisan peta proyek…">
+    <i class="fa fa-circle-notch fa-spin"></i>
+  </div>
+
+  <div *ngIf="options.basemap !== 'none'" class="map-attrib">{{ attribution }}</div>
+</div>

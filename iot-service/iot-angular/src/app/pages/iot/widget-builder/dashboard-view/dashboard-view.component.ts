@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges, NgZone, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges, NgZone, ViewChild, ElementRef, HostListener, HostBinding } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem, DisplayGrid, GridType, CompactType } from 'angular-gridster2';
 import { 
@@ -15,6 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DashboardModalComponent } from '../components/dashboard-modal/dashboard-modal.component';
 import { buildDashboardSettingsBody, DashboardSettingsResult } from '../utils/dashboard-settings';
 import { ScreenConfig, readScreenConfig, fitBox, rowHeight, fontScale, overflowIds } from '../utils/screen-fit';
+import { readFontScale, combinedFontScale } from '../utils/font-scale';
 
 interface DashboardResponse {
   idDashboard?: string;
@@ -121,9 +122,17 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     return this.screen.preset !== 'auto';
   }
 
-  /** Text scale passed to widgets (1 outside TV mode). */
+  /** "Ukuran huruf" chosen in Pengaturan Dashboard (layout_config.fontScale, default 1). */
+  dashboardFontScale = 1;
+
+  /** Text scale passed to widgets: TV screen-fit scale (1 outside TV mode) × dashboard font size. */
   get widgetFontScale(): number {
-    return this.tvMode ? this.wbScale : 1;
+    return combinedFontScale(this.tvMode ? this.wbScale : 1, this.dashboardFontScale);
+  }
+
+  /** Same scale as CSS var for panel titles + immersive header (dashboard-view.component.css). */
+  @HostBinding('style.--wb-scale') get hostScaleVar(): number {
+    return this.widgetFontScale;
   }
 
   /** Explicit stage height in TV edit mode: screen rows + 12 spare rows to drag into. */
@@ -310,6 +319,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
 
         // Target screen (TV) — layout_config.screen
         this.screen = readScreenConfig(data.layoutConfig);
+        this.dashboardFontScale = readFontScale(data.layoutConfig);
         this.measureStage();
 
         // Dashboard-level variables (reset so a previous dashboard's variables never leak)

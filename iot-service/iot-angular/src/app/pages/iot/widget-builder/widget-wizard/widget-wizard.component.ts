@@ -2,8 +2,9 @@ import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { 
   Widget, WidgetType,
-  QueryResult, WidgetQueryDef
+  QueryResult, WidgetQueryDef, toApiWidgetType
 } from '../models/widget.models';
+import { DEFAULT_MAP_OPTIONS, readMapOptions } from '../utils/map-rows';
 import { WidgetBuilderService } from '../../../../../sdk/core/services/widget-builder.service';
 import { NodesService } from '../../../../../sdk/core/services/nodes.service';
 import { SensorsService } from '../../../../../sdk/core/services/sensors.service';
@@ -179,8 +180,11 @@ export class WidgetWizardComponent implements OnInit {
         thresholdColors: true, // Apply threshold colors to value
         fontSize: 'large' as 'small' | 'medium' | 'large' | 'xlarge',
         valueColor: '#ffffff',
-        backgroundColor: ''   // Custom background color
-      }
+        backgroundColor: '',   // Custom background color
+        subtitleField: ''      // Column shown as a text line under the value (e.g. location)
+      },
+      // Map widget specific (see utils/map-rows.ts)
+      mapOptions: { ...DEFAULT_MAP_OPTIONS }
     }
   };
 
@@ -345,6 +349,7 @@ export class WidgetWizardComponent implements OnInit {
     { type: 'gauge', label: 'Gauge', icon: 'fa-tachometer-alt', description: 'Standard gauge visualization' },
     { type: 'table', label: 'Table', icon: 'fa-table', description: 'Supports many column styles' },
     { type: 'pie-chart', label: 'Pie Chart', icon: 'fa-chart-pie', description: 'The new core pie chart visualization' },
+    { type: 'map', label: 'Peta', icon: 'fa-map-marked-alt', description: 'Titik berkoordinat (lat, lon) berwarna sesuai status' },
     { type: 'heatmap', label: 'Heatmap', icon: 'fa-th', description: '2D heatmap visualization' },
   ];
   
@@ -1701,8 +1706,10 @@ ORDER BY day_of_week, hour`
                 thresholdColors: true,
                 fontSize: 'large',
                 valueColor: '#ffffff',
-                backgroundColor: ''
-              }
+                backgroundColor: '',
+                subtitleField: ''
+              },
+              mapOptions: readMapOptions(config.display.mapOptions)
             };
           }
           
@@ -2222,6 +2229,7 @@ ORDER BY day_of_week, hour`
   }
 
   updatePreview(): void {
+    if (this.selectedType === 'map') this.refreshMapPreview();
     if (!this.queryResult) return;
     
     const data = this.queryResult.rows;
@@ -3084,7 +3092,7 @@ ORDER BY day_of_week, hour`
       };
     });
 
-    // Return a dummy series with markLine
+    // Carrier series (no data points) that only hosts the threshold markLine
     return [{
       type: 'line',
       data: [],
@@ -3212,6 +3220,7 @@ ORDER BY day_of_week, hour`
       case 'pie-chart':
         return !!labelField && !!valueField;
       case 'table':
+      case 'map':   // fixed column contract (lat, lon, label, value, unit, status, time)
         return true;
       default:
         return false;
@@ -3409,7 +3418,7 @@ ORDER BY day_of_week, hour`
         widgetId: this.widgetId,
         body: {
           name: this.form.name,
-          widgetType: this.selectedType,
+          widgetType: toApiWidgetType(this.selectedType),
           sqlQuery: primarySql,
           config: widgetConfig
         }
@@ -3429,7 +3438,7 @@ ORDER BY day_of_week, hour`
         dashboardId: this.dashboardId,
         body: {
           name: this.form.name,
-          widgetType: this.selectedType,
+          widgetType: toApiWidgetType(this.selectedType),
           sqlQuery: primarySql,
           config: widgetConfig,
           positionX: 0,
@@ -3452,6 +3461,26 @@ ORDER BY day_of_week, hour`
 
   cancel(): void {
     this.router.navigate(['/iot/widget-builder', this.dashboardId]);
+  }
+
+  // ── Map (Peta) preview: same renderer as the dashboard ──
+  mapPreviewWidget: Widget | null = null;
+  dashboardProjectId: string | null = null;
+  private dashboardProjectLoaded = false;
+
+  refreshMapPreview(): void {
+    this.mapPreviewWidget = {
+      id: 'preview', dashboardId: this.dashboardId, name: this.form.title, type: 'map',
+      config: { display: { mapOptions: { ...this.form.display.mapOptions } } } as any,
+      position: { x: 0, y: 0, cols: 6, rows: 4 }, createdAt: new Date(), updatedAt: new Date(),
+    };
+    if (!this.dashboardProjectLoaded && this.dashboardId) {
+      this.dashboardProjectLoaded = true;
+      this.widgetBuilderService.widgetBuilderControllerGetDashboard$Response({ id: this.dashboardId }).subscribe({
+        next: (res: any) => this.dashboardProjectId = res?.body?.idProject || null,
+        error: () => this.dashboardProjectLoaded = false,
+      });
+    }
   }
 
   needsXYMapping(): boolean {
