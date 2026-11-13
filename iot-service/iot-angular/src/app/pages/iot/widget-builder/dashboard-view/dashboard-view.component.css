@@ -808,9 +808,6 @@ gridster-item,
   height: 100%;
   padding: 0;
 }
-.tv-area-edit .tv-stage .dashboard-gridster {
-  height: auto;
-}
 .tv-screen-edge {
   position: absolute;
   left: 0;
@@ -847,4 +844,8 @@ gridster-item,
 }
 .tv-stage ::ng-deep .panel-label {
   font-size: calc(12px * var(--wb-scale, 1));
+}
+/* TV view mode: never show gridster's own scrollbar inside the 16:9 box */
+.tv-area:not(.tv-area-edit) .tv-stage ::ng-deep gridster {
+  overflow: hidden !important;
 }

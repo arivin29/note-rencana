@@ -36,3 +36,18 @@ export function defaultPresetFrom(timeRange: string | null | undefined): string 
   const v = (timeRange ?? '').trim();
   return findPreset(v) ? v : DEFAULT_PRESET;
 }
+
+/** "now" or "now-<n><unit>" (m,h,d,w,M,y) — a range typed this way keeps rolling on refresh. */
+export function isRelativeExpr(expr: string | null | undefined): boolean {
+  return /^now(-\d+[mhdwMy])?$/.test((expr ?? '').trim());
+}
+
+/**
+ * Dashboard data is "tertunda" when nothing loaded successfully for longer than
+ * max(2 × refresh interval, 3 minutes). Never stale when auto-refresh is off.
+ */
+export function isStale(lastSuccessAt: number | null, now: number, refreshSeconds: number): boolean {
+  if (!lastSuccessAt || refreshSeconds <= 0) return false;
+  const limit = Math.max(2 * refreshSeconds * 1000, 3 * 60 * 1000);
+  return now - lastSuccessAt > limit;
+}

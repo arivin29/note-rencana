@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, AfterViewInit, NgZone, ViewChild } from '@angular/core';
 import { Widget } from '../../models/widget.models';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { WidgetBuilderService } from 'src/sdk/core/services';
 
@@ -49,6 +49,9 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   /** Last reload failed but previous data is still shown. */
   stale = false;
   lastLoadedAt: Date | null = null;
+  /** In-flight query subscriptions of the current load (cancelled when a newer load starts). */
+  private inflight = new Subscription();
+  private pending = false;
   error: string | null = null;
   chartData: any[] = [];
   columns: string[] = [];
@@ -92,15 +95,22 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes['timeRange'] && !changes['timeRange'].firstChange) ||
+    const tick = changes['refreshNonce'] && !changes['refreshNonce'].firstChange;
+    const rangeChanged = (changes['timeRange'] && !changes['timeRange'].firstChange) ||
         (changes['timeFrom'] && !changes['timeFrom'].firstChange) ||
-        (changes['timeTo'] && !changes['timeTo'].firstChange) ||
-        (changes['refreshNonce'] && !changes['refreshNonce'].firstChange)) {
+        (changes['timeTo'] && !changes['timeTo'].firstChange);
+    if (tick) {
+      // Auto-refresh tick: skip while the previous query is still running (slow ClickHouse
+      // queries must not pile up). The next tick will catch up.
+      if (!this.pending) this.loadWidgetData();
+    } else if (rangeChanged) {
+      // User changed the range: cancel the in-flight query so an older response can't win.
       this.loadWidgetData();
     }
   }
 
   ngOnDestroy(): void {
+    this.inflight.unsubscribe();
     this.destroy$.next();
     this.destroy$.complete();
     
@@ -154,7 +164,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
       requestBody.timeRange = (this.timeRange || '6h') as any;
     }
 
-    this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
+    this.inflight.add(this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
       body: requestBody
     }).pipe(
       takeUntil(this.destroy$)
@@ -166,7 +176,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
         console.error('Failed to execute widget query:', err);
         this.finishError(err.error?.message || err.message || 'Gagal memuat data widget');
       }
-    });
+    }));
   }
 
   /** Execute multiple queries and merge results with _source column */
@@ -200,7 +210,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
         requestBody.timeRange = (this.timeRange || '6h') as any;
       }
 
-      this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
+      this.inflight.add(this.widgetBuilderService.widgetBuilderControllerExecuteQuery({
         body: requestBody
       }).pipe(
         takeUntil(this.destroy$)
@@ -228,7 +238,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
             }
           }
         }
-      });
+      }));
     }
   }
 
@@ -237,6 +247,10 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   }
 
   private beginLoad(): void {
+    // Cancel whatever is still running for this widget — only the newest load may update it.
+    this.inflight.unsubscribe();
+    this.inflight = new Subscription();
+    this.pending = true;
     if (this.hasData) {
       this.refreshing = true;   // keep previous chart visible — no flicker
     } else {
@@ -252,6 +266,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
     this.loading = false;
     this.refreshing = false;
     this.lastLoadedAt = new Date();
+    this.pending = false;
     this.loadResult.emit({ ok: true, at: this.lastLoadedAt });
   }
 
@@ -260,6 +275,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
     this.stale = this.hasData;  // previous data stays on screen, marked as stale
     this.loading = false;
     this.refreshing = false;
+    this.pending = false;
     this.loadResult.emit({ ok: false, at: new Date() });
   }
 

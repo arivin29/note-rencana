@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset } from './dashboard-time';
+import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset, isRelativeExpr, isStale } from './dashboard-time';
 
 const NOW = 1_700_000_000_000;
 
@@ -31,4 +31,19 @@ test('default preset from dashboard time_range', () => {
 test('findPreset', () => {
   assert.equal(findPreset('24h')?.duration, 86_400_000);
   assert.equal(findPreset('zz'), null);
+});
+
+test('relative expressions', () => {
+  assert.equal(isRelativeExpr('now'), true);
+  assert.equal(isRelativeExpr('now-6h'), true);
+  assert.equal(isRelativeExpr('now-30d'), true);
+  assert.equal(isRelativeExpr('2026-11-13 00:00:00'), false);
+  assert.equal(isRelativeExpr('now-6x'), false);
+});
+
+test('isStale only with refresh on', () => {
+  assert.equal(isStale(NOW - 130_000, NOW, 60), false); // 2m10s < max(2×60s, 3 min)
+  assert.equal(isStale(NOW - 200_000, NOW, 60), true);
+  assert.equal(isStale(NOW - 999_999, NOW, 0), false); // refresh off → never "tertunda"
+  assert.equal(isStale(null, NOW, 60), false);
 });

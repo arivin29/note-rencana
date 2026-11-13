@@ -49,7 +49,7 @@ export class DashboardModalComponent implements OnInit {
       screenHeight: [screen.height, [Validators.min(240)]],
       screenRows: [screen.rows || SCREEN_DEFAULT_ROWS, [Validators.min(4), Validators.max(48)]],
       timeRange: [defaultPresetFrom(data.dashboard?.timeRange)],
-      refreshInterval: [normalizeRefresh(data.dashboard?.refreshInterval ?? 60)],
+      refreshInterval: [normalizeRefresh(data.dashboard?.refreshInterval ?? 0)],
     });
     // TV screens should refresh by themselves: default to 1 minute when switching to a TV preset with refresh off.
     this.form.get('screenPreset')!.valueChanges.subscribe((p: ScreenPreset) => {

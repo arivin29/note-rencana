@@ -1,11 +1,11 @@
 <!-- Layar Penuh: slim header (name · freshness · clock) + exit button on mouse movement -->
 <div *ngIf="kioskMode" class="immersive-header">
     <span class="immersive-title text-truncate">{{ dashboard?.name || 'Dashboard' }}</span>
-    <span *ngIf="failStreak >= 2 && failingSince" class="immersive-meta text-warning">
-        <i class="bi bi-exclamation-triangle me-1"></i>Gagal memperbarui sejak {{ failingSince | date:'HH:mm' }}
+    <span *ngIf="dataDelayed" class="immersive-meta text-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>Data tertunda — terakhir {{ lastSuccessAt | date:'HH:mm' }}
     </span>
-    <span *ngIf="lastSuccessAt && !(failStreak >= 2)" class="immersive-meta">
-        Diperbarui {{ lastSuccessAt | date:'HH:mm:ss' }}
+    <span *ngIf="lastSuccessAt && !dataDelayed" class="immersive-meta">
+        Diperbarui {{ lastSuccessAt | date:'HH:mm:ss' }}<ng-container *ngIf="failingWidgetCount > 0"> · <span class="text-warning">{{ failingWidgetCount }} widget gagal</span></ng-container>
     </span>
     <span class="immersive-clock">{{ now | date:'HH:mm' }}</span>
 </div>
@@ -197,13 +197,13 @@
         </div>
 
         <!-- Freshness -->
-        <span *ngIf="failStreak >= 2 && failingSince" class="toolbar-status text-warning"
-            [title]="'Beberapa widget gagal diperbarui sejak ' + (failingSince | date:'HH:mm:ss')">
+        <span *ngIf="dataDelayed" class="toolbar-status text-warning"
+            [title]="'Tidak ada data baru sejak ' + (lastSuccessAt | date:'HH:mm:ss')">
             <i class="bi bi-exclamation-triangle"></i>
-            <span class="d-none d-md-inline ms-1">Gagal memperbarui sejak {{ failingSince | date:'HH:mm' }}</span>
+            <span class="d-none d-md-inline ms-1">Data tertunda — terakhir {{ lastSuccessAt | date:'HH:mm' }}</span>
         </span>
-        <span *ngIf="lastSuccessAt && !(failStreak >= 2)" class="toolbar-status text-muted d-none d-sm-inline">
-            Diperbarui {{ lastSuccessAt | date:'HH:mm:ss' }}
+        <span *ngIf="lastSuccessAt && !dataDelayed" class="toolbar-status text-muted d-none d-sm-inline">
+            Diperbarui {{ lastSuccessAt | date:'HH:mm:ss' }}<ng-container *ngIf="failingWidgetCount > 0"> · <span class="text-warning">{{ failingWidgetCount }} widget gagal</span></ng-container>
         </span>
 
         <!-- Refresh -->
@@ -328,7 +328,7 @@
         </div>
         <div class="grid-stage" [class.tv-stage]="tvMode"
             [style.width.px]="tvMode ? stageBox.width : null"
-            [style.height.px]="tvMode ? (editMode ? null : stageBox.height) : null"
+            [style.height.px]="tvMode ? (editMode ? editStageHeight : stageBox.height) : null"
             [style.--wb-scale]="tvMode ? wbScale : null">
             <gridster [options]="gridsterOptions" class="dashboard-gridster">
                 <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item"
@@ -337,7 +337,7 @@
                         [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
                         [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="widgetsReadOnly"
                         [fontScale]="widgetFontScale"
-                        (loadResult)="onWidgetLoad($event)"
+                        (loadResult)="onWidgetLoad(item['id'], $event)"
                         (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
                         (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
                         (duplicate)="duplicateWidget(item['id'])">
@@ -360,7 +360,7 @@
         </button>
         <app-widget-container [widget]="getWidgetById(fullscreenWidget)" [editMode]="false" 
             [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()"
-            [dashboardVariables]="dashboardVariables"
+            [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="true"
             [isFullscreen]="true" (toggleFullscreen)="toggleFullscreen(fullscreenWidget!)">
         </app-widget-container>
     </div>

@@ -9,7 +9,7 @@ import { Subject, interval, merge } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { WidgetBuilderService } from 'src/sdk/core/services';
 import { AppSettings } from '../../../../service/app-settings.service';
-import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset } from '../utils/dashboard-time';
+import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset, isRelativeExpr, isStale } from '../utils/dashboard-time';
 import { LayoutStateService } from '../../../../service/layout-state.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DashboardModalComponent } from '../components/dashboard-modal/dashboard-modal.component';
@@ -67,10 +67,10 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   refreshNonce = 0;
   /** Last time any widget loaded successfully (shown as "Diperbarui HH:mm:ss"). */
   lastSuccessAt: Date | null = null;
-  /** Consecutive refresh cycles in which at least one widget failed. */
-  failStreak = 0;
-  failingSince: Date | null = null;
-  private cycleFailed = false;
+  /** Latest load result per widget id (a single broken widget doesn't flag the whole dashboard). */
+  private widgetStatus = new Map<string, boolean>();
+  /** Dashboard whose defaults (range/refresh) were applied — re-applied only when the dashboard changes. */
+  private defaultsAppliedFor: string | null = null;
 
   // Inputs for embedded mode
   @Input() dashboardId: string | null = null;
@@ -124,6 +124,13 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   /** Text scale passed to widgets (1 outside TV mode). */
   get widgetFontScale(): number {
     return this.tvMode ? this.wbScale : 1;
+  }
+
+  /** Explicit stage height in TV edit mode: screen rows + 12 spare rows to drag into. */
+  get editStageHeight(): number {
+    const m = this.gridsterOptions.margin ?? 4;
+    const rh = (this.gridsterOptions.fixedRowHeight as number) || 0;
+    return m + (this.screen.rows + 12) * (rh + m);
   }
 
   /** Pixel offset of the bottom edge of the last screen row (edit-mode guide line). */
@@ -292,18 +299,24 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
           layoutConfig: data.layoutConfig || {}
         };
 
-        // Dashboard defaults (time range + auto refresh). Toolbar changes are session-only.
-        this.applyDashboardDefaults(data.timeRange, data.refreshInterval);
+        // Dashboard defaults (time range + auto refresh) — only when a different dashboard is loaded,
+        // so reloads (cancel edit, save settings) keep the user's toolbar choice.
+        if (this.defaultsAppliedFor !== dashId) {
+          this.defaultsAppliedFor = dashId;
+          this.applyDashboardDefaults(data.timeRange, data.refreshInterval);
+          this.lastSuccessAt = null;
+          this.widgetStatus.clear();
+        }
 
         // Target screen (TV) — layout_config.screen
         this.screen = readScreenConfig(data.layoutConfig);
         this.measureStage();
 
-        // Extract dashboard-level variables from layoutConfig
-        if (data.layoutConfig?.['variables']) {
-          this.dashboardVariables = data.layoutConfig['variables'];
-        }
-        
+        // Dashboard-level variables (reset so a previous dashboard's variables never leak)
+        this.dashboardVariables = data.layoutConfig?.['variables'] || {};
+
+        this.widgets = [];
+        this.widgetData.clear();
         if (data.widgets && data.widgets.length > 0) {
           this.widgets = data.widgets.map((w: WidgetResponse) => {
             const widgetId = w.idWidget || w.id || '';
@@ -373,7 +386,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
         // layoutConfig merged with the current one (keeps `variables`)
         body: buildDashboardSettingsBody(current.layoutConfig, result) as any
       }).subscribe({
-        next: () => this.loadDashboard(),
+        next: () => this.reloadWithDefaults(),
         error: (err: any) => {
           console.error('Failed to save dashboard settings:', err);
           alert('Gagal menyimpan pengaturan dashboard: ' + (err.error?.message || err.message));
@@ -426,6 +439,12 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     });
   }
 
+  /** Settings saved from the modal must re-apply defaults even for the same dashboard. */
+  private reloadWithDefaults(): void {
+    this.defaultsAppliedFor = null;
+    this.loadDashboard();
+  }
+
   cancelEdit(): void {
     this.loadDashboard(); // Reload to reset positions
     this.toggleEditMode();
@@ -465,6 +484,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
         next: () => {
           this.widgets = this.widgets.filter(w => w['id'] !== widgetId);
           this.widgetData.delete(widgetId);
+          this.widgetStatus.delete(widgetId);
+          this.updateOverflow();
+          this.applyGridMode();
         },
         error: (err: any) => {
           console.error('Failed to delete widget:', err);
@@ -483,6 +505,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   toggleKioskMode(): void {
+    if (!this.kioskMode && this.editMode) this.cancelEdit(); // no hidden Save/Cancel with drag enabled
     this.layoutState.toggle();
     if (this.kioskMode) this.revealImmersiveControls();
   }
@@ -583,8 +606,10 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
           updatedAt: new Date()
         };
         
-        this.widgets.push(newGridsterItem);
         this.widgetData.set(newWidgetId, newWidget);
+        this.widgets.push(newGridsterItem);
+        this.updateOverflow();
+        this.applyGridMode();
         
         console.log('Widget duplicated successfully:', newWidgetId);
       },
@@ -652,25 +677,37 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
    * widget ngOnChanges reloads); custom ranges stay fixed and reload via refreshNonce.
    */
   refreshAllWidgets(): void {
-    const next = rollRange(this.selectedTimePreset, Date.now(), {
+    const now = Date.now();
+    let next = rollRange(this.selectedTimePreset, now, {
       from: this.timeRange.from.getTime(),
       to: this.timeRange.to.getTime(),
     });
+    // A range typed as "now-6h → now" (or picked from recent ranges) is 'custom' but still relative.
+    if (this.selectedTimePreset === 'custom' && isRelativeExpr(this.absoluteTimeFrom) && isRelativeExpr(this.absoluteTimeTo)) {
+      const f = this.parseRelativeTime(this.absoluteTimeFrom.trim());
+      const t = this.parseRelativeTime(this.absoluteTimeTo.trim());
+      if (f && t) next = { from: f.getTime(), to: t.getTime() };
+    }
     this.timeRange = { ...this.timeRange, from: new Date(next.from), to: new Date(next.to) };
-    this.failStreak = this.cycleFailed ? this.failStreak + 1 : 0;
-    if (!this.cycleFailed) this.failingSince = null;
-    this.cycleFailed = false;
     this.refreshNonce++;
     this.lastRefresh = new Date();
   }
 
-  onWidgetLoad(result: { ok: boolean; at: Date }): void {
-    if (result.ok) {
-      this.lastSuccessAt = result.at;
-    } else {
-      this.cycleFailed = true;
-      if (!this.failingSince) this.failingSince = result.at;
-    }
+  onWidgetLoad(widgetId: string, result: { ok: boolean; at: Date }): void {
+    this.widgetStatus.set(widgetId, result.ok);
+    if (result.ok) this.lastSuccessAt = result.at;
+  }
+
+  /** Widgets whose latest load failed (each also shows its own badge). */
+  get failingWidgetCount(): number {
+    let n = 0;
+    this.widgetStatus.forEach(ok => { if (!ok) n++; });
+    return n;
+  }
+
+  /** No successful load for > max(2 × refresh, 3 min) — evaluated against the 10 s clock (`now`). */
+  get dataDelayed(): boolean {
+    return isStale(this.lastSuccessAt ? this.lastSuccessAt.getTime() : null, this.now.getTime(), this.refreshInterval);
   }
 
   /** Read-only widgets (no edit/duplicate/delete) when embedded or fullscreen. */
@@ -693,9 +730,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     if (el) {
       this.zone.runOutsideAngular(() => {
         this.areaObserver = new ResizeObserver(() => this.zone.run(() => this.measureStage()));
+        // observe() fires once immediately — no synchronous measuring inside change detection
         this.areaObserver.observe(el);
       });
-      this.measureStage();
     }
   }
 
