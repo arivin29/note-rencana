@@ -5,6 +5,7 @@
 // ============================================================
 
 import React from 'react'
+import { fmtFixed } from '@/lib/format'
 
 export interface GaugeProps {
   value: number | null | undefined
@@ -75,7 +76,7 @@ export function Gauge({
   const trackPath = arcPath(START_ANGLE, START_ANGLE + SWEEP, R)
   const valuePath = arcPath(START_ANGLE, valueAngle, R)
   const tip = polar(CX, CY, R, valueAngle)
-  const display = hasValue ? value!.toFixed(precision) : '—'
+  const display = hasValue ? fmtFixed(value!, precision) : '—'
 
   const startPt = polar(CX, CY, R, START_ANGLE)
   const endPt = polar(CX, CY, R, START_ANGLE + SWEEP)

@@ -11,6 +11,7 @@ import { useDiagramStore } from '@/stores/useDiagramStore'
 import { useRuntimeStore } from '@/stores/useRuntimeStore'
 import { useUiStore } from '@/stores/useUiStore'
 import type { RuntimeStatus } from '@/types/scada'
+import { KIOSK_BOOST_SCALE } from '@/kiosk/kiosk'
 
 const STATUS_RANK: Record<string, number> = {
   alert: 5, warn: 4, stale: 3, offline: 2, ok: 1, unknown: 0,
@@ -30,6 +31,7 @@ export function ZoneNode({ id, selected }: NodeProps<any>) {
   const runtimeMap = useRuntimeStore((s) => s.nodeRuntimeMap)
   const isEditMode = useUiStore((s) => s.mode) === 'edit'
   const openNodeConfig = useUiStore((s) => s.openNodeConfig)
+  const kioskEnabled = useUiStore((s) => s.kiosk.enabled)
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -122,6 +124,8 @@ export function ZoneNode({ id, selected }: NodeProps<any>) {
           background: 'var(--surface-bg)',
           border: `1px solid ${color}55`,
           boxShadow: `0 3px 10px -3px #000a`,
+          // Kiosk (TV): counter-scale the title pill, anchored on the zone's top-left edge
+          ...(kioskEnabled ? { transform: KIOSK_BOOST_SCALE, transformOrigin: 'left center' } : null),
         }}
       >
         {/* group / layers icon */}

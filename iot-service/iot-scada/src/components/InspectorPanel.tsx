@@ -9,6 +9,7 @@ import { useUiStore } from '@/stores/useUiStore'
 import { useDiagramStore } from '@/stores/useDiagramStore'
 import { useRuntimeStore } from '@/stores/useRuntimeStore'
 import type { ScadaEdgeDto, PipeType, PathMode } from '@/types/scada'
+import { fmtFixed } from '@/lib/format'
 
 // ── Shared: Inspector Header with Close button ────────────────
 
@@ -271,7 +272,7 @@ function NodeInspector({ nodeId, onClose }: { nodeId: string; onClose: () => voi
                     {b.displayLabel ?? b.bindingKey}
                   </span>
                   <span className="value-display text-xs text-[var(--text-primary)]">
-                    {b.value != null ? b.value.toFixed(b.precision ?? 1) : '—'}
+                    {b.value != null ? fmtFixed(b.value, b.precision ?? 1) : '—'}
                     {b.unitOverride ?? b.unit ? (
                       <span className="text-[var(--text-muted)] ml-0.5">
                         {b.unitOverride ?? b.unit}

@@ -359,18 +359,27 @@
     background-color: transparent;
   }
 
-  /* Corner controls: −  +  [fit · Seluruh bagan], ≥40px touch/TV targets */
+  /* Corner controls: −  +  [fit · Seluruh bagan]. Sized in vmin so they scale
+     with the iframe (TV 4K stays readable), ≥36px touch target. Auto-hide when
+     idle (KioskControls toggles .kiosk-controls--idle); focus keeps them shown. */
   .react-flow__controls.kiosk-controls {
+    --kc-btn: clamp(36px, 5vmin, 96px);
     background-color: color-mix(in srgb, var(--surface-bg) 90%, transparent) !important;
     border: 1px solid var(--surface-border) !important;
-    border-radius: 10px !important;
+    border-radius: calc(var(--kc-btn) * 0.25) !important;
     box-shadow: none !important;
-    margin: 12px;
+    margin: clamp(8px, 1.5vmin, 32px);
     gap: 0;
+    opacity: 1;
+    transition: opacity 300ms ease;
+  }
+  .react-flow__controls.kiosk-controls.kiosk-controls--idle:not(:focus-within) {
+    opacity: 0;
+    pointer-events: none;
   }
   .react-flow__controls.kiosk-controls .react-flow__controls-button {
-    width: 40px;
-    height: 40px;
+    width: var(--kc-btn);
+    height: var(--kc-btn);
     padding: 0;
     background-color: transparent !important;
     border: none !important;
@@ -386,17 +395,17 @@
     color: var(--text-primary) !important;
   }
   .react-flow__controls.kiosk-controls .react-flow__controls-button svg {
-    width: 18px;
-    height: 18px;
+    width: calc(var(--kc-btn) * 0.45);
+    height: calc(var(--kc-btn) * 0.45);
     max-width: none;
     max-height: none;
     fill: none !important;
   }
   .react-flow__controls.kiosk-controls .react-flow__controls-button.kiosk-controls__fit {
     width: auto;
-    gap: 8px;
-    padding: 0 14px 0 12px;
-    font-size: 14px;
+    gap: calc(var(--kc-btn) * 0.2);
+    padding: 0 calc(var(--kc-btn) * 0.35) 0 calc(var(--kc-btn) * 0.3);
+    font-size: clamp(13px, 2vmin, 36px);
     font-weight: 500;
     white-space: nowrap;
   }

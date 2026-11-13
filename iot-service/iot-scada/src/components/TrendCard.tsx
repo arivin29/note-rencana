@@ -6,6 +6,7 @@
 
 import React, { useMemo } from 'react'
 import type { SparklinePoint } from './Sparkline'
+import { fmtFixed } from '@/lib/format'
 
 export interface TrendCardProps {
   /** Data points sorted by time ascending */
@@ -26,6 +27,8 @@ export interface TrendCardProps {
   transparent?: boolean
   /** Compact font sizes for embedded use */
   compact?: boolean
+  /** Hide Y/X tick labels (kiosk/TV: illegible at fit zoom) — line uses the full area */
+  hideAxes?: boolean
   /** Optional className */
   className?: string
 }
@@ -94,11 +97,12 @@ export function TrendCard({
   hideHeader = false,
   transparent = false,
   compact = false,
+  hideAxes = false,
   className,
 }: TrendCardProps) {
   const headerH = hideHeader ? 0 : 22
-  const yAxisW = compact ? 24 : 30
-  const xAxisH = compact ? 13 : 16
+  const yAxisW = hideAxes ? 0 : compact ? 24 : 30
+  const xAxisH = hideAxes ? 0 : compact ? 13 : 16
   const padR = compact ? 4 : 6
   const padT = compact ? 8 : 10
   const yFontSize = compact ? 7 : 8
@@ -157,7 +161,7 @@ export function TrendCard({
       yTicks: ticks.map((v) => ({
         value: v,
         y: padT + chartH - ((v - domainMin) / vRange) * chartH,
-        label: v % 1 === 0 ? v.toFixed(0) : v.toFixed(1),
+        label: fmtFixed(v, v % 1 === 0 ? 0 : 1),
       })),
       timeTicks: tt,
       yMin: domainMin,
@@ -235,6 +239,7 @@ export function TrendCard({
       {/* ── Chart body ── */}
       <div className="relative" style={{ height: height - headerH }}>
         {/* Y-axis labels */}
+        {!hideAxes && (
         <div
           className="absolute top-0 left-0 flex flex-col justify-between"
           style={{ width: yAxisW, height: chartH + padT, paddingTop: padT }}
@@ -255,6 +260,7 @@ export function TrendCard({
             </span>
           ))}
         </div>
+        )}
 
         {/* SVG chart area */}
         <svg
@@ -316,6 +322,7 @@ export function TrendCard({
         </svg>
 
         {/* X-axis time labels */}
+        {!hideAxes && (
         <div
           className="absolute flex justify-between"
           style={{
@@ -341,6 +348,7 @@ export function TrendCard({
             </span>
           ))}
         </div>
+        )}
       </div>
     </div>
   )

@@ -12,6 +12,8 @@ import { useUiStore } from '@/stores/useUiStore'
 import { useRuntimeStore } from '@/stores/useRuntimeStore'
 import { useTrendStore } from '@/stores/useTrendStore'
 import { TrendCard } from '@/components/TrendCard'
+import { fmtFixed } from '@/lib/format'
+import { KIOSK_TEXT_BOOST_VAR } from '@/kiosk/kiosk'
 import type { NodeRuntimeState, RuntimeStatus, ScadaNodeBinding } from '@/types/scada'
 
 const STATUS_DOT: Record<RuntimeStatus, string> = {
@@ -72,6 +74,8 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
   const label = (d.label as string) ?? 'Value'
   const mode = useUiStore((s) => s.mode)
   const isEditMode = mode === 'edit'
+  // Kiosk (TV): label wraps above the value, both counter-scaled against the fit zoom
+  const kioskEnabled = useUiStore((s) => s.kiosk.enabled)
 
   const runtime: NodeRuntimeState | null = useRuntimeStore((s) => s.nodeRuntimeMap[id] ?? null)
   const status: RuntimeStatus = runtime?.primaryStatus ?? 'unknown'
@@ -104,9 +108,19 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
   const showStatusDot = styleConfig.showStatusDot !== false
   const showStatusBorder = styleConfig.showStatusBorder ?? true
 
+  // Kiosk font sizing: base × boost. The value is additionally capped so the
+  // (monospace) value + unit always fits the chip width — no ellipsis/overflow.
+  const boostFs = (px: number): number | string =>
+    kioskEnabled ? `calc(${px}px * var(${KIOSK_TEXT_BOOST_VAR}, 1))` : px
+  const kioskValueFs = (px: number, val: string, unit: string): string => {
+    const chars = val.length + (unit ? 0.75 * (unit.length + 0.4) : 0)
+    const cap = Math.max(px, (nodeSize.width - 16) / (0.62 * Math.max(chars, 1)))
+    return `min(calc(${px}px * var(${KIOSK_TEXT_BOOST_VAR}, 1)), ${cap.toFixed(1)}px)`
+  }
+
   // Runtime values
   const displayValue = runtime?.primaryValue != null
-    ? runtime.primaryValue.toFixed(runtime.primaryPrecision ?? 1)
+    ? fmtFixed(runtime.primaryValue, runtime.primaryPrecision ?? 1)
     : '—'
   const displayUnit = runtime?.primaryUnit ?? ''
 
@@ -187,8 +201,14 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
     }
     return (
       <span
-        className="font-semibold truncate leading-tight"
-        style={{ fontSize: labelFs, color: labelColor, maxWidth: nodeSize.width * 0.45 }}
+        className={kioskEnabled
+          ? 'font-semibold leading-tight text-center [overflow-wrap:anywhere]'
+          : 'font-semibold truncate leading-tight'}
+        style={{
+          fontSize: boostFs(labelFs),
+          color: labelColor,
+          maxWidth: kioskEnabled ? undefined : nodeSize.width * 0.45,
+        }}
         onDoubleClick={handleDoubleClick}
         title={label}
       >
@@ -202,10 +222,16 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
     unit: string = displayUnit,
     fs: number = valueFs,
   ) => (
-    <span className="font-mono font-bold leading-none whitespace-nowrap" style={{ fontSize: fs, color: valueColor }}>
+    <span
+      className="font-mono font-bold leading-none whitespace-nowrap"
+      style={{ fontSize: kioskEnabled ? kioskValueFs(fs, val, unit) : fs, color: valueColor }}
+    >
       {val}
       {unit && (
-        <span className="font-normal ml-0.5" style={{ fontSize: Math.max(8, fs - 3), color: unitColor }}>
+        <span
+          className="font-normal ml-0.5"
+          style={{ fontSize: kioskEnabled ? '0.75em' : Math.max(8, fs - 3), color: unitColor }}
+        >
           {unit}
         </span>
       )}
@@ -214,7 +240,18 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
 
   // ── Layout renders ─────────────────────────────────────────
 
-  const renderHorizontal = () => (
+  // Kiosk: label (wrapping) stacked above the value so neither is truncated
+  const renderKioskStack = () => (
+    <div className="flex flex-col items-center justify-center gap-1 w-full min-h-full px-2 py-1">
+      <div className="flex items-center justify-center gap-1.5 max-w-full">
+        {showStatusDot && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_DOT[status]}`} />}
+        {renderLabel()}
+      </div>
+      {renderValue()}
+    </div>
+  )
+
+  const renderHorizontal = () => kioskEnabled ? renderKioskStack() : (
     <div className="flex items-center gap-1.5 w-full h-full px-2">
       <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
         {showStatusDot && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_DOT[status]}`} />}
@@ -234,12 +271,17 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
       {allBindings.length > 1 ? (
         <div className="flex flex-col items-center gap-0.5 mt-0.5">
           {allBindings.map((b) => (
-            <div key={b.bindingId} className="flex items-center gap-1">
-              <span className="text-[9px] font-medium truncate" style={{ color: labelColor, maxWidth: 50 }}>
+            <div key={b.bindingId} className={kioskEnabled ? 'flex flex-col items-center' : 'flex items-center gap-1'}>
+              <span
+                className={kioskEnabled ? 'font-medium text-center [overflow-wrap:anywhere]' : 'text-[9px] font-medium truncate'}
+                style={kioskEnabled
+                  ? { color: labelColor, fontSize: boostFs(9) }
+                  : { color: labelColor, maxWidth: 50 }}
+              >
                 {b.displayLabel ?? b.bindingKey}
               </span>
               {renderValue(
-                b.value != null ? b.value.toFixed(b.precision ?? 1) : '—',
+                b.value != null ? fmtFixed(b.value, b.precision ?? 1) : '—',
                 b.unitOverride ?? b.unit ?? '',
                 Math.max(10, valueFs - 2),
               )}
@@ -300,6 +342,7 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
             hideHeader
             transparent
             compact
+            hideAxes={kioskEnabled}
           />
         </div>
       )}
@@ -313,7 +356,9 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
         ].join(' ')}
         style={{
           width: nodeSize.width,
-          height: nodeSize.height,
+          // Kiosk: boosted text may need more rows → grow downward, never clip
+          height: kioskEnabled ? 'auto' : nodeSize.height,
+          minHeight: kioskEnabled ? nodeSize.height : undefined,
           backgroundColor: bgColor,
           borderStyle: 'solid',
           borderWidth: borderW,

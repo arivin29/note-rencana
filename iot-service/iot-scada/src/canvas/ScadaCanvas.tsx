@@ -7,8 +7,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
-  Controls,
-  ControlButton,
   ConnectionMode,
   BackgroundVariant,
   type Node,
@@ -35,6 +33,7 @@ import {
   KIOSK_FIT_MAX_ZOOM,
   KIOSK_RESIZE_DEBOUNCE_MS,
 } from '@/kiosk/kiosk'
+import { KioskControls, KioskTextBoost } from '@/kiosk/KioskViewport'
 
 // ── Convert store node/edge to React Flow format ──────────────
 
@@ -92,7 +91,7 @@ function toFlowEdge(e: ScadaEdgeDto): Edge {
 // ── ScadaCanvas inner (needs ReactFlow context) ───────────────
 
 function CanvasInner() {
-  const { fitView, zoomIn, zoomOut } = useReactFlow()
+  const { fitView } = useReactFlow()
 
   const storeNodes   = useDiagramStore((s) => s.nodes)
   const storeEdges   = useDiagramStore((s) => s.edges)
@@ -390,36 +389,11 @@ function CanvasInner() {
         />
       )}
 
-      {/* Kiosk interactive: zoom −/+ and fit, corner, TV-readable */}
-      {kioskEnabled && kioskInteractive && (
-        <Controls
-          className="kiosk-controls"
-          position="bottom-right"
-          orientation="horizontal"
-          showZoom={false}
-          showFitView={false}
-          showInteractive={false}
-          aria-label="Kontrol tampilan bagan"
-        >
-          <ControlButton onClick={() => zoomOut({ duration: 200 })} title="Perkecil" aria-label="Perkecil">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.75}><path d="M3 8h10" strokeLinecap="round" /></svg>
-          </ControlButton>
-          <ControlButton onClick={() => zoomIn({ duration: 200 })} title="Perbesar" aria-label="Perbesar">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.75}><path d="M3 8h10M8 3v10" strokeLinecap="round" /></svg>
-          </ControlButton>
-          <ControlButton
-            onClick={() => fitView({ padding: KIOSK_FIT_PADDING, minZoom: KIOSK_MIN_ZOOM, maxZoom: KIOSK_FIT_MAX_ZOOM, duration: 300 })}
-            title="Tampilkan seluruh bagan"
-            aria-label="Tampilkan seluruh bagan"
-            className="kiosk-controls__fit"
-          >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span>Seluruh bagan</span>
-          </ControlButton>
-        </Controls>
-      )}
+      {/* Kiosk: counter-scale readable texts against the fit zoom (TV legibility) */}
+      {kioskEnabled && <KioskTextBoost />}
+
+      {/* Kiosk interactive: zoom −/+ and fit, corner, vmin-sized, auto-hide when idle */}
+      {kioskEnabled && kioskInteractive && <KioskControls />}
     </ReactFlow>
   )
 }

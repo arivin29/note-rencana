@@ -16,6 +16,8 @@ import { Gauge } from '@/components/Gauge'
 import type { NodeRuntimeState, RuntimeStatus, NodeStyleConfig, NodeRenderMode, ScadaNodeBinding, ScadaRuntimeBindingDto } from '@/types/scada'
 import { getSensorCategory } from './sensorCategories'
 import { SCHEMATIC_VARIANTS } from './schematicVariants'
+import { fmtFixed } from '@/lib/format'
+import { KIOSK_BOOST_SCALE } from '@/kiosk/kiosk'
 
 // ── Status helpers ────────────────────────────────────────────
 
@@ -1164,7 +1166,7 @@ function NodeTooltipCard({
   }, [onClose, anchorRef])
 
   const displayValue = runtime?.primaryValue != null
-    ? runtime.primaryValue.toFixed(runtime.primaryPrecision ?? 1)
+    ? fmtFixed(runtime.primaryValue, runtime.primaryPrecision ?? 1)
     : null
   const displayUnit = runtime?.primaryUnit ?? ''
 
@@ -1242,7 +1244,7 @@ function NodeTooltipCard({
                 </span>
                 <div className="flex items-center gap-1">
                   <span className="font-mono text-[var(--text-primary)]">
-                    {b.value != null ? b.value.toFixed(b.precision ?? 1) : '—'}
+                    {b.value != null ? fmtFixed(b.value, b.precision ?? 1) : '—'}
                   </span>
                   {(b.unitOverride ?? b.unit) && (
                     <span className="text-[var(--text-muted)]">{b.unitOverride ?? b.unit}</span>
@@ -1349,6 +1351,10 @@ const DIAL_TYPES = new Set(['pressure', 'flowmeter', 'ph_sensor', 'turbidity_sen
 // selector (a new reference each render triggers "Maximum update depth exceeded")
 const EMPTY_CONFIG: Record<string, unknown> = {}
 const EMPTY_STYLE: NodeStyleConfig = {}
+// Kiosk text boost: scale origin = the glyph edge the info block hangs off
+const INFO_BOOST_ORIGIN: Record<string, string> = {
+  bottom: 'top center', top: 'bottom center', left: 'right center', right: 'left center', center: 'center',
+}
 const EMPTY_BINDINGS: ScadaNodeBinding[] = []
 
 // Body bounds (viewBox 0..64) per tank glyph, for the water-fill overlay
@@ -1368,7 +1374,7 @@ function toNum(v?: number | null): number | null {
 function fmtBinding(b?: ScadaRuntimeBindingDto | null, fallbackPrec = 0): string | null {
   const v = toNum(b?.value)
   if (v == null) return null
-  return v.toFixed(b?.precision ?? fallbackPrec)
+  return fmtFixed(v, b?.precision ?? fallbackPrec)
 }
 
 interface PumpLive {
@@ -1604,7 +1610,7 @@ export function ScadaNodeFrame({
   const glyph     = catDef?.icon ?? NodeGlyph[nodeType] ?? NodeGlyph.junction
 
   const displayValue = runtime?.primaryValue != null
-    ? runtime.primaryValue.toFixed(runtime.primaryPrecision ?? 1)
+    ? fmtFixed(runtime.primaryValue, runtime.primaryPrecision ?? 1)
     : null
 
   const displayUnit = runtime?.primaryUnit ?? ''
@@ -1652,6 +1658,9 @@ export function ScadaNodeFrame({
     useUiStore.getState().openNodeConfig(id)
   }
 
+  // Kiosk (TV): readable texts are counter-scaled, sparkline axes hidden
+  const kioskEnabled = useUiStore((s) => s.kiosk.enabled)
+
   // Read custom style config from store (raw ref → stable empty fallback)
   const styleRaw = useDiagramStore(
     (s) => s.nodes.find((nd) => nd.id === id)?.style
@@ -1694,7 +1703,7 @@ export function ScadaNodeFrame({
   const dialRt = inlineChannelId ? allBindings.find((b) => b.sensorChannelId === inlineChannelId) : undefined
   const dialValueNum = toNum(dialRt?.value) ?? toNum(runtime?.primaryValue)
   const dialValueText = dialValueNum != null
-    ? dialValueNum.toFixed(dialRt?.precision ?? runtime?.primaryPrecision ?? 1)
+    ? fmtFixed(dialValueNum, dialRt?.precision ?? runtime?.primaryPrecision ?? 1)
     : null
   // Is the inline live dial actually shown for this node?
   const dialActive = isDialType && dialPct != null && glyphType === nodeType
@@ -1863,7 +1872,7 @@ export function ScadaNodeFrame({
     )
 
     // ── Position styles for the info block ──
-    const infoPositionStyle: React.CSSProperties = (() => {
+    const infoPositionBase: React.CSSProperties = (() => {
       switch (labelPlacement) {
         case 'center':
           return {
@@ -1912,6 +1921,16 @@ export function ScadaNodeFrame({
           }
       }
     })()
+    // Kiosk (TV): counter-scale the whole info block (value + unit + label + badge)
+    // against the fit zoom. It grows OUTWARD from the glyph edge it is anchored to
+    // (origin = that edge), so it never covers the symbol itself.
+    const infoPositionStyle: React.CSSProperties = kioskEnabled
+      ? {
+          ...infoPositionBase,
+          transform: `${infoPositionBase.transform} ${KIOSK_BOOST_SCALE}`,
+          transformOrigin: INFO_BOOST_ORIGIN[labelPlacement] ?? 'top center',
+        }
+      : infoPositionBase
 
     return (
       <>
@@ -1967,6 +1986,7 @@ export function ScadaNodeFrame({
                 hideHeader
                 transparent
                 compact
+                hideAxes={kioskEnabled}
               />
             )}
           </div>
@@ -2141,6 +2161,7 @@ export function ScadaNodeFrame({
               hideHeader
               transparent
               compact
+              hideAxes={kioskEnabled}
             />
           )}
         </div>

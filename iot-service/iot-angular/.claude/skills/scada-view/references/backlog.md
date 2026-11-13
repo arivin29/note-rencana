@@ -14,6 +14,9 @@ Line numbers are approximate (as of commit cad3e7a).
 - **Mobile "view-only" embed can toggle to Edit** — hide toggle when embedded in view mode (or role-gate).
 
 ## P1 — polish / consistency
+- `accentColor` mengalahkan warna status alarm di dial/pompa (`ScadaNodeFrame.tsx` ~1793: `styleConfig.accentColor || catDef.color || pumpAccent || status…`) → alert/warn harus menang atas accent/kategori (QA monitor-tv-merangin 2026-11-13 P1-6b).
+- Kiosk text boost (`--kiosk-text-boost`) only covers schematic info block, value_display, zone pill. **Card render mode** values/labels and the dial/tank value drawn inside the glyph are NOT boosted. Boosted info blocks can overlap neighbouring chips on tight layouts (e.g. FT label vs value chips below it in Merangin) → TV-variant diagram or collision-aware placement.
+- Status badge `backgroundColor: accentColor + '15'` in schematic info block is invalid CSS when accent is `var(...)` → `color-mix()`.
 - Status colors stale/offline/off inconsistent across tailwind / ScadaNodeFrame / ZoneNode → add `--status-stale/offline/off/unknown` vars and one `statusColor()` helper.
 - `PIPE_COLORS` duplicated (PipeEdge vs InspectorPanel w/o `signal`); `SIGNAL_ENDPOINT_TYPES` duplicated (ScadaCanvas vs DiagramSettingsPanel) → single module.
 - Handle CSS hex in `index.css` (`#30363d`, `#0ea5e9`, React Flow controls) → use tokens.
