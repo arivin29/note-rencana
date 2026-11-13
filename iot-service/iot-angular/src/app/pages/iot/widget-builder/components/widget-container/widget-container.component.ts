@@ -25,6 +25,10 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   @Input() isFullscreen = false;
   /** Dashboard-level variables from layoutConfig.variables */
   @Input() dashboardVariables: Record<string, string> = {};
+  /** Changes on every dashboard-level refresh → reload even when from/to are unchanged */
+  @Input() refreshNonce = 0;
+  /** Hide destructive/edit actions (embedded Monitor, fullscreen) */
+  @Input() readOnly = false;
   /** Enable debug mode to show container dimensions */
   @Input() debugMode = false;
 
@@ -33,8 +37,16 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   @Output() refresh = new EventEmitter<void>();
   @Output() toggleFullscreen = new EventEmitter<void>();
   @Output() duplicate = new EventEmitter<void>();
+  /** Emitted after every load attempt (dashboard uses it for "Diperbarui" + failure streak) */
+  @Output() loadResult = new EventEmitter<{ ok: boolean; at: Date }>();
 
+  /** True only while the FIRST load has no data yet (shows spinner). */
   loading = true;
+  /** True during a background reload — previous data stays visible. */
+  refreshing = false;
+  /** Last reload failed but previous data is still shown. */
+  stale = false;
+  lastLoadedAt: Date | null = null;
   error: string | null = null;
   chartData: any[] = [];
   columns: string[] = [];
@@ -80,7 +92,8 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['timeRange'] && !changes['timeRange'].firstChange) ||
         (changes['timeFrom'] && !changes['timeFrom'].firstChange) ||
-        (changes['timeTo'] && !changes['timeTo'].firstChange)) {
+        (changes['timeTo'] && !changes['timeTo'].firstChange) ||
+        (changes['refreshNonce'] && !changes['refreshNonce'].firstChange)) {
       this.loadWidgetData();
     }
   }
@@ -99,8 +112,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   loadWidgetData(): void {
     if (!this.widget) return;
 
-    this.loading = true;
-    this.error = null;
+    this.beginLoad();
 
     const config = this.widget.config || {} as any;
     const queries = config.queries as any[] | undefined;
@@ -115,8 +127,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
     const sqlQuery = this.widget.sqlQuery || config.sqlQuery;
     
     if (!sqlQuery) {
-      this.error = 'No SQL query configured for this widget';
-      this.loading = false;
+      this.finishError('Widget belum memiliki query SQL');
       return;
     }
 
@@ -147,14 +158,11 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: any) => {
-        this.chartData = response.rows || [];
-        this.columns = response.columns || [];
-        this.loading = false;
+        this.finishOk(response.rows || [], response.columns || []);
       },
       error: (err: any) => {
         console.error('Failed to execute widget query:', err);
-        this.error = err.error?.message || err.message || 'Failed to load widget data';
-        this.loading = false;
+        this.finishError(err.error?.message || err.message || 'Gagal memuat data widget');
       }
     });
   }
@@ -163,8 +171,7 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
   private executeMultipleQueries(queries: any[], config: any): void {
     const enabledQueries = queries.filter((q: any) => q.enabled !== false && q.sql);
     if (enabledQueries.length === 0) {
-      this.error = 'No enabled queries configured';
-      this.loading = false;
+      this.finishError('Tidak ada query aktif');
       return;
     }
 
@@ -205,25 +212,53 @@ export class WidgetContainerComponent implements OnInit, OnDestroy, OnChanges, A
           allRows = allRows.concat(rows);
           completed++;
           if (completed === enabledQueries.length) {
-            this.chartData = allRows;
-            this.columns = Array.from(allColumns);
-            this.loading = false;
+            this.finishOk(allRows, Array.from(allColumns));
           }
         },
         error: (err: any) => {
           console.error(`[${q.name}] Query failed:`, err);
           completed++;
           if (completed === enabledQueries.length) {
-            this.chartData = allRows;
-            this.columns = Array.from(allColumns);
-            this.loading = false;
             if (allRows.length === 0) {
-              this.error = err.error?.message || err.message || 'All queries failed';
+              this.finishError(err.error?.message || err.message || 'Semua query gagal');
+            } else {
+              this.finishOk(allRows, Array.from(allColumns));
             }
           }
         }
       });
     }
+  }
+
+  private get hasData(): boolean {
+    return this.lastLoadedAt !== null;
+  }
+
+  private beginLoad(): void {
+    if (this.hasData) {
+      this.refreshing = true;   // keep previous chart visible — no flicker
+    } else {
+      this.loading = true;
+    }
+  }
+
+  private finishOk(rows: any[], columns: string[]): void {
+    this.chartData = rows;
+    this.columns = columns;
+    this.error = null;
+    this.stale = false;
+    this.loading = false;
+    this.refreshing = false;
+    this.lastLoadedAt = new Date();
+    this.loadResult.emit({ ok: true, at: this.lastLoadedAt });
+  }
+
+  private finishError(message: string): void {
+    this.error = message;
+    this.stale = this.hasData;  // previous data stays on screen, marked as stale
+    this.loading = false;
+    this.refreshing = false;
+    this.loadResult.emit({ ok: false, at: new Date() });
   }
 
   onRefresh(): void {

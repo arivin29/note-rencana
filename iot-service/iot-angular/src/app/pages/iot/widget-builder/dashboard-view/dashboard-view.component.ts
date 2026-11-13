@@ -5,10 +5,11 @@ import {
   Dashboard, Widget,
   TimeRange, TIME_RANGE_PRESETS, REFRESH_INTERVALS
 } from '../models/widget.models';
-import { Subject, interval } from 'rxjs';
+import { Subject, interval, merge } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { WidgetBuilderService } from 'src/sdk/core/services';
 import { AppSettings } from '../../../../service/app-settings.service';
+import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset } from '../utils/dashboard-time';
 
 interface DashboardResponse {
   idDashboard?: string;
@@ -19,6 +20,8 @@ interface DashboardResponse {
   idOwner?: string;
   ownerId?: string;
   layoutConfig?: Record<string, any>;
+  timeRange?: string;
+  refreshInterval?: number;
   owner?: { name: string };
   widgets?: WidgetResponse[];
   createdAt: string;
@@ -51,7 +54,17 @@ interface WidgetResponse {
 })
 export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   private destroy$ = new Subject<void>();
-  
+  /** Cancels the current auto-refresh timer (separate from component teardown). */
+  private refreshTimer$ = new Subject<void>();
+  /** Bumped on every global refresh so widgets reload even when from/to stay the same (custom range). */
+  refreshNonce = 0;
+  /** Last time any widget loaded successfully (shown as "Diperbarui HH:mm:ss"). */
+  lastSuccessAt: Date | null = null;
+  /** Consecutive refresh cycles in which at least one widget failed. */
+  failStreak = 0;
+  failingSince: Date | null = null;
+  private cycleFailed = false;
+
   // Inputs for embedded mode
   @Input() dashboardId: string | null = null;
   @Input() embeddedMode = false; // Hide toolbar when embedded
@@ -144,6 +157,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy(): void {
+    this.refreshTimer$.next();
+    this.refreshTimer$.complete();
     this.destroy$.next();
     this.destroy$.complete();
 
@@ -212,8 +227,14 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
           isDefault: data.isDefault,
           ownerName: data.owner?.name || 'Unknown',
           createdAt: new Date(data.createdAt),
-          updatedAt: new Date(data.updatedAt)
+          updatedAt: new Date(data.updatedAt),
+          timeRange: data.timeRange,
+          refreshInterval: data.refreshInterval,
+          layoutConfig: data.layoutConfig || {}
         };
+
+        // Dashboard defaults (time range + auto refresh). Toolbar changes are session-only.
+        this.applyDashboardDefaults(data.timeRange, data.refreshInterval);
 
         // Extract dashboard-level variables from layoutConfig
         if (data.layoutConfig?.['variables']) {
@@ -362,9 +383,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  refreshWidget(widgetId: string): void {
-    console.log('Refreshing widget:', widgetId);
-    // Trigger re-render (mockup)
+  refreshWidget(_widgetId: string): void {
+    // The widget container reloads itself from its own menu; nothing to do at dashboard level.
   }
 
   toggleFullscreen(widgetId: string): void {
@@ -493,21 +513,60 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private setupAutoRefresh(): void {
-    this.destroy$.next(); // Cancel existing interval
-    
+    this.refreshTimer$.next(); // Cancel existing interval only (never touch destroy$)
+
     if (this.refreshInterval > 0) {
       interval(this.refreshInterval * 1000)
-        .pipe(takeUntil(this.destroy$))
+        .pipe(takeUntil(merge(this.refreshTimer$, this.destroy$)))
         .subscribe(() => {
           this.refreshAllWidgets();
         });
     }
   }
 
+  /** Apply dashboard-level defaults once per load. */
+  private applyDashboardDefaults(timeRange: string | undefined, refreshInterval: number | undefined): void {
+    const presetValue = defaultPresetFrom(timeRange);
+    const preset = findPreset(presetValue);
+    if (preset) {
+      this.selectedTimePreset = preset.value;
+      this.absoluteTimeFrom = 'now-' + preset.value;
+      this.absoluteTimeTo = 'now';
+      this.timeRange = { from: new Date(Date.now() - preset.duration), to: new Date(), label: preset.label };
+    }
+    this.refreshInterval = normalizeRefresh(refreshInterval);
+    this.setupAutoRefresh();
+  }
+
+  /**
+   * Reload every widget. Relative ranges ("Last X") roll forward to now (new from/to →
+   * widget ngOnChanges reloads); custom ranges stay fixed and reload via refreshNonce.
+   */
   refreshAllWidgets(): void {
+    const next = rollRange(this.selectedTimePreset, Date.now(), {
+      from: this.timeRange.from.getTime(),
+      to: this.timeRange.to.getTime(),
+    });
+    this.timeRange = { ...this.timeRange, from: new Date(next.from), to: new Date(next.to) };
+    this.failStreak = this.cycleFailed ? this.failStreak + 1 : 0;
+    if (!this.cycleFailed) this.failingSince = null;
+    this.cycleFailed = false;
+    this.refreshNonce++;
     this.lastRefresh = new Date();
-    console.log('Refreshing all widgets at', this.lastRefresh);
-    // In real implementation, this would trigger data reload for all widgets
+  }
+
+  onWidgetLoad(result: { ok: boolean; at: Date }): void {
+    if (result.ok) {
+      this.lastSuccessAt = result.at;
+    } else {
+      this.cycleFailed = true;
+      if (!this.failingSince) this.failingSince = result.at;
+    }
+  }
+
+  /** Read-only widgets (no edit/duplicate/delete) when embedded or fullscreen. */
+  get widgetsReadOnly(): boolean {
+    return this.embeddedMode || this.kioskMode;
   }
 
   // Gridster callbacks

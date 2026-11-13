@@ -8,6 +8,14 @@
       <!-- Widget Header - Grafana-compact style -->
       <div class="panel-head d-flex justify-content-between align-items-center">
         <div class="panel-label text-truncate" [title]="widget?.name || 'Widget'">{{ widget?.name || 'Widget' }}</div>
+        <span *ngIf="refreshing" class="panel-status text-muted ms-auto" title="Memperbarui…">
+          <i class="fa fa-circle-notch fa-spin"></i>
+        </span>
+        <button *ngIf="stale && !refreshing" type="button" class="panel-status panel-status-stale ms-auto"
+          [title]="'Gagal memuat ulang: ' + error + ' — data terakhir ' + (lastLoadedAt | date:'HH:mm:ss') + '. Klik untuk coba lagi.'"
+          (click)="onRefresh()">
+          <i class="fa fa-exclamation-triangle"></i> <span class="d-none d-md-inline">gagal memuat · Coba lagi</span>
+        </button>
         <div class="dropdown ms-1 flex-shrink-0">
           <button class="icon-button" data-bs-toggle="dropdown">
             <i class="fa fa-ellipsis-v"></i>
@@ -19,16 +27,18 @@
             <a class="dropdown-item" href="javascript:;" (click)="toggleFullscreen.emit()">
               <i class="bi bi-fullscreen fa-fw me-2"></i> Fullscreen
             </a>
-            <a class="dropdown-item" href="javascript:;" (click)="duplicate.emit()">
-              <i class="fa fa-copy fa-fw me-2"></i> Duplicate
-            </a>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="javascript:;" (click)="edit.emit()">
-              <i class="fa fa-edit fa-fw me-2"></i> Edit Widget
-            </a>
-            <a class="dropdown-item text-danger" href="javascript:;" (click)="confirmDelete()">
-              <i class="fa fa-trash fa-fw me-2"></i> Delete
-            </a>
+            <ng-container *ngIf="!readOnly">
+              <a class="dropdown-item" href="javascript:;" (click)="duplicate.emit()">
+                <i class="fa fa-copy fa-fw me-2"></i> Duplicate
+              </a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="javascript:;" (click)="edit.emit()">
+                <i class="fa fa-edit fa-fw me-2"></i> Edit Widget
+              </a>
+              <a class="dropdown-item text-danger" href="javascript:;" (click)="confirmDelete()">
+                <i class="fa fa-trash fa-fw me-2"></i> Delete
+              </a>
+            </ng-container>
           </div>
         </div>
       </div>
@@ -43,14 +53,14 @@
       </div>
 
       <!-- Error State -->
-      <div *ngIf="error && !loading" class="text-center py-2 text-danger small">
+      <div *ngIf="error && !loading && !stale" class="text-center py-2 text-danger small">
         <i class="fa fa-exclamation-triangle mb-1"></i>
         <p class="mb-1 small">{{ error }}</p>
-        <button class="btn btn-sm btn-outline-theme btn-xs" (click)="onRefresh()">Retry</button>
+        <button class="btn btn-sm btn-outline-theme btn-xs" (click)="onRefresh()">Coba lagi</button>
       </div>
 
       <!-- Chart Content -->
-      <ng-container *ngIf="!loading && !error && widget">
+      <ng-container *ngIf="!loading && (!error || stale) && widget">
         <!-- Line Chart -->
         <app-line-chart-widget 
           *ngIf="widget.type === 'line-chart' || widget.type === 'multi-line-chart'"

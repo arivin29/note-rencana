@@ -149,3 +149,17 @@
   font-family: monospace;
   pointer-events: none;
 }
+
+/* Background-refresh / stale indicator in panel header */
+.panel-status {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  white-space: nowrap;
+}
+.panel-status-stale {
+  color: var(--bs-warning);
+  cursor: pointer;
+}

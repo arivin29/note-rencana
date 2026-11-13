@@ -180,8 +180,18 @@
             <div class="time-picker-backdrop" *ngIf="timePickerOpen" (click)="closeTimePicker()"></div>
         </div>
 
+        <!-- Freshness -->
+        <span *ngIf="failStreak >= 2 && failingSince" class="toolbar-status text-warning"
+            [title]="'Beberapa widget gagal diperbarui sejak ' + (failingSince | date:'HH:mm:ss')">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span class="d-none d-md-inline ms-1">Gagal memperbarui sejak {{ failingSince | date:'HH:mm' }}</span>
+        </span>
+        <span *ngIf="lastSuccessAt && !(failStreak >= 2)" class="toolbar-status text-muted d-none d-sm-inline">
+            Diperbarui {{ lastSuccessAt | date:'HH:mm:ss' }}
+        </span>
+
         <!-- Refresh -->
-        <button class="toolbar-btn" (click)="refreshAllWidgets()" title="Refresh">
+        <button class="toolbar-btn" (click)="refreshAllWidgets()" title="Muat ulang semua widget">
             <i class="bi bi-arrow-clockwise"></i>
         </button>
 
@@ -292,7 +302,8 @@
         <gridster-item *ngFor="let item of widgets" [item]="item" class="widget-gridster-item">
             <app-widget-container [widget]="getWidgetById(item['id'])" [editMode]="editMode"
                 [timeFrom]="getTimeFrom()" [timeTo]="getTimeTo()" [isFullscreen]="fullscreenWidget === item['id']"
-                [dashboardVariables]="dashboardVariables"
+                [dashboardVariables]="dashboardVariables" [refreshNonce]="refreshNonce" [readOnly]="widgetsReadOnly"
+                (loadResult)="onWidgetLoad($event)"
                 (edit)="editWidget(item['id'])" (delete)="deleteWidget(item['id'])"
                 (refresh)="refreshWidget(item['id'])" (toggleFullscreen)="toggleFullscreen(item['id'])"
                 (duplicate)="duplicateWidget(item['id'])">

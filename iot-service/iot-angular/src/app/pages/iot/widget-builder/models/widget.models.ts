@@ -13,6 +13,12 @@ export interface Dashboard {
   createdAt: Date;
   updatedAt: Date;
   widgets?: Widget[];
+  /** Default relative range ('6h', '24h', …) — custom_dashboards.time_range */
+  timeRange?: string;
+  /** Default auto-refresh seconds (0 = off) — custom_dashboards.refresh_interval */
+  refreshInterval?: number;
+  /** custom_dashboards.layout_config — holds `variables`, `screen`, … (always merge, never replace) */
+  layoutConfig?: Record<string, any>;
 }
 
 export interface Widget {
