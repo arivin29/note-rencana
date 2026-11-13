@@ -1,5 +1,21 @@
+<!-- Layar Penuh: slim header (name · freshness · clock) + exit button on mouse movement -->
+<div *ngIf="kioskMode" class="immersive-header">
+    <span class="immersive-title text-truncate">{{ dashboard?.name || 'Dashboard' }}</span>
+    <span *ngIf="failStreak >= 2 && failingSince" class="immersive-meta text-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>Gagal memperbarui sejak {{ failingSince | date:'HH:mm' }}
+    </span>
+    <span *ngIf="lastSuccessAt && !(failStreak >= 2)" class="immersive-meta">
+        Diperbarui {{ lastSuccessAt | date:'HH:mm:ss' }}
+    </span>
+    <span class="immersive-clock">{{ now | date:'HH:mm' }}</span>
+</div>
+<button *ngIf="kioskMode" type="button" class="immersive-exit" [class.visible]="showImmersiveControls"
+    (click)="toggleKioskMode()" title="Keluar layar penuh (Esc)">
+    <i class="bi bi-fullscreen-exit me-1"></i>Keluar layar penuh
+</button>
+
 <!-- Compact Dashboard Toolbar -->
-<div class="dashboard-toolbar" [class.kiosk-toolbar]="kioskMode">
+<div class="dashboard-toolbar" *ngIf="!kioskMode">
     <!-- Left: Title & breadcrumb -->
     <div class="toolbar-left" *ngIf="!embeddedMode">
         <nav class="toolbar-breadcrumb">
@@ -220,16 +236,21 @@
                     <i class="bi bi-chevron-down ms-1" style="font-size: 10px;"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-                    <a class="dropdown-item" href="javascript:;" (click)="addWidget()">
-                        <i class="bi bi-plus-lg me-2"></i>Add Widget
-                    </a>
-                    <a class="dropdown-item" href="javascript:;" (click)="toggleEditMode()">
-                        <i class="bi bi-grid-3x3-gap me-2"></i>Edit Layout
+                    <ng-container *ngIf="!embeddedMode">
+                        <a class="dropdown-item" href="javascript:;" (click)="addWidget()">
+                            <i class="bi bi-plus-lg me-2"></i>Add Widget
+                        </a>
+                        <a class="dropdown-item" href="javascript:;" (click)="toggleEditMode()">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Edit Layout
+                        </a>
+                    </ng-container>
+                    <a *ngIf="embeddedMode && dashboard" class="dropdown-item" [routerLink]="['/iot/widget-builder', dashboard.id]">
+                        <i class="bi bi-pencil-square me-2"></i>Buka di Widget Builder
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="javascript:;" (click)="toggleKioskMode()">
                         <i class="bi bi-arrows-fullscreen me-2"></i>
-                        {{ kioskMode ? 'Exit Fullscreen' : 'Fullscreen' }}
+                        {{ kioskMode ? 'Keluar layar penuh' : 'Layar penuh' }}
                     </a>
                 </div>
             </div>
@@ -248,7 +269,7 @@
         </ng-container>
 
         <!-- Kiosk/Fullscreen Toggle (always visible as icon) -->
-        <button class="toolbar-btn" (click)="toggleKioskMode()" [title]="kioskMode ? 'Exit Fullscreen' : 'Fullscreen'">
+        <button class="toolbar-btn" (click)="toggleKioskMode()" [title]="kioskMode ? 'Keluar layar penuh' : 'Layar penuh'">
             <i [class]="kioskMode ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen'"></i>
         </button>
     </div>

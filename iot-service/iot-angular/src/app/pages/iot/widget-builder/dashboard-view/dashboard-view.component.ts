@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, SimpleChanges, OnChanges, NgZone } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem, DisplayGrid, GridType, CompactType } from 'angular-gridster2';
 import { 
@@ -10,6 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 import { WidgetBuilderService } from 'src/sdk/core/services';
 import { AppSettings } from '../../../../service/app-settings.service';
 import { rollRange, normalizeRefresh, defaultPresetFrom, findPreset } from '../utils/dashboard-time';
+import { LayoutStateService } from '../../../../service/layout-state.service';
 
 interface DashboardResponse {
   idDashboard?: string;
@@ -95,7 +96,11 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   loading = true;
   editMode = false;
   fullscreenWidget: string | null = null;
-  kioskMode = false;
+  /** Clock shown in the immersive header. */
+  now = new Date();
+  /** Exit button / header controls in immersive mode — visible briefly after mouse movement. */
+  showImmersiveControls = false;
+  private immersiveControlsTimer: any = null;
   
   // Custom time range modal
   customTimeFrom = '';
@@ -124,11 +129,25 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     private route: ActivatedRoute,
     private router: Router,
     private widgetBuilderService: WidgetBuilderService,
-    private appSettings: AppSettings
+    private appSettings: AppSettings,
+    private layoutState: LayoutStateService,
+    private zone: NgZone
   ) {}
+
+  /** "Layar Penuh" — shared immersive state (hides app + workspace chrome). */
+  get kioskMode(): boolean {
+    return this.layoutState.immersive;
+  }
 
   ngOnInit(): void {
     this.initGridsterOptions();
+
+    // Re-layout whenever fullscreen is entered/left (button, Esc, navigation).
+    this.layoutState.immersive$.pipe(takeUntil(this.destroy$)).subscribe(on => {
+      this.setActivityListener(on);
+      this.relayoutGrid();
+    });
+    interval(10_000).pipe(takeUntil(this.destroy$)).subscribe(() => (this.now = new Date()));
 
     // Minimize sidebar for dashboard fullwidth view (same pattern as project-workspace)
     if (!this.embeddedMode) {
@@ -162,13 +181,12 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
     this.destroy$.next();
     this.destroy$.complete();
 
-    // Restore sidebar state and exit kiosk
+    // Leave fullscreen (restores app chrome), then restore sidebar state
+    this.layoutState.exit();
+    this.setActivityListener(false);
+    clearTimeout(this.immersiveControlsTimer);
     if (!this.embeddedMode) {
       this.appSettings.appSidebarMinified = this.prevSidebarMinified;
-      if (this.kioskMode) {
-        this.appSettings.appHeaderNone = false;
-        this.appSettings.appSidebarNone = false;
-      }
     }
   }
 
@@ -394,17 +412,35 @@ export class DashboardViewComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   toggleKioskMode(): void {
-    this.kioskMode = !this.kioskMode;
-    if (this.kioskMode) {
-      this.appSettings.appHeaderNone = true;
-      this.appSettings.appSidebarNone = true;
-    } else {
-      this.appSettings.appHeaderNone = false;
-      this.appSettings.appSidebarNone = false;
-      setTimeout(() => {
-        this.appSettings.appSidebarMinified = true;
-      });
-    }
+    this.layoutState.toggle();
+    if (this.kioskMode) this.revealImmersiveControls();
+  }
+
+  /** Show the exit button for 3 s after any mouse movement while fullscreen. */
+  revealImmersiveControls(): void {
+    if (!this.kioskMode) return;
+    clearTimeout(this.immersiveControlsTimer);
+    if (!this.showImmersiveControls) this.zone.run(() => (this.showImmersiveControls = true));
+    this.immersiveControlsTimer = setTimeout(
+      () => this.zone.run(() => (this.showImmersiveControls = false)), 3000);
+  }
+
+  private readonly onActivity = () => this.revealImmersiveControls();
+
+  /** mousemove listener only while fullscreen, outside Angular (no change detection per move). */
+  private setActivityListener(on: boolean): void {
+    this.zone.runOutsideAngular(() => {
+      document.removeEventListener('mousemove', this.onActivity);
+      document.removeEventListener('touchstart', this.onActivity);
+      if (on) {
+        document.addEventListener('mousemove', this.onActivity, { passive: true });
+        document.addEventListener('touchstart', this.onActivity, { passive: true });
+      }
+    });
+    if (!on) this.showImmersiveControls = false;
+  }
+
+  private relayoutGrid(): void {
     // Trigger gridster resize after layout shift
     setTimeout(() => {
       if (this.gridsterOptions.api?.resize) {

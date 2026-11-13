@@ -737,3 +737,51 @@ gridster-item,
   white-space: nowrap;
   align-self: center;
 }
+
+/* ── Layar Penuh (immersive) ───────────────────────────────── */
+.immersive-header {
+  display: flex;
+  align-items: center;
+  gap: calc(16px * var(--wb-scale, 1));
+  height: calc(36px * var(--wb-scale, 1));
+  padding: 0 calc(12px * var(--wb-scale, 1));
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+.immersive-title {
+  font-weight: 600;
+  font-size: calc(16px * var(--wb-scale, 1));
+  min-width: 0;
+}
+.immersive-meta {
+  margin-left: auto;
+  font-size: calc(12px * var(--wb-scale, 1));
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+.immersive-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: calc(18px * var(--wb-scale, 1));
+  white-space: nowrap;
+}
+.immersive-exit {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2000;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.immersive-exit.visible {
+  opacity: 0.95;
+  pointer-events: auto;
+}

@@ -1,0 +1,28 @@
+// "Layar Penuh" (immersive) — toggled by LayoutStateService via body.wb-immersive.
+// Global on purpose: hides the project-workspace chrome without coupling that component to dashboards.
+body.wb-immersive {
+  .project-sidebar,
+  .mobile-sidebar-toggle,
+  .mobile-overlay,
+  .workspace-toolbar,
+  theme-panel {
+    display: none !important;
+  }
+
+  .project-workspace {
+    margin: 0 !important;
+    min-height: 100vh !important;
+  }
+
+  .workspace-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+  }
+
+  #content.app-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh;
+  }
+}
