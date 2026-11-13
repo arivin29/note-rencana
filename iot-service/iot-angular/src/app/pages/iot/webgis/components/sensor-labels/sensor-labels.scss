@@ -149,3 +149,20 @@
         transform: translateY(0);
     }
 }
+// Merged card (cards that would overlap at this zoom) — same glass card, one row per channel
+::ng-deep .sensor-label-card.sensor-label-group {
+    max-width: calc(180px * var(--sl-scale, 1));
+}
+
+::ng-deep .group-row {
+    .group-name {
+        color: #00E396;
+        font-weight: 600;
+        font-size: calc(9px * var(--sl-scale, 1));
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

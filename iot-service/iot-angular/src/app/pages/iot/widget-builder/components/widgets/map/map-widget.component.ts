@@ -137,6 +137,8 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
   private themeObserver: MutationObserver | null = null;
   private resizeFrame = 0;
   private lastSignature = '';
+  /** Interactive maps fit once more after the first sensor cards render (their size is part of the padding). */
+  private labelsFitted = false;
   private layersSub: Subscription | null = null;
   private dynamicSub: Subscription | null = null;
   private loadedKey: string | null = null;
@@ -372,18 +374,49 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
 
     const s = this.fontScale || 1;
     const pad = Math.round(28 * s);
+    let left = pad;
     // SQL labels are drawn right of the marker → more room on the right when they are on.
-    const right = this.drawsSql && this.options.showLabels
+    let right = this.drawsSql && this.options.showLabels
       ? Math.min(Math.round(size[0] * 0.3), Math.round(120 * s)) : pad;
-    // WebGIS sensor value cards sit above the node → more room on top.
-    const top = this.sensorLabelsVisible && this.sensorLabelData.length > 0
-      ? Math.max(pad, Math.min(Math.round(size[1] * 0.3), Math.round(80 * s))) : pad;
-    const legendBottom = this.legendCount() > 0 ? Math.round(36 * s) : 0;
+    let top = pad;
+    // WebGIS sensor value cards are centred above the node → half a card on each side, a whole card on top.
+    if (this.sensorLabelsVisible && this.sensorLabelData.length > 0) {
+      const card = this.sensorCardSize(s);
+      const side = Math.ceil(card.w / 2 + 8 * s);
+      left = Math.max(left, side);
+      right = Math.max(right, side);
+      // overlay offset 15 + pointer 5 (sensor-labels) + card + margin
+      top = Math.max(top, Math.ceil(card.h + 28 * s));
+    }
+    // Zoom / reset buttons (top-right column, 8 + 28 + 8 px × scale) must not cover cards or points.
+    if (this.options.interactive) right += Math.round(44 * s);
+    let bottom = pad + (this.legendCount() > 0 ? Math.round(36 * s) : 0);
+    // Tiny cells: never let padding eat the whole view (OL would zoom out to the world).
+    const fitAxis = (a: number, b: number, total: number): [number, number] => {
+      const max = total * 0.8;
+      return a + b > max ? [Math.floor(a * max / (a + b)), Math.floor(b * max / (a + b))] : [a, b];
+    };
+    [left, right] = fitAxis(left, right, size[0]);
+    [top, bottom] = fitAxis(top, bottom, size[1]);
     map.getView().fit(extent, {
-      padding: [top, right, pad + legendBottom, pad],
+      padding: [top, right, bottom, left],
       maxZoom: 16,
       duration: 0,
     });
+  }
+
+  /**
+   * Largest rendered sensor value card (css px; offsetWidth ignores transforms). Before the cards
+   * exist, the SensorLabelsComponent max size at this scale (max-width 140 + padding ≈ 148 × ≈ 45).
+   */
+  private sensorCardSize(s: number): { w: number; h: number } {
+    let w = 0;
+    let h = 0;
+    this.host.nativeElement.querySelectorAll<HTMLElement>('.sensor-label-card').forEach((el) => {
+      w = Math.max(w, el.offsetWidth);
+      h = Math.max(h, el.offsetHeight);
+    });
+    return w > 0 && h > 0 ? { w, h } : { w: 148 * s, h: 45 * s };
   }
 
   private legendCount(): number {
@@ -580,7 +613,13 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.dynamicFailed = problems.length ? `Gagal memperbarui ${problems.join(' & ')}` : null;
       this.webgisFeatureCount = this.countWebgisFeatures();
       this.updateWarn();
-      if (!this.options.interactive) this.zone.runOutsideAngular(() => this.fit());
+      // Fit after change detection rendered the cards so their measured size drives the padding.
+      // Interactive maps keep the user's view, except once when the first cards appear.
+      const firstCards = !this.labelsFitted && this.sensorLabelData.length > 0;
+      if (firstCards) this.labelsFitted = true;
+      if (!this.options.interactive || firstCards) {
+        setTimeout(() => this.zone.runOutsideAngular(() => this.fit()));
+      }
     });
   }
 
@@ -629,6 +668,7 @@ export class MapWidgetComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.alertEntry = null;
     this.alertSource.clear(true);
     this.sensorLabelData = [];
+    this.labelsFitted = false;
     this.sensorTypeNames = new Set();
     this.legendItems = [];
     this.webgisFeatureCount = 0;

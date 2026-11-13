@@ -161,9 +161,11 @@ export class StatCardWidgetComponent implements OnInit, OnChanges {
 
   private computeFit(d: NonNullable<StatCardWidgetComponent['displayData']>, sparkline: boolean) {
     const layout = d.layout || 'centered';
-    // Vertical: card padding 2×0.75em + 0.2em slack, then each extra line (font × line-height + margin).
-    let reserve = 1.7;
-    if (d.subtitle) reserve += 0.8125 * 1.25 + 0.25;
+    // Vertical: card padding 2×0.3em + 0.1em slack, then each extra line (font × line-height + margin).
+    // Keep this tight — every surplus em here is empty space under the value (TV 2-row cells).
+    let reserve = 0.7;
+    // subtitle: 0.8125em font × 1.25 line-height + margin-top 0.25 of its own font
+    if (d.subtitle) reserve += 0.8125 * 1.25 + 0.8125 * 0.25;
     if (d.trend && layout !== 'compact') reserve += 0.875 * 1.5 + 0.375;
     if (d.suffix && (layout === 'centered' || !layout)) reserve += 0.75 * 1.5 + 0.25;
     if (sparkline) reserve += 2.5 + 1;

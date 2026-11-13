@@ -130,6 +130,9 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     const legendOn = display.showLegend !== false;
     const legendPos = display.legendPosition || 'top';
     const hasYName = !!config.yAxis?.label;
+    // Axis text base (scaleChartFonts multiplies it by fontScale afterwards). Enlarged scales (TV) get
+    // +20% so axis labels reach ~22 design-px at fontScale 1.5; normal 1× dashboards stay at 12.
+    const axisFs = this.axisFontBase();
     
     // Get smoothing config
     const smoothingConfig = display.smoothing || {
@@ -334,7 +337,7 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
         containLabel: true,
         left: 8 * s,
         right: legendOn && legendPos === 'right' ? 160 * s : 16 * s,
-        top: (legendOn && legendPos !== 'bottom' ? 34 : 14) * s + (hasYName ? 16 * s : 0),
+        top: (legendOn && legendPos !== 'bottom' ? 34 : 14) * s + (hasYName ? (axisFs + 4) * s : 0),
         bottom: (legendOn && legendPos === 'bottom' ? 30 : 6) * s
       },
       xAxis: {
@@ -342,7 +345,7 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
         data: xAxisData,
         axisLabel: {
           color: textColor,
-          fontSize: 12,
+          fontSize: axisFs,
           rotate: this.shouldRotateLabels() ? 45 : 0,
           interval: this.calcLabelInterval(xAxisData.length),
           showMinLabel: true,
@@ -356,11 +359,11 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
       yAxis: {
         type: 'value',
         name: config.yAxis?.label || '',
-        nameTextStyle: { color: textColor, fontSize: 12, align: 'left' },
+        nameTextStyle: { color: textColor, fontSize: axisFs, align: 'left' },
         nameGap: 8 * s,
         axisLabel: {
           color: textColor,
-          fontSize: 12,
+          fontSize: axisFs,
           formatter: (value: number) => formatIdNumber(Number(value), decimals)
         },
         axisLine: { lineStyle: { color: axisLineColor } },
@@ -433,7 +436,7 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     // Calculate based on available width
     const s = this.geomScale;
     const availableWidth = this.containerWidth > 0 ? this.containerWidth - 60 * s : 300; // subtract axis margins
-    const labelWidth = this.estimateLabelWidth() * s;
+    const labelWidth = this.estimateLabelWidth() * s * (this.axisFontBase() / 12);
     const maxLabels = Math.floor(availableWidth / labelWidth);
     
     if (maxLabels <= 0) return totalPoints - 1; // show only first and last
@@ -441,6 +444,11 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges, A
     
     // Calculate interval to show approximately maxLabels
     return Math.ceil(totalPoints / maxLabels) - 1;
+  }
+
+  /** Axis label font before fontScale: 12, or 12 × 1.2 when the dashboard is enlarged (TV / fontScale > 1). */
+  private axisFontBase(): number {
+    return this.geomScale > 1 ? 14.4 : 12;
   }
 
   /**

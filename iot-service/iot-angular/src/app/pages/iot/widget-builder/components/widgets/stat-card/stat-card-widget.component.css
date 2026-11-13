@@ -13,7 +13,8 @@
   justify-content: center;
   height: 100%;
   min-height: 0;
-  padding: 0.75em;
+  /* thin vertical padding: the value gets the cell height (computeFit's base reserve matches 2×0.3em) */
+  padding: 0.3em 0.75em;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -36,8 +37,8 @@
 }
 .sv-small { --sv-size: 1.5em; }
 .sv-medium { --sv-size: 2em; }
-.sv-large { --sv-size: 2.5em; }
-.sv-xlarge { --sv-size: 3.5em; }
+.sv-large { --sv-size: 3em; }
+.sv-xlarge { --sv-size: 4em; }
 
 .stat-value-compact {
   --sv-size: 1.5em;

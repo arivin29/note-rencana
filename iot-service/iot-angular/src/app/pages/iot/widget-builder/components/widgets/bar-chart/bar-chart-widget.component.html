@@ -1,10 +1,10 @@
+<!-- Chart fills the widget body (flex child of .widget-content); the ResizeObserver in the .ts calls resize().
+     Never size it from containerHeight minus a fixed header — the header scales with --wb-scale. -->
 <div class="chart-wrapper">
   <div echarts 
        [options]="chartOptions" 
        [autoResize]="true" 
        (chartInit)="onChartInit($event)" 
-       class="echart"
-       [style.width.px]="containerWidth > 0 ? containerWidth - 20 : null"
-       [style.height.px]="containerHeight > 0 ? containerHeight - 60 : null">
+       class="echart">
   </div>
 </div>
