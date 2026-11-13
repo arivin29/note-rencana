@@ -43,8 +43,9 @@ export const KIOSK_RESIZE_DEBOUNCE_MS = 150
 // → ~16-17 px inside the iframe). Never shrinks (min 1), never explodes (max).
 // Outside kiosk the var is unset → every `var(--kiosk-text-boost, 1)` = 1.
 export const KIOSK_TEXT_BOOST_VAR = '--kiosk-text-boost'
-export const KIOSK_TEXT_TARGET = 1.75
-export const KIOSK_TEXT_BOOST_MAX = 3
+// Kept modest: a larger boost (1.75/3) made neighbouring blocks collide on dense diagrams (QA 14 Nov).
+export const KIOSK_TEXT_TARGET = 1.3
+export const KIOSK_TEXT_BOOST_MAX = 1.6
 
 export function kioskTextBoost(zoom: number): number {
   if (!Number.isFinite(zoom) || zoom <= 0) return 1

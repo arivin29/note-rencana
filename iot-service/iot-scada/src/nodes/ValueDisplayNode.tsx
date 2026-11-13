@@ -273,7 +273,7 @@ export function ValueDisplayNode({ id, data, selected }: NodeProps<any>) {
           {allBindings.map((b) => (
             <div key={b.bindingId} className={kioskEnabled ? 'flex flex-col items-center' : 'flex items-center gap-1'}>
               <span
-                className={kioskEnabled ? 'font-medium text-center [overflow-wrap:anywhere]' : 'text-[9px] font-medium truncate'}
+                className={kioskEnabled ? 'font-medium text-center whitespace-nowrap' : 'text-[9px] font-medium truncate'}
                 style={kioskEnabled
                   ? { color: labelColor, fontSize: boostFs(9) }
                   : { color: labelColor, maxWidth: 50 }}
