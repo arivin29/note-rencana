@@ -15,6 +15,10 @@ export interface SensorsControllerFindAll$Params {
   search?: string;
   idNode?: string;
   idProject?: string;
+  /** Hide sensors with status 'inactive' (added by hand) */
+  activeOnly?: boolean;
+  /** Admin only: limit to one owner (tenants are always scoped server-side). Added by hand. */
+  ownerId?: string;
   idSensorCatalog?: string;
 }
 
@@ -26,6 +30,8 @@ export function sensorsControllerFindAll(http: HttpClient, rootUrl: string, para
     rb.query('search', params.search, {});
     rb.query('idNode', params.idNode, {});
     rb.query('idProject', params.idProject, {});
+    rb.query('activeOnly', params.activeOnly, {});
+    rb.query('ownerId', params.ownerId, {});
     rb.query('idSensorCatalog', params.idSensorCatalog, {});
   }
 

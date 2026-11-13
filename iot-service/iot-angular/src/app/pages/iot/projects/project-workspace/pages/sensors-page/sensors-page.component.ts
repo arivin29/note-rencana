@@ -7,6 +7,9 @@ import { Workbook } from 'exceljs';
 import { decimalsFromPrecision, excelNumFmt, thresholdState, ThresholdState } from '../../../../../../shared/utils/threshold';
 import { saveAs } from 'file-saver';
 import {
+  formatDuration as fmtDuration, formatInterval as fmtInterval, localTzLabel as tzLabel,
+  sparkPath as buildSparkPath, telHref as buildTelHref, timeAgoId } from '../../../../../../shared/utils/channel-display';
+import {
   FRESHNESS_BADGE, FRESHNESS_LABEL, Freshness, freshnessThresholds, getFreshness, timeAgo
 } from '../../../../../../shared/utils/telemetry-freshness';
 import { NodesService } from '../../../../../../../sdk/core/services/nodes.service';
@@ -468,7 +471,7 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
   }
 
   formatTimeAgo(timestamp: string | null): string {
-    return timeAgo(timestamp);
+    return timeAgoId(timestamp, this.nowMs); // Indonesian, same as Kanal Telemetri
   }
 
   getStatusBadgeClass(sensor: SensorListItem): string {
@@ -498,22 +501,12 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
 
   /** "tiap 2 mnt" / "tiap 15 dtk" / "" — the node's configured reporting interval. */
   formatInterval(sec?: number | null): string {
-    const n = Number(sec);
-    if (!n || n <= 0) return '';
-    if (n < 60) return `tiap ${n} dtk`;
-    if (n % 3600 === 0) return `tiap ${n / 3600} jam`;
-    return `tiap ${Math.round(n / 60)} mnt`;
+    return fmtInterval(sec);
   }
 
   /** Human duration in Indonesian: "12 mnt", "5 jam", "3 hari", "4 bln". */
   formatDuration(ms: number): string {
-    const m = Math.floor(ms / 60_000);
-    if (m < 60) return `${m} mnt`;
-    const h = Math.floor(m / 60);
-    if (h < 48) return `${h} jam`;
-    const d = Math.floor(h / 24);
-    if (d < 60) return `${d} hari`;
-    return `${Math.floor(d / 30)} bln`;
+    return fmtDuration(ms);
   }
 
   /** For offline sensors: since when no data arrived (time of LAST data received, not a measured outage). */
@@ -563,14 +556,12 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
 
   /** Label of the viewer's timezone: WIB / WITA / WIT, else UTC±h (Excel cells carry no timezone). */
   localTzLabel(): string {
-    const offsetH = -new Date().getTimezoneOffset() / 60;
-    const names: Record<number, string> = { 7: 'WIB', 8: 'WITA', 9: 'WIT' };
-    return names[offsetH] || `UTC${offsetH >= 0 ? '+' : ''}${offsetH}`;
+    return tzLabel();
   }
 
   /** tel: link for the node PIC (quick follow-up on a dead logger). */
   telHref(phone?: string): string {
-    return 'tel:' + (phone || '').replace(/[^0-9+]/g, '');
+    return buildTelHref(phone);
   }
 
   stop(event: Event) {
@@ -703,26 +694,9 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
     const cached = this.sparkCache.get(ch.idSensorChannel);
     if (cached !== undefined) return cached;
     const t = this.trendOf(ch);
-    let d = '';
-    if (t) {
-      const vals = t.buckets.map(b => (b && b.avg !== null ? Number(b.avg) : null));
-      const nums = vals.filter((v): v is number => v !== null);
-      if (nums.length >= 2) {
-        const lo = Math.min(...nums), hi = Math.max(...nums);
-        const span = hi - lo || 1;
-        const W = 72, H = 20, n = vals.length;
-        let pen = false;
-        vals.forEach((v, i) => {
-          if (v === null) { pen = false; return; }
-          const x = n > 1 ? (i / (n - 1)) * W : 0;
-          const y = H - 2 - ((v - lo) / span) * (H - 4);
-          d += `${pen ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)} `;
-          pen = true;
-        });
-      }
-    }
-    this.sparkCache.set(ch.idSensorChannel, d.trim());
-    return d.trim();
+    const d = t ? buildSparkPath(t.buckets) : '';
+    this.sparkCache.set(ch.idSensorChannel, d);
+    return d;
   }
 
   /** "24 jam: 0,64–2,28" text (raw min/max, channel precision). */

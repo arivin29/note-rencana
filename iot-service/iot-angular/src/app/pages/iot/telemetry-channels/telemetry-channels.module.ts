@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { SharedComponentsModule } from '../../../shared/shared-components.module';
+import { GuideModule } from '../../../shared/guide/guide.module';
 import { TelemetryChannelsRoutingModule } from './telemetry-channels-routing.module';
 import { TelemetryChannelsListPage } from './telemetry-channels-list/telemetry-channels-list';
 
@@ -16,6 +17,7 @@ import { TelemetryChannelsListPage } from './telemetry-channels-list/telemetry-c
     FormsModule,
     RouterModule,
     SharedComponentsModule,
+    GuideModule,
     TelemetryChannelsRoutingModule
   ],
   exports: [

@@ -1,232 +1,367 @@
 <!-- Header -->
-<div class="d-flex align-items-center mb-3" *ngIf="!embedded">
-  <div>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3" *ngIf="!embedded">
+  <div class="me-auto">
     <ul class="breadcrumb mb-1">
-      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
-      <li class="breadcrumb-item active">Telemetry Channels</li>
+      <li class="breadcrumb-item">IoT</li>
+      <li class="breadcrumb-item active">Kanal Telemetri</li>
     </ul>
-    <h1 class="page-header mb-0">Telemetry Channels</h1>
+    <h1 class="page-header mb-0">Kanal Telemetri</h1>
+    <span class="text-muted small" *ngIf="lastRefreshedAt && !error">
+      {{ rows.length | number }} kanal · {{ totalProjects | number }} project
+      <ng-container *ngIf="lastRefreshedAt"> · diperbarui {{ lastRefreshedAt | date:'HH:mm:ss' }} (otomatis tiap 60 dtk)</ng-container>
+      <span *ngIf="trendsError" class="text-warning"> · {{ trendsError }}</span>
+    </span>
   </div>
-  <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
-    <button class="btn btn-outline-default btn-sm" (click)="loadChannels()" [disabled]="loading">
-      <i class="fa fa-rotate-right fa-fw me-1" [class.fa-spin]="loading"></i> Refresh
+  <div class="d-flex align-items-center gap-2">
+    <page-guide-button></page-guide-button>
+    <button class="btn btn-sm btn-outline-default" (click)="reload()" [disabled]="loading"
+      title="Muat ulang (daftar + tren 24 jam)" aria-label="Muat ulang kanal telemetri dan tren">
+      <i class="fa fa-sync-alt" [class.fa-spin]="loading"></i>
+    </button>
+    <button class="btn btn-sm btn-outline-theme" (click)="exportExcel()" [disabled]="!canExport"
+      title="Ekspor daftar sesuai filter & urutan saat ini (semua halaman)">
+      <i class="fa fa-fw me-1" [ngClass]="exporting ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i>
+      Ekspor Excel
     </button>
   </div>
 </div>
 
-<card class="shadow-sm">
-  <!-- Status tabs -->
+<!-- Alerts -->
+<div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>{{ error }}</span>
+  <button class="btn btn-sm btn-outline-danger ms-auto" (click)="reload()">Coba lagi</button>
+</div>
+
+<div *ngIf="!error && !loading && !latestAvailable" class="alert alert-warning d-flex align-items-center">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>Nilai terakhir kanal sedang tidak dapat dibaca dari server data. Status "No Data" di bawah belum tentu berarti alat mati.</span>
+  <button class="btn btn-sm btn-outline-warning ms-auto" (click)="loadData()">Coba lagi</button>
+</div>
+
+<div *ngIf="embedded && trendsError" class="text-warning small mb-2">{{ trendsError }}</div>
+
+<div *ngIf="exportError" class="alert alert-danger d-flex align-items-center py-2">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>{{ exportError }}</span>
+  <button class="btn btn-sm btn-outline-danger ms-auto" (click)="exportExcel()">Coba lagi</button>
+</div>
+
+<!-- KPI summary (from loaded data within the current Owner/Project/Kelompok/Cari scope; nothing estimated) -->
+<div class="row row-cols-2 row-cols-lg-5 g-3 mb-3" *ngIf="!embedded && !loading && !error && counts.all > 0 && latestAvailable">
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="onStatusFilter('fresh')" title="Tampilkan kanal yang mengirim data">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Mengirim data</div>
+        <div class="fs-3 fw-bold text-success lh-1 mt-1">{{ counts.fresh | number }}<span class="fs-6 text-muted fw-normal"> / {{ counts.all | number }}</span></div>
+        <div class="text-muted small mt-1">sesuai interval lapor</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="onStatusFilter('stale')" title="Tampilkan kanal yang terlambat">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Terlambat</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-warning]="counts.stale > 0">{{ counts.stale | number }}</div>
+        <div class="text-muted small mt-1">data mulai tertunda</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="onStatusFilter('dead')" title="Tampilkan kanal yang mati / belum pernah kirim">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Mati / belum pernah kirim</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="counts.dead > 0">{{ counts.dead | number }}</div>
+        <div class="text-muted small mt-1 text-truncate" *ngIf="longestDead as d; else noDead"
+          [title]="(d.nodeAddress || d.nodeCode) + ' · ' + d.metricCode + ' — sejak ' + (d.lastValueAt | date:'dd MMM yyyy HH:mm')">
+          terlama: {{ d.nodeAddress || d.nodeCode }} · {{ d.lastValueAt | date:'dd MMM yyyy' }}
+        </div>
+        <ng-template #noDead><div class="text-muted small mt-1">{{ counts.nodata ? counts.nodata + ' belum pernah kirim' : 'semua aktif' }}</div></ng-template>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="onStatusFilter('outofrange')" title="Tampilkan nilai di luar ambang">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Di luar ambang</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="counts.outofrange > 0">{{ counts.outofrange | number }}</div>
+        <div class="text-muted small mt-1">{{ thresholdConfiguredCount | number }} dari {{ counts.all | number }} kanal punya ambang</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="onStatusFilter('problem')" title="Tampilkan semua kanal bermasalah (terlambat, mati, di luar ambang)">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Project terdampak</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="affectedProjects > 0">{{ affectedProjects | number }}</div>
+        <div class="text-muted small mt-1 text-truncate" *ngIf="worstProject as w; else noAffected"
+          [title]="'Terbanyak: ' + w.name + ' (' + w.count + ' kanal bermasalah)'">
+          terbanyak: {{ w.name }} · {{ w.count | number }} kanal
+        </div>
+        <ng-template #noAffected><div class="text-muted small mt-1">semua kanal normal</div></ng-template>
+      </card-body>
+    </card>
+  </div>
+</div>
+
+<card class="shadow-sm" *ngIf="!error">
+  <!-- Status tabs (counts from the filtered dataset, not the page) -->
   <ul class="nav nav-tabs nav-tabs-v2 px-4">
-    <li class="nav-item me-3" *ngFor="let option of statusOptions">
+    <li class="nav-item me-3" *ngFor="let opt of statusOptions">
       <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
-         [class.active]="filters.status === option" (click)="setStatusFilter(option)">
-        <span>{{ option === 'All Status' ? 'All' : statusLabel(option) }}</span>
-        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">{{ statusCount(option) }}</span>
+        [class.active]="statusFilter === opt.key" (click)="onStatusFilter(opt.key)">
+        <span>{{ opt.label }}</span>
+        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">{{ counts[opt.key] | number }}</span>
       </a>
     </li>
   </ul>
 
   <div class="p-4">
-    <!-- Filters -->
-    <div class="row g-3 mb-4" *ngIf="!embedded">
-      <div class="col-lg-3 col-md-6" *ngIf="isAdmin">
-        <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
-        <select class="form-select" [(ngModel)]="filters.ownerId" (ngModelChange)="onOwnerChange($event)">
-          <option value="">All Owners</option>
+    <!-- Filter row -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-3 col-md-6" *ngIf="isAdmin && !embedded">
+        <label class="text-muted text-uppercase small d-block mb-1" for="tc-owner">Owner</label>
+        <select id="tc-owner" class="form-select" [ngModel]="ownerId" (ngModelChange)="onOwnerChange($event)"
+          [title]="ownersError || ''">
+          <option value="">Semua owner</option>
+          <option *ngIf="ownersError" value="" disabled>{{ ownersError }}</option>
           <option *ngFor="let o of ownerOptions" [value]="o.id">{{ o.label }}</option>
         </select>
       </div>
-      <div class="col-lg-3 col-md-6" *ngIf="projectOptions.length > 1">
-        <label class="text-muted text-uppercase small d-block mb-1">Project</label>
-        <select class="form-select" [(ngModel)]="filters.projectId" (ngModelChange)="onClientFilterChange()">
-          <option value="">All Projects ({{ projectOptions.length }})</option>
+      <div class="col-md-6" [ngClass]="isAdmin && !embedded ? 'col-lg-3' : 'col-lg-4'">
+        <label class="text-muted text-uppercase small d-block mb-1" for="tc-project">Project</label>
+        <select id="tc-project" class="form-select" [(ngModel)]="projectId" (ngModelChange)="onFilterChange()"
+          [disabled]="projectOptions.length <= 1 && !projectId">
+          <option value="">Semua project</option>
           <option *ngFor="let p of projectOptions" [value]="p.id">{{ p.label }}</option>
         </select>
       </div>
-      <div class="col-lg-2 col-md-6" *ngIf="nodeModelOptions.length > 1">
-        <label class="text-muted text-uppercase small d-block mb-1">Node Type</label>
-        <select class="form-select" [(ngModel)]="filters.nodeModelId" (ngModelChange)="onClientFilterChange()">
-          <option value="">All Models ({{ nodeModelOptions.length }})</option>
-          <option *ngFor="let m of nodeModelOptions" [value]="m.id">{{ m.label }}</option>
+      <div class="col-md-6" [ngClass]="isAdmin && !embedded ? 'col-lg-2' : 'col-lg-3'">
+        <label class="text-muted text-uppercase small d-block mb-1" for="tc-group">Kelompok</label>
+        <select id="tc-group" class="form-select" [(ngModel)]="groupName" (ngModelChange)="onFilterChange()"
+          [disabled]="groupOptions.length <= 1 && !groupName">
+          <option value="">Semua kelompok</option>
+          <option *ngFor="let g of groupOptions" [value]="g">{{ g }}</option>
         </select>
       </div>
-      <div class="col-lg-2 col-md-6" *ngIf="sensorTypeGroupOptions.length > 1">
-        <label class="text-muted text-uppercase small d-block mb-1">Kelompok</label>
-        <select class="form-select" [(ngModel)]="filters.sensorTypeGroup" (ngModelChange)="onGroupChange()">
-          <option value="">Semua Kelompok ({{ sensorTypeGroupOptions.length }})</option>
-          <option *ngFor="let g of sensorTypeGroupOptions" [value]="g.id">{{ g.label }}</option>
-        </select>
-      </div>
-      <div class="col-lg-2 col-md-6" *ngIf="sensorTypeOptions.length > 1">
-        <label class="text-muted text-uppercase small d-block mb-1">Channel Type</label>
-        <select class="form-select" [(ngModel)]="filters.sensorTypeId" (ngModelChange)="onClientFilterChange()">
-          <option value="">All Types ({{ sensorTypeOptions.length }})</option>
-          <option *ngFor="let t of sensorTypeOptions" [value]="t.id">{{ t.label }}</option>
-        </select>
-      </div>
-      <div class="col-lg-2 col-md-6">
-        <label class="text-muted text-uppercase small d-block mb-1">Search</label>
+      <div class="col-md-6" [ngClass]="isAdmin && !embedded ? 'col-lg-4' : 'col-lg-5'">
+        <label class="text-muted text-uppercase small d-block mb-1" for="tc-search">Cari</label>
         <div class="input-group">
-          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search opacity-50"></i></span>
-          <input type="text" class="form-control border-start-0 ps-0" placeholder="Metric code"
-                 [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)">
+          <span class="input-group-text bg-transparent border-end-0 text-muted">
+            <i class="fa fa-search opacity-50"></i>
+          </span>
+          <input id="tc-search" type="text" class="form-control border-start-0 ps-0"
+            placeholder="Cari alamat, kode node, sensor, metrik, project, PIC…"
+            [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
         </div>
       </div>
     </div>
 
-    <!-- Loading -->
-    <div *ngIf="loading" class="text-center text-muted py-5">
-      <i class="fa fa-spinner fa-spin fa-2x mb-2 d-block"></i> Loading channels…
+    <!-- Advanced filters -->
+    <div class="mb-3">
+      <button type="button" class="btn btn-sm btn-outline-default" (click)="showAdvanced = !showAdvanced"
+        [attr.aria-expanded]="showAdvanced" aria-controls="tc-advanced">
+        <i class="fa fa-sliders fa-fw me-1"></i>Filter lanjutan
+        <i class="fa fa-fw ms-1" [ngClass]="showAdvanced ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+      </button>
+      <div id="tc-advanced" class="row g-3 mt-0" *ngIf="showAdvanced">
+        <div class="col-lg-3 col-md-6">
+          <label class="text-muted text-uppercase small d-block mb-1" for="tc-category">Jenis ukuran</label>
+          <select id="tc-category" class="form-select" [(ngModel)]="category" (ngModelChange)="onFilterChange()"
+            [disabled]="categoryOptions.length <= 1 && !category">
+            <option value="">Semua jenis</option>
+            <option *ngFor="let c of categoryOptions" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+      </div>
     </div>
 
-    <!-- Error -->
-    <div *ngIf="error && !loading" class="alert alert-warning">{{ error }}</div>
+    <!-- Active filters as removable chips -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3" *ngIf="hasActiveFilter">
+      <span class="badge fw-normal fs-6 border chip"
+        [ngClass]="statusFilter === 'dead' || statusFilter === 'problem' ? 'bg-danger-subtle text-danger border-danger-subtle' : 'bg-theme-subtle text-theme border-theme-subtle'"
+        *ngIf="statusFilter !== 'all'">
+        Status: {{ statusChipLabel() }} ({{ counts[statusFilter] | number }})
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('status')" aria-label="Hapus filter status">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="ownerId">
+        Owner: {{ ownerLabel(ownerId) || ownerId }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('owner')" aria-label="Hapus filter owner">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="projectId">
+        Project: {{ projectLabel(projectId) }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('project')" aria-label="Hapus filter project">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="groupName">
+        Kelompok: {{ groupName }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('group')" aria-label="Hapus filter kelompok">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="category">
+        Jenis: {{ category }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('category')" aria-label="Hapus filter jenis ukuran">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="searchText.trim()">
+        Cari: “{{ searchText.trim() }}”
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('search')" aria-label="Hapus pencarian">&times;</a>
+      </span>
+      <a href="javascript:;" class="small" (click)="resetFilters()">Reset filter</a>
+    </div>
 
-    <!-- Table -->
-    <div class="table-responsive" *ngIf="!loading">
-      <table class="table table-hover text-nowrap align-middle">
-        <thead class="text-uppercase text-muted small">
-          <tr>
-            <th class="pt-0 pb-2 w-10px"></th>
-            <th class="pt-0 pb-2 sortable" (click)="sortBy('metric')">Channel <i class="fa ms-1" [ngClass]="sortIcon('metric')"></i></th>
-            <th class="pt-0 pb-2 sortable" (click)="sortBy('type')">Type <i class="fa ms-1" [ngClass]="sortIcon('type')"></i></th>
-            <th class="pt-0 pb-2 sortable text-end" (click)="sortBy('value')">Latest Value <i class="fa ms-1" [ngClass]="sortIcon('value')"></i></th>
-            <th class="pt-0 pb-2 sortable" (click)="sortBy('status')">Status <i class="fa ms-1" [ngClass]="sortIcon('status')"></i></th>
-            <th class="pt-0 pb-2 sortable" *ngIf="!nodeId" (click)="sortBy('node')">Node <i class="fa ms-1" [ngClass]="sortIcon('node')"></i></th>
-            <th class="pt-0 pb-2 sortable text-end" (click)="sortBy('lastSeen')">Last Reading <i class="fa ms-1" [ngClass]="sortIcon('lastSeen')"></i></th>
-            <th class="pt-0 pb-2 text-end">Links</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let c of paginatedChannels">
-            <tr class="cursor-pointer" [class.table-active]="expandedId === c.idSensorChannel"
-                (click)="toggleExpand(c.idSensorChannel)">
-              <!-- Expand toggle (first column) -->
-              <td class="w-10px align-middle text-center">
-                <button class="btn btn-sm btn-link text-muted p-0" (click)="$event.stopPropagation(); toggleExpand(c.idSensorChannel)"
-                        [attr.aria-expanded]="expandedId === c.idSensorChannel" title="Toggle details">
-                  <i class="fa" [class.fa-chevron-right]="expandedId !== c.idSensorChannel" [class.fa-chevron-down]="expandedId === c.idSensorChannel"></i>
-                </button>
-              </td>
-              <!-- Channel (2 lines) -->
-              <td>
-                <div class="fw-semibold text-inverse text-opacity-75">{{ c.metricCode }}</div>
-                <div class="text-muted small">{{ c.sensor.label || '—' }}</div>
-              </td>
-              <!-- Type -->
-              <td>
-                <span *ngIf="c.sensorType.groupName" class="badge bg-theme bg-opacity-25 text-theme me-1">{{ c.sensorType.groupName }}</span>
-                <span class="text-muted small">{{ c.sensorType.category || '—' }}</span>
-              </td>
-              <!-- Latest value (2 lines) -->
-              <td class="text-end">
-                <div class="fw-semibold">{{ formatValue(c) }}</div>
-                <div class="text-muted small">{{ ageLabel(c) }}</div>
-              </td>
-              <!-- Status -->
-              <td><span [class]="statusBadge(c.status)">{{ statusLabel(c.status) }}</span></td>
-              <!-- Node (2 lines, clickable link) -->
-              <td *ngIf="!nodeId">
-                <a [routerLink]="c.node.idNode ? ['/iot/nodes', c.node.idNode] : null" (click)="$event.stopPropagation()"
-                   class="fw-semibold text-decoration-none" [class.text-theme]="c.node.idNode" [class.text-inverse]="!c.node.idNode">
-                  {{ c.node.name || c.node.code || '—' }}
-                </a>
-                <div class="small">
-                  <i class="fa fa-circle fa-2xs me-1" [class]="connectivityBadge(c.node.connectivityStatus)"></i>
-                  <span class="text-muted">{{ (c.node.connectivityStatus || 'unknown') | titlecase }} · {{ c.node.modelName || '—' }}</span>
-                </div>
-              </td>
-              <!-- Last reading -->
-              <td class="text-end text-muted">
-                {{ c.latest?.ts ? (c.latest?.ts | date:'short') : 'Never' }}
-              </td>
-              <!-- Related links (real anchors → right-click / ctrl-click opens new tab) -->
-              <td class="text-end text-nowrap">
-                <a *ngIf="c.node.idNode" [routerLink]="['/iot/nodes', c.node.idNode]" (click)="$event.stopPropagation()"
-                   class="text-muted text-decoration-none px-1" title="Open node">
-                  <i class="fa fa-microchip"></i>
-                </a>
-                <a *ngIf="c.node.idNode && c.sensor.idSensor" [routerLink]="['/iot/nodes', c.node.idNode, 'sensor', c.sensor.idSensor]" (click)="$event.stopPropagation()"
-                   class="text-muted text-decoration-none px-1" title="Open sensor / channel">
-                  <i class="fa fa-wave-square"></i>
-                </a>
-                <a *ngIf="c.project.idProject" [routerLink]="['/iot/projects', c.project.idProject]" (click)="$event.stopPropagation()"
-                   class="text-muted text-decoration-none px-1" title="Open project">
-                  <i class="fa fa-diagram-3"></i>
-                </a>
-              </td>
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border spinner-border-sm text-theme" role="status">
+        <span class="visually-hidden">Memuat…</span>
+      </div>
+      <div class="mt-2 text-muted small">Memuat kanal…</div>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div class="table-responsive" *ngIf="filtered.length">
+        <table class="table table-hover align-middle channels-table">
+          <thead class="text-uppercase text-muted small">
+            <tr>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('metric')"
+                (click)="onSort('metric')" (keydown.enter)="onSort('metric')">
+                Kanal <i class="fa ms-1" [ngClass]="sortIcon('metric')"></i>
+              </th>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('node')"
+                (click)="onSort('node')" (keydown.enter)="onSort('node')">
+                Node <i class="fa ms-1" [ngClass]="sortIcon('node')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('value')"
+                (click)="onSort('value')" (keydown.enter)="onSort('value')">
+                Nilai terakhir <i class="fa ms-1" [ngClass]="sortIcon('value')"></i>
+              </th>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('status')"
+                (click)="onSort('status')" (keydown.enter)="onSort('status')"
+                title="Urut: bermasalah dulu, lalu data paling lama">
+                Status <i class="fa ms-1" [ngClass]="sortIcon('status')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('lastAt')"
+                (click)="onSort('lastAt')" (keydown.enter)="onSort('lastAt')">
+                Data terakhir <i class="fa ms-1" [ngClass]="sortIcon('lastAt')"></i>
+              </th>
+              <th class="pt-0 pb-2 w-10px"></th>
             </tr>
-
-            <!-- Expanded detail row -->
-            <tr *ngIf="expandedId === c.idSensorChannel" class="expanded-row">
-              <td [attr.colspan]="nodeId ? 7 : 8" class="p-0 border-0">
-                <div class="bg-body-tertiary p-4 mx-2 mb-2 rounded-3">
-                  <div class="row g-4">
-                    <div class="col-md-3">
-                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-gauge me-1"></i> Reading</h6>
-                      <div class="mb-1"><strong>Value:</strong> {{ formatValue(c) }}</div>
-                      <div class="mb-1"><strong>Raw:</strong> {{ c.latest?.valueRaw ?? '—' }}</div>
-                      <div class="mb-1"><strong>Quality:</strong> {{ c.latest?.qualityFlag || '—' }}</div>
-                      <div class="mb-1"><strong>Updated:</strong> {{ c.latest?.ts ? (c.latest?.ts | date:'medium') : 'Never' }}</div>
-                    </div>
-                    <div class="col-md-3">
-                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-sliders me-1"></i> Channel</h6>
-                      <div class="mb-1"><strong>Unit:</strong> {{ c.unit || '—' }}</div>
-                      <div class="mb-1"><strong>Thresholds:</strong> {{ thresholdLabel(c) }}</div>
-                      <div class="mb-1"><strong>Register:</strong> {{ c.registerAddress ?? '—' }}</div>
-                      <div class="mb-1"><strong>Mult / Offset:</strong> {{ c.multiplier ?? 1 }} / {{ c.offsetValue ?? 0 }}</div>
-                      <div class="mb-1"><strong>Aggregation:</strong> {{ c.aggregation || '—' }}</div>
-                    </div>
-                    <div class="col-md-3">
-                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-microchip me-1"></i> Node</h6>
-                      <div class="mb-1"><strong>Code:</strong> {{ c.node.code || '—' }}</div>
-                      <div class="mb-1"><strong>Model:</strong> {{ c.node.modelVendor || '' }} {{ c.node.modelName || '' }}</div>
-                      <div class="mb-1"><strong>Connectivity:</strong> {{ (c.node.connectivityStatus || 'unknown') | titlecase }}</div>
-                      <div class="mb-1"><strong>Last seen:</strong> {{ c.node.lastSeenAt ? (c.node.lastSeenAt | date:'short') : 'Never' }}</div>
-                      <div class="mb-1"><strong>Interval:</strong> {{ c.node.telemetryIntervalSec ?? '—' }}s</div>
-                    </div>
-                    <div class="col-md-3">
-                      <h6 class="text-muted text-uppercase small mb-2"><i class="fa fa-diagram-3 me-1"></i> Context</h6>
-                      <div class="mb-1"><strong>Sensor:</strong> {{ c.sensor.label || '—' }}</div>
-                      <div class="mb-1"><strong>Type:</strong> {{ c.sensorType.category || '—' }}</div>
-                      <div class="mb-1"><strong>Project:</strong> {{ c.project.name || '—' }}</div>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of pageRows; trackBy: trackRow" class="channel-row" (click)="openChannel(r)">
+              <!-- Kanal -->
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="w-40px h-40px bg-inverse bg-opacity-25 rounded-3 d-none d-sm-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="fa fa-wave-square text-theme"></i>
+                  </div>
+                  <div class="ms-sm-3 text-truncate cell-mw">
+                    <div class="text-inverse text-opacity-75 fw-semibold text-truncate" [title]="r.metricCode">{{ r.metricCode || '-' }}</div>
+                    <div class="text-muted small text-truncate" [title]="r.sensorLabel + (r.groupName ? ' · ' + r.groupName : '')">
+                      {{ r.sensorLabel || r.sensorCode || '-' }}<ng-container *ngIf="r.groupName"> · {{ r.groupName }}</ng-container>
                     </div>
                   </div>
                 </div>
               </td>
+              <!-- Node -->
+              <td>
+                <ng-container *ngIf="r.idNode; else noNode">
+                  <a class="fw-semibold text-decoration-none d-inline-block text-truncate cell-mw" [routerLink]="nodeLink(r)"
+                    (click)="stop($event)" [title]="r.nodeAddress || r.nodeCode">
+                    {{ r.nodeAddress || r.nodeCode || '-' }}
+                  </a>
+                  <div class="text-muted small" *ngIf="r.nodeAddress">{{ r.nodeCode }}</div>
+                  <div class="text-muted small text-truncate cell-mw" *ngIf="r.projectName" [title]="r.projectName">
+                    <i class="fa fa-diagram-project fa-fw opacity-50"></i>{{ r.projectName }}
+                  </div>
+                  <a *ngIf="r.isProblem && r.picPhone" class="small text-decoration-none d-inline-block text-truncate cell-mw"
+                    [href]="telHref(r.picPhone)" (click)="stop($event)"
+                    [title]="'Telepon PIC ' + (r.picName || '') + ' · ' + r.picPhone">
+                    <i class="fa fa-phone fa-fw"></i>{{ r.picName || 'Telepon PIC' }}
+                  </a>
+                </ng-container>
+                <ng-template #noNode><span class="text-muted">-</span></ng-template>
+              </td>
+              <!-- Nilai terakhir: marked against CONFIGURED thresholds; only FRESH crossings count -->
+              <td class="text-end value-cell" [title]="r.metricCode + ' · ' + r.thresholdText">
+                <span class="fw-semibold"
+                  [class.text-muted]="r.lastValue === null"
+                  [class.text-danger]="r.isOut"
+                  [class.text-warning]="(r.tstate === 'below' || r.tstate === 'above') && !r.isOut">
+                  <i *ngIf="r.tstate === 'below'" class="fa fa-arrow-down fa-fw small"></i>
+                  <i *ngIf="r.tstate === 'above'" class="fa fa-arrow-up fa-fw small"></i>
+                  {{ r.valueText }}
+                </span>
+                <div class="d-flex align-items-center justify-content-end gap-1 trend-line" *ngIf="r.spark || r.rangeText">
+                  <svg *ngIf="r.spark" class="spark d-none d-md-block" viewBox="0 0 72 20" width="72" height="20" aria-hidden="true">
+                    <path [attr.d]="r.spark" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <span class="small text-muted">{{ r.rangeText }}</span>
+                </div>
+                <div class="small out-note" *ngIf="r.outText" [class.text-danger]="r.isOut" [class.text-muted]="!r.isOut">
+                  {{ r.outText }}<span *ngIf="!r.isOut"> · data terlambat</span>
+                </div>
+              </td>
+              <!-- Status -->
+              <td>
+                <span class="badge" [ngClass]="badgeClass(r)" [title]="r.statusTitle">{{ statusLabel(r) }}</span>
+                <div class="text-muted small mt-1" *ngIf="r.intervalText">{{ r.intervalText }}</div>
+              </td>
+              <!-- Data terakhir -->
+              <td class="text-end">
+                <ng-container *ngIf="r.isDead; else normalUpdated">
+                  <div class="text-danger fw-semibold">{{ r.deadText }}</div>
+                  <div class="text-muted small" *ngIf="r.lastValueAt">sejak {{ r.lastValueAt | date:'dd MMM yyyy, HH:mm' }}</div>
+                  <div class="text-muted small" *ngIf="r.seenText">{{ r.seenText }}</div>
+                </ng-container>
+                <ng-template #normalUpdated>
+                  <div>{{ timeAgo(r) }}</div>
+                  <div class="text-muted small" *ngIf="r.lastValueAt">{{ r.lastValueAt | date:'dd MMM, HH:mm' }}</div>
+                </ng-template>
+              </td>
+              <td class="w-10px text-muted"><i class="fa fa-chevron-right small"></i></td>
             </tr>
-          </ng-container>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Empty state -->
-    <div *ngIf="!loading && !filteredChannels.length" class="text-center text-muted py-5 border-top">
-      No telemetry channels match the filter.
-    </div>
-
-    <!-- Pagination -->
-    <div class="d-md-flex align-items-center mt-3" *ngIf="!loading && totalEntries">
-      <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
-        Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalEntries }} channels
+          </tbody>
+        </table>
       </div>
-      <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
-        <span class="text-muted small me-2 text-uppercase">Rows</span>
-        <select class="form-select form-select-sm w-auto" [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
-          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-        </select>
+
+      <!-- Empty -->
+      <div *ngIf="!filtered.length" class="text-center text-muted py-5 border-top">
+        <i class="fa fa-wave-square fa-2x mb-2 opacity-50 d-block"></i>
+        <ng-container *ngIf="!rows.length; else noMatch">Belum ada kanal telemetri.</ng-container>
+        <ng-template #noMatch>
+          Tidak ada kanal sesuai filter.
+          <div class="mt-2"><button class="btn btn-sm btn-outline-default" (click)="resetFilters()">Reset filter</button></div>
+        </ng-template>
       </div>
-      <ul class="pagination mb-0 justify-content-center">
-        <li class="page-item" [class.disabled]="currentPage === 1">
-          <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
-        </li>
-        <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
-          <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
-        </li>
-        <li class="page-item" [class.disabled]="currentPage === totalPages">
-          <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
-        </li>
-      </ul>
-    </div>
+
+      <!-- Pagination -->
+      <div class="d-md-flex align-items-center mt-3" *ngIf="filtered.length">
+        <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+          Menampilkan {{ paginationStart | number }}–{{ paginationEnd | number }} dari {{ filtered.length | number }} kanal
+        </div>
+        <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
+          <label class="text-muted small me-2 text-uppercase mb-0" for="tc-pagesize">Baris</label>
+          <select id="tc-pagesize" class="form-select form-select-sm w-auto" [ngModel]="pageSize"
+            (ngModelChange)="changePageSize($event)">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+        </div>
+        <ul class="pagination mb-0 justify-content-center">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:;" (click)="goToPage(1)" aria-label="Halaman pertama">&laquo;</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Sebelumnya</a>
+          </li>
+          <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+            <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Berikutnya</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" href="javascript:;" (click)="goToPage(totalPages)" aria-label="Halaman terakhir">&raquo;</a>
+          </li>
+        </ul>
+      </div>
+    </ng-container>
   </div>
 </card>

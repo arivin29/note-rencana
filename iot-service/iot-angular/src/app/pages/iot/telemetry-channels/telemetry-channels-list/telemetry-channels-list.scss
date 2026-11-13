@@ -1,18 +1,63 @@
-.sortable {
+th.sortable {
   cursor: pointer;
   user-select: none;
-  transition: color 0.15s;
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     color: var(--bs-theme) !important;
   }
 }
 
-.expanded-row td {
-  background: transparent;
-}
-
-tr.cursor-pointer {
+.channel-row {
   cursor: pointer;
 }
 
+.cell-mw {
+  max-width: 240px;
+}
+
+.kpi-link {
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--bs-theme);
+  }
+}
+
+.chip {
+  white-space: normal;
+  text-align: start;
+}
+
+// No horizontal scroll (same rules as the Sensors tab): text cells wrap; numbers, badges and times stay on one line.
+.channels-table {
+  td,
+  th {
+    white-space: normal;
+  }
+
+  .badge,
+  .value-cell .fw-semibold {
+    white-space: nowrap;
+  }
+
+  td:nth-child(3),
+  td:nth-child(5) {
+    white-space: nowrap; // value + last-data columns
+  }
+
+  .value-cell .out-note {
+    white-space: normal;
+  }
+}
+
+.trend-line {
+  white-space: nowrap;
+
+  .spark {
+    color: var(--bs-theme);
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+}

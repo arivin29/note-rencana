@@ -1,6 +1,6 @@
 ---
 title: Daftar Sensor Project
-version: 1.3.1
+version: 1.3.2
 updatedAt: 2026-11-13
 audience: operator, supervisor distribusi, admin
 sources: [src/app/pages/iot/projects/project-workspace/pages/sensors-page/sensors-page.component.ts, src/app/pages/iot/projects/project-workspace/pages/sensors-page/sensors-page.component.html, src/app/shared/utils/telemetry-freshness.ts, src/app/shared/utils/threshold.ts, src/app/shared/utils/fetch-all.ts]
@@ -81,7 +81,7 @@ Huruf besar atau kecil tidak berpengaruh. Hasil muncul sekitar setengah detik se
   - Di bawah nilai tiap channel ada **tren 24 jam** (lihat bagian "Tren 24 jam" di bawah).
   - Penanda ambang dijelaskan di bagian "Penanda di luar ambang" di bawah.
 - Kolom **Updated**:
-  - Baris Fresh dan Stale: selisih waktu ("4m ago", "2h ago") dan tanggal serta jam bacaan terakhir.
+  - Baris Fresh dan Stale: selisih waktu ("4 mnt lalu", "2 jam lalu") dan tanggal serta jam bacaan terakhir.
   - Baris **Offline dan No Data**: tulisan merah "Data terakhir *durasi* lalu" dan di bawahnya "sejak *tanggal, jam*". Durasi ditulis dalam mnt, jam, hari, atau bln.
   - Kalau sensor tidak pernah mengirim nilai, baris pertama (merah) tertulis "Belum pernah kirim". Baris kedua "node terlihat *durasi* lalu" muncul **kalau node-nya pernah terlihat** (misalnya node mengirim data lain). Artinya alat hidup, tetapi channel ini belum pernah menyetor nilai. Periksa pemetaan atau kabel sensornya. Kalau node juga tidak pernah terlihat, baris kedua tidak ada.
 
@@ -246,7 +246,7 @@ Kalau interval node tidak diketahui, dipakai batas minimum: 10 dan 60 menit.
 
 | Status baris | Tampilan |
 |---|---|
-| Fresh, Stale | "4m ago" / "2h ago", lalu tanggal dan jam |
+| Fresh, Stale | "4 mnt lalu" / "2 jam lalu", lalu tanggal dan jam |
 | Offline | "Data terakhir 5 jam lalu", lalu "sejak 13 Nov 2026, 08:00" (merah) |
 | No Data | "Belum pernah kirim" (merah), dan di bawahnya "node terlihat ... lalu" kalau node pernah terlihat |
 

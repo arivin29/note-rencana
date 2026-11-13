@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { TelemetryChannelsListPage } from './telemetry-channels-list/telemetry-channels-list';
 
 const routes: Routes = [
-  { path: '', component: TelemetryChannelsListPage, data: { title: 'Telemetry Channels' } }
+  { path: '', component: TelemetryChannelsListPage, data: { title: 'Kanal Telemetri', guide: 'telemetry-channels' } }
 ];
 
 @NgModule({

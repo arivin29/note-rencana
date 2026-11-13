@@ -9,8 +9,10 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 export interface SensorsControllerTrends$Params {
-  /** Project UUID (required) */
-  idProject: string;
+  /** Project UUID. Optional: without it the scope is the caller's owner (tenant) or ownerId / all projects (admin). */
+  idProject?: string;
+  /** Admin only: limit to one owner (ignored for tenants) */
+  ownerId?: string;
   /** Hours back incl. the current hour (default 24, max 48) */
   hours?: number;
 }
@@ -20,6 +22,7 @@ export function sensorsControllerTrends(http: HttpClient, rootUrl: string, param
   const rb = new RequestBuilder(rootUrl, sensorsControllerTrends.PATH, 'get');
   if (params) {
     rb.query('idProject', params.idProject, {});
+    rb.query('ownerId', params.ownerId, {});
     rb.query('hours', params.hours, {});
   }
 

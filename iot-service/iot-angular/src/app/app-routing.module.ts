@@ -165,6 +165,7 @@ const routes: Routes = [
     },
     {
         path: 'iot/telemetry-channels',
+        canActivate: [AuthGuard],
         loadChildren: () => import('./pages/iot/telemetry-channels/telemetry-channels.module').then((m) => m.TelemetryChannelsModule)
     },
     {
