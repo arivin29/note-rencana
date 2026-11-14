@@ -13,13 +13,13 @@ const routes: Routes = [
     path: '',
     component: UsersListComponent,
     canActivate: [AuthGuard],
-    data: { title: 'User Management', roles: ['admin'] }
+    data: { title: 'User Management', roles: ['admin'], guide: 'user-management' }
   },
   {
     path: ':id',
     component: UserDetailComponent,
     canActivate: [AuthGuard],
-    data: { title: 'User Details', roles: ['admin'] }
+    data: { title: 'User Details', roles: ['admin'], guide: 'user-management' }
   }
 ];
 

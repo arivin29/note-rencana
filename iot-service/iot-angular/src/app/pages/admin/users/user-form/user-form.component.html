@@ -123,6 +123,7 @@
           class="form-select"
           name="role"
           [(ngModel)]="formData.role"
+          (ngModelChange)="onRoleChange()"
           required
           [disabled]="saving">
           <option value="tenant">Tenant</option>
@@ -134,19 +135,35 @@
         </small>
       </div>
 
-      <!-- Owner ID (for tenant users) -->
+      <!-- Owner — WAJIB untuk user tenant (lihat requireOwnerForTenant di backend) -->
       <div class="mb-3" *ngIf="formData.role === 'tenant'">
-        <label class="form-label fw-bold">Owner ID</label>
-        <input 
-          type="text" 
+        <label class="form-label fw-bold">Owner <span class="text-danger">*</span></label>
+        <select
+          class="form-select"
           name="idOwner"
           [(ngModel)]="formData.idOwner"
-          class="form-control"
-          placeholder="Enter owner ID (optional)"
-          [disabled]="saving">
-        <small class="text-muted">
+          required
+          [disabled]="saving || loadingOwners || !!ownersError"
+          #idOwnerCtrl="ngModel">
+          <option value="" disabled>{{ loadingOwners ? 'Memuat daftar owner…' : 'Pilih owner' }}</option>
+          <option *ngFor="let o of owners" [value]="o.idOwner">{{ o.name }}</option>
+        </select>
+
+        <div class="text-danger mt-1" *ngIf="idOwnerCtrl.invalid && idOwnerCtrl.touched">
+          <small>Owner wajib dipilih untuk user tenant</small>
+        </div>
+
+        <div class="text-danger mt-1" *ngIf="ownersError">
+          <small>
+            <i class="bi bi-exclamation-triangle me-1"></i>{{ ownersError }}
+            <a href="javascript:;" class="ms-1" (click)="loadOwners()">Coba lagi</a>
+          </small>
+        </div>
+
+        <small class="text-muted" *ngIf="!ownersError && !idOwnerCtrl.invalid">
           <i class="bi bi-info-circle me-1"></i>
-          Associate this user with an owner
+          User tenant hanya melihat data owner ini. Wajib diisi — tanpa owner,
+          user justru bisa membaca data semua PDAM.
         </small>
       </div>
 
