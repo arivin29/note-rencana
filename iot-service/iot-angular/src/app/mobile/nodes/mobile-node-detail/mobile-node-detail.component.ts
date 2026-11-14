@@ -25,7 +25,7 @@ export class MobileNodeDetailComponent implements OnInit, OnDestroy {
   nid = '';
   pid = '';
   found = false;
-  head = { title: '', code: '', tone: 'off' as MTone, status: '', last: '', interval: '', rule: '', phone: '', picName: '' };
+  head = { title: '', code: '', tone: 'off' as MTone, status: '', last: '', ago: '', interval: '', rule: '', phone: '', picName: '' };
 
   private destroy$ = new Subject<void>();
 
@@ -53,6 +53,7 @@ export class MobileNodeDetailComponent implements OnInit, OnDestroy {
           tone: FRESHNESS_TONE[f],
           status: FRESHNESS_LABEL_ID[f],
           last: n.lastSeenAt ? `Data terakhir ${timeAgoId(n.lastSeenAt, now)}` : 'Belum pernah kirim',
+          ago: n.lastSeenAt ? timeAgoId(n.lastSeenAt, now) : '',
           interval: formatInterval(n.telemetryIntervalSec),
           rule: `terlambat bila > ${th.freshMin} mnt, offline bila > ${th.staleMin} mnt`,
           phone: n.picPhone,

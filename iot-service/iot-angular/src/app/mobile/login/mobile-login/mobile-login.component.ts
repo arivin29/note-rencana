@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NgForm } from '@angular/forms';
 import { AppSettings } from '../../../service/app-settings.service';
 import { AuthService } from '@services/auth.service';
+import { ensureHeliosFont } from '../../shared/helios-font';
 
 /** Login mobile tersendiri (UI .m-app, logika AuthService yang sama). docs/mobile/05 §1. */
 @Component({
@@ -23,6 +24,7 @@ export class MobileLoginComponent implements OnDestroy {
     private appSettings: AppSettings,
     private auth: AuthService
   ) {
+    ensureHeliosFont();
     this.appSettings.appSidebarNone = true;
     this.appSettings.appHeaderNone = true;
     this.appSettings.appContentClass = 'p-0';

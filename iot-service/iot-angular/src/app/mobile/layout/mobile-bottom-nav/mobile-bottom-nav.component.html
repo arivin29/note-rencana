@@ -1,11 +1,11 @@
 <nav class="m-bottomnav" aria-label="Navigasi utama">
-  <a class="m-bottomnav__item" routerLink="/mobile/projects" routerLinkActive="active">
-    <span class="ic-wrap"><i class="fa fa-diagram-project"></i></span>Project
+  <a class="m-bottomnav__item" routerLink="/mobile/projects" routerLinkActive="active" #rlaP="routerLinkActive" [attr.aria-current]="rlaP.isActive ? 'page' : null">
+    <span class="ic-wrap"><i class="bi bi-grid-1x2" aria-hidden="true"></i></span>Project
   </a>
-  <a class="m-bottomnav__item" routerLink="/mobile/alerts" routerLinkActive="active">
-    <span class="ic-wrap"><i class="fa fa-bell"></i></span>Peringatan
+  <a class="m-bottomnav__item" routerLink="/mobile/alerts" routerLinkActive="active" #rlaA="routerLinkActive" [attr.aria-current]="rlaA.isActive ? 'page' : null">
+    <span class="ic-wrap"><i class="bi bi-bell" aria-hidden="true"></i></span>Peringatan
   </a>
-  <a class="m-bottomnav__item" routerLink="/mobile/profile" routerLinkActive="active">
-    <span class="ic-wrap"><i class="fa fa-user"></i></span>Profil
+  <a class="m-bottomnav__item" routerLink="/mobile/profile" routerLinkActive="active" #rlaU="routerLinkActive" [attr.aria-current]="rlaU.isActive ? 'page' : null">
+    <span class="ic-wrap"><i class="bi bi-person" aria-hidden="true"></i></span>Profil
   </a>
 </nav>

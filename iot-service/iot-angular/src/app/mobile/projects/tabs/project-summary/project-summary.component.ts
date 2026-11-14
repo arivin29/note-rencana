@@ -8,7 +8,7 @@ import { Freshness } from '@app/shared/utils/telemetry-freshness';
 import { MobileProjectStore, ProjectData } from '../../../shared/mobile-project-store.service';
 import { MobileScopeService } from '../../../shared/mobile-scope.service';
 import { cleanTs } from '../../../shared/util';
-import { buildChannelRows, ChannelRow, nodeFreshness, toNodeLite } from '../../../shared/channel-rows';
+import { buildChannelRows, ChannelRow, KeyReading, keyReadingsByNode, nodeFreshness, toNodeLite } from '../../../shared/channel-rows';
 import {
   clockText, FRESHNESS_LABEL_ID, FRESHNESS_TONE, mErrorText, MTone, ruleTypeLabel, severityLabel, severityRank, severityTone
 } from '../../../shared/labels';
@@ -30,6 +30,11 @@ interface AttnItem {
 }
 
 interface Seg { key: Freshness; label: string; tone: MTone; n: number; pct: number; }
+
+/** Baris "Nilai terkini": perangkat + nilai kunci (tekanan/debit) dari store — tanpa request baru. */
+interface KeyNode { id: string; title: string; code: string; tone: MTone; statusLabel: string; last: string; reads: KeyReading[]; }
+
+const KEY_NODES_MAX = 6;
 
 /**
  * Ringkasan project (pengganti Dashboard): bar status perangkat Aktif/Terlambat/Offline/Belum ada
@@ -57,6 +62,9 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
   withThreshold = 0;
   attention: AttnItem[] = [];
   allClear = false;
+  /** nilai kunci terkini per perangkat (maks KEY_NODES_MAX) */
+  keyNodes: KeyNode[] = [];
+  keyNodesTotal = 0;
 
   diagrams: ScadaDiagram[] = [];
   scadaLoading = true;
@@ -90,6 +98,10 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
   }
 
   tel(p: string): string { return telHref(p); }
+  trackById(_: number, n: KeyNode): string { return n.id; }
+  get freshCount(): number { return this.segs[0]?.n || 0; }
+  /** warna garis severity kiri baris perhatian */
+  sevClass(t: MTone): string { return 'm-attn__sev--' + t; }
   trackByKey(_: number, a: AttnItem): string { return a.key; }
 
   private build(s: ProjectData): void {
@@ -133,6 +145,24 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
     const outRows = rows.filter((r) => r.verdict.isOut);
     this.outCount = outRows.length;
     const chById = new Map<string, ChannelRow>(rows.map((r) => [r.id, r]));
+
+    // ---- nilai terkini (tekanan/debit dulu); perangkat tanpa nilai tidak ditampilkan ----
+    const reads = s.latestAvailable ? keyReadingsByNode(rows, 2) : new Map<string, KeyReading[]>();
+    const keyNodes: KeyNode[] = [];
+    for (const n of nodes) {
+      const r = reads.get(n.idNode);
+      if (!r?.length) { continue; }
+      const nl = toNodeLite(n);
+      const f = fresh.get(n.idNode) || 'nodata';
+      keyNodes.push({
+        id: n.idNode, title: nodeLabel(nl) || 'Perangkat', code: nodeSubLabel(nl),
+        tone: FRESHNESS_TONE[f], statusLabel: FRESHNESS_LABEL_ID[f],
+        last: nl.lastSeenAt ? timeAgoId(nl.lastSeenAt, now) : '', reads: r
+      });
+    }
+    keyNodes.sort((a, b) => a.title.localeCompare(b.title, 'id'));
+    this.keyNodesTotal = keyNodes.length;
+    this.keyNodes = keyNodes.slice(0, KEY_NODES_MAX);
 
     // ---- perlu perhatian ----
     const items: AttnItem[] = [];

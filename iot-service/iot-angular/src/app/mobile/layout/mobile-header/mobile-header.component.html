@@ -1,20 +1,21 @@
 <header class="m-appbar">
   <button *ngIf="showBack" class="m-appbar__back" type="button" (click)="back.emit()" aria-label="Kembali" title="Kembali">
-    <i class="fa fa-chevron-left"></i>
+    <i class="bi bi-chevron-left" aria-hidden="true"></i>
   </button>
 
-  <span class="m-brand__mark" *ngIf="!showBack" aria-hidden="true"><i class="fa fa-droplet"></i></span>
+  <span class="m-brand__mark" *ngIf="!showBack" aria-hidden="true">D</span>
 
   <div class="m-appbar__titles">
     <div class="m-appbar__title" *ngIf="title; else brand">{{ title }}</div>
-    <ng-template #brand><span class="m-brand__name">Helio<span class="accent">s</span></span></ng-template>
+    <ng-template #brand><span class="m-brand__name">Devetek Helios</span></ng-template>
     <div class="m-appbar__sub" *ngIf="sub">{{ sub }}</div>
+    <div class="m-appbar__sub" *ngIf="!sub && !showBack && title">Devetek Helios</div>
   </div>
 
   <button class="m-iconbtn" type="button" (click)="goDesktop()" title="Tampilan Desktop" aria-label="Tampilan Desktop">
-    <i class="fa fa-desktop"></i>
+    <i class="bi bi-display" aria-hidden="true"></i>
   </button>
   <a class="m-iconbtn" *ngIf="!onProfile" routerLink="/mobile/profile" title="Profil" aria-label="Profil">
-    <i class="fa fa-user"></i>
+    <i class="bi bi-person" aria-hidden="true"></i>
   </a>
 </header>

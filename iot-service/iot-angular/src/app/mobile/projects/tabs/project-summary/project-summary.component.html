@@ -1,86 +1,123 @@
-<!-- Muatan pertama -->
-<div class="m-card m-pad" *ngIf="s.firstLoad">
+<!-- Muatan pertama: rangka HUD tampil dulu -->
+<m-panel *ngIf="s.firstLoad" label="Status perangkat" icon="bi-speedometer2" tone="theme" [pad]="true">
   <div class="m-skel w-50"></div><div class="m-skel w-70"></div><div class="m-skel w-40"></div>
-</div>
+</m-panel>
 
 <!-- Gagal total (belum ada data sama sekali) -->
-<div class="m-empty" *ngIf="!s.firstLoad && !s.nodes && s.nodesError">
-  <i class="fa fa-triangle-exclamation"></i>{{ s.nodesError }}
-  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-</div>
+<m-panel *ngIf="!s.firstLoad && !s.nodes && s.nodesError" label="Status perangkat" icon="bi-speedometer2" tone="danger">
+  <div class="m-empty">
+    <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ s.nodesError }}
+    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+  </div>
+</m-panel>
 
 <ng-container *ngIf="!s.firstLoad && s.nodes">
 
   <div class="m-banner m-banner--warn" *ngIf="s.refreshFailed" role="status">
-    <i class="fa fa-triangle-exclamation"></i>
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
     <span>Sebagian data gagal diperbarui<ng-container *ngIf="updated"> · data per {{ updated }}</ng-container></span>
     <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
   <div class="m-banner m-banner--warn" *ngIf="!s.latestAvailable" role="status">
-    <i class="fa fa-circle-info"></i>
+    <i class="bi bi-info-circle" aria-hidden="true"></i>
     <span>Nilai terakhir channel sedang tidak tersedia dari server. Status ambang tidak dapat dinilai.</span>
   </div>
 
-  <!-- Kepala status -->
-  <div class="m-card m-statushead">
-    <div class="m-statushead__meta m-mt-0">
-      <ng-container *ngIf="meta.lastData">Data terakhir masuk {{ meta.lastData }}</ng-container>
-      <ng-container *ngIf="!meta.lastData">Belum ada data masuk</ng-container>
-      <ng-container *ngIf="meta.interval"> · kirim {{ meta.interval }}</ng-container>
+  <!-- Status perangkat -->
+  <m-panel label="Status perangkat" icon="bi-speedometer2" tone="theme">
+    <span panelAside><b>{{ freshCount }}</b> / {{ total }} aktif</span>
+    <div class="m-panel__body">
+      <div class="m-hero">
+        <div class="m-hero__big">{{ freshCount }}<small>/{{ total }}</small></div>
+        <div class="m-hero__lbl">Perangkat<br><i class="m-sq" aria-hidden="true"></i>{{ segs[0]?.label }}</div>
+      </div>
+      <ng-container *ngIf="total > 0">
+        <div class="m-sbar m-mt-3" role="img"
+             [attr.aria-label]="'Status perangkat: ' + segs[0].n + ' aktif, ' + segs[1].n + ' terlambat, ' + segs[2].n + ' offline, ' + segs[3].n + ' belum ada data'">
+          <ng-container *ngFor="let g of segs"><span *ngIf="g.n > 0" class="m-sbar__seg" [ngClass]="'m-sbar__seg--' + g.tone" [style.width.%]="g.pct"></span></ng-container>
+        </div>
+        <div class="m-sbar__ticks" aria-hidden="true"><span>0</span><span>{{ total }}</span></div>
+      </ng-container>
+      <div class="m-legend">
+        <div *ngFor="let g of segs" class="m-legend__i" [class.m-legend__i--zero]="!g.n">
+          <span class="m-dot" [ngClass]="'m-dot--' + g.tone" aria-hidden="true"></span>{{ g.label }}<b>{{ g.n }}</b>
+        </div>
+      </div>
+      <div class="m-metaline">
+        <span *ngIf="meta.lastData">Data terakhir masuk <b>{{ meta.lastData }}</b></span>
+        <span *ngIf="!meta.lastData">Belum ada data masuk</span>
+        <span *ngIf="meta.interval">Kirim <b>{{ meta.interval }}</b></span>
+      </div>
+      <div class="m-metaline m-metaline--plain" *ngIf="meta.area || meta.owner || updated">
+        <span *ngIf="meta.owner || meta.area">{{ meta.owner }}<ng-container *ngIf="meta.owner && meta.area"> · </ng-container>{{ meta.area }}</span>
+        <span *ngIf="updated">Diperbarui <b>{{ updated }}</b></span>
+      </div>
     </div>
-    <div class="m-sbar m-mt-3" *ngIf="total > 0" role="img"
-         [attr.aria-label]="'Status perangkat: ' + segs[0].n + ' aktif, ' + segs[1].n + ' terlambat, ' + segs[2].n + ' offline, ' + segs[3].n + ' belum ada data'">
-      <span *ngFor="let g of segs" class="m-sbar__seg" [ngClass]="'m-sbar__seg--' + g.tone" [style.width.%]="g.pct"></span>
-    </div>
-    <div class="m-sbar__legend">
-      <span *ngFor="let g of segs" class="m-sbar__item"><span class="m-dot" [ngClass]="'m-dot--' + g.tone"></span>{{ g.label }} <b>{{ g.n }}</b></span>
-    </div>
-    <div class="m-statushead__meta" *ngIf="meta.area || meta.owner || updated">
-      <ng-container *ngIf="meta.owner">{{ meta.owner }}</ng-container><ng-container *ngIf="meta.owner && meta.area"> · </ng-container><ng-container *ngIf="meta.area">{{ meta.area }}</ng-container>
-      <ng-container *ngIf="updated"><ng-container *ngIf="meta.owner || meta.area"> · </ng-container>Diperbarui {{ updated }}</ng-container>
-    </div>
-  </div>
+  </m-panel>
 
-  <!-- KPI (ketuk → daftar terfilter) -->
-  <div class="m-stats m-mt-3">
-    <a class="m-stat m-stat--tap m-stat--accent" [routerLink]="['/mobile/p', pid, 'perangkat']" aria-label="Semua perangkat">
-      <div class="m-stat__top"><span class="m-stat__ic"><i class="fa fa-microchip"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
-      <div class="m-stat__value">{{ total }}</div>
-      <div class="m-stat__label">Perangkat</div>
-    </a>
-    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/p', pid, 'perangkat']" [queryParams]="{ status: 'offline' }" aria-label="Perangkat offline">
-      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="offline ? 'm-stat__ic--danger' : 'm-stat__ic--muted'"><i class="fa fa-plug-circle-xmark"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
-      <div class="m-stat__value" [class.m-tx-danger]="offline > 0">{{ offline }}</div>
-      <div class="m-stat__label">Offline<ng-container *ngIf="nodata"> · {{ nodata }} belum ada data</ng-container></div>
-    </a>
-    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/p', pid, 'channel']" [queryParams]="{ status: 'out' }" aria-label="Channel di luar ambang">
-      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="outCount ? 'm-stat__ic--danger' : 'm-stat__ic--warn'"><i class="fa fa-wave-square"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
-      <div class="m-stat__value" [class.m-tx-danger]="outCount > 0">{{ s.sensors && s.latestAvailable ? outCount : '—' }}</div>
-      <div class="m-stat__label">
-        Di luar ambang
-      </div>
-      <div class="m-stat__hint" *ngIf="s.sensors">
-        {{ withThreshold ? (withThreshold + ' dari ' + channelsTotal + ' channel punya ambang') : 'Ambang belum diatur' }}
-      </div>
-    </a>
-    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/p', pid, 'peringatan']" aria-label="Peringatan aktif">
-      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="(s.alerts?.total || 0) > 0 ? 'm-stat__ic--danger' : 'm-stat__ic--muted'"><i class="fa fa-bell"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
-      <div class="m-stat__value" [class.m-tx-danger]="(s.alerts?.total || 0) > 0">{{ s.alerts ? s.alerts.total : '—' }}</div>
-      <div class="m-stat__label">Peringatan aktif</div>
-      <div class="m-stat__hint m-tx-danger" *ngIf="!s.alerts && s.alertsError">gagal dimuat</div>
-    </a>
-  </div>
+  <!-- Nilai terkini (tekanan / debit) — data store yang sama, tanpa request baru -->
+  <m-panel *ngIf="keyNodes.length" label="Nilai terkini" icon="bi-activity">
+    <span panelAside><b>{{ keyNodesTotal }}</b> perangkat</span>
+    <div class="m-attn" *ngFor="let k of keyNodes; trackBy: trackById">
+      <a class="m-attn__main" [routerLink]="['/mobile/p', pid, 'nodes', k.id]" [attr.aria-label]="'Buka perangkat ' + k.title">
+        <div class="m-attn__top">
+          <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + k.tone"><span class="dot"></span>{{ k.statusLabel }}</span>
+          <span class="m-attn__iv" *ngIf="k.last">{{ k.last }}</span>
+        </div>
+        <div class="m-attn__title">{{ k.title }}<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
+        <div class="m-list__sub" *ngIf="k.code">{{ k.code }}</div>
+        <div class="m-reads m-attn__reads">
+          <div class="m-read" *ngFor="let r of k.reads" [class.m-read--out]="r.out" [class.m-read--stale]="r.stale">
+            <div class="m-read__k">{{ r.label }}</div>
+            <div class="m-read__v">{{ r.valueText }}<u *ngIf="r.unit">{{ r.unit }}</u></div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="m-panel__foot" *ngIf="channelsTotal">
+      <a class="m-link m-more" [routerLink]="['/mobile/p', pid, 'channel']">Semua {{ channelsTotal }} channel <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    </div>
+  </m-panel>
+
+  <!-- KPI (ketuk → daftar terfilter): satu panel, grid 2×2 -->
+  <m-panel>
+    <div class="m-kpis">
+      <a class="m-kpi" [routerLink]="['/mobile/p', pid, 'perangkat']" aria-label="Semua perangkat">
+        <div class="m-kpi__k">Perangkat<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
+        <div class="m-kpi__v">{{ total }}</div>
+        <div class="m-kpi__h" [class.m-tx-ok]="freshCount > 0">{{ freshCount }} {{ segs[0]?.label | lowercase }}</div>
+      </a>
+      <a class="m-kpi" [routerLink]="['/mobile/p', pid, 'perangkat']" [queryParams]="{ status: 'offline' }" aria-label="Perangkat offline">
+        <div class="m-kpi__k">Offline<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
+        <div class="m-kpi__v" [class.m-tx-danger]="offline > 0">{{ offline }}</div>
+        <div class="m-kpi__h" *ngIf="nodata">{{ nodata }} belum ada data</div>
+      </a>
+      <a class="m-kpi" [routerLink]="['/mobile/p', pid, 'channel']" [queryParams]="{ status: 'out' }" aria-label="Channel di luar ambang">
+        <div class="m-kpi__k">Di luar ambang<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
+        <div class="m-kpi__v" [class.m-tx-danger]="outCount > 0" [class.m-kpi__v--dash]="!(s.sensors && s.latestAvailable)">{{ s.sensors && s.latestAvailable ? outCount : '—' }}</div>
+        <div class="m-kpi__h" *ngIf="s.sensors">
+          {{ withThreshold ? (withThreshold + ' dari ' + channelsTotal + ' channel punya ambang') : 'Ambang belum diatur' }}
+        </div>
+      </a>
+      <a class="m-kpi" [routerLink]="['/mobile/p', pid, 'peringatan']" aria-label="Peringatan aktif">
+        <div class="m-kpi__k">Peringatan aktif<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
+        <div class="m-kpi__v" [class.m-tx-danger]="(s.alerts?.total || 0) > 0" [class.m-kpi__v--dash]="!s.alerts">{{ s.alerts ? s.alerts.total : '—' }}</div>
+        <div class="m-kpi__h m-tx-danger" *ngIf="!s.alerts && s.alertsError">gagal dimuat</div>
+      </a>
+    </div>
+  </m-panel>
 
   <!-- Perlu perhatian -->
-  <div class="m-section">Perlu perhatian <span class="m-tag m-tag--active" *ngIf="attention.length">{{ attention.length }}</span></div>
+  <m-panel *ngIf="attention.length || allClear || (s.alertsError && !s.alerts)" label="Perlu perhatian" icon="bi-exclamation-triangle" [tone]="attention.length && attention[0].tone === 'danger' ? 'danger' : ''">
+    <span panelAside *ngIf="attention.length"><b>{{ attention.length }}</b> item</span>
 
-  <div class="m-card m-pad m-row-between" *ngIf="s.alertsError && !s.alerts">
-    <span class="m-subtle"><i class="fa fa-triangle-exclamation m-tx-danger"></i> Peringatan gagal dimuat — {{ s.alertsError }}</span>
-    <button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button>
-  </div>
+    <div class="m-empty m-row-between" *ngIf="s.alertsError && !s.alerts">
+      <span><i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i> Peringatan gagal dimuat — {{ s.alertsError }}</span>
+      <button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button>
+    </div>
 
-  <div class="m-card" *ngIf="attention.length > 0">
     <div class="m-attn" *ngFor="let a of attention; trackBy: trackByKey">
+      <span class="m-attn__sev" [ngClass]="sevClass(a.tone)" aria-hidden="true"></span>
       <a class="m-attn__main" [routerLink]="a.link">
         <div class="m-attn__top">
           <span class="m-attn__title">{{ a.title }}</span>
@@ -90,38 +127,41 @@
         <div class="m-attn__line">{{ a.line }}<ng-container *ngIf="a.time"> · {{ a.time }}</ng-container></div>
       </a>
       <a class="m-callbtn" *ngIf="a.phone" [href]="tel(a.phone)" [attr.aria-label]="'Telepon ' + a.phoneLabel + ' ' + a.title" title="Telepon PIC">
-        <i class="fa fa-phone"></i>
+        <i class="bi bi-telephone" aria-hidden="true"></i>
       </a>
     </div>
-  </div>
-  <a class="m-link m-more" *ngIf="s.alerts && s.alerts.total > s.alerts.list.length" [routerLink]="['/mobile/p', pid, 'peringatan']">
-    Lihat semua {{ s.alerts.total }} peringatan aktif <i class="fa fa-chevron-right"></i>
-  </a>
 
-  <div class="m-empty m-empty--sm" *ngIf="allClear">
-    <i class="fa fa-circle-check m-tx-ok"></i>
-    Semua perangkat aktif, tidak ada peringatan aktif<ng-container *ngIf="withThreshold"> dan tidak ada channel di luar ambang</ng-container>.
-  </div>
+    <div class="m-panel__foot" *ngIf="s.alerts && s.alerts.total > s.alerts.list.length">
+      <a class="m-link m-more" [routerLink]="['/mobile/p', pid, 'peringatan']">
+        Lihat semua {{ s.alerts.total }} peringatan aktif <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    <div class="m-empty" *ngIf="allClear">
+      <b>Semua normal</b>
+      Semua perangkat aktif, tidak ada peringatan aktif<ng-container *ngIf="withThreshold"> dan tidak ada channel di luar ambang</ng-container>.
+    </div>
+  </m-panel>
 
   <!-- Bagan SCADA -->
-  <ng-container *ngIf="scadaLoading || scadaError || diagrams.length">
-    <div class="m-section">Bagan SCADA</div>
-    <div class="m-card m-pad" *ngIf="scadaLoading"><div class="m-skel w-60"></div></div>
-    <div class="m-card m-pad m-row-between" *ngIf="!scadaLoading && scadaError">
-      <span class="m-subtle">{{ scadaError }}</span>
+  <m-panel *ngIf="scadaLoading || scadaError || diagrams.length" label="Bagan SCADA" icon="bi-diagram-3"
+           [aside]="!scadaLoading && !scadaError ? diagrams.length + ' bagan' : ''">
+    <div class="m-panel__body" *ngIf="scadaLoading"><div class="m-skel w-60"></div></div>
+    <div class="m-empty m-row-between" *ngIf="!scadaLoading && scadaError">
+      <span>{{ scadaError }}</span>
       <button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="loadScada()">Coba lagi</button>
     </div>
-    <div class="m-card" *ngIf="!scadaLoading && !scadaError">
+    <ng-container *ngIf="!scadaLoading && !scadaError">
       <a class="m-list__item" *ngFor="let d of diagrams" [routerLink]="['/mobile/p', pid, 'scada', d.id]">
-        <div class="m-scada-ic"><i class="fa fa-diagram-project"></i></div>
+        <i class="bi bi-diagram-3 m-list__ic" aria-hidden="true"></i>
         <div class="m-list__body">
           <div class="m-list__title">{{ d.name }}</div>
           <div class="m-list__sub">Buka layar penuh</div>
         </div>
-        <i class="fa fa-expand m-list__chev"></i>
+        <i class="bi bi-arrows-fullscreen m-list__chev" aria-hidden="true"></i>
       </a>
-    </div>
-  </ng-container>
+    </ng-container>
+  </m-panel>
 
   <div class="m-spacer"></div>
 </ng-container>

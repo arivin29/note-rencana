@@ -187,8 +187,9 @@ export class HeaderComponent implements OnInit {
 	 * Get user initials for avatar
 	 */
 	getUserInitials(): string {
-		if (!this.currentUser) return 'U';
-		return this.currentUser.name.charAt(0).toUpperCase();
+		// name can be missing (e.g. a user record without a display name) — fall back to email, then 'U'
+		const source = (this.currentUser?.name || this.currentUser?.email || '').trim();
+		return source ? source.charAt(0).toUpperCase() : 'U';
 	}
 	
 	/**

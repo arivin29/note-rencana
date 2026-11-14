@@ -1,28 +1,42 @@
-<div class="m-card" *ngIf="rows.length > 0">
+<m-panel *ngIf="rows.length > 0" [label]="label" [icon]="icon" [aside]="aside">
+  <svg width="0" height="0" class="m-defs" aria-hidden="true" focusable="false" style="position:absolute">
+    <defs>
+      <linearGradient id="mSparkArea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3cd2a5" stop-opacity=".22"></stop>
+        <stop offset="1" stop-color="#3cd2a5" stop-opacity="0"></stop>
+      </linearGradient>
+    </defs>
+  </svg>
   <a class="m-chrow m-chrow--link" *ngFor="let c of rows; trackBy: trackById" [routerLink]="c.link"
      [attr.aria-label]="c.title + ', ' + c.valueText + ' ' + c.unit + ', ' + c.statusLabel">
     <div class="m-chrow__top">
-      <span class="m-chrow__metric">{{ c.title }}</span>
-      <span class="m-chrow__valwrap">
-        <span class="m-chrow__valstack">
-          <span class="m-chrow__val" [class.m-tx-danger]="c.verdict.isOut">{{ c.valueText }}</span>
-          <span class="m-chrow__unit" *ngIf="c.unit">{{ c.unit }}</span>
-        </span>
-        <i class="fa fa-chevron-right m-list__chev"></i>
-      </span>
-    </div>
-    <div class="m-chrow__mid">
+      <span class="m-chrow__metric">{{ c.metricLabel }}</span>
       <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + c.tone"><span class="dot"></span>{{ c.statusLabel }}</span>
-      <span class="m-chrow__subtxt" *ngIf="c.sub">{{ c.sub }}</span>
-      <svg class="m-spark-sm" *ngIf="c.spark" [attr.viewBox]="'0 0 ' + sparkW + ' ' + sparkH" preserveAspectRatio="none" aria-hidden="true">
-        <path [attr.d]="c.spark"></path>
+    </div>
+    <div class="m-chrow__node" *ngIf="c.title !== c.metricLabel">{{ c.nodeTitle }}</div>
+    <div class="m-chrow__main">
+      <span class="m-chrow__big" [class.m-tx-danger]="c.verdict.isOut"
+            [class.m-chrow__big--stale]="c.statusKey === 'stale' || c.statusKey === 'offline'">{{ c.valueText }}<u *ngIf="c.unit">{{ c.unit }}</u></span>
+      <svg class="m-spark" *ngIf="c.spark" [class.m-spark--danger]="c.verdict.isOut"
+           [attr.viewBox]="'0 0 ' + sparkW + ' ' + sparkH" preserveAspectRatio="none" role="img"
+           [attr.aria-label]="c.metricLabel + ' 24 jam' + (c.sparkMin ? ', min ' + c.sparkMin + ' maks ' + c.sparkMax + ' ' + c.unit : '')">
+        <path class="m-spark__base" [attr.d]="'M0 ' + (sparkH - 0.5) + 'H' + sparkW"></path>
+        <path class="m-spark__area" *ngIf="c.sparkArea" [attr.d]="c.sparkArea"></path>
+        <path class="m-spark__line" [attr.d]="c.spark"></path>
+        <rect class="m-spark__end" *ngIf="c.sparkEnd" [attr.x]="c.sparkEnd.x - 1.5" [attr.y]="c.sparkEnd.y - 1.5" width="3" height="3"></rect>
       </svg>
     </div>
+    <div class="m-chrow__stats" *ngIf="c.sparkMin || c.sparkMax">
+      <span>Min <b>{{ c.sparkMin }}</b></span><span>Maks <b>{{ c.sparkMax }}</b></span><span>24 jam</span>
+    </div>
+    <div class="m-chrow__sub" *ngIf="c.sub">{{ c.sub }}</div>
     <div class="m-chrow__sub2">
-      <i class="fa fa-clock"></i>
+      <i class="bi bi-clock" aria-hidden="true"></i>
       <span>{{ c.updatedText }} · <span [class.m-tx-dim]="!c.hasThreshold">{{ c.thresholdText }}</span></span>
     </div>
-    <div class="m-chrow__out" *ngIf="c.outText"><i class="fa fa-triangle-exclamation"></i> {{ c.outText }}</div>
+    <div class="m-chrow__out" *ngIf="c.outText"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> {{ c.outText }}</div>
   </a>
-</div>
-<div class="m-empty" *ngIf="rows.length === 0"><i class="fa fa-wave-square"></i>{{ emptyText }}</div>
+</m-panel>
+<m-panel *ngIf="rows.length === 0" [label]="label" [icon]="icon" [aside]="aside">
+  <div class="m-empty">{{ emptyText }}</div>
+</m-panel>

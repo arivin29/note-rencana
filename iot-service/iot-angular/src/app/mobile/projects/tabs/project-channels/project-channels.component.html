@@ -1,9 +1,9 @@
 <div class="m-filterbar">
   <div class="m-search">
-    <i class="fa fa-search"></i>
+    <i class="bi bi-search" aria-hidden="true"></i>
     <input type="text" placeholder="Cari alamat / channel / sensor…" aria-label="Cari channel" [ngModel]="search" (ngModelChange)="onSearch($event)">
     <button class="m-iconbtn m-iconbtn--flat" type="button" *ngIf="search" (click)="onSearch('')" aria-label="Hapus pencarian" title="Hapus pencarian">
-      <i class="fa fa-xmark"></i>
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
     </button>
   </div>
   <div class="m-chips m-chips--scroll" role="tablist" aria-label="Filter status channel">
@@ -14,21 +14,23 @@
   </div>
 </div>
 
-<div class="m-card m-pad" *ngIf="s.firstLoad"><div class="m-skel"></div><div class="m-skel w-50"></div></div>
+<m-panel *ngIf="s.firstLoad" [pad]="true"><div class="m-skel"></div><div class="m-skel w-50"></div></m-panel>
 
-<div class="m-empty" *ngIf="!s.firstLoad && !s.sensors && s.sensorsError">
-  <i class="fa fa-triangle-exclamation"></i>{{ s.sensorsError }}
-  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-</div>
+<m-panel *ngIf="!s.firstLoad && !s.sensors && s.sensorsError" tone="danger">
+  <div class="m-empty">
+    <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ s.sensorsError }}
+    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+  </div>
+</m-panel>
 
 <ng-container *ngIf="!s.firstLoad && s.sensors">
   <div class="m-banner m-banner--warn" *ngIf="s.sensorsError" role="status">
-    <i class="fa fa-triangle-exclamation"></i>
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
     <span>Gagal memperbarui<ng-container *ngIf="updated"> · data per {{ updated }}</ng-container></span>
     <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
   <div class="m-banner m-banner--warn" *ngIf="!s.latestAvailable" role="status">
-    <i class="fa fa-circle-info"></i>
+    <i class="bi bi-info-circle" aria-hidden="true"></i>
     <span>Nilai terakhir sedang tidak tersedia dari server — nilai dan status channel tidak ditampilkan.</span>
   </div>
 

@@ -37,6 +37,7 @@
               "src/styles.css",
               "src/scss/styles.scss",
               "src/scss/mobile/mobile.scss",
+              "src/scss/mobile/helios.scss",
               "node_modules/ol/ol.css",
               "node_modules/highlight.js/styles/github.css",
               "node_modules/codemirror/lib/codemirror.css",

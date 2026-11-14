@@ -1,55 +1,53 @@
 <ng-container *ngIf="s.sensors || !s.sensorsError; else loadErr">
   <div class="m-banner m-banner--warn" *ngIf="s.sensorsError" role="status">
-    <i class="fa fa-triangle-exclamation"></i>
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
     <span>Gagal memperbarui nilai<ng-container *ngIf="updated"> · data per {{ updated }}</ng-container></span>
     <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
   <div class="m-banner m-banner--warn" *ngIf="!s.latestAvailable" role="status">
-    <i class="fa fa-circle-info"></i>
+    <i class="bi bi-info-circle" aria-hidden="true"></i>
     <span>Nilai terakhir sedang tidak tersedia dari server.</span>
   </div>
 
-  <div class="m-section">Nilai terbaru<span class="m-section__aside" *ngIf="updated">diperbarui {{ updated }}</span></div>
-  <mobile-channel-list [rows]="rows" emptyText="Perangkat ini belum punya channel aktif"></mobile-channel-list>
+  <mobile-channel-list [rows]="rows" label="Nilai terbaru" icon="bi-activity" [aside]="updated ? 'diperbarui ' + updated : ''"
+    emptyText="Perangkat ini belum punya channel aktif"></mobile-channel-list>
 
-  <ng-container *ngIf="flowCards.length">
-    <div class="m-section">Hidrolika pipa</div>
-    <mobile-flow-diagram *ngFor="let card of flowCards"
-      [data]="card.data"
-      [sensorLabel]="card.label"
-      (configureDiameter)="openCtx({ id: card.sensorId, label: card.label })">
-    </mobile-flow-diagram>
-  </ng-container>
+  <mobile-flow-diagram *ngFor="let card of flowCards"
+    [data]="card.data"
+    [sensorLabel]="card.label"
+    (configureDiameter)="openCtx({ id: card.sensorId, label: card.label })">
+  </mobile-flow-diagram>
 
-  <ng-container *ngIf="sensors.length">
-    <div class="m-section">Konteks pemasangan</div>
-    <div class="m-card">
-      <button class="m-list__item m-list__item--btn" type="button" *ngFor="let x of sensors" (click)="openCtx(x)">
-        <span class="m-ctxbtn__ic"><i class="fa fa-sliders"></i></span>
-        <div class="m-list__body">
-          <div class="m-list__title">{{ x.label }}</div>
-          <div class="m-list__sub">Parameter pemasangan · atur release</div>
-        </div>
-        <i class="fa fa-chevron-right m-list__chev"></i>
-      </button>
-    </div>
-  </ng-container>
+  <m-panel *ngIf="sensors.length" label="Konteks pemasangan" icon="bi-sliders">
+    <button class="m-list__item m-list__item--btn" type="button" *ngFor="let x of sensors" (click)="openCtx(x)">
+      <span class="m-ctxbtn__ic"><i class="bi bi-sliders" aria-hidden="true"></i></span>
+      <div class="m-list__body">
+        <div class="m-list__title">{{ x.label }}</div>
+        <div class="m-list__sub">Parameter pemasangan · atur release</div>
+      </div>
+      <i class="bi bi-chevron-right m-list__chev" aria-hidden="true"></i>
+    </button>
+  </m-panel>
 
   <details class="m-fold" *ngIf="info.length">
     <summary class="m-fold__sum">Info teknis</summary>
-    <div class="m-card m-meta">
-      <div class="m-meta__r" *ngFor="let r of info"><span class="m-meta__k">{{ r.k }}</span><span class="m-meta__v">{{ r.v }}</span></div>
-    </div>
+    <m-panel>
+      <div class="m-meta">
+        <div class="m-meta__r" *ngFor="let r of info"><span class="m-meta__k">{{ r.k }}</span><span class="m-meta__v">{{ r.v }}</span></div>
+      </div>
+    </m-panel>
   </details>
 
   <div class="m-spacer"></div>
 </ng-container>
 
 <ng-template #loadErr>
-  <div class="m-empty">
-    <i class="fa fa-triangle-exclamation"></i>{{ s.sensorsError }}
-    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-  </div>
+  <m-panel label="Nilai terbaru" icon="bi-activity" tone="danger">
+    <div class="m-empty">
+      <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ s.sensorsError }}
+      <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+    </div>
+  </m-panel>
 </ng-template>
 
 <mobile-sensor-context [open]="ctxOpen" [idSensor]="ctxSensorId" [sensorLabel]="ctxSensorLabel" (closed)="closeCtx()"></mobile-sensor-context>

@@ -1,32 +1,39 @@
-<div class="m-card m-pad" *ngIf="s.firstLoad"><div class="m-skel w-60"></div><div class="m-skel w-40"></div></div>
+<m-panel *ngIf="s.firstLoad" tone="theme" [pad]="true"><div class="m-skel w-60"></div><div class="m-skel w-40"></div></m-panel>
 
-<div class="m-empty" *ngIf="!s.firstLoad && !s.nodes && s.nodesError">
-  <i class="fa fa-triangle-exclamation"></i>{{ s.nodesError }}
-  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-</div>
+<m-panel *ngIf="!s.firstLoad && !s.nodes && s.nodesError" tone="danger">
+  <div class="m-empty">
+    <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ s.nodesError }}
+    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+  </div>
+</m-panel>
 
-<div class="m-empty" *ngIf="!s.firstLoad && s.nodes && !found">
-  <i class="fa fa-microchip"></i>Perangkat tidak ditemukan di project ini
-  <div class="m-mt-3"><a class="m-btn m-btn--ghost m-btn--tap" [routerLink]="['/mobile/p', pid, 'perangkat']" [replaceUrl]="true">Lihat daftar perangkat</a></div>
-</div>
+<m-panel *ngIf="!s.firstLoad && s.nodes && !found">
+  <div class="m-empty">
+    Perangkat tidak ditemukan di project ini
+    <div class="m-mt-3"><a class="m-btn m-btn--ghost m-btn--tap" [routerLink]="['/mobile/p', pid, 'perangkat']" [replaceUrl]="true">Lihat daftar perangkat</a></div>
+  </div>
+</m-panel>
 
 <ng-container *ngIf="!s.firstLoad && found">
-  <div class="m-card m-statushead">
-    <div class="m-statushead__top">
-      <div class="m-statushead__code">{{ head.title }}</div>
-      <span class="m-pill" [ngClass]="'m-pill--' + head.tone"><span class="dot"></span>{{ head.status }}</span>
+  <m-panel tone="theme">
+    <div class="m-statushead">
+      <div class="m-row-between">
+        <span class="m-pill" [ngClass]="'m-pill--' + head.tone"><span class="dot"></span>{{ head.status }}</span>
+      </div>
+      <div class="m-statushead__code m-mt-2">{{ head.title }}</div>
+      <div class="m-list__sub" *ngIf="head.code">{{ head.code }}</div>
+      <div class="m-facts">
+        <div><div class="m-facts__k">Data terakhir</div><div class="m-facts__v">{{ head.ago || 'Belum pernah kirim' }}</div></div>
+        <div><div class="m-facts__k">Interval kirim</div><div class="m-facts__v">{{ head.interval || '—' }}</div></div>
+      </div>
+      <div class="m-statushead__meta">Aturan status: {{ head.rule }}</div>
+      <a class="m-btn m-btn--ghost m-mt-3" *ngIf="head.phone" [href]="tel(head.phone)" [attr.aria-label]="'Telepon ' + (head.picName || 'PIC')">
+        <i class="bi bi-telephone" aria-hidden="true"></i> Telepon {{ head.picName || 'PIC' }} · {{ head.phone }}
+      </a>
     </div>
-    <div class="m-statushead__meta">
-      <ng-container *ngIf="head.code">{{ head.code }}<br></ng-container>
-      <i class="fa fa-clock fa-fw"></i> {{ head.last }}<ng-container *ngIf="head.interval"> · kirim {{ head.interval }}</ng-container>
-      <br><span class="m-tx-dim">Aturan status: {{ head.rule }}</span>
-    </div>
-    <a class="m-btn m-btn--ghost m-mt-3" *ngIf="head.phone" [href]="tel(head.phone)" [attr.aria-label]="'Telepon ' + (head.picName || 'PIC')">
-      <i class="fa fa-phone"></i> Telepon {{ head.picName || 'PIC' }} · {{ head.phone }}
-    </a>
-  </div>
+  </m-panel>
 
-  <nav class="m-tabs m-tabs--sticky m-mt-3" aria-label="Bagian perangkat">
+  <nav class="m-tabs m-tabs--sticky" aria-label="Bagian perangkat">
     <a class="m-tab" routerLink="nilai" routerLinkActive="active" [replaceUrl]="true">Nilai</a>
     <a class="m-tab" routerLink="perintah" routerLinkActive="active" [replaceUrl]="true">Perintah</a>
     <a class="m-tab" routerLink="log" routerLinkActive="active" [replaceUrl]="true">Log</a>

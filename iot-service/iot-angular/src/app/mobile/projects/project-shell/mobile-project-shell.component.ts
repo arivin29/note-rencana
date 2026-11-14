@@ -29,11 +29,11 @@ export class MobileProjectShellComponent implements OnInit, AfterViewInit, OnDes
   @ViewChild('nav', { static: true }) navRef!: ElementRef<HTMLElement>;
 
   readonly tabs: { key: TabKey; label: string; icon: string }[] = [
-    { key: 'ringkasan', label: 'Ringkasan', icon: 'fa-gauge-high' },
-    { key: 'perangkat', label: 'Perangkat', icon: 'fa-microchip' },
-    { key: 'channel', label: 'Channel', icon: 'fa-wave-square' },
-    { key: 'peta', label: 'Peta', icon: 'fa-map-location-dot' },
-    { key: 'peringatan', label: 'Peringatan', icon: 'fa-bell' }
+    { key: 'ringkasan', label: 'Ringkasan', icon: 'bi-speedometer2' },
+    { key: 'perangkat', label: 'Perangkat', icon: 'bi-hdd-stack' },
+    { key: 'channel', label: 'Channel', icon: 'bi-broadcast-pin' },
+    { key: 'peta', label: 'Peta', icon: 'bi-map' },
+    { key: 'peringatan', label: 'Peringatan', icon: 'bi-bell' }
   ];
   pid = '';
   active: TabKey = 'ringkasan';

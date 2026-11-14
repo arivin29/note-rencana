@@ -1,23 +1,24 @@
-<div class="m-card m-flow">
+<m-panel class="m-flow" label="Hidrolika pipa" icon="bi-droplet-half">
+  <span panelAside [class]="crossCheckClass">
+    {{ crossCheckLabel }}
+    <ng-container *ngIf="view.deviationPct !== null && view.crossCheck !== 'idle' && view.crossCheck !== 'unknown'">
+      · {{ view.deviationPct > 0 ? '+' : '' }}{{ view.deviationPct | number:'1.0-1' }}%
+    </ng-container>
+  </span>
+  <div class="m-flow__body-wrap">
   <div class="m-flow__head">
-    <div class="m-flow__title"><i class="fa fa-water"></i> {{ sensorLabel || 'Hidrolika Pipa' }}</div>
-    <span [class]="crossCheckClass">
-      {{ crossCheckLabel }}
-      <ng-container *ngIf="view.deviationPct !== null && view.crossCheck !== 'idle' && view.crossCheck !== 'unknown'">
-        · {{ view.deviationPct > 0 ? '+' : '' }}{{ view.deviationPct | number:'1.0-1' }}%
-      </ng-container>
-    </span>
+    <div class="m-flow__title">{{ sensorLabel || 'Hidrolika Pipa' }}</div>
   </div>
 
   <svg class="m-flow__svg" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet" role="img"
        [attr.aria-label]="'Diagram aliran ' + sensorLabel">
     <defs>
       <linearGradient id="mFlowWater" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#22d3ee" stop-opacity=".9" />
-        <stop offset="100%" stop-color="#0369a1" stop-opacity=".7" />
+        <stop offset="0%" stop-color="#3cd2a5" stop-opacity=".55" />
+        <stop offset="100%" stop-color="#3cd2a5" stop-opacity=".15" />
       </linearGradient>
       <marker id="mFlowHead" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
-        <polygon points="0 0, 9 3, 0 6" fill="#22d3ee" />
+        <polygon points="0 0, 9 3, 0 6" fill="#3cd2a5" />
       </marker>
     </defs>
 
@@ -90,6 +91,7 @@
 
   <button *ngIf="view.diameter.value === null" type="button" class="m-btn m-btn--ghost m-btn--sm m-flow__cta"
           (click)="configureDiameter.emit()">
-    <i class="fa fa-sliders"></i> Atur diameter pipa
+    <i class="bi bi-sliders" aria-hidden="true"></i> Atur diameter pipa
   </button>
-</div>
+  </div>
+</m-panel>

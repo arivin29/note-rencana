@@ -31,6 +31,7 @@ import { MobileAlertsComponent } from './alerts/mobile-alerts/mobile-alerts.comp
 import { ScadaEmbedModule } from '../shared/scada-embed/scada-embed.module';
 import { WebgisSharedModule } from '../pages/iot/webgis/webgis-shared.module';
 import { MobileProfileComponent } from './profile/mobile-profile/mobile-profile.component';
+import { MobilePanelComponent } from './shared/panel/mobile-panel.component';
 
 /**
  * Modul Mobile (lite, read-only fase 1). Sengaja TIDAK import SharedComponentsModule
@@ -61,7 +62,8 @@ import { MobileProfileComponent } from './profile/mobile-profile/mobile-profile.
     MobileNodeCommandComponent,
     MobileNodeLogsComponent,
     MobileAlertsComponent,
-    MobileProfileComponent
+    MobileProfileComponent,
+    MobilePanelComponent
   ],
   imports: [
     CommonModule,

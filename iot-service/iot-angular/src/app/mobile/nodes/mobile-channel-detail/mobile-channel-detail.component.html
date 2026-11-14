@@ -1,59 +1,72 @@
-<div class="m-card m-statushead">
-  <div class="m-statushead__top">
-    <div>
-      <div class="m-statushead__code">{{ title || 'Channel' }}</div>
-      <div class="m-list__sub" *ngIf="nodeTitle">{{ nodeTitle }}</div>
+<m-panel tone="theme">
+  <div class="m-statushead">
+    <div class="m-statushead__top m-row-between">
+      <div style="min-width:0">
+        <div class="m-label">{{ title || 'Channel' }}</div>
+        <div class="m-statushead__code m-mt-2" *ngIf="nodeTitle">{{ nodeTitle }}</div>
+      </div>
     </div>
-    <div class="m-bigval" *ngIf="rows.length">
+    <div class="m-bigval m-mt-3" *ngIf="rows.length" style="text-align:left">
       <span class="m-bigval__v">{{ stats.last }}</span><span class="m-bigval__u" *ngIf="unit">{{ unit }}</span>
     </div>
+    <div class="m-statushead__meta">{{ thText }}<ng-container *ngIf="updated"> · diperbarui {{ updated }}</ng-container></div>
   </div>
-  <div class="m-statushead__meta">{{ thText }}<ng-container *ngIf="updated"> · diperbarui {{ updated }}</ng-container></div>
-</div>
+</m-panel>
 
-<div class="m-chips m-mt-3" role="tablist" aria-label="Rentang waktu">
+<div class="m-chips m-chips--fill" role="tablist" aria-label="Rentang waktu">
   <button class="m-chip" type="button" role="tab" [class.active]="range === '1h'" [attr.aria-selected]="range === '1h'" (click)="setRange('1h')">1 jam</button>
   <button class="m-chip" type="button" role="tab" [class.active]="range === '24h'" [attr.aria-selected]="range === '24h'" (click)="setRange('24h')">24 jam</button>
   <button class="m-chip" type="button" role="tab" [class.active]="range === '7d'" [attr.aria-selected]="range === '7d'" (click)="setRange('7d')">7 hari</button>
 </div>
 <div class="m-subtle m-mb-2" *ngIf="range !== '1h'">Rentang {{ range === '24h' ? '24 jam' : '7 hari' }} dimuat sekali (tidak diperbarui otomatis) — tarik ke bawah untuk memuat ulang.</div>
 
-<div class="m-card m-pad" *ngIf="loading"><div class="m-skel m-skel--chart"></div></div>
+<m-panel *ngIf="loading" label="Grafik" icon="bi-graph-up" [pad]="true"><div class="m-skel m-skel--chart"></div></m-panel>
 
-<div class="m-empty" *ngIf="!loading && error">
-  <i class="fa fa-triangle-exclamation"></i>{{ error }}
-  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-</div>
+<m-panel *ngIf="!loading && error" label="Grafik" icon="bi-graph-up" tone="danger">
+  <div class="m-empty">
+    <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ error }}
+    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+  </div>
+</m-panel>
 
-<div class="m-empty" *ngIf="!loading && !error && rows.length === 0">
-  <i class="fa fa-chart-line"></i>Belum ada data pada rentang ini
-</div>
+<m-panel *ngIf="!loading && !error && rows.length === 0" label="Grafik" icon="bi-graph-up">
+  <div class="m-empty">Belum ada data pada rentang ini</div>
+</m-panel>
 
 <ng-container *ngIf="!loading && !error && rows.length > 0">
   <div class="m-banner m-banner--warn" *ngIf="refreshError" role="status">
-    <i class="fa fa-triangle-exclamation"></i><span>{{ refreshError }} · data per {{ updated }}</span>
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i><span>{{ refreshError }} · data per {{ updated }}</span>
     <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
 
-  <div class="m-card m-chart">
-    <svg viewBox="0 0 340 150" preserveAspectRatio="none" role="img" [attr.aria-label]="'Grafik ' + title + ', minimum ' + stats.min + ', maksimum ' + stats.max + ' ' + unit">
-      <line class="m-chart__grid" x1="0" y1="38" x2="340" y2="38"></line>
-      <line class="m-chart__grid" x1="0" y1="75" x2="340" y2="75"></line>
-      <line class="m-chart__grid" x1="0" y1="112" x2="340" y2="112"></line>
-      <path class="m-chart__area" [attr.d]="areaPath"></path>
-      <path class="m-chart__line" [attr.d]="path"></path>
-    </svg>
-    <div class="m-statrow">
-      <span>Min <b>{{ stats.min }}</b></span><span>Rata-rata <b>{{ stats.avg }}</b></span><span>Maks <b>{{ stats.max }}</b></span><span>{{ stats.count }} titik</span>
+  <m-panel label="Grafik" icon="bi-graph-up" [aside]="range === '1h' ? '1 jam' : range === '24h' ? '24 jam' : '7 hari'">
+    <div class="m-chart">
+      <svg viewBox="0 0 340 150" preserveAspectRatio="none" role="img" [attr.aria-label]="'Grafik ' + title + ', minimum ' + stats.min + ', maksimum ' + stats.max + ' ' + unit">
+        <defs>
+          <linearGradient id="mChartArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3cd2a5" stop-opacity=".22"></stop>
+            <stop offset="1" stop-color="#3cd2a5" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <line class="m-chart__grid" x1="0" y1="38" x2="340" y2="38"></line>
+        <line class="m-chart__grid" x1="0" y1="75" x2="340" y2="75"></line>
+        <line class="m-chart__grid" x1="0" y1="112" x2="340" y2="112"></line>
+        <line class="m-chart__base" x1="0" y1="144" x2="340" y2="144"></line>
+        <path class="m-chart__area" [attr.d]="areaPath"></path>
+        <path class="m-chart__line" [attr.d]="path"></path>
+        <rect class="m-chart__end" *ngIf="end" [attr.x]="end.x" [attr.y]="end.y" width="4" height="4"></rect>
+      </svg>
+      <div class="m-statrow">
+        <span>Min <b>{{ stats.min }}</b></span><span>Rata-rata <b>{{ stats.avg }}</b></span><span>Maks <b>{{ stats.max }}</b></span><span>{{ stats.count }} titik</span>
+      </div>
     </div>
-  </div>
+  </m-panel>
 
-  <div class="m-section">Data terakhir</div>
-  <div class="m-card">
+  <m-panel label="Data terakhir" icon="bi-list-ul">
     <div class="m-row" *ngFor="let r of rows">
       <span class="m-row__t">{{ r.ts }}</span>
       <span class="m-row__v">{{ r.value }} {{ unit }}</span>
     </div>
-  </div>
+  </m-panel>
   <div class="m-spacer"></div>
 </ng-container>

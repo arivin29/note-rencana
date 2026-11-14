@@ -15,6 +15,10 @@ import { ChannelRow } from '../channel-rows';
 export class MobileChannelListComponent {
   @Input() rows: ChannelRow[] = [];
   @Input() emptyText = 'Tidak ada channel';
+  /** strip kepala panel (opsional) */
+  @Input() label = '';
+  @Input() icon = '';
+  @Input() aside = '';
   readonly sparkW = SPARK_W;
   readonly sparkH = SPARK_H;
 

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Inject, LOCALE_ID, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, interval, Subject } from 'rxjs';
 import { startWith, takeUntil } from 'rxjs/operators';
@@ -6,7 +6,7 @@ import { formatInterval, telHref, timeAgoId } from '@app/shared/utils/channel-di
 import { nodeLabel, nodeSubLabel } from '@app/shared/utils/channel-verdict';
 import { Freshness } from '@app/shared/utils/telemetry-freshness';
 import { MobileProjectStore, ProjectData } from '../../shared/mobile-project-store.service';
-import { nodeFreshness, toNodeLite } from '../../shared/channel-rows';
+import { buildChannelRows, KeyReading, keyReadingsByNode, nodeFreshness, toNodeLite } from '../../shared/channel-rows';
 import { clockText, FRESHNESS_LABEL_ID, FRESHNESS_TONE, MTone } from '../../shared/labels';
 
 type StatusFilter = 'all' | Freshness;
@@ -16,6 +16,8 @@ interface NodeVM {
   freshness: Freshness; tone: MTone; statusLabel: string;
   lastText: string; interval: string;
   picName: string; picPhone: string; hay: string;
+  /** nilai kunci (tekanan/debit) dari /sensors yang sudah ada di store */
+  reads: KeyReading[];
 }
 
 const ORDER: Record<Freshness, number> = { offline: 0, stale: 1, nodata: 2, fresh: 3 };
@@ -43,7 +45,10 @@ export class MobileNodesListComponent implements OnInit, OnDestroy {
   private all: NodeVM[] = [];
   private destroy$ = new Subject<void>();
 
-  constructor(private store: MobileProjectStore, private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private store: MobileProjectStore, private route: ActivatedRoute, private router: Router,
+    @Inject(LOCALE_ID) private locale: string
+  ) {}
 
   ngOnInit(): void {
     this.pid = this.store.pid;
@@ -75,6 +80,11 @@ export class MobileNodesListComponent implements OnInit, OnDestroy {
     this.s = s;
     this.updated = clockText(s.updatedAt);
     const now = Date.now();
+    const byId = new Map<string, any>((s.nodes || []).map((n) => [n.idNode, n]));
+    const reads = s.sensors && s.latestAvailable ? keyReadingsByNode(buildChannelRows({
+      sensors: s.sensors, nodesById: byId, pid: this.pid, locale: this.locale, now,
+      latestAvailable: s.latestAvailable, context: 'project'
+    }), 2) : new Map<string, KeyReading[]>();
     this.all = (s.nodes || []).map((raw) => {
       const n = toNodeLite(raw);
       const f = nodeFreshness(n, now);
@@ -87,7 +97,8 @@ export class MobileNodesListComponent implements OnInit, OnDestroy {
         lastText: n.lastSeenAt ? `Data terakhir ${timeAgoId(n.lastSeenAt, now)}` : 'Belum pernah kirim',
         interval: formatInterval(n.telemetryIntervalSec),
         picName: n.picName, picPhone: n.picPhone,
-        hay: `${n.address} ${n.code} ${n.name} ${n.city}`.toLowerCase()
+        hay: `${n.address} ${n.code} ${n.name} ${n.city}`.toLowerCase(),
+        reads: reads.get(n.idNode) || []
       };
     }).sort((a, b) => (ORDER[a.freshness] - ORDER[b.freshness]) || a.title.localeCompare(b.title, 'id'));
     this.apply();

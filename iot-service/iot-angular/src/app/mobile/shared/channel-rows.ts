@@ -1,4 +1,4 @@
-import { ChannelTrend, sparkPath, timeAgoId } from '@app/shared/utils/channel-display';
+import { ChannelTrend, SPARK_H, sparkPath, timeAgoId } from '@app/shared/utils/channel-display';
 import { channelVerdict, ChannelVerdict, nodeLabel, outOfRangeText, thresholdText } from '@app/shared/utils/channel-verdict';
 import { Freshness, getFreshness } from '@app/shared/utils/telemetry-freshness';
 import { toThresholdNumber } from '@app/shared/utils/threshold';
@@ -35,6 +35,13 @@ export interface ChannelRow {
   updatedText: string;
   link: any[];
   spark: string;
+  /** area di bawah garis sparkline (tiap segmen ditutup ke dasar) — hanya hiasan */
+  sparkArea: string;
+  /** titik terakhir sparkline (koordinat SVG 72×20) */
+  sparkEnd: { x: number; y: number } | null;
+  /** min / maks 24 jam (trend.stats), sudah diformat id-ID; '' bila tak ada */
+  sparkMin: string;
+  sparkMax: string;
   hay: string;
 }
 
@@ -139,12 +146,66 @@ export function buildChannelRows(opts: {
         updatedText: !opts.latestAvailable ? 'Nilai terakhir tidak tersedia'
           : lastAt ? `Data ${timeAgoId(lastAt, opts.now)}` : 'Belum pernah kirim',
         link: ['/mobile/p', opts.pid, 'nodes', node.idNode || nid, 'channels', ch.idSensorChannel],
-        spark: trend ? sparkPath(trend.buckets) : '',
+        ...sparkDecor(trend ? sparkPath(trend.buckets) : ''),
+        sparkMin: trend?.stats?.min != null ? fmt(Number(trend.stats.min)) : '',
+        sparkMax: trend?.stats?.max != null ? fmt(Number(trend.stats.max)) : '',
         hay: `${nTitle} ${node.code} ${node.name} ${sensorLabel} ${ch.metricCode || ''} ${mLabel}`.toLowerCase()
       });
     }
   }
   return rows;
+}
+
+/**
+ * Hiasan visual sparkline dari path `sparkPath` (titik TIDAK dihitung ulang): area per segmen
+ * (putus = tidak diisi) dan titik terakhir.
+ */
+export function sparkDecor(d: string): { spark: string; sparkArea: string; sparkEnd: { x: number; y: number } | null } {
+  if (!d) { return { spark: '', sparkArea: '', sparkEnd: null }; }
+  const base = SPARK_H.toFixed(1);
+  let area = '';
+  let end: { x: number; y: number } | null = null;
+  for (const seg of d.split('M').map((x) => x.trim()).filter(Boolean)) {
+    const pts = seg.split('L').map((x) => x.trim()).filter(Boolean);
+    const first = pts[0].split(',');
+    const last = pts[pts.length - 1].split(',');
+    end = { x: Number(last[0]), y: Number(last[1]) };
+    if (pts.length < 2) { continue; }
+    area += `M${first[0]},${base} L${pts.join(' L')} L${last[0]},${base} Z `;
+  }
+  return { spark: d, sparkArea: area.trim(), sparkEnd: end };
+}
+
+/** Metrik kunci operator (tekanan/debit dulu) untuk Ringkasan & daftar Perangkat. */
+const KEY_METRIC_RANK: Record<string, number> = { Tekanan: 0, Debit: 1, Level: 2, Kecepatan: 3 };
+
+export interface KeyReading {
+  id: string; label: string; valueText: string; unit: string;
+  /** di luar ambang (angka merah) */
+  out: boolean;
+  /** data terlambat/offline: angka tetap tampil, diredupkan */
+  stale: boolean;
+}
+
+/**
+ * Nilai kunci per perangkat dari baris channel yang SUDAH dimuat store (tanpa request baru).
+ * Hanya channel yang punya nilai; urut tekanan → debit → level → kecepatan.
+ */
+export function keyReadingsByNode(rows: ChannelRow[], max = 2): Map<string, KeyReading[]> {
+  const out = new Map<string, KeyReading[]>();
+  const keyed = rows
+    .filter((r) => r.value !== null && r.valueText !== '—' && KEY_METRIC_RANK[r.metricLabel] !== undefined)
+    .sort((a, b) => KEY_METRIC_RANK[a.metricLabel] - KEY_METRIC_RANK[b.metricLabel]);
+  for (const r of keyed) {
+    const list = out.get(r.nodeId) || [];
+    if (list.length >= max) { continue; }
+    list.push({
+      id: r.id, label: r.metricLabel, valueText: r.valueText, unit: r.unit,
+      out: r.verdict.isOut, stale: r.statusKey === 'stale' || r.statusKey === 'offline'
+    });
+    out.set(r.nodeId, list);
+  }
+  return out;
 }
 
 /** Urutan bawaan: bermasalah di atas, lalu alamat, lalu metrik. */

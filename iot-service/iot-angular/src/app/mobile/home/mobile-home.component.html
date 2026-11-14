@@ -1,17 +1,20 @@
-<div class="m-card m-pad" *ngIf="loading"><div class="m-skel w-60"></div><div class="m-skel w-40"></div></div>
+<m-panel *ngIf="loading" label="Project" icon="bi-grid-1x2" [pad]="true"><div class="m-skel w-60"></div><div class="m-skel w-40"></div></m-panel>
 
-<div class="m-empty" *ngIf="!loading && error">
-  <i class="fa fa-triangle-exclamation"></i>{{ error }}
-  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-</div>
-
-<div class="m-empty" *ngIf="!loading && !error">
-  <i class="fa fa-folder-open"></i>
-  <b>Belum ada project untuk akun ini</b>
-  <div class="m-subtle m-mt-2">Minta admin menambahkan project dan perangkat ke akun Anda.</div>
-  <div class="m-stack m-mt-4">
-    <button class="m-btn m-btn--ghost" type="button" (click)="retry()"><i class="fa fa-rotate"></i> Muat ulang</button>
-    <button class="m-btn m-btn--ghost" type="button" (click)="goDesktop()"><i class="fa fa-desktop"></i> Tampilan Desktop</button>
-    <button class="m-btn m-btn--ghost m-tx-danger" type="button" (click)="logout()"><i class="fa fa-arrow-right-from-bracket"></i> Keluar</button>
+<m-panel *ngIf="!loading && error" label="Project" icon="bi-grid-1x2" tone="danger">
+  <div class="m-empty">
+    <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ error }}
+    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
   </div>
-</div>
+</m-panel>
+
+<m-panel *ngIf="!loading && !error" label="Project" icon="bi-grid-1x2">
+  <div class="m-empty">
+    <b>Belum ada project untuk akun ini</b>
+    <div class="m-subtle">Minta admin menambahkan project dan perangkat ke akun Anda.</div>
+    <div class="m-stack m-mt-4">
+      <button class="m-btn m-btn--ghost" type="button" (click)="retry()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Muat ulang</button>
+      <button class="m-btn m-btn--ghost" type="button" (click)="goDesktop()"><i class="bi bi-display" aria-hidden="true"></i> Tampilan Desktop</button>
+      <button class="m-btn m-btn--ghost m-tx-danger" type="button" (click)="logout()"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Keluar</button>
+    </div>
+  </div>
+</m-panel>

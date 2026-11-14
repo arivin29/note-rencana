@@ -1,20 +1,22 @@
-<div class="m-chips" role="tablist" aria-label="Jenis peringatan">
+<div class="m-chips m-chips--fill" role="tablist" aria-label="Jenis peringatan">
   <button class="m-chip" type="button" role="tab" [class.active]="filter === 'active'" [attr.aria-selected]="filter === 'active'" (click)="setFilter('active')">Aktif</button>
   <button class="m-chip" type="button" role="tab" [class.active]="filter === 'history'" [attr.aria-selected]="filter === 'history'" (click)="setFilter('history')">Riwayat</button>
 </div>
 
-<div class="m-card m-pad" *ngIf="loading">
+<m-panel *ngIf="loading" label="Peringatan" icon="bi-bell" [pad]="true">
   <div class="m-skel w-50"></div><div class="m-skel w-70"></div><div class="m-skel w-40"></div>
-</div>
+</m-panel>
 
-<div class="m-empty" *ngIf="!loading && error">
-  <i class="fa fa-triangle-exclamation"></i>{{ error }}
-  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
-</div>
+<m-panel *ngIf="!loading && error" label="Peringatan" icon="bi-bell" tone="danger">
+  <div class="m-empty">
+    <i class="bi bi-exclamation-triangle m-tx-danger" aria-hidden="true"></i>{{ error }}
+    <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+  </div>
+</m-panel>
 
 <ng-container *ngIf="!loading && !error">
   <div class="m-banner m-banner--warn" *ngIf="refreshError" role="status">
-    <i class="fa fa-triangle-exclamation"></i><span>{{ refreshError }}</span>
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i><span>{{ refreshError }}</span>
     <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
 
@@ -22,13 +24,13 @@
     {{ total }} peringatan {{ filter === 'active' ? 'aktif' : 'selesai' }}<ng-container *ngIf="!inProject"> · semua project</ng-container>
   </div>
 
-  <div class="m-empty" *ngIf="alerts.length === 0">
-    <i class="fa fa-bell-slash"></i>
-    {{ filter === 'active' ? 'Tidak ada peringatan aktif' : 'Belum ada riwayat peringatan' }}
-  </div>
+  <m-panel *ngIf="alerts.length === 0" label="Peringatan" icon="bi-bell">
+    <div class="m-empty">{{ filter === 'active' ? 'Tidak ada peringatan aktif' : 'Belum ada riwayat peringatan' }}</div>
+  </m-panel>
 
-  <div class="m-card" *ngIf="alerts.length > 0">
+  <m-panel *ngIf="alerts.length > 0" [tone]="filter === 'active' && alerts[0].sev === 'danger' ? 'danger' : ''">
     <div class="m-attn" *ngFor="let a of alerts">
+      <span class="m-attn__sev" [ngClass]="'m-attn__sev--' + a.sev" aria-hidden="true"></span>
       <a class="m-attn__main" [routerLink]="a.link" [class.m-attn__main--static]="!a.link">
         <div class="m-attn__top">
           <span class="m-attn__title">{{ a.title }}</span>
@@ -37,17 +39,17 @@
         </div>
         <div class="m-list__sub" *ngIf="a.code">{{ a.code }}</div>
         <div class="m-attn__line">{{ a.line }}</div>
-        <div class="m-attn__line m-tx-dim">{{ a.time }}<ng-container *ngIf="a.when"> · {{ a.when }}</ng-container></div>
+        <div class="m-attn__line">{{ a.time }}<ng-container *ngIf="a.when"> · {{ a.when }}</ng-container></div>
       </a>
       <a class="m-callbtn" *ngIf="a.phone" [href]="tel(a.phone)" [attr.aria-label]="'Telepon ' + a.phoneLabel + ' ' + a.title" title="Telepon PIC">
-        <i class="fa fa-phone"></i>
+        <i class="bi bi-telephone" aria-hidden="true"></i>
       </a>
     </div>
-  </div>
+  </m-panel>
 
-  <div class="m-mt-3" *ngIf="alerts.length < total">
+  <div *ngIf="alerts.length < total">
     <button class="m-btn m-btn--ghost" type="button" (click)="more()" [disabled]="loadingMore">
-      <i class="fa" [ngClass]="loadingMore ? 'fa-spinner fa-spin' : 'fa-chevron-down'"></i>
+      <i class="fa" [ngClass]="loadingMore ? 'fa-spinner fa-spin' : 'fa-chevron-down'" aria-hidden="true"></i>
       Muat lagi ({{ alerts.length }} dari {{ total }})
     </button>
   </div>

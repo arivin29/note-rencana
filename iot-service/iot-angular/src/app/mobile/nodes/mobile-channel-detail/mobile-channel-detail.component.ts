@@ -42,6 +42,8 @@ export class MobileChannelDetailComponent implements OnInit, OnDestroy {
   updated = '';
   path = '';
   areaPath = '';
+  /** titik terakhir grafik (hiasan) */
+  end: { x: number; y: number } | null = null;
 
   private precision: any = null;
   private points: Point[] = [];
@@ -153,7 +155,7 @@ export class MobileChannelDetailComponent implements OnInit, OnDestroy {
 
   private buildChart(): void {
     const W = 340, H = 150, pad = 6;
-    if (this.points.length < 2) { this.path = ''; this.areaPath = ''; return; }
+    if (this.points.length < 2) { this.path = ''; this.areaPath = ''; this.end = null; return; }
     const xs = this.points.map((p) => p.t);
     const ys = this.points.map((p) => p.v);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -163,6 +165,8 @@ export class MobileChannelDetailComponent implements OnInit, OnDestroy {
     const sy = (v: number) => pad + (H - 2 * pad) * (1 - (v - minY) / (maxY - minY || 1));
     const pts = this.points.map((p) => `${sx(p.t).toFixed(1)},${sy(p.v).toFixed(1)}`);
     this.path = 'M' + pts.join(' L');
+    const lastPt = this.points[this.points.length - 1];
+    this.end = { x: Number(sx(lastPt.t).toFixed(1)) - 2, y: Number(sy(lastPt.v).toFixed(1)) - 2 };
     this.areaPath = `M${sx(minX).toFixed(1)},${(H - pad).toFixed(1)} L` + pts.join(' L') +
       ` L${sx(maxX).toFixed(1)},${(H - pad).toFixed(1)} Z`;
   }

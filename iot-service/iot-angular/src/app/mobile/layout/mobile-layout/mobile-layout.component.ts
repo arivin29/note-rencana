@@ -6,6 +6,7 @@ import { AppSettings } from '../../../service/app-settings.service';
 import { RefreshBusService } from '../../shared/refresh-bus.service';
 import { MobileChromeService } from '../../shared/mobile-chrome.service';
 import { MobileScopeService } from '../../shared/mobile-scope.service';
+import { ensureHeliosFont } from '../../shared/helios-font';
 
 export type MobileNavMode = 'global' | 'none' | 'project';
 
@@ -57,6 +58,7 @@ export class MobileLayoutComponent implements OnInit, OnDestroy {
     private scope: MobileScopeService,
     private location: Location
   ) {
+    ensureHeliosFont();
     // Set di constructor (bukan ngOnInit) agar tidak memicu NG0100 di AppComponent.
     this.prev = {
       header: this.appSettings.appHeaderNone,
