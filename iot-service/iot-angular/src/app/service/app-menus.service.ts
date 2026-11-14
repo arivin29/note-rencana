@@ -15,8 +15,7 @@ export class AppMenuService {
 			{ 'path': '/iot/dashboard-admin', 'icon': 'bi bi-shield-lock', 'text': 'Super Admin Dashboard', 'roles': ['admin'] },
 			{ 'path': '/iot/projects', 'icon': 'bi bi-diagram-3', 'text': 'Projects', 'roles': ['admin','tenant'] },
 			{ 'path': '/iot/owners', 'icon': 'bi bi-briefcase', 'text': 'Owners', 'roles': ['admin'], 'children': [
-				{ 'path': '/iot/owners', 'text': 'Owner Directory' },
-				{ 'path': '/iot/owners#delivery', 'text': 'Data Delivery Config' }
+				{ 'path': '/iot/owners', 'text': 'Owner Directory' }
 			]},
 			{ 'path': '/iot/nodes', 'icon': 'bi bi-hdd-stack', 'text': 'Nodes' },
 			{ 'path': '/iot/telemetry-channels', 'icon': 'bi bi-broadcast-pin', 'text': 'Kanal Telemetri', 'roles': ['admin','tenant'] },

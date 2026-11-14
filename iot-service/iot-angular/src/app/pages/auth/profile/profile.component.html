@@ -142,10 +142,12 @@
                                 <div *ngIf="ownerDetail" class="col-sm-6">
                                     <label class="form-label text-muted small mb-1">Organization</label>
                                     <p class="mb-0 fw-medium">
-                                        <a [routerLink]="'/iot/owners/' + user.idOwner" class="text-decoration-none">
+                                        <!-- owner pages are admin-only; tenants see the name as plain text -->
+                                        <a *ngIf="user.role === 'admin'; else ownerPlain" [routerLink]="'/iot/owners/' + user.idOwner" class="text-decoration-none">
                                             {{ ownerDetail.name }}
                                             <i class="bi bi-box-arrow-up-right ms-1 small"></i>
                                         </a>
+                                        <ng-template #ownerPlain>{{ ownerDetail.name }}</ng-template>
                                     </p>
                                 </div>
                                 <div *ngIf="ownerDetail?.industry" class="col-sm-6">

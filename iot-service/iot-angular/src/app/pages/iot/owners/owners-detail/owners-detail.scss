@@ -1,24 +1,32 @@
-.forwarding-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
+.kpi-link {
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--bs-theme);
+  }
 }
 
-.forwarding-card__status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 0.35rem;
+// Prefixed: generic row class names collide with global rules in src/scss/styles.scss.
+.od-row {
+  cursor: pointer;
 }
 
-.forwarding-card__status-dot.success {
-  background: #22c55e;
+.od-table {
+  td,
+  th {
+    white-space: normal;
+  }
+
+  .badge {
+    white-space: nowrap;
+  }
 }
 
-.forwarding-card__status-dot.failed {
-  background: #ef4444;
+.od-profile dd {
+  word-break: break-word;
 }
 
-.forwarding-card__status-dot.pending {
-  background: #f59e0b;
+.min-w-0 {
+  min-width: 0;
 }

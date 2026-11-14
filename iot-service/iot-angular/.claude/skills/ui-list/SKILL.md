@@ -5,7 +5,9 @@ description: Standard list/index page for the IoT Angular app (Bootstrap table O
 
 # Standard List Page
 
-Reference impls: `pages/iot/nodes/nodes-list/` (table) and `pages/iot/projects/projects-list/` (card grid). Read `ui-coding-style` first.
+Reference impls (table): `pages/iot/projects/projects-list/` and `pages/iot/owners/owners-list/` (health KPIs + health tabs + fetchAll + client-side filter, problems first), `pages/iot/telemetry-channels/telemetry-channels-list/`. Read `ui-coding-style` first.
+
+**Project/owner-level status** comes from the backend `health` object (`GET /projects`, `/owners`, `/owners/{id}/detail`) read via `shared/utils/project-health.ts` (`healthOf`, `healthState`, `HEALTH_BADGE`, `HEALTH_ORDER`, `sumHealth`) — never from `connectivity_status`, `metrics.online` or a local count. Prefer a table over a card grid whenever rows are compared on the same numbers.
 
 ## Component (TS)
 ```typescript
@@ -142,7 +144,7 @@ export class NodesListPage implements OnInit {
 ```
 
 ## Card-grid variant
-Replace the `<table>` with `<div class="row g-3"><div class="col-xl-4 col-md-6" *ngFor="let item of items"><card>…</card></div></div>`. Use dropdown filters and a 400ms debounced search (see projects-list).
+Replace the `<table>` with `<div class="row g-3"><div class="col-xl-4 col-md-6" *ngFor="let item of items"><card>…</card></div></div>`. Use dropdown filters and a 300ms debounced search. Only for catalog-style lists (no per-row numbers to compare).
 
 ## Rules
 - Header: breadcrumb + `h1.page-header` + primary action top-right; hide it all when `@Input() embedded`.

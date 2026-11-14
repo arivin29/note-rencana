@@ -1,215 +1,359 @@
-<div class="d-flex align-items-center mb-3">
-    <div>
-        <ul class="breadcrumb mb-1">
-            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
-            <li class="breadcrumb-item active">Projects</li>
-        </ul>
-        <h1 class="page-header mb-0">IoT Projects</h1>
-    </div>
-    <div class="ms-auto">
-        <a routerLink="/iot/projects/new" class="btn btn-outline-theme">
-            <i class="fa fa-plus-circle fa-fw me-1"></i>
-            Add Project
-        </a>
-    </div>
+<!-- Header -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div class="me-auto">
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item">IoT</li>
+      <li class="breadcrumb-item active">Project</li>
+    </ul>
+    <h1 class="page-header mb-0">Project</h1>
+    <span class="text-muted small" *ngIf="lastRefreshedAt && !error">
+      {{ scoped.length | number }} project · {{ ownerCount | number }} PDAM
+      · diperbarui {{ lastRefreshedAt | date:'HH:mm:ss' }} (otomatis tiap 60 dtk)
+    </span>
+    <span class="badge bg-warning-subtle text-warning ms-2" *ngIf="refreshFailed && !error && rows.length">
+      <i class="bi bi-exclamation-triangle me-1"></i>Gagal memperbarui — data per {{ lastRefreshedAt | date:'HH:mm' }}
+      <a href="javascript:;" class="text-warning ms-1" (click)="loadProjects()">Coba lagi</a>
+    </span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <page-guide-button></page-guide-button>
+    <button class="btn btn-sm btn-outline-default" (click)="reload()" [disabled]="loading"
+      title="Muat ulang daftar project" aria-label="Muat ulang daftar project">
+      <i class="fa fa-sync-alt" [class.fa-spin]="loading"></i>
+    </button>
+    <a routerLink="/iot/projects/new" class="btn btn-sm btn-outline-theme">
+      <i class="fa fa-plus-circle fa-fw me-1"></i>Tambah Project
+    </a>
+  </div>
 </div>
 
+<!-- Error -->
+<div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>{{ error }}</span>
+  <button class="btn btn-sm btn-outline-danger ms-auto" (click)="reload()">Coba lagi</button>
+</div>
 
-<card>
-    <ul class="nav nav-tabs nav-tabs-v2 px-4">
-        <li class="nav-item me-3" *ngFor="let option of statusOptions">
-            <a href="javascript:;" class="nav-link px-2" [class.active]="filters.status === option"
-                (click)="setStatusFilter(option)">
-                {{ option === 'All Status' ? 'All' : (option | titlecase) }}
-                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border ms-1">{{ statusCount(option)
-                    }}</span>
-            </a>
-        </li>
-    </ul>
-    <div class="p-4">
-        <!-- Filter row -->
-        <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Owner</label>
-                <div class="dropdown w-100">
-                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start text-truncate"
-                        type="button" data-bs-toggle="dropdown">
-                        {{ filters.ownerLabel }}
-                    </button>
-                    <div class="dropdown-menu w-100" style="max-height: 320px; overflow-y: auto;">
-                        <button type="button" class="dropdown-item text-truncate"
-                            *ngFor="let option of ownerOptions" [class.active]="filters.ownerId === option.value"
-                            (click)="setOwnerFilter(option)">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Area</label>
-                <div class="dropdown w-100">
-                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start text-truncate"
-                        type="button" data-bs-toggle="dropdown">
-                        {{ filters.areaLabel }}
-                    </button>
-                    <div class="dropdown-menu w-100">
-                        <button type="button" class="dropdown-item" *ngFor="let option of areaOptions"
-                            [class.active]="filters.areaType === option.value" (click)="setAreaFilter(option)">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Urutkan</label>
-                <div class="dropdown w-100">
-                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start text-truncate"
-                        type="button" data-bs-toggle="dropdown">
-                        {{ sortOption.label }}
-                    </button>
-                    <div class="dropdown-menu w-100">
-                        <button type="button" class="dropdown-item" *ngFor="let option of sortOptions"
-                            [class.active]="sortOption === option" (click)="setSortOption(option)">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i
-                            class="fa fa-search opacity-50"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0"
-                        placeholder="Cari nama project / ID / lokasi" [ngModel]="searchTerm"
-                        (ngModelChange)="onSearchChange($event)">
-                    <button type="button" class="btn btn-outline-default" *ngIf="hasActiveFilters"
-                        (click)="resetFilters()" title="Reset semua filter">
-                        <i class="fa fa-times fa-fw"></i>
-                    </button>
-                </div>
-            </div>
+<div *ngIf="!error && !loading && missingHealth > 0" class="alert alert-warning d-flex align-items-center">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>Kesehatan perangkat untuk {{ missingHealth | number }} project tidak dikirim server. Angkanya ditampilkan "—", bukan 0.</span>
+  <button class="btn btn-sm btn-outline-warning ms-auto" (click)="reload()">Coba lagi</button>
+</div>
+
+<!-- KPI summary: totals of the projects in the current Owner / Area / Status / Cari scope (sumHealth) -->
+<div class="row row-cols-2 row-cols-lg-5 g-3 mb-3" *ngIf="!loading && !error && scoped.length">
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('problem', false)" title="Tampilkan project bermasalah">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Project bermasalah</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="counts.problem > 0">
+          {{ counts.problem | number }}<span class="fs-6 text-muted fw-normal"> / {{ scoped.length | number }}</span>
         </div>
-
-        <!-- Error -->
-        <div class="alert alert-warning d-flex align-items-center" *ngIf="error">
-            <i class="fa fa-triangle-exclamation fa-fw me-2"></i>
-            <div class="flex-fill">{{ error }}</div>
-            <button type="button" class="btn btn-sm btn-outline-default ms-3" (click)="loadProjects()">Coba lagi</button>
+        <div class="text-muted small mt-1">ada node mati atau alert terbuka</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('ok', false)" title="Tampilkan project yang semua nodenya mengirim data">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Node mengirim data</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-success]="totals.fresh > 0">
+          {{ totals.fresh | number }}<span class="fs-6 text-muted fw-normal"> / {{ totals.nodes | number }}</span>
         </div>
-
-        <!-- Card grid -->
-        <div class="row g-3">
-            <div class="col-xl-4 col-md-6" *ngFor="let project of paginatedProjects; trackBy: trackByProject">
-                <card class="h-100 shadow-sm">
-                    <card-body class="d-flex flex-column h-100">
-                        <div class="d-flex align-items-start mb-2">
-                            <div class="min-width-0 me-2">
-                                <div class="text-muted small text-truncate" [title]="project.owner.name">
-                                    {{ project.owner.name }}
-                                </div>
-                                <h5 class="mb-0 text-truncate" [title]="project.name">{{ project.name }}</h5>
-                            </div>
-                            <div class="ms-auto text-nowrap">
-                                <span [class]="statusBadge(project.status)">{{ project.status | titlecase }}</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex align-items-center small text-muted mb-3">
-                            <span class="text-nowrap">
-                                <i class="fa fa-fw me-1" [ngClass]="areaIcon(project.areaType)"></i>
-                                {{ (project.areaType | titlecase) || 'Other' }}
-                            </span>
-                            <span class="ms-auto text-nowrap">
-                                <i class="fa fa-clock-rotate-left fa-fw me-1"></i>{{ project.lastSync }}
-                            </span>
-                        </div>
-
-                        <div class="row text-center mb-3">
-                            <div class="col">
-                                <div class="fw-semibold fs-4">
-                                    {{ project.online }}<span class="fs-6 text-muted">/{{ project.nodes }}</span>
-                                </div>
-                                <div class="text-uppercase small text-muted">Nodes Online</div>
-                            </div>
-                            <div class="col border-start border-end">
-                                <div class="fw-semibold fs-4">{{ project.sensors }}</div>
-                                <div class="text-uppercase small text-muted">Sensors</div>
-                            </div>
-                            <div class="col">
-                                <div class="fw-semibold fs-4" [class.text-danger]="project.alerts > 0"
-                                    [class.text-muted]="project.alerts === 0">{{ project.alerts }}</div>
-                                <div class="text-uppercase small text-muted">Alerts</div>
-                            </div>
-                        </div>
-
-                        <div class="small text-muted text-truncate mb-3" [title]="project.location">
-                            <i class="fa fa-map-marker-alt fa-fw me-1"></i> {{ project.location }}
-                        </div>
-
-                        <div class="mt-auto d-flex gap-2">
-                            <a [routerLink]="['/iot/projects', project.idProject, 'overview']"
-                                class="btn btn-sm btn-theme flex-fill">Detail</a>
-                            <a [routerLink]="['/iot/projects', project.idProject, 'nodes']"
-                                class="btn btn-sm btn-outline-theme flex-fill">Nodes</a>
-                            <a [routerLink]="['/iot/projects', project.idProject, 'monitor']"
-                                class="btn btn-sm btn-outline-default flex-fill">Monitor</a>
-                        </div>
-                    </card-body>
-                </card>
-            </div>
-
-            <!-- Loading -->
-            <div class="col-12" *ngIf="loading">
-                <div class="text-center text-muted py-5">
-                    <div class="spinner-border spinner-border-sm me-2"></div> Memuat project…
-                </div>
-            </div>
-
-            <!-- Empty -->
-            <div class="col-12" *ngIf="!loading && !totalEntries && !error">
-                <div class="text-center text-muted py-5">
-                    <i class="fa fa-folder-open fa-2x d-block mb-2 opacity-25"></i>
-                    <div>Tidak ada project sesuai filter.</div>
-                    <button type="button" class="btn btn-sm btn-outline-default mt-3" *ngIf="hasActiveFilters"
-                        (click)="resetFilters()">Reset filter</button>
-                </div>
-            </div>
+        <div class="text-muted small mt-1">sesuai interval lapor</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('warning', false)" title="Tampilkan project yang hanya punya node terlambat">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Node terlambat</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-warning]="totals.stale > 0">{{ totals.stale | number }}</div>
+        <div class="text-muted small mt-1">data mulai tertunda</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('problem', false)" title="Tampilkan project bermasalah">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Node mati</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="totals.offline + totals.nodata > 0">
+          {{ totals.offline + totals.nodata | number }}
         </div>
-
-        <!-- Pagination -->
-        <div class="d-md-flex align-items-center mt-4 pt-3 border-top" *ngIf="totalEntries">
-            <div class="me-md-auto text-md-start text-center mb-2 mb-md-0 text-muted">
-                Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalEntries }} projects
-            </div>
-            <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
-                <span class="text-muted small me-2 text-uppercase">Per page</span>
-                <select class="form-select form-select-sm w-auto" [ngModel]="pageSize"
-                    (ngModelChange)="changePageSize($event)">
-                    <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-                </select>
-            </div>
-            <ul class="pagination mb-0 justify-content-center" *ngIf="totalPages > 1">
-                <li class="page-item" [class.disabled]="currentPage === 1">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(1)" title="Halaman pertama">
-                        <i class="fa fa-angles-left"></i>
-                    </a>
-                </li>
-                <li class="page-item" [class.disabled]="currentPage === 1">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
-                </li>
-                <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
-                </li>
-                <li class="page-item" [class.disabled]="currentPage === totalPages">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
-                </li>
-                <li class="page-item" [class.disabled]="currentPage === totalPages">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(totalPages)" title="Halaman terakhir">
-                        <i class="fa fa-angles-right"></i>
-                    </a>
-                </li>
-            </ul>
+        <div class="text-muted small mt-1">
+          {{ totals.offline | number }} offline · {{ totals.nodata | number }} belum pernah kirim
         </div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('problem', false)" title="Tampilkan project bermasalah">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Alert terbuka</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="totals.openAlerts > 0">{{ totals.openAlerts | number }}</div>
+        <div class="text-muted small mt-1">belum selesai ditangani</div>
+      </card-body>
+    </card>
+  </div>
+</div>
+
+<card class="shadow-sm" *ngIf="!error">
+  <!-- Health tabs (counts from the Owner / Area / Status / Cari scope, not the page) -->
+  <ul class="nav nav-tabs nav-tabs-v2 px-4">
+    <li class="nav-item me-3" *ngFor="let t of tabs">
+      <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+        [class.active]="tab === t.key" (click)="setTab(t.key)">
+        <span>{{ t.label }}</span>
+        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">{{ counts[t.key] | number }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <div class="p-4">
+    <!-- Filter row -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-3 col-md-6" *ngIf="isAdmin">
+        <label class="text-muted text-uppercase small d-block mb-1" for="pl-owner">Owner</label>
+        <select id="pl-owner" class="form-select" [(ngModel)]="ownerId" (ngModelChange)="onFilterChange()"
+          [title]="ownersError || ''">
+          <option value="">Semua owner</option>
+          <option *ngIf="ownersError" value="" disabled>{{ ownersError }}</option>
+          <option *ngFor="let o of ownerOptions" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+      <div class="col-md-6" [ngClass]="isAdmin ? 'col-lg-2' : 'col-lg-3'">
+        <label class="text-muted text-uppercase small d-block mb-1" for="pl-area">Tipe area</label>
+        <select id="pl-area" class="form-select" [(ngModel)]="areaType" (ngModelChange)="onFilterChange()"
+          [disabled]="!areaOptions.length">
+          <option value="">Semua tipe</option>
+          <option *ngFor="let a of areaOptions" [value]="a.value">{{ a.label }}</option>
+        </select>
+      </div>
+      <div class="col-md-6" [ngClass]="isAdmin ? 'col-lg-2' : 'col-lg-3'">
+        <label class="text-muted text-uppercase small d-block mb-1" for="pl-status">Status project</label>
+        <select id="pl-status" class="form-select" [(ngModel)]="projectStatus" (ngModelChange)="onFilterChange()"
+          [disabled]="!projectStatusOptions.length">
+          <option value="">Semua status</option>
+          <option *ngFor="let s of projectStatusOptions" [value]="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+      <div class="col-md-6" [ngClass]="isAdmin ? 'col-lg-5' : 'col-lg-6'">
+        <label class="text-muted text-uppercase small d-block mb-1" for="pl-search">Cari</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted">
+            <i class="fa fa-search opacity-50"></i>
+          </span>
+          <input id="pl-search" type="text" class="form-control border-start-0 ps-0"
+            placeholder="Cari nama project, owner, lokasi…"
+            [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
+        </div>
+      </div>
     </div>
+
+    <!-- Active filters as removable chips -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3" *ngIf="hasActiveFilter">
+      <span class="badge fw-normal fs-6 border chip"
+        [ngClass]="tab === 'problem' ? 'bg-danger-subtle text-danger border-danger-subtle' : 'bg-theme-subtle text-theme border-theme-subtle'"
+        *ngIf="tab !== 'all'">
+        Kesehatan: {{ tabLabel(tab) }} ({{ counts[tab] | number }})
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('tab')" aria-label="Hapus filter kesehatan">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="ownerId">
+        Owner: {{ ownerLabel(ownerId) }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('owner')" aria-label="Hapus filter owner">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="areaType">
+        Tipe area: {{ areaLabel(areaType) }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('area')" aria-label="Hapus filter tipe area">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="projectStatus">
+        Status: {{ statusLabel(projectStatus) }}
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('status')" aria-label="Hapus filter status project">&times;</a>
+      </span>
+      <span class="badge bg-theme-subtle text-theme border border-theme-subtle fw-normal fs-6 chip" *ngIf="searchText.trim()">
+        Cari: “{{ searchText.trim() }}”
+        <a href="javascript:;" class="ms-2 text-decoration-none text-reset" (click)="clearFilter('search')" aria-label="Hapus pencarian">&times;</a>
+      </span>
+      <a href="javascript:;" class="small" (click)="resetFilters()">Reset filter</a>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border spinner-border-sm text-theme" role="status">
+        <span class="visually-hidden">Memuat…</span>
+      </div>
+      <div class="mt-2 text-muted small">Memuat project…</div>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div class="table-responsive" *ngIf="filtered.length">
+        <table class="table table-hover align-middle projects-table">
+          <thead class="text-uppercase text-muted small">
+            <tr>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('name')"
+                (click)="onSort('name')" (keydown.enter)="onSort('name')">
+                Project <i class="fa ms-1" [ngClass]="sortIcon('name')"></i>
+              </th>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('health')"
+                (click)="onSort('health')" (keydown.enter)="onSort('health')"
+                title="Urut: bermasalah dulu, lalu node mati terbanyak">
+                Kesehatan <i class="fa ms-1" [ngClass]="sortIcon('health')"></i>
+              </th>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('fresh')"
+                (click)="onSort('fresh')" (keydown.enter)="onSort('fresh')">
+                Node mengirim <i class="fa ms-1" [ngClass]="sortIcon('fresh')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('late')"
+                (click)="onSort('late')" (keydown.enter)="onSort('late')"
+                title="Node terlambat · node mati (offline + belum pernah kirim)">
+                Terlambat / Mati <i class="fa ms-1" [ngClass]="sortIcon('late')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('sensors')"
+                (click)="onSort('sensors')" (keydown.enter)="onSort('sensors')">
+                Sensor <i class="fa ms-1" [ngClass]="sortIcon('sensors')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('alerts')"
+                (click)="onSort('alerts')" (keydown.enter)="onSort('alerts')">
+                Alert terbuka <i class="fa ms-1" [ngClass]="sortIcon('alerts')"></i>
+              </th>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('location')"
+                (click)="onSort('location')" (keydown.enter)="onSort('location')">
+                Lokasi <i class="fa ms-1" [ngClass]="sortIcon('location')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('lastSeen')"
+                (click)="onSort('lastSeen')" (keydown.enter)="onSort('lastSeen')"
+                title="Waktu data terbaru dari node mana pun di project ini">
+                Data terakhir <i class="fa ms-1" [ngClass]="sortIcon('lastSeen')"></i>
+              </th>
+              <th class="pt-0 pb-2"><span class="visually-hidden">Aksi</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of pageRows; trackBy: trackRow" class="pl-row" (click)="openProject(r)">
+              <!-- Project -->
+              <td>
+                <div class="cell-mw">
+                  <a class="fw-semibold text-decoration-none d-block text-truncate" [title]="r.name"
+                    [routerLink]="['/iot/projects', r.idProject, 'overview']" (click)="stop($event)">{{ r.name || '—' }}</a>
+                  <div class="text-muted small text-truncate" [title]="r.ownerName">
+                    {{ r.ownerName || '—' }}
+                    <span class="badge bg-secondary-subtle text-secondary fw-normal ms-1"
+                      *ngIf="r.status && r.status !== 'active'" title="Status project (administrasi), bukan kesehatan alat">
+                      {{ statusLabel(r.status) }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <!-- Kesehatan -->
+              <td>
+                <span *ngIf="r.state; else noHealth" class="badge health-badge" [ngClass]="HEALTH_BADGE[r.state]">{{ HEALTH_LABEL[r.state] }}</span>
+                <ng-template #noHealth><span class="badge bg-secondary-subtle text-secondary">Tidak tersedia</span></ng-template>
+              </td>
+              <!-- Node mengirim -->
+              <td class="fresh-cell">
+                <ng-container *ngIf="r.health; else dash">
+                  <div class="text-nowrap">
+                    <span class="fw-semibold">{{ r.health.fresh | number }}</span>
+                    <span class="text-muted"> / {{ r.health.nodes | number }}</span>
+                  </div>
+                  <div class="progress fresh-bar mt-1" *ngIf="r.health.nodes > 0" role="progressbar"
+                    [attr.aria-valuenow]="freshPct(r)" aria-valuemin="0" aria-valuemax="100"
+                    [attr.aria-label]="freshPct(r) + '% node mengirim data'">
+                    <div class="progress-bar bg-success" [style.width.%]="freshPct(r)"></div>
+                  </div>
+                </ng-container>
+              </td>
+              <!-- Terlambat / Mati -->
+              <td class="text-end text-nowrap">
+                <ng-container *ngIf="r.health; else dash">
+                  <span [ngClass]="r.health.stale > 0 ? 'text-warning fw-semibold' : 'text-muted'"
+                    [title]="(r.health.stale | number) + ' node terlambat'">{{ r.health.stale | number }}</span>
+                  <span class="text-muted"> · </span>
+                  <span [ngClass]="r.dead > 0 ? 'text-danger fw-semibold' : 'text-muted'"
+                    [title]="(r.health.offline | number) + ' offline, ' + (r.health.nodata | number) + ' belum pernah kirim'">{{ r.dead | number }}</span>
+                </ng-container>
+              </td>
+              <!-- Sensor -->
+              <td class="text-end">
+                <ng-container *ngIf="r.health; else dash">{{ r.health.sensors | number }}</ng-container>
+              </td>
+              <!-- Alert terbuka -->
+              <td class="text-end">
+                <ng-container *ngIf="r.health; else dash">
+                  <span [ngClass]="r.health.openAlerts > 0 ? 'text-danger fw-semibold' : 'text-muted'">{{ r.health.openAlerts | number }}</span>
+                </ng-container>
+              </td>
+              <!-- Lokasi -->
+              <td>
+                <div class="loc-cell small" [title]="r.location" *ngIf="r.location; else dash">{{ r.location }}</div>
+              </td>
+              <!-- Data terakhir -->
+              <td class="text-end text-nowrap" [title]="r.lastSeenAt ? (r.lastSeenAt | date:'EEEE, dd MMMM yyyy HH:mm:ss') : 'Belum ada data dari node mana pun'">
+                <ng-container *ngIf="r.lastSeenAt; else never">
+                  <div>{{ timeAgo(r) }}</div>
+                  <div class="text-muted small">{{ r.lastSeenAt | date:'dd MMM yyyy, HH:mm' }}</div>
+                </ng-container>
+                <ng-template #never><span class="text-muted">Belum pernah</span></ng-template>
+              </td>
+              <!-- Aksi -->
+              <td class="text-end text-nowrap" (click)="stop($event)">
+                <a class="btn btn-sm btn-link text-muted px-1" [routerLink]="['/iot/projects', r.idProject, 'nodes']"
+                  title="Node" aria-label="Buka daftar node"><i class="fa fa-microchip"></i></a>
+                <a class="btn btn-sm btn-link text-muted px-1" [routerLink]="['/iot/projects', r.idProject, 'monitor']"
+                  title="Monitor" aria-label="Buka monitor"><i class="fa fa-chart-line"></i></a>
+                <a class="btn btn-sm btn-link text-muted px-1" [routerLink]="['/iot/projects', r.idProject, 'edit']"
+                  title="Ubah project" aria-label="Ubah project"><i class="fa fa-edit"></i></a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #dash><span class="text-muted">—</span></ng-template>
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!filtered.length" class="text-center text-muted py-5 border-top">
+        <i class="fa fa-diagram-project fa-2x mb-2 opacity-50 d-block"></i>
+        <ng-container *ngIf="!rows.length; else noMatch">
+          Belum ada project.
+          <div class="mt-2"><a routerLink="/iot/projects/new" class="btn btn-sm btn-outline-theme">
+            <i class="fa fa-plus-circle fa-fw me-1"></i>Tambah Project</a></div>
+        </ng-container>
+        <ng-template #noMatch>
+          Tidak ada project sesuai filter.
+          <div class="mt-2"><button class="btn btn-sm btn-outline-default" (click)="resetFilters()">Reset filter</button></div>
+        </ng-template>
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-md-flex align-items-center mt-3" *ngIf="filtered.length">
+        <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+          Menampilkan {{ paginationStart | number }}–{{ paginationEnd | number }} dari {{ filtered.length | number }} project
+        </div>
+        <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
+          <label class="text-muted small me-2 text-uppercase mb-0" for="pl-pagesize">Baris</label>
+          <select id="pl-pagesize" class="form-select form-select-sm w-auto" [ngModel]="pageSize"
+            (ngModelChange)="changePageSize($event)">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+        </div>
+        <ul class="pagination mb-0 justify-content-center" *ngIf="totalPages > 1">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:;" (click)="goToPage(1)" aria-label="Halaman pertama">&laquo;</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Sebelumnya</a>
+          </li>
+          <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+            <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Berikutnya</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" href="javascript:;" (click)="goToPage(totalPages)" aria-label="Halaman terakhir">&raquo;</a>
+          </li>
+        </ul>
+      </div>
+    </ng-container>
+  </div>
 </card>

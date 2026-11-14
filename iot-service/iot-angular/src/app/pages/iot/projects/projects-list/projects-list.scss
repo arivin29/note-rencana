@@ -1,13 +1,81 @@
-:host {
-    // Kartu di dalam satu baris grid harus setinggi baris, bukan setinggi isinya,
-    // supaya tombol aksi di bawah rata antar kartu.
-    .card.h-100 {
-        height: 100%;
-    }
+th.sortable {
+  cursor: pointer;
+  user-select: none;
 
-    // text-truncate tidak bekerja di dalam flex item tanpa min-width:0 —
-    // nama project panjang akan memaksa kartu melebar, bukan terpotong.
-    .min-width-0 {
-        min-width: 0;
-    }
+  &:hover,
+  &:focus-visible {
+    color: var(--bs-theme) !important;
+  }
+}
+
+// Prefixed row class: global styles.scss has unscoped `.channel-row` etc. — keep names component-specific.
+.pl-row {
+  cursor: pointer;
+}
+
+.cell-mw {
+  max-width: 200px;
+  min-width: 0;
+}
+
+.kpi-link {
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--bs-theme);
+  }
+}
+
+.chip {
+  white-space: normal;
+  text-align: start;
+}
+
+// Text cells wrap; numbers, badges and times stay on one line.
+.projects-table {
+  td,
+  th {
+    white-space: normal;
+  }
+
+  // headers may wrap (two short lines) so the table fits a laptop screen without horizontal scroll
+  .badge {
+    white-space: nowrap;
+  }
+
+  // keep the sort icon glued to the last header word
+  th .fa {
+    white-space: nowrap;
+  }
+
+  td,
+  th {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+  }
+
+  // "Belum ada perangkat" may break into two lines instead of widening the column
+  .badge.health-badge {
+    white-space: normal;
+    max-width: 96px;
+    text-align: start;
+    line-height: 1.3;
+  }
+
+  .loc-cell {
+    max-width: 170px;
+    min-width: 100px;
+    overflow-wrap: anywhere;
+  }
+}
+
+.fresh-cell {
+  min-width: 72px;
+}
+
+.fresh-bar {
+  height: 4px;
+  max-width: 120px;
+  background-color: var(--bs-secondary-bg);
 }

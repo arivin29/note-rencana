@@ -188,7 +188,9 @@ const routes: Routes = [
     },
     {
         path: 'iot/owners',
-        loadChildren: () => import('./pages/iot/owners/owners.module').then((m) => m.OwnersModule)
+        loadChildren: () => import('./pages/iot/owners/owners.module').then((m) => m.OwnersModule),
+        canActivate: [AuthGuard],
+        data: { title: 'PDAM / Owner', roles: ['admin'] }
     },
     {
         path: 'iot/widget-builder',

@@ -1,148 +1,92 @@
-<div class="d-flex align-items-center mb-3">
-  <div>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div class="me-auto">
     <ul class="breadcrumb mb-1">
-      <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
-      <li class="breadcrumb-item"><a routerLink="/iot/owners">Owners</a></li>
+      <li class="breadcrumb-item">IoT</li>
+      <li class="breadcrumb-item"><a routerLink="/iot/owners">PDAM / Owner</a></li>
       <li class="breadcrumb-item active">{{ breadcrumbTitle }}</li>
     </ul>
     <h1 class="page-header mb-0">{{ pageTitle }}</h1>
   </div>
-  <div class="ms-auto">
-    <a routerLink="/iot/owners" class="btn btn-outline-default">Back</a>
+  <div class="d-flex align-items-center gap-2">
+    <a [routerLink]="backLink" class="btn btn-sm btn-outline-default">Kembali</a>
   </div>
 </div>
 
-<!-- Loading State -->
+<!-- Loading -->
 <div *ngIf="loadingData" class="text-center py-5">
-  <div class="spinner-border text-theme" role="status">
-    <span class="visually-hidden">Loading...</span>
-  </div>
-  <p class="mt-3 text-muted">Loading owner data...</p>
+  <div class="spinner-border spinner-border-sm text-theme" role="status"><span class="visually-hidden">Memuat…</span></div>
+  <div class="mt-2 text-muted small">Memuat data owner…</div>
 </div>
 
-<form [formGroup]="ownerForm" (ngSubmit)="submitOwner()" *ngIf="!loadingData">
-  <!-- Error Alert -->
-  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+<!-- Load error -->
+<div *ngIf="loadError && !loadingData" class="alert alert-danger d-flex align-items-center">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>{{ loadError }}</span>
+  <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadOwner(ownerId!)" *ngIf="ownerId">Coba lagi</button>
+</div>
+
+<form [formGroup]="ownerForm" (ngSubmit)="submitOwner()" *ngIf="!loadingData && !loadError">
+  <div *ngIf="error" class="alert alert-danger d-flex align-items-center mb-3" role="alert">
     <i class="fa fa-exclamation-circle me-2"></i>
-    {{ error }}
-    <button type="button" class="btn-close" (click)="error = null"></button>
+    <span>{{ error }}</span>
+    <button type="button" class="btn-close ms-auto" (click)="error = null" aria-label="Tutup"></button>
   </div>
 
   <card>
+    <card-header class="fw-semibold">Profil owner</card-header>
     <card-body>
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">Owner Name <span class="text-danger">*</span></label>
-          <input class="form-control" placeholder="PT ABC" formControlName="name"
+          <label class="form-label" for="of-name">Nama owner <span class="text-danger">*</span></label>
+          <input id="of-name" class="form-control" placeholder="mis. PDAM Tirta Mahakam" formControlName="name"
             [class.is-invalid]="hasError('name', 'required')">
-          <div class="invalid-feedback" *ngIf="hasError('name', 'required')">
-            Name is required
-          </div>
+          <div class="invalid-feedback">Nama wajib diisi.</div>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Industry</label>
-          <select class="form-select" formControlName="industry">
+          <label class="form-label" for="of-industry">Industri <span class="text-danger">*</span></label>
+          <select id="of-industry" class="form-select" formControlName="industry" [class.is-invalid]="hasError('industry', 'required')">
+            <option value="" disabled>Pilih industri…</option>
             <option *ngFor="let option of industryOptions" [value]="option">{{ option }}</option>
           </select>
+          <div class="invalid-feedback">Industri wajib dipilih.</div>
         </div>
         <div class="col-md-4">
-          <label class="form-label">Contact Person <span class="text-danger">*</span></label>
-          <input class="form-control" formControlName="contactPerson"
+          <label class="form-label" for="of-pic">Contact person <span class="text-danger">*</span></label>
+          <input id="of-pic" class="form-control" formControlName="contactPerson"
             [class.is-invalid]="hasError('contactPerson', 'required')">
-          <div class="invalid-feedback" *ngIf="hasError('contactPerson', 'required')">
-            Contact person is required
-          </div>
+          <div class="invalid-feedback">Contact person wajib diisi.</div>
         </div>
         <div class="col-md-4">
-          <label class="form-label">Contact Email</label>
-          <input type="email" class="form-control" formControlName="contactEmail"
-            [class.is-invalid]="hasError('contactEmail', 'email')">
-          <div class="invalid-feedback" *ngIf="hasError('contactEmail', 'email')">
-            Invalid email format
-          </div>
+          <label class="form-label" for="of-email">Email</label>
+          <input id="of-email" type="email" class="form-control" formControlName="email"
+            [class.is-invalid]="hasError('email', 'email')">
+          <div class="invalid-feedback">Format email tidak valid.</div>
         </div>
         <div class="col-md-4">
-          <label class="form-label">Contact Phone</label>
-          <input class="form-control" formControlName="contactPhone">
+          <label class="form-label" for="of-phone">Telepon</label>
+          <input id="of-phone" class="form-control" formControlName="phone">
         </div>
         <div class="col-md-4">
-          <label class="form-label">SLA Level</label>
-          <select class="form-select" formControlName="slaLevel">
+          <label class="form-label" for="of-sla">Tingkat SLA</label>
+          <select id="of-sla" class="form-select" formControlName="slaLevel">
+            <option value="">Belum diatur</option>
             <option *ngFor="let sla of slaLevels" [value]="sla">{{ sla }}</option>
           </select>
         </div>
         <div class="col-12">
-          <label class="form-label">Address</label>
-          <textarea class="form-control" rows="2" formControlName="address"></textarea>
+          <label class="form-label" for="of-address">Alamat</label>
+          <textarea id="of-address" class="form-control" rows="2" formControlName="address"></textarea>
         </div>
-        <div class="col-12">
-          <label class="form-label">Notes</label>
-          <textarea class="form-control" rows="2" formControlName="notes"></textarea>
-        </div>
-        
-        <!-- Forwarding Settings -->
-        <ng-container formGroupName="forwarding">
-          <div class="col-12 mt-4">
-            <h6 class="mb-3">Data Forwarding Settings</h6>
-          </div>
-          <div class="col-md-4">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" formControlName="enableWebhook" id="enableWebhook">
-              <label class="form-check-label" for="enableWebhook">Enable Webhook</label>
-            </div>
-          </div>
-          <div class="col-md-8">
-            <label class="form-label">Webhook URL</label>
-            <input class="form-control" placeholder="https://api.example.com/webhook" formControlName="webhookUrl"
-              [disabled]="!forwardingGroup.get('enableWebhook')?.value">
-          </div>
-          <div class="col-md-4">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" formControlName="enableDatabase" id="enableDatabase">
-              <label class="form-check-label" for="enableDatabase">Enable Database Storage</label>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Batch Size</label>
-            <input type="number" class="form-control" formControlName="batchSize" min="1" max="1000">
-            <small class="text-muted">Number of records per batch (1-1000)</small>
-          </div>
-        </ng-container>
       </div>
+      <div class="text-muted small mt-3"><i class="fa fa-info-circle fa-fw me-1"></i>Forwarding data ke sistem PDAM belum tersedia.</div>
     </card-body>
   </card>
 
-  <div class="row g-3 mt-3">
-    <div class="col-lg-6">
-      <card>
-        <card-body>
-          <div class="fw-semibold mb-2">Owner Summary</div>
-          <div class="text-muted small">{{ ownerForm.get('name')?.value || 'Owner Name' }}</div>
-          <div class="text-muted small">Industry: {{ ownerForm.get('industry')?.value }}</div>
-          <div class="text-muted small">Contact: {{ ownerForm.get('contactPerson')?.value || '-' }}</div>
-          <div class="text-muted small">Email: {{ ownerForm.get('contactEmail')?.value || '-' }}</div>
-          <div class="text-muted small">Phone: {{ ownerForm.get('contactPhone')?.value || '-' }}</div>
-        </card-body>
-      </card>
-    </div>
-    <div class="col-lg-6">
-      <card>
-        <card-body>
-          <div class="d-flex align-items-center mb-2">
-            <div class="fw-semibold">Payload Preview</div>
-            <div class="ms-auto text-muted small">Demo JSON</div>
-          </div>
-          <pre class="bg-dark text-white rounded-3 p-3 small mb-0">{{ payload | json }}</pre>
-        </card-body>
-      </card>
-    </div>
-  </div>
-
-  <div class="d-flex justify-content-end mt-3">
-    <button type="submit" class="btn btn-theme" [disabled]="ownerForm.invalid || loading">
-      <i class="fa fa-save fa-fw me-1"></i>
-      <span *ngIf="!loading">{{ submitButtonText }}</span>
-      <span *ngIf="loading">{{ isEditMode ? 'Updating...' : 'Saving...' }}</span>
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <a [routerLink]="backLink" class="btn btn-outline-default">Batal</a>
+    <button type="submit" class="btn btn-theme" [disabled]="saving">
+      <i class="fa fa-fw me-1" [ngClass]="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+      {{ saving ? 'Menyimpan…' : (isEditMode ? 'Simpan perubahan' : 'Simpan owner') }}
     </button>
   </div>
 </form>

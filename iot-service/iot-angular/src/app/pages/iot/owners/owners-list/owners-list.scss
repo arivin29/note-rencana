@@ -1,0 +1,34 @@
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--bs-theme) !important;
+  }
+}
+
+// Prefixed row class: generic names (e.g. `.channel-row`) collide with global rules in src/scss/styles.scss.
+.ow-row {
+  cursor: pointer;
+}
+
+.kpi-link {
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--bs-theme);
+  }
+}
+
+.owners-table {
+  td,
+  th {
+    white-space: normal;
+  }
+
+  .badge {
+    white-space: nowrap;
+  }
+}

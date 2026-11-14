@@ -1,83 +1,53 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { OwnersService } from '../../../../../sdk/core/services/owners.service';
-import { UsersService } from '../../../../../sdk/core/services/users.service';
-import { OwnerDetailResponseDto } from '../../../../../sdk/core/models/owner-detail-response-dto';
-import { ForwardingWebhookResponseDto } from '../../../../../sdk/core/models/forwarding-webhook-response-dto';
-import { ForwardingDatabaseResponseDto } from '../../../../../sdk/core/models/forwarding-database-response-dto';
-import { UserResponseDto } from '../../../../../sdk/core/models/user-response-dto';
-import { UserModal } from '../user-modal/user-modal';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { OwnersService } from '@sdk/core/services/owners.service';
+import { UsersService } from '@sdk/core/services/users.service';
+import { UserResponseDto } from '@sdk/core/models/user-response-dto';
+import { fetchAll, parseBody } from '@app/shared/utils/fetch-all';
 import {
-  TenantApiKeysService,
-  TenantApiKeyResponse,
-  CreateTenantApiKeyRequest,
-  RateLimitPlan
-} from '../../../../services/tenant-api-keys.service';
+  ProjectHealth, HealthState, healthOf, healthState, deadNodes,
+  HEALTH_LABEL, HEALTH_BADGE, HEALTH_ORDER
+} from '@app/shared/utils/project-health';
+import { timeAgoId } from '@app/shared/utils/channel-display';
+import { TenantApiKeyResponse, RateLimitPlan } from '../../../../services/tenant-api-keys.service';
+import { OwnerApiKeysService, OwnerApiKeyCreate } from '../owner-api-keys.service';
+import { normalizeSla } from '../owner-form-options';
+import { UserModal } from '../user-modal/user-modal';
 
-interface OwnerProfile {
+interface OwnerView {
+  idOwner: string;
   name: string;
+  ownerCode: string;
   industry: string;
   contactPerson: string;
   email: string;
   phone: string;
-  projects: number;
-  nodes: number;
-  sensors: number;
-  forwardingStatus: string;
+  address: string;
+  sla: string | null;
+  createdAt: string | null;
+  totalProjects: number;
+  totalSensors: number;
 }
 
-interface ForwardingLog {
-  id: string;
-  target: string;
-  type: 'webhook' | 'mysql' | 'postgres';
-  status: 'success' | 'failed' | 'pending';
-  timestamp: string;
-  attempts: number;
-  message: string;
-  durationMs: number;
+interface ProjectRow {
+  idProject: string;
+  name: string;
+  areaType: string;
+  status: string;
+  nodeCount: number;
+  health: ProjectHealth | null;
+  state: HealthState;
 }
 
-interface WebhookHeader {
-  key: string;
-  value: string;
-}
+type DetailTab = 'summary' | 'projects' | 'users' | 'apikeys';
 
-interface WebhookConfig {
-  enabled: boolean;
-  label: string;
-  endpointUrl: string;
-  httpMethod: 'POST' | 'PUT';
-  secretToken: string;
-  headers: WebhookHeader[];
-  payloadFormat: 'timeseries' | 'raw';
-  retry: {
-    maxRetry: number;
-    backoffMs: number;
-  };
-  lastStatus: string;
-  lastDeliveryAt?: string;
-  lastError?: string;
-}
-
-interface DatabaseConfig {
-  id: string;
-  label: string;
-  type: 'mysql' | 'postgres';
-  enabled: boolean;
-  host: string;
-  port: number;
-  database: string;
-  schema?: string;
-  username: string;
-  password: string;
-  targetTable: string;
-  writeMode: 'append' | 'upsert';
-  batchSize: number;
-  lastStatus: string;
-  lastDeliveryAt?: string;
-  lastError?: string;
-}
+// Plan names only: the backend has no rate limiter yet, so no per-minute numbers are shown.
+const RATE_LIMIT_LABEL: Record<string, string> = {
+  basic: 'Basic', standard: 'Standard', premium: 'Premium'
+};
 
 @Component({
   selector: 'owners-detail',
@@ -85,112 +55,40 @@ interface DatabaseConfig {
   styleUrls: ['./owners-detail.scss'],
   standalone: false
 })
-export class OwnersDetailPage implements OnInit {
+export class OwnersDetailPage implements OnInit, OnDestroy {
   ownerId = '';
-  ownerData: OwnerDetailResponseDto | null = null;
+  activeTab: DetailTab = 'summary';
+
   loading = false;
-  error = '';
-  
-  // Track webhook ID for update operations
-  webhookId: string | null = null;
-  
-  // Track database config IDs for update operations (keyed by database type)
-  mysqlDatabaseId: string | null = null;
-  postgresDatabaseId: string | null = null;
-  
-  // Test messages for each database type
-  mysqlTestMessage = '';
-  postgresTestMessage = '';
+  error: string | null = null;
+  owner: OwnerView | null = null;
+  health: ProjectHealth | null = null;
+  projects: ProjectRow[] = [];
 
-  ownerProfile: OwnerProfile = {
-    name: '',
-    industry: '',
-    contactPerson: '',
-    email: '',
-    phone: '',
-    projects: 0,
-    nodes: 0,
-    sensors: 0,
-    forwardingStatus: 'Unknown'
-  };
+  // Pengguna
+  users: UserResponseDto[] = [];
+  usersLoading = false;
+  usersError: string | null = null;
+  usersLoaded = false;
 
-  activeDeliveryTab: 'webhook' | 'mysql' | 'postgres' = 'webhook';
-  webhookTestMessage = '';
-
-  webhookConfig: WebhookConfig = {
-    enabled: true,
-    label: 'Command Center Webhook',
-    endpointUrl: 'https://hooks.adhiwater.co.id/iot/ingest',
-    httpMethod: 'POST',
-    secretToken: 'whsec-demo-token',
-    headers: [
-      { key: 'X-Tenant-Code', value: 'ADHI-WATER' },
-      { key: 'X-Signature', value: 'HMAC-SHA256' }
-    ],
-    payloadFormat: 'timeseries',
-    retry: {
-      maxRetry: 3,
-      backoffMs: 2000
-    },
-    lastStatus: 'Healthy',
-    lastDeliveryAt: '2024-05-26T09:12:00Z'
-  };
-
-  databaseConfigs: DatabaseConfig[] = [
-    {
-      id: 'mysql-default',
-      label: 'MySQL Warehouse',
-      type: 'mysql',
-      enabled: true,
-      host: 'mysql-fw.adhiwater.local',
-      port: 3306,
-      database: 'iot_forwarder',
-      schema: undefined,
-      username: 'forwarder',
-      password: '********',
-      targetTable: 'telemetry_logs',
-      writeMode: 'append',
-      batchSize: 200,
-      lastStatus: 'Healthy',
-      lastDeliveryAt: '2024-05-26T09:10:22Z'
-    },
-    {
-      id: 'postgres-ops',
-      label: 'PostgreSQL Ops DB',
-      type: 'postgres',
-      enabled: false,
-      host: 'pg-fw.ops.internal',
-      port: 5432,
-      database: 'ops_datahub',
-      schema: 'public',
-      username: 'ops_forwarder',
-      password: '********',
-      targetTable: 'sensor_channels_buffer',
-      writeMode: 'upsert',
-      batchSize: 100,
-      lastStatus: 'Disabled',
-      lastDeliveryAt: undefined,
-      lastError: 'Connection disabled by user'
-    }
-  ];
-
-  // No endpoint yet: stays empty (no placeholder data)
-  forwardingLogs: ForwardingLog[] = []; // Empty until real endpoint ready
-
-  // User Management
-  ownerUsers: UserResponseDto[] = [];
-  loadingUsers = false;
-  usersError = '';
-
-  // API Key Management
+  // API key
   apiKeys: TenantApiKeyResponse[] = [];
-  loadingApiKeys = false;
-  apiKeysError = '';
-  apiKeysMessage = '';
+  apiKeysLoading = false;
+  apiKeysError: string | null = null;
+  apiKeysLoaded = false;
+  apiKeyMessage: { kind: 'success' | 'danger' | 'info'; text: string } | null = null;
   showCreateApiKeyForm = false;
-  newApiKey: CreateTenantApiKeyRequest = { label: '', description: '', expiresAt: null, rateLimitPlan: 'basic' };
+  newApiKey: OwnerApiKeyCreate = this.emptyApiKey();
   generatedApiKey = '';
-  showGeneratedKey = false;
+
+  readonly HEALTH_LABEL = HEALTH_LABEL;
+  readonly HEALTH_BADGE = HEALTH_BADGE;
+  readonly deadNodes = deadNodes;
+  readonly RATE_LIMIT_LABEL = RATE_LIMIT_LABEL;
+
+  private destroy$ = new Subject<void>();
+  /** Emits on every owner change → cancels requests of the previous owner. */
+  private ownerChange$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
@@ -198,721 +96,279 @@ export class OwnersDetailPage implements OnInit {
     private modalService: NgbModal,
     private ownersService: OwnersService,
     private usersService: UsersService,
-    private tenantApiKeysService: TenantApiKeysService
-  ) {
-    this.route.paramMap.subscribe((params) => {
+    private apiKeysService: OwnerApiKeysService
+  ) {}
+
+  ngOnInit(): void {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       this.ownerId = params.get('ownerId') ?? '';
-      if (this.ownerId) {
-        this.loadOwnerDetail();
-      }
+      this.resetState();
+      if (this.ownerId) this.load();
     });
   }
 
-  ngOnInit(): void {
-    // Initialization handled in constructor
+  ngOnDestroy(): void {
+    this.ownerChange$.next();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  loadOwnerDetail(): void {
+  // ---------------------------------------------------------------- load
+  load(): void {
     this.loading = true;
-    this.error = '';
-
-    this.ownersService
-      .ownersControllerFindOneDetailed({ id: this.ownerId })
+    this.error = null;
+    this.ownersService.ownersControllerFindOneDetailed$Response({ id: this.ownerId })
+      .pipe(takeUntil(this.ownerChange$), takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.ownerData = data;
-          this.mapOwnerDataToProfile(data);
+        next: (res) => {
+          const d: any = parseBody(res.body) ?? {};
+          this.owner = {
+            idOwner: d.idOwner || this.ownerId,
+            name: d.name || '—',
+            ownerCode: d.ownerCode || '',
+            industry: d.industry || '',
+            contactPerson: d.contactPerson || '',
+            email: d.email || '',
+            phone: d.phone || '',
+            address: d.address || '',
+            sla: normalizeSla(d.slaLevel),
+            createdAt: d.createdAt || null,
+            totalProjects: Number(d.statistics?.totalProjects ?? (d.projects?.length ?? 0)) || 0,
+            totalSensors: Number(d.statistics?.totalSensors ?? 0) || 0
+          };
+          this.health = healthOf(d);
+          this.projects = (Array.isArray(d.projects) ? d.projects : []).map((p: any) => {
+            const h = healthOf(p);
+            return {
+              idProject: p.idProject,
+              name: p.name || '—',
+              areaType: p.areaType || '',
+              status: p.status || '',
+              nodeCount: Number(p.nodeCount ?? h?.nodes ?? 0) || 0,
+              health: h,
+              state: healthState(h)
+            } as ProjectRow;
+          }).sort((a: ProjectRow, b: ProjectRow) =>
+            (HEALTH_ORDER[a.state] - HEALTH_ORDER[b.state]) || a.name.localeCompare(b.name, 'id'));
           this.loading = false;
-          // Load users after owner details are loaded
-          this.loadOwnerUsers();
+          // Counts in the tab labels need both lists; they are small and scoped to this owner.
+          this.loadUsers();
           this.loadApiKeys();
         },
         error: (err) => {
-          console.error('Error loading owner detail:', err);
-          this.error = 'Failed to load owner details';
+          this.error = err?.status === 404 ? 'Owner tidak ditemukan.' : (err?.error?.message || 'Gagal memuat detail owner.');
           this.loading = false;
         }
       });
   }
 
-  mapOwnerDataToProfile(data: OwnerDetailResponseDto): void {
-    this.ownerProfile = {
-      name: data.name || 'Unknown Owner',
-      industry: data.industry || 'Not Specified',
-      contactPerson: data.contactPerson || 'N/A',
-      email: '', // Not in API yet
-      phone: '', // Not in API yet
-      projects: data.statistics?.totalProjects || 0,
-      nodes: data.statistics?.totalNodes || 0,
-      sensors: data.statistics?.activeSensors || 0,
-      forwardingStatus: this.determineForwardingStatus(data)
-    };
+  setTab(tab: DetailTab): void { this.activeTab = tab; }
 
-    // Map webhook configuration from API
-    if (data.forwardingWebhooks && data.forwardingWebhooks.length > 0) {
-      const webhook = data.forwardingWebhooks[0]; // Use first webhook
-      this.webhookId = webhook.idOwnerForwardingWebhook; // Store ID for updates
-      this.webhookConfig = {
-        enabled: webhook.enabled || false,
-        label: webhook.label || 'Webhook',
-        endpointUrl: webhook.endpointUrl || '',
-        httpMethod: (webhook.httpMethod as 'POST' | 'PUT') || 'POST',
-        secretToken: webhook.secretToken || '',
-        headers: this.parseHeadersJson(webhook.headersJson),
-        payloadFormat: 'timeseries', // Default
-        retry: {
-          maxRetry: webhook.maxRetry || 3,
-          backoffMs: webhook.retryBackoffMs || 2000
-        },
-        lastStatus: webhook.lastStatus || 'Unknown',
-        lastDeliveryAt: webhook.lastDeliveryAt
-      };
-    } else {
-      // No webhook exists, reset ID
-      this.webhookId = null;
-    }
+  get state(): HealthState { return healthState(this.health); }
 
-    // Map database configurations from API
-    if (data.forwardingDatabases && data.forwardingDatabases.length > 0) {
-      this.databaseConfigs = data.forwardingDatabases.map(db => ({
-        id: db.idOwnerForwardingDb,
-        label: db.label,
-        type: (db.dbType === 'mysql' ? 'mysql' : 'postgres') as 'mysql' | 'postgres',
-        enabled: db.enabled || false,
-        host: db.host,
-        port: db.port,
-        database: db.databaseName,
-        schema: db.targetSchema,
-        username: db.username,
-        password: db.passwordCipher, // Already masked
-        targetTable: db.targetTable,
-        writeMode: (db.writeMode as 'append' | 'upsert') || 'append',
-        batchSize: db.batchSize || 100,
-        lastStatus: db.lastStatus || 'Unknown',
-        lastDeliveryAt: db.lastDeliveryAt,
-        lastError: db.lastError
-      }));
-      
-      // Track database IDs by type for updates
-      data.forwardingDatabases.forEach(db => {
-        if (db.dbType === 'mysql') {
-          this.mysqlDatabaseId = db.idOwnerForwardingDb;
-        } else if (db.dbType === 'postgresql') {
-          this.postgresDatabaseId = db.idOwnerForwardingDb;
-        }
-      });
-    } else {
-      // No databases configured, reset IDs
-      this.mysqlDatabaseId = null;
-      this.postgresDatabaseId = null;
-    }
-
-    // TODO: Forwarding logs - disabled until backend endpoint ready
-    // Map forwarding logs from API
-    // if (data.forwardingLogs && data.forwardingLogs.length > 0) {
-    //   this.forwardingLogs = data.forwardingLogs.map(log => {
-    //     // Find target name from webhook or database config
-    //     let targetName = 'Unknown Target';
-    //     if (log.configType === 'webhook') {
-    //       const webhook = data.forwardingWebhooks?.find(w => w.idOwnerForwardingWebhook === log.configId);
-    //       targetName = webhook?.label || 'Webhook';
-    //     } else if (log.configType === 'database') {
-    //       const db = data.forwardingDatabases?.find(d => d.idOwnerForwardingDb === log.configId);
-    //       targetName = db?.label || 'Database';
-    //     }
-
-    //     return {
-    //       id: log.idOwnerForwardingLog,
-    //       target: targetName,
-    //       type: (log.configType as 'webhook' | 'mysql' | 'postgres'),
-    //       status: (log.status as 'success' | 'failed' | 'pending'),
-    //       timestamp: new Date(log.createdAt).toLocaleString(),
-    //       attempts: log.attempts || 1,
-    //       message: log.errorMessage || `${log.status === 'success' ? 'Delivered successfully' : 'Delivery failed'}`,
-    //       durationMs: log.durationMs || 0
-    //     };
-    //   });
-    // }
+  get attentionProjects(): ProjectRow[] {
+    return this.projects.filter(p => p.state === 'problem' || p.state === 'warning');
   }
 
-  determineForwardingStatus(data: OwnerDetailResponseDto): string {
-    const hasWebhooks = data.forwardingWebhooks && data.forwardingWebhooks.length > 0;
-    const hasDatabases = data.forwardingDatabases && data.forwardingDatabases.length > 0;
-    
-    if (!hasWebhooks && !hasDatabases) {
-      return 'Not Configured';
-    }
-
-    const enabledWebhooks = data.forwardingWebhooks?.filter(w => w.enabled) || [];
-    const enabledDatabases = data.forwardingDatabases?.filter(d => d.enabled) || [];
-
-    if (enabledWebhooks.length > 0 || enabledDatabases.length > 0) {
-      return 'Operational';
-    }
-
-    return 'Disabled';
+  get subtitle(): string {
+    if (!this.owner) return '';
+    return [this.owner.ownerCode, this.owner.industry].filter(Boolean).join(' · ');
   }
 
-  parseHeadersJson(headersJson: any): WebhookHeader[] {
-    if (!headersJson || typeof headersJson !== 'object') {
-      return [];
-    }
-    
-    return Object.keys(headersJson).map(key => ({
-      key: key,
-      value: headersJson[key]
-    }));
+  timeAgo(at: string | null | undefined): string { return timeAgoId(at ?? null); }
+
+  problemText(p: ProjectRow): string {
+    const h = p.health;
+    if (!h) return '';
+    const parts: string[] = [];
+    if (h.offline) parts.push(`${h.offline} node offline`);
+    if (h.nodata) parts.push(`${h.nodata} node belum pernah kirim`);
+    if (h.stale) parts.push(`${h.stale} node terlambat`);
+    if (h.openAlerts) parts.push(`${h.openAlerts} alert terbuka`);
+    return parts.join(' · ');
   }
 
-  setActiveDeliveryTab(tab: 'webhook' | 'mysql' | 'postgres') {
-    this.activeDeliveryTab = tab;
-    this.webhookTestMessage = '';
-  }
-
-  onWebhookToggle(enabled: boolean) {
-    this.webhookConfig.enabled = enabled;
-  }
-
-  addWebhookHeader() {
-    this.webhookConfig.headers.push({ key: '', value: '' });
-  }
-
-  removeWebhookHeader(index: number) {
-    this.webhookConfig.headers.splice(index, 1);
-  }
-
-  testWebhookDelivery() {
-    if (!this.webhookId) {
-      this.webhookTestMessage = 'Please save the webhook configuration first.';
-      return;
-    }
-
-    this.webhookTestMessage = 'Testing delivery...';
-    
-    this.ownersService
-      .ownersControllerTestWebhook({
-        id: this.ownerId,
-        webhookId: this.webhookId
-      })
+  // ---------------------------------------------------------------- Pengguna
+  loadUsers(): void {
+    this.usersLoading = true;
+    this.usersError = null;
+    fetchAll(p => this.usersService.usersControllerFindAll$Response({ idOwner: this.ownerId, ...p }))
+      .pipe(takeUntil(this.ownerChange$), takeUntil(this.destroy$))
       .subscribe({
-        next: (result: any) => {
-          if (result.success) {
-            this.webhookTestMessage = `Test delivery succeeded! Duration: ${result.duration}ms`;
-            this.webhookConfig.lastStatus = 'Healthy';
-            this.webhookConfig.lastDeliveryAt = new Date().toISOString();
-          } else {
-            this.webhookTestMessage = `Test failed: ${result.message}`;
-            this.webhookConfig.lastStatus = 'Failed';
-          }
+        next: (users) => {
+          this.users = users as UserResponseDto[];
+          this.usersLoading = false;
+          this.usersLoaded = true;
         },
-        error: (err: any) => {
-          console.error('Error testing webhook:', err);
-          this.webhookTestMessage = `Test error: ${err.error?.message || 'Unknown error'}`;
-          this.webhookConfig.lastStatus = 'Failed';
+        error: () => {
+          this.usersError = 'Gagal memuat pengguna owner ini.';
+          this.usersLoading = false;
         }
       });
   }
 
-  saveWebhookConfig() {
-    this.webhookTestMessage = 'Saving configuration...';
-
-    // Prepare headers JSON
-    const headersJson: Record<string, any> = {};
-    this.webhookConfig.headers.forEach(header => {
-      if (header.key && header.value) {
-        headersJson[header.key] = header.value;
-      }
-    });
-
-    const webhookData = {
-      label: this.webhookConfig.label,
-      endpointUrl: this.webhookConfig.endpointUrl,
-      httpMethod: this.webhookConfig.httpMethod,
-      headersJson: Object.keys(headersJson).length > 0 ? headersJson : undefined,
-      secretToken: this.webhookConfig.secretToken || undefined,
-      maxRetry: this.webhookConfig.retry.maxRetry,
-      retryBackoffMs: this.webhookConfig.retry.backoffMs,
-      enabled: this.webhookConfig.enabled
-    };
-
-    if (this.webhookId) {
-      // Update existing webhook
-      this.ownersService
-        .ownersControllerUpdateWebhook({
-          id: this.ownerId,
-          webhookId: this.webhookId,
-          body: webhookData
-        })
-        .subscribe({
-          next: (response: ForwardingWebhookResponseDto) => {
-            this.webhookTestMessage = 'Configuration saved successfully!';
-            this.webhookConfig.lastStatus = 'Saved';
-            setTimeout(() => {
-              this.webhookTestMessage = '';
-            }, 3000);
-          },
-          error: (err: any) => {
-            console.error('Error saving webhook:', err);
-            this.webhookTestMessage = `Error: ${err.error?.message || 'Failed to save configuration'}`;
-          }
-        });
-    } else {
-      // Create new webhook
-      this.ownersService
-        .ownersControllerCreateWebhook({
-          id: this.ownerId,
-          body: webhookData
-        })
-        .subscribe({
-          next: (response: ForwardingWebhookResponseDto) => {
-            this.webhookId = response.idOwnerForwardingWebhook; // Store new ID
-            this.webhookTestMessage = 'Configuration created successfully!';
-            this.webhookConfig.lastStatus = 'Created';
-            setTimeout(() => {
-              this.webhookTestMessage = '';
-            }, 3000);
-          },
-          error: (err: any) => {
-            console.error('Error creating webhook:', err);
-            this.webhookTestMessage = `Error: ${err.error?.message || 'Failed to create configuration'}`;
-          }
-        });
-    }
-  }
-
-  getDatabaseConfigsByType(type: 'mysql' | 'postgres') {
-    return this.databaseConfigs.filter((config) => config.type === type);
-  }
-
-  toggleDatabaseEnabled(config: DatabaseConfig, enabled: boolean) {
-    config.enabled = enabled;
-    config.lastStatus = config.enabled ? 'Enabled' : 'Disabled';
-  }
-
-  testDatabaseConnection(config: DatabaseConfig) {
-    const databaseId = config.type === 'mysql' ? this.mysqlDatabaseId : this.postgresDatabaseId;
-    
-    if (!databaseId) {
-      const message = 'Please save the database configuration first.';
-      if (config.type === 'mysql') {
-        this.mysqlTestMessage = message;
-      } else {
-        this.postgresTestMessage = message;
-      }
-      return;
-    }
-
-    config.lastStatus = 'Testing...';
-    const message = 'Testing connection...';
-    if (config.type === 'mysql') {
-      this.mysqlTestMessage = message;
-    } else {
-      this.postgresTestMessage = message;
-    }
-
-    this.ownersService
-      .ownersControllerTestDatabase({
-        id: this.ownerId,
-        databaseId: databaseId
-      })
-      .subscribe({
-        next: (result: any) => {
-          if (result.success) {
-            const successMsg = `Connection test succeeded! Duration: ${result.duration}ms`;
-            config.lastStatus = 'Healthy';
-            config.lastDeliveryAt = new Date().toISOString();
-            config.lastError = undefined;
-            
-            if (config.type === 'mysql') {
-              this.mysqlTestMessage = successMsg;
-            } else {
-              this.postgresTestMessage = successMsg;
-            }
-
-            setTimeout(() => {
-              this.mysqlTestMessage = '';
-              this.postgresTestMessage = '';
-            }, 3000);
-          } else {
-            const failMsg = `Test failed: ${result.message}`;
-            config.lastStatus = 'Failed';
-            config.lastError = result.message;
-            
-            if (config.type === 'mysql') {
-              this.mysqlTestMessage = failMsg;
-            } else {
-              this.postgresTestMessage = failMsg;
-            }
-          }
-        },
-        error: (err: any) => {
-          console.error('Error testing database:', err);
-          const errorMsg = `Test error: ${err.error?.message || 'Unknown error'}`;
-          config.lastStatus = 'Failed';
-          config.lastError = err.error?.message || 'Unknown error';
-          
-          if (config.type === 'mysql') {
-            this.mysqlTestMessage = errorMsg;
-          } else {
-            this.postgresTestMessage = errorMsg;
-          }
-        }
-      });
-  }
-
-  saveDatabaseConfig(config: DatabaseConfig) {
-    config.lastStatus = 'Saving...';
-    const savingMsg = 'Saving configuration...';
-    if (config.type === 'mysql') {
-      this.mysqlTestMessage = savingMsg;
-    } else {
-      this.postgresTestMessage = savingMsg;
-    }
-
-    const databaseId = config.type === 'mysql' ? this.mysqlDatabaseId : this.postgresDatabaseId;
-
-    if (databaseId) {
-      // UPDATE existing database config
-      const updateData = {
-        label: config.label,
-        dbType: (config.type === 'mysql' ? 'mysql' : 'postgresql') as 'mysql' | 'postgresql',
-        host: config.host,
-        port: config.port,
-        databaseName: config.database,
-        targetSchema: config.schema || undefined,
-        username: config.username,
-        passwordCipher: config.password === '********' ? undefined : config.password, // Only send if changed
-        targetTable: config.targetTable,
-        writeMode: config.writeMode,
-        batchSize: config.batchSize,
-        enabled: config.enabled
-      };
-
-      this.ownersService
-        .ownersControllerUpdateDatabase({
-          id: this.ownerId,
-          databaseId: databaseId,
-          body: updateData
-        })
-        .subscribe({
-          next: (response: ForwardingDatabaseResponseDto) => {
-            config.lastStatus = 'Saved';
-            const successMsg = 'Configuration saved successfully!';
-            
-            if (config.type === 'mysql') {
-              this.mysqlTestMessage = successMsg;
-            } else {
-              this.postgresTestMessage = successMsg;
-            }
-
-            setTimeout(() => {
-              this.mysqlTestMessage = '';
-              this.postgresTestMessage = '';
-            }, 3000);
-          },
-          error: (err: any) => {
-            console.error('Error saving database config:', err);
-            config.lastStatus = 'Failed';
-            const errorMsg = `Error: ${err.error?.message || 'Failed to save configuration'}`;
-            
-            if (config.type === 'mysql') {
-              this.mysqlTestMessage = errorMsg;
-            } else {
-              this.postgresTestMessage = errorMsg;
-            }
-          }
-        });
-    } else {
-      // CREATE new database config
-      const createData = {
-        label: config.label,
-        dbType: (config.type === 'mysql' ? 'mysql' : 'postgresql') as 'mysql' | 'postgresql',
-        host: config.host,
-        port: config.port,
-        databaseName: config.database,
-        targetSchema: config.schema || undefined,
-        username: config.username,
-        passwordCipher: config.password, // Required for create
-        targetTable: config.targetTable,
-        writeMode: config.writeMode,
-        batchSize: config.batchSize,
-        enabled: config.enabled
-      };
-
-      this.ownersService
-        .ownersControllerCreateDatabase({
-          id: this.ownerId,
-          body: createData
-        })
-        .subscribe({
-          next: (response: ForwardingDatabaseResponseDto) => {
-            // Store new ID
-            if (config.type === 'mysql') {
-              this.mysqlDatabaseId = response.idOwnerForwardingDb;
-            } else {
-              this.postgresDatabaseId = response.idOwnerForwardingDb;
-            }
-            
-            config.id = response.idOwnerForwardingDb;
-            config.lastStatus = 'Created';
-            const successMsg = 'Configuration created successfully!';
-            
-            if (config.type === 'mysql') {
-              this.mysqlTestMessage = successMsg;
-            } else {
-              this.postgresTestMessage = successMsg;
-            }
-
-            setTimeout(() => {
-              this.mysqlTestMessage = '';
-              this.postgresTestMessage = '';
-            }, 3000);
-          },
-          error: (err: any) => {
-            console.error('Error creating database config:', err);
-            config.lastStatus = 'Failed';
-            const errorMsg = `Error: ${err.error?.message || 'Failed to create configuration'}`;
-            
-            if (config.type === 'mysql') {
-              this.mysqlTestMessage = errorMsg;
-            } else {
-              this.postgresTestMessage = errorMsg;
-            }
-          }
-        });
-    }
-  }
-
-  // ===========================
-  // User Management Methods
-  // ===========================
-
-  loadOwnerUsers(): void {
-    this.loadingUsers = true;
-    this.usersError = '';
-
-    this.usersService
-      .usersControllerFindAll({
-        idOwner: this.ownerId
-      })
-      .subscribe({
-        next: (response) => {
-          this.ownerUsers = Array.isArray(response) ? response : [];
-          this.loadingUsers = false;
-        },
-        error: (err) => {
-          console.error('Error loading owner users:', err);
-          this.usersError = 'Failed to load users';
-          this.loadingUsers = false;
-        }
-      });
-  }
-
-  openUserModal(mode: 'create' | 'edit', user: UserResponseDto | null): void {
-    if (mode === 'edit' && user) {
-      // Navigate to existing user detail page
-      this.router.navigate(['/admin/users', user.idUser]);
-      return;
-    }
-
-    // Open modal for create new user
-    const modalRef = this.modalService.open(UserModal, {
-      size: 'lg',
-      backdrop: 'static',
-      keyboard: false
-    });
-
+  openCreateUser(): void {
+    const modalRef = this.modalService.open(UserModal, { size: 'lg', backdrop: 'static', keyboard: false });
     modalRef.componentInstance.mode = 'create';
     modalRef.componentInstance.user = null;
     modalRef.componentInstance.ownerId = this.ownerId;
-    modalRef.componentInstance.ownerName = this.ownerProfile?.name || this.ownerData?.name || 'Unknown';
-
+    modalRef.componentInstance.ownerName = this.owner?.name || '';
     modalRef.result.then(
-      (result) => {
-        if (result === 'saved') {
-          console.log('User saved successfully, refreshing list...');
-          this.loadOwnerUsers(); // Refresh user list
-        }
-      },
-      (reason) => {
-        console.log('Modal dismissed:', reason);
-      }
+      (result) => { if (result === 'saved') this.loadUsers(); },
+      () => { /* dismissed */ }
     );
   }
 
-  toggleUserStatus(user: UserResponseDto): void {
-    if (!confirm(`Are you sure you want to ${user.isActive ? 'deactivate' : 'activate'} user "${user.name || user.email}"?`)) {
-      return;
-    }
+  openUser(user: UserResponseDto): void {
+    this.router.navigate(['/admin/users', user.idUser]);
+  }
 
-    this.usersService
-      .usersControllerToggleActive({ id: user.idUser })
-      .subscribe({
-        next: () => {
-          // Update local state
-          user.isActive = !user.isActive;
-          console.log('User status toggled successfully');
-        },
-        error: (err: any) => {
-          console.error('Error toggling user status:', err);
-          alert('Failed to toggle user status. Please try again.');
-        }
-      });
+  toggleUserStatus(user: UserResponseDto): void {
+    const action = user.isActive ? 'nonaktifkan' : 'aktifkan';
+    if (!confirm(`Yakin ${action} pengguna "${user.name || user.email}"?`)) return;
+    this.usersService.usersControllerToggleActive({ id: user.idUser }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { user.isActive = !user.isActive; },
+      error: (err: any) => alert(`Gagal mengubah status pengguna: ${err?.error?.message || 'coba lagi.'}`)
+    });
   }
 
   deleteUser(user: UserResponseDto): void {
-    if (!confirm(`Are you sure you want to delete user "${user.name || user.email}"?\n\nThis action cannot be undone.`)) {
-      return;
-    }
-
-    this.usersService
-      .usersControllerDelete({ id: user.idUser })
-      .subscribe({
-        next: () => {
-          // Remove from local array
-          this.ownerUsers = this.ownerUsers.filter(u => u.idUser !== user.idUser);
-          console.log('User deleted successfully');
-        },
-        error: (err: any) => {
-          console.error('Error deleting user:', err);
-          alert('Failed to delete user. Please try again.');
-        }
-      });
+    if (!confirm(`Hapus pengguna "${user.name || user.email}"?\n\nTindakan ini tidak bisa dibatalkan.`)) return;
+    this.usersService.usersControllerDelete({ id: user.idUser }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.users = this.users.filter(u => u.idUser !== user.idUser); },
+      error: (err: any) => alert(`Gagal menghapus pengguna: ${err?.error?.message || 'coba lagi.'}`)
+    });
   }
 
-  // ===========================
-  // API Key Management Methods
-  // ===========================
-
+  // ---------------------------------------------------------------- API key
   loadApiKeys(): void {
-    this.loadingApiKeys = true;
-    this.apiKeysError = '';
-
-    this.tenantApiKeysService.findAll(this.ownerId).subscribe({
-      next: (response) => {
-        this.apiKeys = Array.isArray(response) ? response : [];
-        this.loadingApiKeys = false;
-      },
-      error: (err) => {
-        console.error('Error loading API keys:', err);
-        this.apiKeysError = 'Failed to load API keys';
-        this.loadingApiKeys = false;
-      }
-    });
+    this.apiKeysLoading = true;
+    this.apiKeysError = null;
+    this.apiKeysService.list(this.ownerId)
+      .pipe(takeUntil(this.ownerChange$), takeUntil(this.destroy$))
+      .subscribe({
+        next: (keys) => {
+          this.apiKeys = keys;
+          this.apiKeysLoading = false;
+          this.apiKeysLoaded = true;
+        },
+        error: (err) => {
+          this.apiKeysError = err?.error?.message || 'Gagal memuat API key owner ini.';
+          this.apiKeysLoading = false;
+        }
+      });
   }
 
   toggleCreateApiKeyForm(): void {
     this.showCreateApiKeyForm = !this.showCreateApiKeyForm;
     if (this.showCreateApiKeyForm) {
-      this.newApiKey = { label: '', description: '', expiresAt: null, rateLimitPlan: 'basic' };
+      this.newApiKey = this.emptyApiKey();
       this.generatedApiKey = '';
-      this.showGeneratedKey = false;
     }
   }
 
   createApiKey(): void {
-    if (!this.newApiKey.label) {
-      this.apiKeysMessage = 'Error: Label is required';
+    if (!this.newApiKey.label?.trim()) {
+      this.apiKeyMessage = { kind: 'danger', text: 'Label wajib diisi.' };
       return;
     }
-
-    this.apiKeysMessage = 'Generating API key...';
-
-    this.tenantApiKeysService.create({ ...this.newApiKey, idOwner: this.ownerId }).subscribe({
+    this.apiKeyMessage = { kind: 'info', text: 'Membuat API key…' };
+    const dto: OwnerApiKeyCreate = { ...this.newApiKey, label: this.newApiKey.label.trim(), expiresAt: this.newApiKey.expiresAt ? `${this.newApiKey.expiresAt}T23:59:59+07:00` : null }; // valid through the end of that day (WIB), not 00:00 UTC
+    this.apiKeysService.create(this.ownerId, dto).pipe(takeUntil(this.destroy$)).subscribe({
       next: (result) => {
         this.generatedApiKey = result.key;
-        this.showGeneratedKey = true;
-        this.apiKeysMessage = 'API Key generated! Copy it now — it won\'t be shown again.';
+        this.showCreateApiKeyForm = false;
+        this.apiKeyMessage = { kind: 'success', text: 'API key dibuat. Salin sekarang — key tidak akan ditampilkan lagi.' };
         this.loadApiKeys();
       },
       error: (err: any) => {
-        console.error('Error creating API key:', err);
-        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to generate API key'}`;
+        this.apiKeyMessage = { kind: 'danger', text: `Gagal membuat API key: ${err?.error?.message || 'coba lagi.'}` };
       }
     });
   }
 
   copyApiKey(): void {
-    if (this.generatedApiKey) {
-      navigator.clipboard.writeText(this.generatedApiKey).then(() => {
-        this.apiKeysMessage = 'API Key copied to clipboard!';
-        setTimeout(() => {
-          if (this.apiKeysMessage === 'API Key copied to clipboard!') {
-            this.apiKeysMessage = '';
-          }
-        }, 3000);
-      });
-    }
+    if (!this.generatedApiKey) return;
+    navigator.clipboard.writeText(this.generatedApiKey).then(
+      () => { this.apiKeyMessage = { kind: 'success', text: 'API key disalin ke clipboard.' }; },
+      () => { this.apiKeyMessage = { kind: 'danger', text: 'Gagal menyalin. Salin manual dari kotak di atas.' }; }
+    );
   }
 
   toggleApiKeyActive(key: TenantApiKeyResponse): void {
-    const newStatus = !key.isActive;
-    const action = newStatus ? 'activate' : 'deactivate';
-
-    if (!confirm(`Are you sure you want to ${action} API key "${key.label}"?`)) {
-      return;
-    }
-
-    this.tenantApiKeysService.update(key.idApiKey, { isActive: newStatus }).subscribe({
+    const next = !key.isActive;
+    if (!confirm(`Yakin ${next ? 'aktifkan' : 'nonaktifkan'} API key "${key.label}"?`)) return;
+    this.apiKeysService.setActive(this.ownerId, key.idApiKey, next).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
-        key.isActive = newStatus;
-        this.apiKeysMessage = `API key ${action}d successfully`;
-        setTimeout(() => { this.apiKeysMessage = ''; }, 3000);
+        key.isActive = next;
+        this.apiKeyMessage = { kind: 'success', text: `API key "${key.label}" ${next ? 'diaktifkan' : 'dinonaktifkan'}.` };
       },
       error: (err: any) => {
-        console.error('Error updating API key:', err);
-        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to update API key'}`;
+        this.apiKeyMessage = { kind: 'danger', text: `Gagal mengubah API key: ${err?.error?.message || 'coba lagi.'}` };
       }
     });
   }
 
   regenerateApiKey(key: TenantApiKeyResponse): void {
-    if (!confirm(`Regenerate API key "${key.label}"?\n\nThe old key will be IMMEDIATELY INVALIDATED.`)) {
-      return;
-    }
-
-    this.apiKeysMessage = 'Regenerating API key...';
-
-    this.tenantApiKeysService.regenerate(key.idApiKey).subscribe({
+    if (!confirm(`Buat ulang API key "${key.label}"?\n\nKey lama LANGSUNG tidak berlaku.`)) return;
+    this.apiKeysService.regenerate(this.ownerId, key.idApiKey).pipe(takeUntil(this.destroy$)).subscribe({
       next: (result) => {
         this.generatedApiKey = result.key;
-        this.showGeneratedKey = true;
-        this.apiKeysMessage = 'New API Key generated! Copy it now.';
+        this.apiKeyMessage = { kind: 'success', text: 'API key baru dibuat. Salin sekarang — key tidak akan ditampilkan lagi.' };
         this.loadApiKeys();
       },
       error: (err: any) => {
-        console.error('Error regenerating API key:', err);
-        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to regenerate API key'}`;
+        this.apiKeyMessage = { kind: 'danger', text: `Gagal membuat ulang API key: ${err?.error?.message || 'coba lagi.'}` };
       }
     });
   }
 
   revokeApiKey(key: TenantApiKeyResponse): void {
-    if (!confirm(`PERMANENTLY revoke API key "${key.label}"?\n\nThis action CANNOT be undone.`)) {
-      return;
-    }
-
-    this.tenantApiKeysService.revoke(key.idApiKey).subscribe({
+    if (!confirm(`Cabut PERMANEN API key "${key.label}"?\n\nTindakan ini tidak bisa dibatalkan.`)) return;
+    this.apiKeysService.revoke(this.ownerId, key.idApiKey).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.apiKeys = this.apiKeys.filter(k => k.idApiKey !== key.idApiKey);
-        this.apiKeysMessage = 'API key revoked successfully';
-        setTimeout(() => { this.apiKeysMessage = ''; }, 3000);
+        this.apiKeyMessage = { kind: 'success', text: `API key "${key.label}" dicabut.` };
       },
       error: (err: any) => {
-        console.error('Error revoking API key:', err);
-        this.apiKeysMessage = `Error: ${err.error?.message || 'Failed to revoke API key'}`;
+        this.apiKeyMessage = { kind: 'danger', text: `Gagal mencabut API key: ${err?.error?.message || 'coba lagi.'}` };
       }
     });
   }
 
-  isApiKeyExpired(key: TenantApiKeyResponse): boolean {
-    if (!key.expiresAt) return false;
-    return new Date() > new Date(key.expiresAt);
+  apiKeyStatus(key: TenantApiKeyResponse): { cls: string; text: string } {
+    if (!key.isActive) return { cls: 'bg-secondary-subtle text-secondary', text: 'Nonaktif' };
+    if (key.expiresAt && Date.now() > new Date(key.expiresAt).getTime()) {
+      return { cls: 'bg-warning-subtle text-warning', text: 'Kedaluwarsa' };
+    }
+    return { cls: 'bg-success-subtle text-success', text: 'Aktif' };
   }
 
-  getApiKeyStatusBadge(key: TenantApiKeyResponse): { class: string; text: string } {
-    if (!key.isActive) return { class: 'bg-secondary', text: 'Inactive' };
-    if (this.isApiKeyExpired(key)) return { class: 'bg-warning text-dark', text: 'Expired' };
-    return { class: 'bg-success', text: 'Active' };
+  // ---------------------------------------------------------------- private
+  /** The component is reused when navigating owner → owner: wipe EVERYTHING of the previous one. */
+  private resetState(): void {
+    this.ownerChange$.next();
+    this.activeTab = 'summary';
+    this.loading = false;
+    this.error = null;
+    this.owner = null;
+    this.health = null;
+    this.projects = [];
+    this.users = [];
+    this.usersLoading = false;
+    this.usersError = null;
+    this.usersLoaded = false;
+    this.apiKeys = [];
+    this.apiKeysLoading = false;
+    this.apiKeysError = null;
+    this.apiKeysLoaded = false;
+    this.apiKeyMessage = null;
+    this.showCreateApiKeyForm = false;
+    this.newApiKey = this.emptyApiKey();
+    this.generatedApiKey = '';
+  }
+
+  private emptyApiKey(): OwnerApiKeyCreate {
+    return { label: '', description: '', expiresAt: null, rateLimitPlan: 'basic' as RateLimitPlan };
   }
 }

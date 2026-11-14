@@ -16,7 +16,7 @@ import { AnalyticsPageComponent } from './project-workspace/pages/analytics-page
 import { ConfigPageComponent } from './project-workspace/pages/config-page/config-page.component';
 
 const routes: Routes = [
-  { path: '', component: ProjectsListPage },
+  { path: '', component: ProjectsListPage, data: { guide: 'projects-list' } },
   { path: 'new', component: ProjectsAddPage },
   { path: ':projectId/edit', component: ProjectsAddPage },
   // New workspace layout with child routes

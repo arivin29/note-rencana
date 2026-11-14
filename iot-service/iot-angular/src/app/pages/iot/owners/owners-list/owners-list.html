@@ -1,182 +1,225 @@
-<div class="d-flex align-items-center mb-3">
-    <div>
-        <ul class="breadcrumb mb-1">
-            <li class="breadcrumb-item"><a href="javascript:;">IoT</a></li>
-            <li class="breadcrumb-item active">Owners</li>
-        </ul>
-        <h1 class="page-header mb-0">IoT Owners</h1>
-    </div>
-    <div class="ms-auto">
-        <a routerLink="/iot/owners/new" class="btn btn-outline-theme">
-            <i class="fa fa-plus-circle fa-fw me-1"></i>
-            Add Owner
-        </a>
-    </div>
-</div>
-
-<div class="mb-sm-4 mb-3 d-sm-flex">
-    <div class="mt-sm-0 mt-2">
-        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
-            <i class="fa fa-download fa-fw me-1 text-theme"></i>
-            Export Owners
-        </a>
-    </div>
-    <div class="ms-sm-4 mt-sm-0 mt-2">
-        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none">
-            <i class="fa fa-envelope fa-fw me-1 text-theme"></i>
-            Invite Owner Admin
-        </a>
-    </div>
-    <div class="ms-sm-4 mt-sm-0 mt-2 dropdown">
-        <a href="javascript:;" class="text-inverse text-opacity-75 text-decoration-none dropdown-toggle"
-            data-bs-toggle="dropdown">
-            More Actions
-        </a>
-        <div class="dropdown-menu dropdown-menu-end">
-            <a class="dropdown-item" href="javascript:;">Assign SLA</a>
-            <a class="dropdown-item" href="javascript:;">Generate Contract</a>
-            <div role="separator" class="dropdown-divider"></div>
-            <a class="dropdown-item" href="javascript:;">Archive Owner</a>
-        </div>
-    </div>
-</div>
-
-<card>
-    <ul class="nav nav-tabs nav-tabs-v2 px-4">
-        <li class="nav-item me-3" *ngFor="let option of statusOptions">
-            <a href="javascript:;" class="nav-link px-2" [class.active]="filters.status === option"
-                (click)="setFilter('status', option)">
-                {{ option === 'All Status' ? 'All' : (option | titlecase) }}
-                <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border ms-1">{{ statusCount(option)
-                    }}</span>
-            </a>
-        </li>
+<!-- Header -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div class="me-auto">
+    <ul class="breadcrumb mb-1">
+      <li class="breadcrumb-item">IoT</li>
+      <li class="breadcrumb-item active">PDAM / Owner</li>
     </ul>
-    <div class="p-4">
-        <!-- Error Alert -->
-        <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-            <i class="fa fa-exclamation-circle me-2"></i>
-            {{ error }}
-            <button type="button" class="btn-close" (click)="error = null"></button>
-        </div>
+    <h1 class="page-header mb-0">PDAM / Owner</h1>
+    <span class="text-muted small" *ngIf="lastRefreshedAt && !error">
+      {{ rows.length | number }} owner · {{ ownersWithDevices | number }} punya perangkat ·
+      {{ total.nodes | number }} node · diperbarui {{ lastRefreshedAt | date:'HH:mm:ss' }}
+    </span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <page-guide-button></page-guide-button>
+    <button class="btn btn-sm btn-outline-default" (click)="load()" [disabled]="loading"
+      title="Muat ulang" aria-label="Muat ulang daftar owner">
+      <i class="fa fa-sync-alt" [class.fa-spin]="loading"></i>
+    </button>
+    <a routerLink="/iot/owners/new" class="btn btn-sm btn-outline-theme">
+      <i class="fa fa-plus-circle fa-fw me-1"></i>Tambah Owner
+    </a>
+  </div>
+</div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-4 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Industry</label>
-                <div class="dropdown w-100">
-                    <button class="btn btn-outline-default dropdown-toggle w-100 text-start" type="button"
-                        data-bs-toggle="dropdown">
-                        {{ filters.industry }}
-                    </button>
-                    <div class="dropdown-menu w-100">
-                        <button type="button" class="dropdown-item" *ngFor="let option of industryOptions"
-                            (click)="setFilter('industry', option)">
-                            {{ option }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <label class="text-muted text-uppercase small d-block mb-1">Search</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i
-                            class="fa fa-search opacity-50"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0"
-                        placeholder="Cari nama owner / ID / kontak" [ngModel]="searchTerm"
-                        (ngModelChange)="onSearchChange($event)">
-                </div>
-            </div>
-        </div>
+<!-- Error -->
+<div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center">
+  <i class="fa fa-exclamation-triangle me-2"></i>
+  <span>{{ error }}</span>
+  <button class="btn btn-sm btn-outline-danger ms-auto" (click)="load()">Coba lagi</button>
+</div>
 
-        <div class="table-responsive">
-            <!-- Loading State -->
-            <div *ngIf="loading" class="text-center py-5">
-                <div class="spinner-border text-theme" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <div class="text-muted mt-2">Loading owners...</div>
-            </div>
+<!-- KPI (all owners, independent of tab/search) -->
+<div class="row row-cols-2 row-cols-lg-5 g-3 mb-3" *ngIf="!loading && !error && rows.length">
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('all')" title="Tampilkan semua owner">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Owner</div>
+        <div class="fs-3 fw-bold lh-1 mt-1">{{ ownersWithDevices | number }}<span class="fs-6 text-muted fw-normal"> / {{ rows.length | number }}</span></div>
+        <div class="text-muted small mt-1">punya perangkat / total</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Node mengirim data</div>
+        <div class="fs-3 fw-bold lh-1 mt-1 text-success">{{ total.fresh | number }}<span class="fs-6 text-muted fw-normal"> / {{ total.nodes | number }}</span></div>
+        <div class="text-muted small mt-1">{{ total.stale ? (total.stale | number) + ' terlambat' : 'tepat waktu' }}</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('problem')" title="Tampilkan owner bermasalah">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Node mati</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="deadNodes(total) > 0">{{ deadNodes(total) | number }}</div>
+        <div class="text-muted small mt-1">{{ total.offline | number }} offline · {{ total.nodata | number }} belum pernah kirim</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('problem')" title="Tampilkan owner bermasalah">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Alert terbuka</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="total.openAlerts > 0">{{ total.openAlerts | number }}</div>
+        <div class="text-muted small mt-1">belum ditutup</div>
+      </card-body>
+    </card>
+  </div>
+  <div class="col">
+    <card class="h-100 kpi-link" (click)="setTab('problem')" title="Tampilkan owner bermasalah">
+      <card-body class="p-3">
+        <div class="text-muted text-uppercase small">Owner bermasalah</div>
+        <div class="fs-3 fw-bold lh-1 mt-1" [class.text-danger]="problemOwners > 0">{{ problemOwners | number }}</div>
+        <div class="text-muted small mt-1">ada node mati atau alert</div>
+      </card-body>
+    </card>
+  </div>
+</div>
 
-            <!-- Table Content -->
-            <table *ngIf="!loading" class="table table-hover text-nowrap align-middle">
-                <thead class="text-uppercase text-muted small">
-                    <tr>
-                        <th class="w-10px"></th>
-                        <th>Owner</th>
-                        <th>Projects / Nodes / Sensors</th>
-                        <th>SLA & Status</th>
-                        <th>Contact</th>
-                        <th>Alerts</th>
-                        <th class="text-end">Last Activity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let owner of paginatedOwners">
-                        <td class="w-10px align-middle">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" [id]="'owner-' + owner.idOwner">
-                                <label class="form-check-label" [for]="'owner-' + owner.idOwner"></label>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="fw-semibold">
-                                <a [routerLink]="['/iot/owners', owner.idOwner]" class="text-decoration-none text-theme">
-                                    {{ owner.name }}
-                                </a>
-                            </div>
-                            <div class="text-muted small">{{ owner.industry || 'Unspecified' }}</div>
-                            <div class="text-muted small">ID: {{ owner.idOwner }}</div>
-                        </td>
-                        <td>
-                            <div class="fw-semibold">{{ owner.projects }} Projects</div>
-                            <div class="text-muted small">{{ owner.nodes }} Nodes · {{ owner.sensors }} Sensors</div>
-                        </td>
-                        <td>
-                            <div class="text-muted small">SLA {{ owner.slaLevel | uppercase }}</div>
-                            <span [class]="statusBadge(owner.status)">{{ owner.status | titlecase }}</span>
-                        </td>
-                        <td class="text-muted small">
-                            <div><i class="fa fa-user fa-fw me-1"></i>{{ owner.contactPerson || '-' }}</div>
-                            <div><i class="fa fa-envelope fa-fw me-1"></i>{{ owner.contactEmail || '-' }}</div>
-                            <div><i class="fa fa-phone fa-fw me-1"></i>{{ owner.contactPhone || '-' }}</div>
-                        </td>
-                        <td class="fw-semibold text-danger">{{ owner.alerts }}</td>
-                        <td class="text-end text-muted">{{ owner.lastActivity }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+<card class="shadow-sm" *ngIf="!error">
+  <!-- Tabs: counts follow the search, not the page -->
+  <ul class="nav nav-tabs nav-tabs-v2 px-4">
+    <li class="nav-item me-3" *ngFor="let t of tabs">
+      <a href="javascript:;" class="nav-link px-2 d-flex align-items-center gap-2"
+        [class.active]="activeTab === t.key" (click)="setTab(t.key)">
+        <span>{{ t.label }}</span>
+        <span class="badge rounded-pill bg-body text-inverse text-opacity-75 border">{{ tabCounts[t.key] | number }}</span>
+      </a>
+    </li>
+  </ul>
 
-        <div *ngIf="!loading && !filteredOwners.length" class="text-center text-muted py-5 border-top">
-            <i class="fa fa-inbox fa-3x mb-3 opacity-25"></i>
-            <div>Tidak ada owner sesuai filter.</div>
-            <button class="btn btn-sm btn-outline-theme mt-3" (click)="loadOwners()">
-                <i class="fa fa-refresh me-1"></i> Refresh
-            </button>
+  <div class="p-4">
+    <!-- Filter row -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-5 col-md-8">
+        <label class="text-muted text-uppercase small d-block mb-1" for="ow-search">Cari</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fa fa-search opacity-50"></i></span>
+          <input id="ow-search" type="text" class="form-control border-start-0 ps-0"
+            placeholder="Cari nama, kode owner, industri, PIC, email…"
+            [ngModel]="searchText" (ngModelChange)="onSearchChange($event)">
         </div>
-
-        <div class="d-md-flex align-items-center mt-3">
-            <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
-                Showing {{ paginationStart }} to {{ paginationEnd }} of {{ totalEntries }} owners
-            </div>
-            <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3">
-                <span class="text-muted small me-2 text-uppercase">Rows</span>
-                <select class="form-select form-select-sm w-auto" [ngModel]="pageSize"
-                    (ngModelChange)="changePageSize($event)">
-                    <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-                </select>
-            </div>
-            <ul class="pagination mb-0 justify-content-center">
-                <li class="page-item" [class.disabled]="currentPage === 1">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Previous</a>
-                </li>
-                <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
-                </li>
-                <li class="page-item" [class.disabled]="currentPage === totalPages">
-                    <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Next</a>
-                </li>
-            </ul>
-        </div>
+      </div>
+      <div class="col-md-4 d-flex align-items-end" *ngIf="searchText.trim() || activeTab !== 'all'">
+        <a href="javascript:;" class="small" (click)="resetFilters()">Reset filter</a>
+      </div>
     </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border spinner-border-sm text-theme" role="status"><span class="visually-hidden">Memuat…</span></div>
+      <div class="mt-2 text-muted small">Memuat owner…</div>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div class="table-responsive" *ngIf="filtered.length">
+        <table class="table table-hover align-middle owners-table">
+          <thead class="text-uppercase text-muted small">
+            <tr>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('name')"
+                (click)="onSort('name')" (keydown.enter)="onSort('name')">
+                Owner <i class="fa ms-1" [ngClass]="sortIcon('name')"></i>
+              </th>
+              <th class="pt-0 pb-2">Project · Node · Sensor</th>
+              <th class="pt-0 pb-2 sortable" tabindex="0" [attr.aria-sort]="ariaSort('health')"
+                (click)="onSort('health')" (keydown.enter)="onSort('health')" title="Urut: bermasalah dulu">
+                Kesehatan <i class="fa ms-1" [ngClass]="sortIcon('health')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('alerts')"
+                (click)="onSort('alerts')" (keydown.enter)="onSort('alerts')">
+                Alert terbuka <i class="fa ms-1" [ngClass]="sortIcon('alerts')"></i>
+              </th>
+              <th class="pt-0 pb-2 text-end sortable" tabindex="0" [attr.aria-sort]="ariaSort('lastSeen')"
+                (click)="onSort('lastSeen')" (keydown.enter)="onSort('lastSeen')">
+                Data terakhir <i class="fa ms-1" [ngClass]="sortIcon('lastSeen')"></i>
+              </th>
+              <th class="pt-0 pb-2">PIC</th>
+              <th class="pt-0 pb-2 w-10px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let o of pageRows; trackBy: trackRow" class="ow-row" (click)="openOwner(o)">
+              <td>
+                <a class="fw-semibold text-decoration-none" [routerLink]="['/iot/owners', o.idOwner]" (click)="stop($event)">{{ o.name }}</a>
+                <div class="text-muted small">
+                  {{ o.ownerCode || '—' }}<ng-container *ngIf="o.industry"> · {{ o.industry }}</ng-container>
+                </div>
+                <div class="text-muted small" *ngIf="o.sla">SLA {{ o.sla }}</div>
+              </td>
+              <td class="text-nowrap">
+                <span class="fw-semibold">{{ o.projectCount | number }}</span>&nbsp;<span class="text-muted small">project</span> ·
+                <span class="fw-semibold">{{ o.nodeCount | number }}</span>&nbsp;<span class="text-muted small">node</span> ·
+                <span class="fw-semibold">{{ o.sensorCount | number }}</span>&nbsp;<span class="text-muted small">sensor</span>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="HEALTH_BADGE[o.state]">{{ HEALTH_LABEL[o.state] }}</span>
+                <div class="text-muted small mt-1" *ngIf="o.health && o.health.nodes">
+                  {{ o.health.fresh | number }}/{{ o.health.nodes | number }} node mengirim
+                </div>
+                <div class="small text-danger" *ngIf="o.health && deadNodes(o.health)">
+                  {{ deadNodes(o.health) | number }} node mati
+                </div>
+                <div class="small text-warning" *ngIf="o.health && o.health.stale">
+                  {{ o.health.stale | number }} terlambat
+                </div>
+              </td>
+              <td class="text-end">
+                <span *ngIf="o.health; else noHealth" class="fw-semibold" [class.text-danger]="o.health.openAlerts > 0"
+                  [class.text-muted]="!o.health.openAlerts">{{ o.health.openAlerts | number }}</span>
+                <ng-template #noHealth><span class="text-muted">—</span></ng-template>
+              </td>
+              <td class="text-end text-nowrap">
+                <span [title]="o.lastSeenAt ? (o.lastSeenAt | date:'dd MMMM yyyy, HH:mm:ss') : 'Belum ada node yang pernah mengirim data'"
+                  [class.text-muted]="!o.lastSeenAt">{{ timeAgo(o.lastSeenAt) }}</span>
+                <div class="text-muted small" *ngIf="o.lastSeenAt">{{ o.lastSeenAt | date:'dd MMM yyyy, HH:mm' }}</div>
+              </td>
+              <td class="small">
+                <div>{{ o.contactPerson || '—' }}</div>
+                <div class="text-muted" *ngIf="o.email">{{ o.email }}</div>
+                <div class="text-muted" *ngIf="o.phone">{{ o.phone }}</div>
+              </td>
+              <td class="w-10px text-muted"><i class="fa fa-chevron-right small"></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!filtered.length" class="text-center text-muted py-5 border-top">
+        <i class="fa fa-briefcase fa-2x mb-2 opacity-50 d-block"></i>
+        <ng-container *ngIf="!rows.length; else noMatch">Belum ada owner.</ng-container>
+        <ng-template #noMatch>
+          Tidak ada owner sesuai filter.
+          <div class="mt-2"><button class="btn btn-sm btn-outline-default" (click)="resetFilters()">Reset filter</button></div>
+        </ng-template>
+      </div>
+
+      <!-- Pagination (client-side: every owner is loaded) -->
+      <div class="d-md-flex align-items-center mt-3" *ngIf="filtered.length">
+        <div class="me-md-auto text-md-start text-center mb-2 mb-md-0">
+          Menampilkan {{ paginationStart | number }}–{{ paginationEnd | number }} dari {{ filtered.length | number }} owner
+        </div>
+        <div class="d-flex align-items-center justify-content-center mb-2 mb-md-0 me-md-3" *ngIf="filtered.length > pageSizeOptions[0]">
+          <label class="text-muted small me-2 text-uppercase mb-0" for="ow-pagesize">Baris</label>
+          <select id="ow-pagesize" class="form-select form-select-sm w-auto" [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+        </div>
+        <ul class="pagination mb-0 justify-content-center" *ngIf="totalPages > 1">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:;" (click)="goToPage(currentPage - 1)">Sebelumnya</a>
+          </li>
+          <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+            <a class="page-link" href="javascript:;" (click)="goToPage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" href="javascript:;" (click)="goToPage(currentPage + 1)">Berikutnya</a>
+          </li>
+        </ul>
+      </div>
+    </ng-container>
+  </div>
 </card>
