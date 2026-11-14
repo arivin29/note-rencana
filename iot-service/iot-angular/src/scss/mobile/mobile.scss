@@ -412,17 +412,8 @@ body:has(.m-app) .app-theme-panel { display:none !important; }
 .m-scada-embed--full{ position:fixed; inset:0; z-index:1200; margin:0; background:#0a1424; }
 .m-scada-embed--full .m-scada-embed__frame{ width:100%; height:100%; height:100dvh; border:0; border-radius:0; }
 
-/* ---- openlayers map ---- */
-.m-olmap-wrap{ position:relative; }
-.m-olmap{ width:100%; height:62vh; border-radius:var(--m-radius); overflow:hidden; border:1px solid var(--m-border); background:#0a1424; }
-.m-ol-popup{ position:absolute; min-width:160px; background:var(--m-surface); border:1px solid var(--m-border); border-radius:var(--m-radius-sm); box-shadow:var(--m-shadow); padding:10px 12px; display:none; z-index:5; }
-.m-ol-popup.open{ display:block; }
-.m-ol-popup__code{ font-weight:700; font-size:var(--m-sm); }
-.m-ol-popup__row{ display:flex; align-items:center; gap:6px; margin-top:5px; }
-/* OL controls tweak agar pas tema */
-.m-olmap .ol-zoom{ top:8px; left:8px; }
-.m-olmap .ol-control button{ background:rgba(15,28,48,.85); color:#eaf2fb; }
-.m-olmap .ol-control button:hover{ background:rgba(26,45,73,.95); }
+/* ---- openlayers map (tab Peta; tinggi diatur komponen, isi = <webgis-project-map>) ---- */
+.m-olmap{ width:100%; border-radius:var(--m-radius); overflow:hidden; border:1px solid var(--m-border); background:#0a1424; }
 
 /* ---- pull-to-refresh indicator ---- */
 .m-ptr{ position:fixed; top:60px; left:50%; width:34px; height:34px; border-radius:50%;

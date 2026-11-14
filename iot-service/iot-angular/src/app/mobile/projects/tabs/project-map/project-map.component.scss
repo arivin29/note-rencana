@@ -1,114 +1,321 @@
-// Sensor label overlay — copied from desktop webgis sensor-labels for visual parity.
-// Overlays live outside the component view, so pierce with ::ng-deep.
+// Tab Peta (mobile) — Helios HUD (docs/design/mobile-helios/design-language.md). The map itself
+// (layers, styles, value cards) is the shared <webgis-project-map>; only mobile chrome lives here,
+// all colours/radii from --m-* tokens (src/scss/mobile/helios.scss). Rules scoped to this host.
 
-::ng-deep .sensor-label-overlay {
-  pointer-events: none;
-  z-index: 100;
+:host { display: block; }
+
+// Translucent HUD surface for anything floating over the map.
+%hud {
+  background: rgba(13, 16, 27, .78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--m-line);
+  border-radius: var(--m-radius-sm);
 }
 
-::ng-deep .sensor-label-container {
-  animation: mSensorFadeInUp 0.2s ease-out;
+%caps {
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
 }
 
-::ng-deep .sensor-label-card {
-  background: rgba(20, 20, 35, 0.88);
+.pm {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+// ── Panel (brackets + strip) ──
+.pm-panel {
+  flex: 1 1 auto;
+  display: flex !important;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0 !important;
+}
+.pm-none { font-size: var(--m-sm); color: var(--m-text-muted); }
+
+.pm-upd { font-variant-numeric: tabular-nums; }
+.pm-upd b { color: var(--m-text-strong); font-weight: 600; }
+.pm-upd__btn {
+  position: relative;
+  width: 32px; height: 28px; margin-right: -8px;
+  border: 0; background: none; color: var(--m-theme); font-size: 15px;
+  display: inline-flex; align-items: center; justify-content: center;
+  &::before { content: ''; position: absolute; inset: -8px -6px; } // 44 px touch target
+}
+.pm-warn { color: var(--m-warn); }
+.pm-link { border: 0; background: none; padding: 0 0 0 4px; color: var(--m-theme); font-weight: 600; font-size: inherit; letter-spacing: inherit; text-transform: inherit; }
+.pm-spin { display: inline-block; animation: pm-spin 1s linear infinite; }
+@keyframes pm-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pm-spin { animation: none; } }
+
+// ── Map box ──
+.pm-map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 240px;
+  margin: 1px;
+  border: 0;
+  border-radius: 0;
+  background: var(--m-bg-2);
+}
+.pm-map webgis-project-map { position: absolute; inset: 0; display: block; }
+:host ::ng-deep .pm-map .map-layer-warn { top: 100px; border-radius: var(--m-radius-sm); }
+:host ::ng-deep .pm-map .map-layer-loading { top: auto; bottom: 48px; right: auto; left: 50%; }
+:host ::ng-deep .pm-map .map-attrib {
+  font-size: 11px; opacity: 1; right: 6px; bottom: 3px; color: var(--m-text-muted); letter-spacing: .04em;
+}
+// "+N lainnya" in value cards: ≥ 11 px on phones.
+:host ::ng-deep .pm-map .sensor-label-container .more-indicator { font-size: 11px; }
+// Narrow phone maps: compact value cards.
+:host ::ng-deep .pm--narrow .pm-map .sensor-label-card { max-width: 150px; }
+:host ::ng-deep .pm--narrow .pm-map .sensor-label-card.sensor-label-group { max-width: 180px; }
+
+// ── Toolbar: view tabs + status badges (one HUD block) ──
+.pm-bar {
+  @extend %hud;
+  position: absolute;
+  z-index: 5;
+  top: 8px; left: 8px; right: 60px;
+  display: flex; flex-direction: column;
+  max-width: 360px;
+}
+.pm-tabs { display: flex; border-bottom: 1px solid var(--m-hair); }
+.pm-tab {
+  @extend %caps;
+  position: relative;
+  flex: 1 1 0;
+  min-height: 40px;
+  border: 0; background: none;
+  color: var(--m-text-muted);
+  &::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; bottom: -2px; } // 44 px target
+  &.active { color: var(--m-text-strong); }
+  &.active::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: -1px; height: 2px; background: var(--m-theme); }
+}
+.pm-chips {
+  display: flex; gap: 4px;
+  padding: 6px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+.pm-chip {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 28px; padding: 0 8px;
+  border: 1px solid transparent; border-radius: var(--m-radius-sm);
+  background: none;
+  color: var(--m-text-muted);
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+  &::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; bottom: -8px; } // 44 px target
+  &.active { color: var(--m-text-strong); border-color: rgba(var(--m-theme-rgb), .5); background: rgba(var(--m-theme-rgb), .1); }
+}
+.pm-chip__n { font-size: 12px; font-weight: 500; letter-spacing: .02em; font-variant-numeric: tabular-nums; color: var(--m-text-strong); }
+.pm-led { width: 6px; height: 6px; flex: 0 0 auto; background: var(--m-off); }
+.pm-chip--online .pm-led { background: var(--m-ok); }
+.pm-chip--terganggu .pm-led { background: var(--m-warn); }
+.pm-chip--offline .pm-led { background: var(--m-danger); }
+// Compact status badges = LED + count (label in aria-label/title) when full labels don't fit (measured).
+.pm--compact-chips .pm-chip:not(.pm-chip--all) {
+  min-width: var(--m-tap); justify-content: center;
+  .pm-chip__label { display: none; }
+}
+
+.pm-filter-empty {
+  @extend %hud;
+  position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+  z-index: 5; padding: 6px 12px;
+  font-size: var(--m-sm); color: var(--m-text-muted); white-space: nowrap;
+}
+
+// ── Right rail ──
+.pm-rail {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 5;
+  display: flex; flex-direction: column; gap: 6px;
+  > button, .pm-rail__group > button {
+    width: var(--m-tap); height: var(--m-tap);
+    border: 1px solid var(--m-line); border-radius: var(--m-radius-sm);
+    background: var(--m-chrome); color: var(--m-text-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    &:active { background: rgba(var(--m-theme-rgb), .12); }
+    &:disabled { opacity: .6; }
+    &.on { color: var(--m-info); border-color: var(--m-info); }
+  }
+}
+.pm-rail__group {
+  display: flex; flex-direction: column;
+  > button:first-child { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  > button:last-child { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+}
+// "Diperbarui" + refresh in the rail (landscape only), full rail width.
+.pm-rail > .pm-rail__upd {
+  display: none;
+  width: calc(2 * var(--m-tap) + 6px);
+  gap: 6px;
+  font-size: 12px; font-weight: 500; letter-spacing: .04em; color: var(--m-text-muted);
+  font-variant-numeric: tabular-nums;
+  i { color: var(--m-theme); }
+  &.pm-rail__upd--warn, &.pm-rail__upd--warn i { color: var(--m-warn); }
+}
+
+// ── Legend (collapsible HUD strip, bottom-left) ──
+.pm-legend {
+  position: absolute; z-index: 5;
+  left: 8px; bottom: 22px;
+  max-width: calc(100% - 76px);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+}
+.pm-legend__btn {
+  @extend %hud;
+  @extend %caps;
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 32px; padding: 0 10px;
+  color: var(--m-text);
+  i { color: var(--m-theme); font-size: 13px; }
+  i:last-child { color: var(--m-text-muted); font-size: 11px; }
+  &::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
+}
+.pm-legend__list {
+  @extend %hud;
+  list-style: none; margin: 0; padding: 6px 10px;
+  display: flex; flex-wrap: wrap; gap: 4px 12px;
+  max-height: 40vh; overflow-y: auto;
+  li { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--m-text); white-space: nowrap; }
+}
+.pm-sw { flex: 0 0 auto; display: inline-block; background: var(--sw); }
+// Same shapes as the map: markers are round, pipes are lines, zones are areas.
+.pm-sw--dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px var(--m-text-strong); }
+.pm-sw--line { width: 14px; height: 3px; }
+.pm-sw--area { width: 10px; height: 10px; opacity: .8; }
+
+// ── Bottom sheet (HUD panel) ──
+.pm-sheet {
+  --pb: var(--m-bracket);
+  position: fixed; left: 0; right: 0;
+  z-index: 1101;
+  max-height: 62%;
+  display: flex; flex-direction: column;
+  background: var(--m-chrome);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-radius: 5px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-  padding: 6px 9px;
-  min-width: 80px;
-  max-width: 160px;
-  overflow: hidden;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 9px;
-  color: #e0e0e0;
-  line-height: 1.3;
-  position: relative;
+  border-top: 1px solid var(--m-line);
+  border-radius: 0;
+  transform: translateY(110%);
+  transition: transform .2s ease-out;
+  visibility: hidden;
+  &.open { transform: translateY(0); visibility: visible; }
+}
+@media (prefers-reduced-motion: reduce) { .pm-sheet { transition: none; } }
+.pm--full .pm-sheet { padding-bottom: env(safe-area-inset-bottom); }
+.pm-sheet__head {
+  display: flex; align-items: flex-start; gap: var(--m-2);
+  padding: 10px 12px; flex: 0 0 auto;
+  background: var(--m-strip);
+}
+.pm-sheet__titles { flex: 1 1 auto; min-width: 0; }
+.pm-sheet__eyebrow { @extend %caps; color: var(--m-text-muted); }
+.pm-sheet__status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pm-sheet__ago { font-size: 11px; letter-spacing: .06em; color: var(--m-text-muted); }
+.pm-sheet__title { font-size: 15px; font-weight: 500; letter-spacing: .02em; color: var(--m-text-strong); line-height: 1.3; margin-top: 6px; }
+.pm-sheet__sub { font-size: 12px; letter-spacing: .06em; color: var(--m-text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.pm-sheet__body { overflow-y: auto; padding: 0 12px 4px; flex: 1 1 auto; min-height: 0; }
+.pm-sheet__none { font-size: var(--m-sm); color: var(--m-text-muted); padding: 12px 0; }
 
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid rgba(20, 20, 35, 0.88);
+.pm-x {
+  flex: 0 0 auto; width: var(--m-tap); height: var(--m-tap); margin: -6px -6px 0 0;
+  border: 0; background: none; color: var(--m-text); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.pm-x:first-child { margin: -6px 0 0 -6px; }
+
+.pm-ch {
+  width: 100%;
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--m-3);
+  min-height: 48px; padding: 8px 0;
+  border: 0; border-bottom: 1px solid var(--m-hair);
+  background: none; color: var(--m-text); text-align: left;
+  &:last-child { border-bottom: 0; }
+  &:active { background: rgba(var(--m-theme-rgb), .08); }
+}
+.pm-ch__name { @extend %caps; font-weight: 500; color: var(--m-text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-ch__val { font-size: 22px; font-weight: 500; letter-spacing: .02em; color: var(--m-text-strong); white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
+.pm-ch__unit { font-size: 12px; font-weight: 400; letter-spacing: .06em; color: var(--m-text-muted); }
+.pm-ch--critical .pm-ch__val { color: var(--m-danger); }
+.pm-ch--warning .pm-ch__val { color: var(--m-warn); }
+
+.pm-choice {
+  width: 100%; display: flex; align-items: center; gap: var(--m-3);
+  min-height: 64px; padding: 10px 0;
+  border: 0; border-bottom: 1px solid var(--m-hair);
+  background: none; color: var(--m-text); text-align: left;
+  &:last-child { border-bottom: 0; }
+  .bi-chevron-right { color: var(--m-text-muted); }
+}
+.pm-choice__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.pm-choice__name { font-size: 15px; font-weight: 500; color: var(--m-text-strong); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-choice__sub { font-size: 12px; letter-spacing: .06em; color: var(--m-text-muted); }
+
+.pm-actions {
+  flex: 0 0 auto;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--m-hair);
+  button {
+    min-height: 52px; padding: 4px 2px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    border: 1px solid var(--m-line); border-radius: var(--m-radius-sm);
+    background: none; color: var(--m-text);
+    font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    i { font-size: 17px; color: var(--m-theme); }
+    &:active { background: rgba(var(--m-theme-rgb), .1); }
+    &.primary { border-color: rgba(var(--m-theme-rgb), .6); color: var(--m-text-strong); background: rgba(var(--m-theme-rgb), .1); }
+    &:disabled { opacity: .45; }
   }
 }
 
-::ng-deep .sensor-group {
-  padding: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-
-  &:last-of-type { border-bottom: none; }
+.pm-toast {
+  @extend %hud;
+  position: absolute; left: 50%; top: 56px; transform: translateX(-50%);
+  z-index: 1150;
+  padding: 10px 16px;
+  background: var(--m-chrome);
+  color: var(--m-text-strong);
+  font-size: var(--m-sm); font-weight: 500; white-space: nowrap;
 }
 
-::ng-deep .sensor-name {
-  color: #00E396;
-  font-weight: 600;
-  font-size: 9px;
-  margin-bottom: 0;
-  text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+// ── Fullscreen ──
+.pm--full {
+  height: 100%;
+  background: var(--m-bg-2);
+}
+// iOS / no Fullscreen API → cover the mobile chrome.
+.pm--css-full {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
 }
 
-::ng-deep .channel-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0;
-  gap: 8px;
-
-  &.status-normal .channel-value { color: #4ade80; }
-  &.status-warning .channel-value { color: #fbbf24; }
-  &.status-critical .channel-value { color: #f87171; font-weight: 700; }
-  &.status-unknown .channel-value { color: rgba(255, 255, 255, 0.55); }
-}
-
-::ng-deep .channel-name {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 8px;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-::ng-deep .channel-value {
-  font-weight: 600;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  font-family: 'Roboto Mono', 'SF Mono', monospace;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-::ng-deep .more-indicator {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 8px;
-  padding-top: 2px;
-  font-style: italic;
-}
-
-// Footer: "kapan terakhir kirim" (mobile addition).
-::ng-deep .label-foot {
-  margin-top: 2px;
-  padding-top: 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 8px;
-  text-align: right;
-
-  i { margin-right: 2px; }
-}
-
-@keyframes mSensorFadeInUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+// ── Short landscape screens: no strip; toolbar in one row; rail in two columns with the time ──
+@media (max-height: 480px) {
+  .pm { min-height: 160px; }
+  .pm-map { min-height: 120px; }
+  .pm-bar { flex-direction: row; align-items: stretch; right: calc(2 * var(--m-tap) + 22px); max-width: none; }
+  .pm-tabs { border-bottom: 0; border-right: 1px solid var(--m-hair); flex: 0 0 168px; }
+  .pm-chips { flex: 1 1 auto; align-items: center; padding: 4px 6px; }
+  .pm-rail { flex-direction: row; flex-wrap: wrap; width: calc(2 * var(--m-tap) + 6px); justify-content: flex-end; }
+  .pm-rail > .pm-rail__upd { display: flex; }
+  .pm-rail__group { flex-direction: row; gap: 0; }
+  .pm-rail__group > button:first-child { border-radius: var(--m-radius-sm) 0 0 var(--m-radius-sm); }
+  .pm-rail__group > button:last-child { border-top: 1px solid var(--m-line); border-left: 0; border-radius: 0 var(--m-radius-sm) var(--m-radius-sm) 0; }
+  :host ::ng-deep .pm-map .map-layer-warn { top: 60px; }
+  .pm-filter-empty { top: 60px; }
+  // Sheet on the left so the rail (zoom, lokasi saya…) stays usable.
+  .pm .pm-sheet { right: auto; width: calc(100vw - 2 * var(--m-tap) - 46px); max-width: 560px; border-right: 1px solid var(--m-line); }
 }

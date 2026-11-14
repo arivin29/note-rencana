@@ -1,0 +1,77 @@
+<div class="map-widget" [style.--map-scale]="fontScale">
+  <div #mapEl class="map-canvas" [class.no-basemap]="options.basemap === 'none'"></div>
+  <div #tooltipEl class="map-tooltip"></div>
+
+  <!-- Interactive maps: back to the auto-fit view -->
+  <button *ngIf="options.interactive && zoomControl" type="button" class="map-reset" (click)="resetView()"
+          title="Tampilkan seluruh area" aria-label="Tampilkan seluruh area">
+    <i class="fa fa-crosshairs"></i>
+  </button>
+
+  <!-- WebGIS sensor value cards (same component as the WebGIS page) -->
+  <sensor-labels
+    [map]="labelMap"
+    [visible]="sensorLabelsVisible"
+    [sensorData]="shownLabelData"
+    [scale]="fontScale"
+    [typeColors]="sensorTypeColors"
+    [insets]="labelInsets"
+    [variant]="labelVariant"
+    [format]="labelFormat"
+    [clear]="labelClear">
+  </sensor-labels>
+
+  <!-- Blocking states -->
+  <div *ngIf="needsProject" class="map-empty">
+    <i class="fa fa-project-diagram mb-1"></i>
+    <div class="fw-semibold">{{ noProjectTitle }}</div>
+    <div *ngIf="noProjectHint" class="small text-body-secondary">{{ noProjectHint }}</div>
+  </div>
+
+  <div *ngIf="!needsProject && drawsWebgis && layersError" class="map-empty">
+    <i class="fa fa-exclamation-triangle mb-1 text-warning"></i>
+    <div class="fw-semibold">{{ layersError }}</div>
+    <button type="button" class="btn btn-outline-theme btn-sm mt-2" (click)="retryLayers()">
+      <i class="fa fa-redo me-1"></i>Coba lagi
+    </button>
+  </div>
+
+  <div *ngIf="webgisEmpty" class="map-empty">
+    <i class="fa fa-map-marked-alt mb-1"></i>
+    <div class="fw-semibold">Belum ada data peta untuk proyek ini</div>
+    <div class="small text-body-secondary">Tambahkan koordinat node atau lapisan di WebGIS proyek.</div>
+  </div>
+
+  <div *ngIf="options.source === 'sql' && points.length === 0" class="map-empty">
+    <i class="fa fa-map-marker-alt mb-1"></i>
+    <div class="fw-semibold">Tidak ada titik berkoordinat</div>
+    <div class="small text-body-secondary">Query harus mengembalikan kolom <code>lat</code> &amp; <code>lon</code> yang terisi.</div>
+  </div>
+
+  <!-- Legend: WebGIS layers (name + style colour) and/or SQL status semantics -->
+  <div *ngIf="options.showLegend && (legendItems.length || alertCount || drawsSql)" class="map-legend">
+    <span *ngFor="let item of legendItems" class="map-legend-item">
+      <span class="swatch" [ngClass]="'swatch-' + item.shape" [style.--swatch]="item.color"></span>{{ item.name }}
+    </span>
+    <span *ngIf="alertCount" class="map-legend-item">
+      <span class="swatch swatch-dot" [style.--swatch]="alertColor"></span>Alarm ({{ alertCount }})
+    </span>
+    <ng-container *ngIf="drawsSql">
+      <span class="map-legend-item"><span class="dot dot-normal"></span>Normal</span>
+      <span class="map-legend-item"><span class="dot dot-alarm"></span>Di luar ambang</span>
+      <span class="map-legend-item"><span class="dot dot-muted"></span>Tanpa ambang</span>
+      <span class="map-legend-item"><span class="dot dot-nodata"></span>Tidak ada data</span>
+    </ng-container>
+  </div>
+
+  <!-- Non-blocking: some layers / last refresh failed, previous data stays -->
+  <div *ngIf="layersWarn || (!drawsWebgis && layersError)" class="map-layer-warn">
+    <i class="fa fa-exclamation-triangle me-1"></i>{{ layersWarn || layersError }}
+    <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" (click)="retryLayers()">Coba lagi</button>
+  </div>
+  <div *ngIf="layersLoading" class="map-layer-loading" title="Memuat lapisan peta proyek…">
+    <i class="fa fa-circle-notch fa-spin"></i>
+  </div>
+
+  <div *ngIf="options.basemap !== 'none'" class="map-attrib">{{ attribution }}</div>
+</div>

@@ -181,3 +181,65 @@
     color: rgba(255, 255, 255, 0.35) !important;
     font-weight: 400;
 }
+
+// Card placed beside/below its marker or slid inside the map edge: no pointer triangle.
+::ng-deep .sensor-label-container.sl-nopointer .sensor-label-card::after {
+    display: none;
+}
+
+// ── Helios variant (mobile, opt-in `variant="helios"`): HUD tag — square corners, 1px line, no glow,
+// Chakra Petch, white tabular values. WebGIS / TV keep the default look above.
+::ng-deep .sensor-label-container.sl-helios {
+    .sensor-label-card {
+        font-family: var(--m-font, 'Chakra Petch', system-ui, sans-serif);
+        letter-spacing: .02em;
+        background: rgba(13, 16, 27, .86);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        border: 1px solid var(--m-line, rgba(255, 255, 255, .3));
+        border-radius: var(--m-radius-sm, 2px);
+        box-shadow: none;
+        color: var(--m-text, rgba(255, 255, 255, .75));
+
+        &::after {
+            bottom: calc(-6px * var(--sl-scale, 1));
+            border-top-color: var(--m-line, rgba(255, 255, 255, .3));
+        }
+    }
+    .sensor-name, .group-row .group-name {
+        color: var(--m-text-strong, #fff);
+        font-weight: 500;
+    }
+    .channel-name {
+        color: var(--m-text-muted, rgba(255, 255, 255, .56));
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+    .channel-value {
+        font-family: inherit;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums lining-nums;
+        letter-spacing: .02em;
+    }
+    .channel-row.status-normal .channel-value { color: var(--m-text-strong, #fff); }
+    .channel-row.status-warning .channel-value { color: var(--m-warn, #ff9f0c); }
+    .channel-row.status-critical .channel-value { color: var(--m-danger, #ff6060); font-weight: 600; }
+    .channel-row.status-unknown .channel-value { color: var(--m-text-strong, #fff); }
+    .sl-unit {
+        font-weight: 400;
+        color: var(--m-text-muted, rgba(255, 255, 255, .56));
+        font-size: .85em;
+    }
+    .sensor-group, .more-indicator { border-color: var(--m-hair, rgba(255, 255, 255, .1)); }
+    .more-indicator { font-style: normal; color: var(--m-text-muted, rgba(255, 255, 255, .56)); }
+    .group-row .group-dot { border-radius: 0; box-shadow: none; }
+    .group-head {
+        display: flex; align-items: center; gap: calc(5px * var(--sl-scale, 1));
+        .group-dot {
+            flex: 0 0 auto;
+            width: calc(6px * var(--sl-scale, 1)); height: calc(6px * var(--sl-scale, 1));
+            border-radius: 50%; background: rgba(255, 255, 255, .35);
+        }
+    }
+    .sensor-label-group .sensor-group { padding: calc(2px * var(--sl-scale, 1)) 0; }
+}

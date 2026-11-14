@@ -33,6 +33,12 @@ export interface MapPoint {
   unit: string;
   status: MapPointStatus;
   time: Date | null;
+  /** Host-supplied points only (never set from SQL rows): node id → tap selects it. */
+  id?: string;
+  /** Host-supplied points only: marker fill overriding the status colour. */
+  color?: string;
+  /** Host-supplied points only: draw order (higher = on top). */
+  z?: number;
 }
 
 export interface MapWidgetOptions {

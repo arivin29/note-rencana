@@ -1,55 +1,183 @@
-<div class="m-card" *ngIf="loading" style="padding:var(--m-3)"><div class="m-skel" style="height:200px;margin:0"></div></div>
+<div #root class="pm" [class.pm--css-full]="cssFullscreen" [class.pm--full]="isFull" [class.pm--narrow]="narrow"
+     [class.pm--land]="landscape" [class.pm--compact-chips]="compactChips" [style.height.px]="isFull ? null : height">
 
-<div class="m-empty" *ngIf="!loading && error"><i class="fa fa-triangle-exclamation"></i>{{ error }}</div>
+  <m-panel *ngIf="!projectId" label="Peta" icon="bi-map" [pad]="true">
+    <div class="pm-none">Proyek tidak ditemukan.</div>
+  </m-panel>
 
-<div class="m-empty" *ngIf="!loading && !error && count === 0">
-  <i class="fa fa-map-location-dot"></i>Belum ada node ber-koordinat di project ini
-</div>
+  <m-panel *ngIf="projectId" class="pm-panel" [label]="landscape && !isFull ? '' : 'Peta jaringan'" icon="bi-map">
+    <!-- Strip: last update + refresh (landscape: lives in the rail) -->
+    <span panelAside class="pm-upd">
+      <ng-container *ngIf="updatedText; else notYet">Diperbarui <b>{{ updatedText }}</b></ng-container>
+      <ng-template #notYet>
+        <ng-container *ngIf="!(loadErrorText || nodesError); else loadFailed">Memuat…</ng-container>
+      </ng-template>
+      <ng-template #loadFailed>
+        <span class="pm-warn"><i class="bi bi-exclamation-triangle"></i> Gagal memuat</span>
+        <button type="button" class="pm-link" (click)="nodesError && !loadErrorText ? retryNodes() : retryMap()">Coba lagi</button>
+      </ng-template>
+      <button type="button" class="pm-upd__btn" (click)="refresh()" aria-label="Perbarui data" title="Perbarui data">
+        <i class="bi bi-arrow-clockwise" [class.pm-spin]="nodesLoading"></i>
+      </button>
+    </span>
 
-<ng-container *ngIf="!loading && !error && count > 0">
-  <!-- Toggle Node / Sensor -->
-  <div class="m-seg" style="display:flex;gap:4px;background:var(--m-surface-2,#eef1f5);padding:4px;border-radius:10px;margin-bottom:8px">
-    <button type="button" class="m-btn m-btn--sm" style="flex:1"
-      [ngClass]="mode==='node' ? 'm-btn--primary' : 'm-btn--ghost'" (click)="setMode('node')">
-      <i class="fa fa-microchip"></i> Node
-    </button>
-    <button type="button" class="m-btn m-btn--sm" style="flex:1"
-      [ngClass]="mode==='sensor' ? 'm-btn--primary' : 'm-btn--ghost'" (click)="setMode('sensor')">
-      <i class="fa fa-gauge"></i> Sensor
-    </button>
-  </div>
+    <div class="pm-map m-olmap">
+      <webgis-project-map
+        [projectId]="projectId"
+        [source]="view === 'node' ? 'both' : 'webgis'"
+        basemap="dark"
+        [interactive]="true"
+        [zoomControl]="false"
+        [showLegend]="false"
+        labelMode="label"
+        [points]="mapPoints"
+        [fontScale]="cardScale"
+        [markerScale]="markerScale"
+        [hitTolerance]="hitTolerance"
+        [fitPadding]="fitPadding"
+        [cardReserveMax]="cardReserveMax"
+        [labelInsets]="labelInsets"
+        [minStartCards]="minStartCards"
+        [labelVariant]="labelVariant"
+        [labelFormat]="labelFormat"
+        [visibleNodeIds]="mapVisibleNodeIds"
+        [refreshNonce]="refreshNonce"
+        noProjectTitle="Proyek tidak ditemukan"
+        noProjectHint=""
+        (featureSelect)="onSelect($event)"
+        (valuesChange)="onValues($event)"
+        (loaded)="onLoaded($event)"
+        (loadError)="onLoadError($event)"
+        (legendChange)="onLegend($event)">
+      </webgis-project-map>
 
-  <div class="m-olmap-wrap">
-    <div #mapEl class="m-olmap"></div>
-
-    <!-- popup overlay -->
-    <div #popupEl class="m-ol-popup" [class.open]="popup.open">
-      <!-- NODE -->
-      <ng-container *ngIf="popup.kind==='node'">
-        <div class="m-ol-popup__code">{{ popup.code }}</div>
-        <div class="m-ol-popup__row">
-          <span class="m-dot" [ngClass]="{'m-dot--ok':popup.status==='online','m-dot--warn':popup.status==='degraded','m-dot--danger':popup.status!=='online' && popup.status!=='degraded'}"></span>
-          <span class="m-subtle">{{ popup.status }}</span>
+      <!-- Toolbar: view tabs (underline) + status badges -->
+      <div class="pm-bar">
+        <div class="pm-tabs" role="tablist" aria-label="Tampilan peta">
+          <button type="button" role="tab" class="pm-tab" [class.active]="view === 'sensor'" [attr.aria-selected]="view === 'sensor'"
+                  (click)="setView('sensor')">Sensor</button>
+          <button type="button" role="tab" class="pm-tab" [class.active]="view === 'node'" [attr.aria-selected]="view === 'node'"
+                  (click)="setView('node')">Node</button>
         </div>
-        <div class="m-subtle" style="margin-top:4px"><i class="fa fa-location-dot me-1"></i>{{ popup.address || 'Alamat belum diisi' }}</div>
-        <div class="m-subtle" style="margin-top:2px"><i class="fa fa-clock me-1"></i>{{ popup.lastSeen }}</div>
-        <button class="m-btn m-btn--primary m-btn--sm" style="width:100%;margin-top:8px" (click)="openNode()">Buka node</button>
-      </ng-container>
-
-      <!-- SENSOR -->
-      <ng-container *ngIf="popup.kind==='sensor'">
-        <div class="m-ol-popup__code">{{ popup.code }}</div>
-        <div *ngFor="let c of popup.channels" class="m-ol-popup__row" style="justify-content:space-between;gap:8px">
-          <span class="m-subtle" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.label }}</span>
-          <span style="font-weight:600">{{ fmtVal(c.value) }} <span class="m-subtle">{{ c.unit }}</span></span>
+        <div class="pm-chips" role="group" aria-label="Saring status node">
+          <button *ngFor="let f of filters" type="button" class="pm-chip" [class.active]="filter === f.key"
+                  [ngClass]="'pm-chip--' + f.key" (click)="setFilter(f.key)" [attr.aria-pressed]="filter === f.key"
+                  [attr.aria-label]="f.label + ' ' + counts[f.key]" [title]="f.label">
+            <span *ngIf="f.key !== 'all'" class="pm-led"></span><span class="pm-chip__label">{{ f.label }}</span><span class="pm-chip__n">{{ counts[f.key] }}</span>
+          </button>
         </div>
-        <div class="m-subtle" style="margin-top:4px"><i class="fa fa-location-dot me-1"></i>{{ popup.address || 'Alamat belum diisi' }}</div>
-        <div class="m-subtle" style="margin-top:2px"><i class="fa fa-clock me-1"></i>{{ popup.lastSeen }}</div>
-        <button class="m-btn m-btn--primary m-btn--sm" style="width:100%;margin-top:8px" (click)="openNode()">Buka node</button>
-      </ng-container>
+      </div>
+
+      <!-- Right rail -->
+      <div class="pm-rail">
+        <!-- landscape: "Diperbarui" + refresh -->
+        <button type="button" class="pm-rail__upd" *ngIf="!(loadErrorText || nodesError) || updatedText; else railRetry"
+                (click)="refresh()" [attr.aria-label]="updatedText ? 'Diperbarui ' + updatedText + ', perbarui data' : 'Perbarui data'"
+                title="Perbarui data">
+          <i class="bi bi-arrow-clockwise" [class.pm-spin]="nodesLoading || !updatedText"></i><span>{{ updatedText || '…' }}</span>
+        </button>
+        <ng-template #railRetry>
+          <button type="button" class="pm-rail__upd pm-rail__upd--warn" (click)="retryMap()" aria-label="Gagal memuat data, coba lagi"
+                  title="Gagal memuat data — Coba lagi">
+            <i class="bi bi-exclamation-triangle"></i><span>Ulang</span>
+          </button>
+        </ng-template>
+        <div class="pm-rail__group">
+          <button type="button" (click)="zoom(1)" aria-label="Perbesar" title="Perbesar"><i class="bi bi-plus-lg"></i></button>
+          <button type="button" (click)="zoom(-1)" aria-label="Perkecil" title="Perkecil"><i class="bi bi-dash-lg"></i></button>
+        </div>
+        <button type="button" (click)="fitAll()" aria-label="Seluruh area" title="Seluruh area"><i class="bi bi-bounding-box"></i></button>
+        <button type="button" (click)="locate()" [class.on]="userLocated" [attr.aria-pressed]="userLocated"
+                [attr.aria-label]="userLocated ? 'Sembunyikan lokasi saya' : 'Lokasi saya'"
+                [title]="userLocated ? 'Sembunyikan lokasi saya' : 'Lokasi saya'" [disabled]="locating">
+          <i class="bi bi-crosshair" [class.pm-spin]="locating"></i>
+        </button>
+        <button type="button" (click)="toggleFullscreen()" [attr.aria-label]="isFull ? 'Keluar layar penuh' : 'Layar penuh'"
+                [title]="isFull ? 'Keluar layar penuh' : 'Layar penuh'">
+          <i class="bi" [ngClass]="isFull ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
+        </button>
+      </div>
+
+      <div *ngIf="filter !== 'all' && counts[filter] === 0" class="pm-filter-empty">
+        Tidak ada node berstatus {{ filterLabel }}
+      </div>
+
+      <!-- Legend: collapsible HUD strip (WebGIS layer colours) -->
+      <div *ngIf="view === 'sensor' && (legendItems.length || alertCount)" class="pm-legend" [class.open]="legendOpen">
+        <ul *ngIf="legendOpen" class="pm-legend__list">
+          <li *ngFor="let it of legendItems">
+            <span class="pm-sw" [ngClass]="'pm-sw--' + it.shape" [style.--sw]="it.color"></span>{{ it.name }}
+          </li>
+          <li *ngIf="alertCount"><span class="pm-sw pm-sw--dot" [style.--sw]="alertColor"></span>Alarm ({{ alertCount }})</li>
+        </ul>
+        <button type="button" class="pm-legend__btn" (click)="toggleLegend()" [attr.aria-expanded]="legendOpen">
+          <i class="bi bi-layers"></i>Legenda<i class="bi" [ngClass]="legendOpen ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+        </button>
+      </div>
     </div>
+  </m-panel>
+
+  <!-- Bottom sheet (HUD panel above the bottom nav) -->
+  <div *ngIf="projectId" class="pm-sheet" [class.open]="sheetOpen" [style.bottom.px]="isFull ? 0 : sheetBottom"
+       role="dialog" aria-label="Detail node" [attr.aria-hidden]="!sheetOpen">
+    <i class="m-br m-br--tl" aria-hidden="true"></i><i class="m-br m-br--tr" aria-hidden="true"></i>
+
+    <!-- Co-located nodes: choose one -->
+    <ng-container *ngIf="!selected && choices.length">
+      <div class="pm-sheet__head">
+        <div class="pm-sheet__titles">
+          <div class="pm-sheet__eyebrow">Titik bersama</div>
+          <div class="pm-sheet__title">{{ choices.length }} node di titik ini</div>
+        </div>
+        <button type="button" class="pm-x" (click)="closeSheet()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="pm-sheet__body">
+        <button *ngFor="let n of choices" type="button" class="pm-choice" (click)="choose(n)">
+          <span class="pm-choice__text">
+            <span class="m-pill" [ngClass]="'m-pill--' + n.tone"><span class="dot"></span>{{ n.statusText }}</span>
+            <span class="pm-choice__name">{{ n.label }}</span>
+            <span *ngIf="n.code" class="pm-choice__sub">{{ n.code }}</span>
+          </span>
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- One node -->
+    <ng-container *ngIf="selected as n">
+      <div class="pm-sheet__head">
+        <button *ngIf="choices.length" type="button" class="pm-x" (click)="backToChoices()" aria-label="Kembali ke daftar">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="pm-sheet__titles">
+          <div class="pm-sheet__status">
+            <span class="m-pill" [ngClass]="'m-pill--' + n.tone"><span class="dot"></span>{{ n.statusText }}</span>
+            <span *ngIf="n.ago" class="pm-sheet__ago">kirim {{ n.ago }}</span>
+          </div>
+          <div class="pm-sheet__title">{{ n.label }}</div>
+          <div *ngIf="n.code" class="pm-sheet__sub">{{ n.code }}</div>
+        </div>
+        <button type="button" class="pm-x" (click)="closeSheet()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      <div class="pm-sheet__body">
+        <div *ngIf="!n.channels.length" class="pm-sheet__none">Belum ada channel sensor pada node ini.</div>
+        <button *ngFor="let c of n.channels" type="button" class="pm-ch" [ngClass]="'pm-ch--' + c.status"
+                (click)="openTrend(c.channelId)" [attr.aria-label]="'Tren ' + c.name">
+          <span class="pm-ch__name">{{ c.name }}</span>
+          <span class="pm-ch__val">{{ c.value }}<span *ngIf="c.unit" class="pm-ch__unit"> {{ c.unit }}</span></span>
+        </button>
+      </div>
+
+      <div class="pm-actions">
+        <button type="button" (click)="routeTo()" [disabled]="!hasCoords"><i class="bi bi-signpost-2"></i>Rute</button>
+        <button type="button" (click)="copy()"><i class="bi bi-clipboard"></i>Salin</button>
+        <button type="button" (click)="share()"><i class="bi bi-share"></i>Bagikan</button>
+        <button type="button" (click)="openTrend()"><i class="bi bi-graph-up"></i>Tren</button>
+        <button type="button" class="primary" (click)="openNode()"><i class="bi bi-hdd-stack"></i>Buka node</button>
+      </div>
+    </ng-container>
   </div>
-  <div class="m-subtle" style="padding:8px 4px">
-    {{ mode==='node' ? (count + ' node') : 'Nilai sensor terbaru' }} · tap marker untuk detail.
-  </div>
-</ng-container>
+
+  <div *ngIf="toast" class="pm-toast" role="status">{{ toast }}</div>
+</div>

@@ -1,350 +1,815 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, Optional, ViewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { NodesService } from '@sdk/core/services/nodes.service';
-import { WebGisCoreGeoJsonService } from '@sdk/core/services/web-gis-core-geo-json.service';
-import { WebGisLayersService } from '@sdk/core/services/web-gis-layers.service';
-import { BasemapService } from '@services/basemap.service';
+import { fetchAll } from '@app/shared/utils/fetch-all';
+import { getFreshness, Freshness } from '@app/shared/utils/telemetry-freshness';
+import { timeAgoId } from '@app/shared/utils/channel-display';
+import { formatHm, formatIdNumber } from '@app/pages/iot/widget-builder/utils/format-id';
+import { decimalsFromPrecision } from '@app/shared/utils/threshold';
+import { metricLabel } from '../../../shared/channel-rows';
+import { FRESHNESS_TONE, MTone } from '../../../shared/labels';
+import type {
+  MapLegendItem, ProjectMapLegend,
+} from '@app/pages/iot/webgis/components/project-map/webgis-project-map.component';
+import type { SensorLabelFormat } from '@app/pages/iot/webgis/components/sensor-labels/sensor-labels';
+import {
+  WebgisProjectMapComponent, ProjectMapSelection,
+} from '@app/pages/iot/webgis/components/project-map/webgis-project-map.component';
+import { MapPoint } from '@app/pages/iot/widget-builder/utils/map-rows';
+import { NodeSensorData, SensorChannelValue } from '@app/pages/iot/webgis/components/sensor-labels/sensor-labels';
+import {
+  MAP_BUCKET_LABEL, MAP_FRESHNESS_TEXT, MapStatusBucket, MapStatusFilter, countBuckets, directionsUrl,
+  fillHeight, freshnessBucket, latestTime, nodeShareText, sortSheetChannels, whatsappShareUrl,
+} from '@app/pages/iot/webgis/shared/map-node-info';
+import { isConstantMetric, metricDecimals, prettyUnit } from '@app/pages/iot/webgis/shared/map-node-info';
+import type { Insets } from '@app/pages/iot/webgis/shared/label-clusters';
+import { RefreshBusService } from '../../../shared/refresh-bus.service';
+import { MobileProjectStore } from '../../../shared/mobile-project-store.service';
 
-interface PNode { id: string; code: string; lat: number; lng: number; status: string; address: string; lastSeenAt: string | null; ago: string; }
-interface PChannel { label: string; metric: string; value: number | null; unit: string; status: string; }
-interface PSensorNode { id: string; code: string; lat: number; lng: number; address: string; lastSeenAt: string | null; ago: string; channels: PChannel[]; }
-type MapMode = 'node' | 'sensor';
+const REFRESH_MS = 60_000;
+/** Bigger markers (radius 7 → ~10 px) + hit tolerance → ≥ 44 px touch target. */
+const MARKER_SCALE = 1.4;
+const HIT_TOLERANCE = 16;
+/** Node view: no node is drawn from the sensor-type layers (their markers/cards/alerts hidden). */
+const NO_NODES: ReadonlySet<string> = new Set<string>();
+/** Fit room for overlays [top, right, bottom, left]: portrait = toggle + chip rows / rail; landscape = one row / 2-col rail. */
+const FIT_PAD_PORTRAIT: [number, number, number, number] = [100, 56, 0, 0];
+const FIT_PAD_LANDSCAPE: [number, number, number, number] = [60, 110, 0, 0];
+/** Value cards avoid: toggle + chips (top), control rail (right), attribution (bottom). */
+const INSETS_PORTRAIT: Partial<Insets> = { top: 100, right: 60, bottom: 44, left: 0 };
+const INSETS_LANDSCAPE: Partial<Insets> = { top: 60, right: 110, bottom: 44, left: 0 };
+/** Node view draw order: problems on top (offline > terganggu > belum pernah > online). */
+const NODE_Z: Record<Freshness, number> = { fresh: 0, nodata: 1, stale: 2, offline: 3 };
+/** Node view point status: drives declutter order (alarm statuses first → their label wins). */
+const NODE_POINT_STATUS: Record<Freshness, MapPoint['status']> = { fresh: 'normal', nodata: 'nodata', stale: 'low', offline: 'high' };
+/** Value cards a bit larger than desktop (≥ 11 px text). */
+const CARD_SCALE = 1.15;
 
-/** Tab Peta: OpenLayers + CARTO Dark base. Toggle Node/Sensor. Operational (uploaded)
- *  layers rendered under markers. Sensor labels use the same glass card as desktop. */
+interface MapNode {
+  id: string;
+  code: string;
+  address: string;
+  lat: number;
+  lon: number;
+  lastSeenAt: string | null;
+  intervalSec: number | null;
+}
+
+interface SheetChannel {
+  channelId: string;
+  name: string;
+  value: string;
+  unit: string;
+  status: SensorChannelValue['status'];
+}
+
+interface SheetNode {
+  id: string;
+  label: string;
+  /** Line 2 (node code) — only when the label is the address. */
+  code: string;
+  lat: number | null;
+  lon: number | null;
+  freshness: Freshness;
+  /** Glossary tone for the status badge (ok / warn / danger / off). */
+  tone: MTone;
+  statusText: string;
+  ago: string;
+  channels: SheetChannel[];
+}
+
+/**
+ * Tab Peta proyek (mobile) — same map engine as the desktop widget / Monitor TV
+ * (`<webgis-project-map>`: WebGIS layers & styles, sensor-type colours, alerts, merged value cards).
+ * Mobile adds: status filter chips, 44 px controls (zoom, seluruh area, lokasi saya, layar penuh),
+ * auto-refresh 60 s and a bottom sheet with field actions (Rute, Salin, Bagikan, Buka node, Tren).
+ */
 @Component({
   selector: 'mobile-project-map',
   templateUrl: './project-map.component.html',
   styleUrls: ['./project-map.component.scss'],
-  standalone: false
+  standalone: false,
 })
-export class MobileProjectMapComponent implements OnInit, OnDestroy {
-  loading = true;
-  error = '';
-  count = 0;
-  mode: MapMode = 'node';
+export class MobileProjectMapComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('root', { static: true }) rootEl!: ElementRef<HTMLElement>;
+  @ViewChild(WebgisProjectMapComponent) mapCmp?: WebgisProjectMapComponent;
 
-  @ViewChild('mapEl') mapEl?: ElementRef<HTMLDivElement>;
-  @ViewChild('popupEl') popupEl?: ElementRef<HTMLDivElement>;
-  popup = {
-    open: false, kind: 'node' as MapMode, code: '', status: '', id: '',
-    address: '', lastSeen: '', channels: [] as PChannel[]
-  };
+  readonly markerScale = MARKER_SCALE;
+  readonly hitTolerance = HIT_TOLERANCE;
+  readonly cardScale = CARD_SCALE;
+  /** Room for the chips row (top) and the control column (right) when fitting. */
+  fitPadding: [number, number, number, number] = FIT_PAD_PORTRAIT;
+  /** Phone maps: value-card room in the fit is capped (else the start view zooms out to one card). */
+  readonly cardReserveMax = 0.12;
+  labelInsets: Partial<Insets> = INSETS_PORTRAIT;
+  /** Phone start view: zoom in a little until at least this many value cards show. */
+  readonly minStartCards = 3;
+  /** Map narrower than 480 px → compact value cards. */
+  narrow = false;
+  /** Short landscape screen → no panel strip (time/refresh live in the rail). */
+  landscape = false;
+  readonly labelVariant = 'helios' as const;
+  legendItems: MapLegendItem[] = [];
+  alertCount = 0;
+  alertColor = '';
+  /** Legend strip: collapsed by default on phones. */
+  legendOpen = typeof window !== 'undefined' && window.innerWidth >= 900 && window.innerHeight >= 600;
+  /** Status chips show LED + count only (measured: the full labels don't fit the toolbar). */
+  compactChips = typeof window !== 'undefined' && window.innerWidth <= 440;
+  /** Toolbar width at which full chips overflowed (re-expand only when clearly wider). */
+  private chipsOverflowAt = 0;
+  private decimals = new Map<string, number>();
+  private legendTouched = false;
+  private sensorsRef: any[] | null = null;
+  labelFormat: SensorLabelFormat = this.buildLabelFormat();
+  readonly filters: { key: MapStatusFilter; label: string }[] = [
+    { key: 'all', label: 'Semua' },
+    { key: 'online', label: MAP_BUCKET_LABEL.online },
+    { key: 'terganggu', label: MAP_BUCKET_LABEL.terganggu },
+    { key: 'offline', label: MAP_BUCKET_LABEL.offline },
+  ];
 
-  private nodes: PNode[] = [];
-  private sensors: PSensorNode[] = [];
-  private opLayers: { name: string; style: any; geo: any }[] = [];
-  private map: any = null;
-  private overlay: any = null;
-  private nodeLayer: any = null;
-  private sensorLayer: any = null;
-  private sensorOverlays: any[] = [];
+  projectId: string | null = null;
+  /** Set when hosted in the /mobile/p/:pid shell (in-project node links). */
+  private pid: string | null = null;
+  refreshNonce = 0;
+  /** Map box height (px); null until measured. */
+  height: number | null = null;
+  /** px between the viewport bottom and the bottom nav top → sheet sits above it. */
+  sheetBottom = 0;
+
+  /** Sensor (default on every open) = value cards; Node = connectivity status markers. */
+  view: 'sensor' | 'node' = 'sensor';
+  /** Node view markers (status colour + "terakhir kirim" label). */
+  nodePoints: MapPoint[] = [];
+
+  filter: MapStatusFilter = 'all';
+  counts: Record<MapStatusFilter, number> = countBuckets([]);
+  visibleNodeIds: ReadonlySet<string> | null = null;
+
+  updatedAt: Date | null = null;
+  nodesLoading = false;
+  nodesError = false;
+  /** Map engine failed to load layers / values (no data at all yet). */
+  loadErrorText: string | null = null;
+
+  /** Bottom sheet: node chooser (co-located) or one node's detail. */
+  sheetOpen = false;
+  choices: SheetNode[] = [];
+  selected: SheetNode | null = null;
+
+  fullscreen = false;
+  /** Native fullscreen unavailable (iOS) → CSS fixed overlay. */
+  cssFullscreen = false;
+  locating = false;
+  /** Blue dot currently shown. */
+  userLocated = false;
+  toast: string | null = null;
+
+  private nodes = new Map<string, MapNode>();
+  private values = new Map<string, NodeSensorData>();
+  private now = Date.now();
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  private nodesSub: Subscription | null = null;
+  private lastRefreshAt = Date.now();
+  private unregisterRefresh: (() => void) | null = null;
+  /** Resolves the pending pull-to-refresh promise. */
+  private nodesDone: (() => void) | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
-    private nodesSvc: NodesService,
-    private webgisSvc: WebGisCoreGeoJsonService,
-    private layersSvc: WebGisLayersService,
     private route: ActivatedRoute,
     private router: Router,
-    private basemap: BasemapService
+    private nodesService: NodesService,
+    private refreshBus: RefreshBusService,
+    private zone: NgZone,
+    /** Provided by the `/mobile/p/:pid` shell: shared node list + its pull-to-refresh. */
+    @Optional() private store: MobileProjectStore | null,
   ) {}
 
+  // ── Lifecycle ────────────────────────────────────────────
+
   ngOnInit(): void {
-    const id = this.route.parent?.snapshot.paramMap.get('id') || '';
-    forkJoin({
-      nodes: this.nodesSvc.nodesControllerFindAll$Response({ idProject: id, limit: 200 }),
-      values: this.webgisSvc.coreGeoJsonControllerGetSensorChannelValues$Response({ projectId: id }),
-      layers: this.layersSvc.layersControllerFindAll$Response({ projectId: id })
-    }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ nodes, values, layers }) => {
-        this.nodes = this.parseNodes(nodes);
-        const byNode = new Map(this.nodes.map((n) => [n.id, n]));
-        this.sensors = this.parseSensors(values, byNode);
-        this.count = this.nodes.length;
-        this.loadOperationalLayers(this.parseLayerList(layers));
-      },
-      error: (e) => { this.error = e?.message || 'Gagal memuat peta'; this.loading = false; }
-    });
-  }
-
-  private parseNodes(res: any): PNode[] {
-    let b: any = res.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = null; } }
-    const rows = (b?.data || []) as any[];
-    return rows.map((n) => ({
-      id: n.idNode || n.id,
-      code: n.code || n.name || '-',
-      lat: n.latitude != null ? parseFloat(n.latitude) : NaN,
-      lng: n.longitude != null ? parseFloat(n.longitude) : NaN,
-      status: n.connectivityStatus || 'offline',
-      address: n.address || '',
-      lastSeenAt: n.lastSeenAt || null,
-      ago: this.fmtAgo(n.lastSeenAt || null)
-    })).filter((n) => !isNaN(n.lat) && !isNaN(n.lng));
-  }
-
-  private parseSensors(res: any, byNode: Map<string, PNode>): PSensorNode[] {
-    let b: any = res.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = null; } }
-    const rows = (Array.isArray(b) ? b : b?.data || []) as any[];
-    const out: PSensorNode[] = [];
-    for (const r of rows) {
-      const lat = r.latitude != null ? parseFloat(r.latitude) : NaN;
-      const lng = r.longitude != null ? parseFloat(r.longitude) : NaN;
-      if (isNaN(lat) || isNaN(lng)) { continue; }
-      const channels: PChannel[] = (r.channels || []).map((c: any) => ({
-        label: c.sensorLabel || c.metricCode || 'channel',
-        metric: c.metricCode || '',
-        value: c.value != null ? Number(c.value) : null,
-        unit: c.unit || '',
-        status: c.status || 'unknown'
-      }));
-      if (!channels.length) { continue; }
-      const node = byNode.get(r.nodeId);
-      const lastSeenAt = node?.lastSeenAt || null;
-      out.push({
-        id: r.nodeId,
-        code: r.nodeCode || r.nodeName || '-',
-        lat, lng,
-        address: node?.address || '',
-        lastSeenAt,
-        ago: this.fmtAgo(lastSeenAt),
-        channels
-      });
-    }
-    return out;
-  }
-
-  private parseLayerList(res: any): any[] {
-    let b: any = res.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = null; } }
-    const rows = (b?.data || []) as any[];
-    return rows.filter((l) => l.layerType && l.layerType !== 'core' && l.isVisibleDefault !== false);
-  }
-
-  private loadOperationalLayers(defs: any[]): void {
-    const finish = () => { this.loading = false; if (this.count > 0) { setTimeout(() => this.initMap(), 0); } };
-    if (!defs.length) { finish(); return; }
-    forkJoin(defs.map((l) => this.layersSvc.layersControllerGetGeoJson$Response({ id: l.idLayer })))
-      .pipe(takeUntil(this.destroy$)).subscribe({
-        next: (geos: any[]) => {
-          this.opLayers = defs.map((l, i) => {
-            let g: any = geos[i]?.body; if (typeof g === 'string') { try { g = JSON.parse(g); } catch { g = null; } }
-            return { name: l.layerName, style: l.styleJson || {}, geo: g };
-          }).filter((x) => x.geo && (x.geo.features?.length || x.geo.type));
-          finish();
-        },
-        error: () => finish()
-      });
-  }
-
-  setMode(m: MapMode): void {
-    if (this.mode === m) { return; }
-    this.mode = m;
-    this.popup.open = false;
-    this.overlay?.setPosition(undefined);
-    this.nodeLayer?.setVisible(m === 'node');
-    this.sensorLayer?.setVisible(m === 'sensor');
-    this.updateSensorOverlayVisibility();
-  }
-
-  openNode(): void { if (this.popup.id) { this.router.navigate(['/mobile/nodes', this.popup.id]); } }
-
-  fmtVal(v: number | null): string {
-    if (v == null) { return 'N/A'; }
-    const a = Math.abs(v);
-    if (a >= 1000) { return v.toFixed(0); }
-    if (a >= 100) { return v.toFixed(1); }
-    if (a >= 1) { return v.toFixed(2); }
-    return v.toFixed(3);
-  }
-
-  fmtAgo(iso: string | null): string {
-    if (!iso) { return '—'; }
-    const t = new Date(iso).getTime();
-    if (isNaN(t)) { return '—'; }
-    const m = Math.floor((Date.now() - t) / 60000);
-    if (m < 1) { return 'now'; }
-    if (m < 60) { return `${m}m`; }
-    const h = Math.floor(m / 60);
-    if (h < 24) { return `${h}h`; }
-    return `${Math.floor(h / 24)}d`;
-  }
-
-  fmtLastSeen(iso: string | null): string {
-    if (!iso) { return 'belum pernah kirim'; }
-    const t = new Date(iso).getTime();
-    if (isNaN(t)) { return '—'; }
-    const m = Math.floor((Date.now() - t) / 60000);
-    if (m < 1) { return 'baru saja'; }
-    if (m < 60) { return `${m} menit lalu`; }
-    const h = Math.floor(m / 60);
-    if (h < 24) { return `${h} jam lalu`; }
-    const d = Math.floor(h / 24);
-    if (d < 30) { return `${d} hari lalu`; }
-    return new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-  }
-
-  // ---- desktop-style sensor label card ----
-  private titleCase(code: string): string {
-    return (code || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-  private statusClass(s: string): string {
-    return s === 'critical' ? 'status-critical' : s === 'warning' ? 'status-warning' : s === 'normal' ? 'status-normal' : 'status-unknown';
-  }
-  private esc(text: string): string {
-    const d = document.createElement('div'); d.textContent = text; return d.innerHTML;
-  }
-  private buildLabelHtml(s: PSensorNode): string {
-    let html = '<div class="sensor-label-card">';
-    for (const c of s.channels.slice(0, 3)) {
-      const val = c.value != null ? `${this.fmtVal(c.value)} ${c.unit}` : 'N/A';
-      html += '<div class="sensor-group">';
-      html += `<div class="sensor-name">${this.esc(this.titleCase(c.label))}</div>`;
-      html += `<div class="channel-row ${this.statusClass(c.status)}">`;
-      html += `<span class="channel-name">${this.esc(this.titleCase(c.metric))}</span>`;
-      html += `<span class="channel-value">${this.esc(val)}</span>`;
-      html += '</div></div>';
-    }
-    if (s.channels.length > 3) { html += `<div class="more-indicator">+${s.channels.length - 3} sensor</div>`; }
-    html += `<div class="label-foot"><i class="fa fa-clock"></i> ${s.ago}</div>`;
-    html += '</div>';
-    return html;
-  }
-
-  private updateSensorOverlayVisibility(): void {
-    const show = this.mode === 'sensor';
-    for (const ov of this.sensorOverlays) {
-      const el = ov.getElement();
-      if (el) { el.style.display = show ? '' : 'none'; }
-    }
-  }
-
-  private async initMap(): Promise<void> {
-    if (this.map || !this.mapEl) { return; }
-    const [
-      MapMod, ViewMod, TileMod, XYZMod, VLayerMod, VSrcMod, FeatMod, PointMod, ProjMod,
-      StyleMod, CircleMod, FillMod, StrokeMod, TextMod, OverlayMod, GeoJSONMod
-    ] = await Promise.all([
-      import('ol/Map'), import('ol/View'), import('ol/layer/Tile'), import('ol/source/XYZ'),
-      import('ol/layer/Vector'), import('ol/source/Vector'), import('ol/Feature'), import('ol/geom/Point'),
-      import('ol/proj'), import('ol/style/Style'), import('ol/style/Circle'), import('ol/style/Fill'),
-      import('ol/style/Stroke'), import('ol/style/Text'), import('ol/Overlay'), import('ol/format/GeoJSON')
-    ]);
-    const OlMap = MapMod.default, View = ViewMod.default, TileLayer = TileMod.default, XYZ = XYZMod.default;
-    const VectorLayer = VLayerMod.default, VectorSource = VSrcMod.default, Feature = FeatMod.default, Point = PointMod.default;
-    const Style = StyleMod.default, CircleStyle = CircleMod.default, Fill = FillMod.default, Stroke = StrokeMod.default;
-    const Text = TextMod.default, Overlay = OverlayMod.default, GeoJSON = GeoJSONMod.default;
-    const fromLonLat = ProjMod.fromLonLat;
-
-    // Operational/custom uploaded layers (GeoJSON) — drawn under the markers.
-    const opVectorLayers = this.opLayers.map((op) => {
-      const st = op.style || {};
-      const strokeColor = st.strokeColor || st.color || '#22d3ee';
-      const strokeWidth = st.strokeWidth || st.weight || 3;
-      const fillColor = st.fillColor || 'rgba(34,211,238,0.15)';
-      const radius = st.radius || 5;
-      const source = new VectorSource({ features: new GeoJSON().readFeatures(op.geo, { featureProjection: 'EPSG:3857' }) });
-      return new VectorLayer({
-        source,
-        style: new Style({
-          stroke: new Stroke({ color: strokeColor, width: strokeWidth }),
-          fill: new Fill({ color: fillColor }),
-          image: new CircleStyle({ radius, fill: new Fill({ color: strokeColor }), stroke: new Stroke({ color: '#ffffff', width: 1 }) })
-        })
-      });
-    });
-
-    // Node layer (marker + compact "ago" chip, dark theme).
-    const nodeSrc = new VectorSource();
-    for (const n of this.nodes) {
-      const f = new Feature({ geometry: new Point(fromLonLat([n.lng, n.lat])) });
-      f.set('kind', 'node'); f.set('data', n);
-      f.setStyle(new Style({
-        image: new CircleStyle({ radius: 8, fill: new Fill({ color: this.color(n.status) }), stroke: new Stroke({ color: '#0b0b18', width: 2 }) }),
-        text: new Text({
-          text: n.ago, offsetY: -16, font: '600 10px system-ui,sans-serif',
-          fill: new Fill({ color: '#e5e7eb' }), backgroundFill: new Fill({ color: 'rgba(20,20,35,0.85)' }),
-          padding: [2, 5, 2, 5]
-        })
-      }));
-      nodeSrc.addFeature(f);
-    }
-
-    // Sensor layer (small circle only; value shown by HTML card overlay).
-    const sensorSrc = new VectorSource();
-    for (const s of this.sensors) {
-      const f = new Feature({ geometry: new Point(fromLonLat([s.lng, s.lat])) });
-      f.set('kind', 'sensor'); f.set('data', s);
-      f.setStyle(new Style({
-        image: new CircleStyle({ radius: 6, fill: new Fill({ color: '#3b82f6' }), stroke: new Stroke({ color: '#ffffff', width: 2 }) })
-      }));
-      sensorSrc.addFeature(f);
-    }
-
-    this.nodeLayer = new VectorLayer({ source: nodeSrc, visible: this.mode === 'node' });
-    this.sensorLayer = new VectorLayer({ source: sensorSrc, visible: this.mode === 'sensor' });
-    this.overlay = new Overlay({ element: this.popupEl?.nativeElement, positioning: 'bottom-center', offset: [0, -14], stopEvent: true });
-
-    // CARTO Dark Matter base (same as desktop).
-    const baseTile = new TileLayer({
-      source: new XYZ({
-        url: this.basemap.carto('dark_all'),
-        attributions: this.basemap.attribution
-      })
-    });
-
-    this.map = new OlMap({
-      target: this.mapEl.nativeElement,
-      layers: [baseTile, ...opVectorLayers, this.nodeLayer, this.sensorLayer],
-      view: new View({ center: fromLonLat([this.nodes[0].lng, this.nodes[0].lat]), zoom: 13 }),
-      overlays: [this.overlay],
-      controls: []
-    });
-    this.map.getView().fit(nodeSrc.getExtent(), { padding: [70, 40, 90, 40], maxZoom: 16 });
-
-    // Sensor value cards (desktop glass style), shown only in sensor mode.
-    for (const s of this.sensors) {
-      const el = document.createElement('div');
-      el.className = 'sensor-label-container';
-      el.innerHTML = this.buildLabelHtml(s);
-      const ov = new Overlay({ element: el, positioning: 'bottom-center', offset: [0, -16], stopEvent: false, className: 'sensor-label-overlay' });
-      ov.setPosition(fromLonLat([s.lng, s.lat]));
-      this.map.addOverlay(ov);
-      this.sensorOverlays.push(ov);
-    }
-    this.updateSensorOverlayVisibility();
-
-    this.map.on('click', (ev: any) => {
-      const feat = this.map.forEachFeatureAtPixel(ev.pixel, (ft: any) => ft, {
-        layerFilter: (l: any) => l === (this.mode === 'node' ? this.nodeLayer : this.sensorLayer)
-      });
-      if (feat) {
-        if (feat.get('kind') === 'node') {
-          const n = feat.get('data') as PNode;
-          this.popup = { open: true, kind: 'node', code: n.code, status: n.status, id: n.id, address: n.address, lastSeen: this.fmtLastSeen(n.lastSeenAt), channels: [] };
-        } else {
-          const s = feat.get('data') as PSensorNode;
-          this.popup = { open: true, kind: 'sensor', code: s.code, status: '', id: s.id, address: s.address, lastSeen: this.fmtLastSeen(s.lastSeenAt), channels: s.channels };
+    this.projectId = this.readProjectId();
+    if (this.store) {
+      // Inside the project shell: nodes come from the shared store (it polls & owns pull-to-refresh).
+      let lastStoreAt: Date | null = null;
+      this.store.state$.pipe(takeUntil(this.destroy$)).subscribe((st) => {
+        this.nodesLoading = st.firstLoad;
+        this.nodesError = !!st.nodesError && !st.nodes;
+        if (st.nodes) this.setNodes(st.nodes);
+        if (st.sensors && st.sensors !== this.sensorsRef) this.setPrecision(st.sensors);
+        // A store reload we didn't trigger (pull-to-refresh / its poll) → refresh map values too,
+        // unless ours ran moments ago.
+        if (st.updatedAt && st.updatedAt !== lastStoreAt) {
+          lastStoreAt = st.updatedAt;
+          if (Date.now() - this.lastRefreshAt > 15_000) this.refreshValues();
         }
-        this.overlay.setPosition(feat.getGeometry().getCoordinates());
-      } else {
-        this.popup.open = false;
-        this.overlay.setPosition(undefined);
-      }
+      });
+    } else {
+      void this.loadNodes();
+      // Pull-to-refresh: resolves when the node status reload finished (values reload in parallel).
+      this.unregisterRefresh = this.refreshBus.register(() => this.refresh());
+    }
+    this.zone.runOutsideAngular(() => {
+      this.timer = setInterval(() => {
+        if (document.hidden) return;
+        // With the store, node status is polled by the store; we only refresh map values.
+        this.zone.run(() => (this.store ? this.refreshValues() : void this.refresh()));
+      }, REFRESH_MS);
     });
   }
 
-  private color(s: string): string {
-    return s === 'online' ? '#2dd4a7' : s === 'degraded' ? '#fbbf24' : '#fb5b6d';
+  ngAfterViewInit(): void {
+    // Measure after layout settled (header/tabs rendered).
+    setTimeout(() => this.measure());
+    setTimeout(() => this.measure(), 300);
   }
 
   ngOnDestroy(): void {
-    if (this.map) {
-      for (const ov of this.sensorOverlays) { this.map.removeOverlay(ov); }
-      this.map.setTarget(undefined); this.map = null;
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.nodesSub?.unsubscribe();
+    this.unregisterRefresh?.();
+    this.mapCmp?.setUserLocation(null);
+    this.nodesDone?.();
+    if (this.timer) clearInterval(this.timer);
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    if (document.fullscreenElement === this.rootEl?.nativeElement) document.exitFullscreen?.().catch(() => undefined);
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onResize(): void {
+    setTimeout(() => this.measure());
+  }
+
+  @HostListener('document:visibilitychange')
+  onVisibility(): void {
+    if (!document.hidden && Date.now() - this.lastRefreshAt >= REFRESH_MS) void this.refresh();
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    this.fullscreen = document.fullscreenElement === this.rootEl.nativeElement;
+    setTimeout(() => this.mapCmp?.updateSize());
+  }
+
+  // ── Data ─────────────────────────────────────────────────
+
+  /** Dynamic values (map) + node status; geometry is not reloaded. */
+  refresh(): Promise<void> {
+    this.refreshValues();
+    return this.store ? this.store.refresh() : this.loadNodes();
+  }
+
+  /** Sensor values + alerts only (map engine tick). */
+  private refreshValues(): void {
+    this.lastRefreshAt = Date.now();
+    this.now = Date.now();
+    this.refreshNonce++;
+  }
+
+  retryNodes(): void {
+    void (this.store ? this.store.refresh() : this.loadNodes());
+  }
+
+  onValues(rows: NodeSensorData[]): void {
+    this.values = new Map(rows.map((r) => [r.nodeId, r] as [string, NodeSensorData]));
+    this.now = Date.now();
+    this.recompute();
+  }
+
+  onLoaded(at: Date): void {
+    this.updatedAt = at;
+  }
+
+  /** Own collapsible legend (engine legend off): WebGIS colours, friendlier names. */
+  onLegend(l: ProjectMapLegend): void {
+    this.legendItems = l.items.map((i) => ({ ...i, name: i.shape === 'dot' ? metricLabel(i.name) : i.name }));
+    this.alertCount = l.alertCount;
+    this.alertColor = l.alertColor;
+  }
+
+  get filterLabel(): string {
+    return this.filter === 'all' ? '' : MAP_BUCKET_LABEL[this.filter].toLowerCase();
+  }
+
+  toggleLegend(): void {
+    this.legendTouched = true;
+    this.legendOpen = !this.legendOpen;
+  }
+
+  /** channelId → decimals from `sensor_channels.precision` (store `/sensors`); unknown → 2. */
+  private setPrecision(sensors: any[]): void {
+    this.sensorsRef = sensors;
+    const map = new Map<string, number>();
+    for (const s of sensors) {
+      for (const ch of s?.channels || []) {
+        // no precision -> metric default (volume 0, tekanan/debit 2), never a blanket 2
+        if (ch?.idSensorChannel) map.set(ch.idSensorChannel, decimalsFromPrecision(ch.precision, metricDecimals(ch.metricCode)));
+      }
     }
-    this.sensorOverlays = [];
-    this.destroy$.next(); this.destroy$.complete();
+    this.decimals = map;
+    this.labelFormat = this.buildLabelFormat();
+    if (this.selected) this.selected = this.sheetNode(this.selected.id);
+  }
+
+  private buildLabelFormat(): SensorLabelFormat {
+    const decimals = this.decimals;
+    return {
+      metric: (code) => metricLabel(code),
+      value: (ch) => {
+        const n = ch.value === null || ch.value === undefined ? NaN : Number(ch.value);
+        return Number.isFinite(n) ? formatIdNumber(n, decimals.get(ch.channelId) ?? metricDecimals(ch.metricCode)) : '—';
+      },
+      unit: (u) => prettyUnit(u),
+      hide: (ch) => isConstantMetric(ch.metricCode),
+    };
+  }
+
+  onLoadError(text: string | null): void {
+    this.loadErrorText = text;
+  }
+
+  retryMap(): void {
+    this.loadErrorText = null;
+    this.mapCmp?.retryLayers();
+    void (this.store ? this.store.refresh() : this.loadNodes());
+  }
+
+  get updatedText(): string {
+    // id-ID clock 09.42 (same as Ringkasan)
+    return this.updatedAt ? formatHm(this.updatedAt).replace(':', '.') : '';
+  }
+
+  private loadNodes(): Promise<void> {
+    const projectId = this.projectId;
+    if (!projectId) return Promise.resolve();
+    this.nodesSub?.unsubscribe();
+    this.nodesDone?.();
+    const done = new Promise<void>((resolve) => (this.nodesDone = resolve));
+    const finish = () => { const d = this.nodesDone; this.nodesDone = null; d?.(); };
+    this.nodesLoading = true;
+    this.nodesSub = fetchAll((p) => this.nodesService.nodesControllerFindAll$Response({ idProject: projectId, ...p }))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (rows: any[]) => {
+          this.setNodes(rows);
+          this.nodesError = false;
+          this.nodesLoading = false;
+          finish();
+        },
+        error: () => {
+          this.nodesError = true;
+          this.nodesLoading = false;
+          finish();
+        },
+      });
+    return done;
+  }
+
+  private setNodes(rows: any[]): void {
+    const map = new Map<string, MapNode>();
+    for (const n of rows) {
+      const id = n.idNode || n.id;
+      if (!id) continue;
+      map.set(id, {
+        id,
+        code: n.code || n.name || '',
+        address: (n.address || '').trim(),
+        lat: toNum(n.latitude),
+        lon: toNum(n.longitude),
+        lastSeenAt: n.lastSeenAt || null,
+        intervalSec: n.telemetryIntervalSec ?? null,
+      });
+    }
+    this.nodes = map;
+    this.now = Date.now();
+    this.recompute();
+  }
+
+  /** Status per node → chip counts, filter set, open sheet content. */
+  private recompute(): void {
+    const all = new Map<string, MapStatusBucket>();
+    for (const id of this.mapNodeIds()) all.set(id, freshnessBucket(this.freshnessOf(id)));
+    // Counts = markers of the current view: Sensor → nodes with located channel values; Node → every located node.
+    const sensorIds = new Set(this.sensorNodeIds());
+    const shown = this.view === 'node' ? all : new Map([...all].filter(([id]) => sensorIds.has(id)));
+    this.counts = countBuckets([...shown.values()]);
+    this.applyFilter(all);
+    this.buildNodePoints(all);
+    setTimeout(() => this.fitChips()); // counts change chip widths
+    if (this.selected) this.selected = this.sheetNode(this.selected.id);
+    if (this.choices.length) this.choices = this.choices.map((c) => this.sheetNode(c.id));
+  }
+
+  /** Nodes drawn on the map: with coordinates (node list) or with a located value row. */
+  private mapNodeIds(): string[] {
+    const ids = new Set<string>();
+    for (const n of this.nodes.values()) if (Number.isFinite(n.lat) && Number.isFinite(n.lon)) ids.add(n.id);
+    for (const v of this.values.values()) if (v.hasCoordinates) ids.add(v.nodeId);
+    return [...ids];
+  }
+
+  /** Nodes drawn by the sensor-type layers / value cards (Sensor view). */
+  private sensorNodeIds(): string[] {
+    return [...this.values.values()].filter((v) => v.hasCoordinates && v.channels.length > 0).map((v) => v.nodeId);
+  }
+
+  private lastAtOf(id: string): string | null {
+    const v = this.values.get(id);
+    return latestTime(this.nodes.get(id)?.lastSeenAt, ...(v?.channels || []).map((c) => c.timestamp));
+  }
+
+  private freshnessOf(id: string): Freshness {
+    return getFreshness(this.lastAtOf(id), this.nodes.get(id)?.intervalSec, this.now);
+  }
+
+  // ── View (Sensor | Node) ─────────────────────────────────
+
+  setView(v: 'sensor' | 'node'): void {
+    if (this.view === v) return;
+    this.view = v;
+    this.recompute();
+  }
+
+  /** Sensor view: status filter set; Node view: hide every sensor-type marker/card/alert. */
+  get mapVisibleNodeIds(): ReadonlySet<string> | null {
+    return this.view === 'node' ? NO_NODES : this.visibleNodeIds;
+  }
+
+  get mapPoints(): MapPoint[] {
+    return this.view === 'node' ? this.nodePoints : NO_POINTS;
+  }
+
+  private buildNodePoints(buckets: Map<string, MapStatusBucket>): void {
+    const css = getComputedStyle(this.rootEl?.nativeElement || document.documentElement);
+    const tok = (name: string, fb: string) => css.getPropertyValue(name).trim() || fb;
+    const colors: Record<Freshness, string> = {
+      fresh: tok('--m-success', '#2dd4a7'),
+      stale: tok('--m-warning', '#fbbf24'),
+      offline: tok('--m-danger', '#fb5b6d'),
+      nodata: '',
+    };
+    const points: MapPoint[] = [];
+    for (const [id, bucket] of buckets) {
+      if (this.filter !== 'all' && bucket !== this.filter) continue;
+      const n = this.sheetNode(id);
+      if (n.lat === null || n.lon === null) continue;
+      points.push({
+        id,
+        lat: n.lat,
+        lon: n.lon,
+        label: n.ago,
+        value: null,
+        unit: '',
+        // nodata → muted ring (no fill); others filled with the mobile status token
+        status: NODE_POINT_STATUS[n.freshness],
+        color: colors[n.freshness] || undefined,
+        z: NODE_Z[n.freshness],
+        time: null,
+      });
+    }
+    this.nodePoints = points;
+  }
+
+  // ── Filter ───────────────────────────────────────────────
+
+  setFilter(f: MapStatusFilter): void {
+    if (this.filter === f) return;
+    this.filter = f;
+    this.recompute();
+  }
+
+  private applyFilter(buckets: Map<string, MapStatusBucket>): void {
+    if (this.filter === 'all') {
+      this.visibleNodeIds = null;
+      return;
+    }
+    const next = new Set([...buckets].filter(([, b]) => b === this.filter).map(([id]) => id));
+    const prev = this.visibleNodeIds;
+    // Keep the reference when nothing changed (no needless restyle / card rebuild).
+    if (prev && prev.size === next.size && [...next].every((id) => prev.has(id))) return;
+    this.visibleNodeIds = next;
+  }
+
+  // ── Sheet ────────────────────────────────────────────────
+
+  onSelect(sel: ProjectMapSelection | null): void {
+    if (!sel) {
+      this.closeSheet();
+      return;
+    }
+    const nodes = sel.nodeIds.map((id) => this.sheetNode(id));
+    if (nodes.length === 1) {
+      this.choices = [];
+      this.selected = nodes[0];
+    } else {
+      this.choices = nodes;
+      this.selected = null;
+    }
+    this.sheetOpen = true;
+  }
+
+  choose(n: SheetNode): void {
+    this.selected = n;
+  }
+
+  backToChoices(): void {
+    this.selected = null;
+  }
+
+  closeSheet(): void {
+    this.sheetOpen = false;
+    this.selected = null;
+    this.choices = [];
+  }
+
+  private sheetNode(id: string): SheetNode {
+    const node = this.nodes.get(id);
+    const v = this.values.get(id);
+    const code = node?.code || v?.nodeCode || v?.nodeName || '';
+    const address = node?.address || (v?.nodeAddress || '').trim();
+    const lat = node && Number.isFinite(node.lat) ? node.lat : v?.hasCoordinates ? Number(v.latitude) : NaN;
+    const lon = node && Number.isFinite(node.lon) ? node.lon : v?.hasCoordinates ? Number(v.longitude) : NaN;
+    const freshness = this.freshnessOf(id);
+    const lastAt = this.lastAtOf(id);
+    const channels = v?.channels || [];
+    const metricCount = new Map<string, number>();
+    for (const c of channels) metricCount.set(metricLabel(c.metricCode), (metricCount.get(metricLabel(c.metricCode)) || 0) + 1);
+    return {
+      id,
+      label: address || code || '—',
+      code: address ? code : '',
+      lat: Number.isFinite(lat) ? lat : null,
+      lon: Number.isFinite(lon) ? lon : null,
+      freshness,
+      tone: FRESHNESS_TONE[freshness],
+      statusText: MAP_FRESHNESS_TEXT[freshness],
+      ago: lastAt ? timeAgoId(lastAt, this.now) : '',
+      channels: sortSheetChannels(channels).map((c) => {
+        const metric = metricLabel(c.metricCode);
+        const num = c.value === null || c.value === undefined ? NaN : Number(c.value);
+        return {
+          channelId: c.channelId,
+          // metric name; sensor label only when two channels share the metric
+          name: (metricCount.get(metric) || 0) > 1 && c.sensorLabel ? `${metric} · ${c.sensorLabel}` : metric,
+          value: Number.isFinite(num) ? formatIdNumber(num, this.decimals.get(c.channelId) ?? metricDecimals(c.metricCode)) : '—',
+          unit: Number.isFinite(num) ? prettyUnit(c.unit) : '',
+          status: c.status,
+        };
+      }),
+    };
+  }
+
+  // ── Actions ──────────────────────────────────────────────
+
+  get hasCoords(): boolean {
+    return !!this.selected && this.selected.lat !== null && this.selected.lon !== null;
+  }
+
+  routeTo(): void {
+    const n = this.selected;
+    if (!n || n.lat === null || n.lon === null) return;
+    window.open(directionsUrl(n.lat, n.lon), '_blank', 'noopener');
+  }
+
+  async copy(): Promise<void> {
+    const text = this.shareTextOf(this.selected);
+    if (!text) return;
+    const ok = await copyText(text);
+    this.showToast(ok ? 'Disalin' : 'Gagal menyalin');
+  }
+
+  async share(): Promise<void> {
+    const text = this.shareTextOf(this.selected);
+    if (!text) return;
+    const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+    if (nav.share) {
+      try {
+        await nav.share({ title: this.selected!.label, text });
+        return;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return; // user cancelled
+        // The user gesture is spent — a popup would be blocked; copy instead.
+        const ok = await copyText(text);
+        this.showToast(ok ? 'Disalin' : 'Gagal membagikan');
+        return;
+      }
+    }
+    window.open(whatsappShareUrl(text), '_blank', 'noopener');
+  }
+
+  openNode(n: SheetNode | null = this.selected): void {
+    if (n) this.router.navigate(this.nodeLink(n.id));
+  }
+
+  /** Trend of the main channel (first after alarm-first / pressure-flow ordering). */
+  openTrend(channelId?: string): void {
+    const n = this.selected;
+    if (!n) return;
+    const ch = channelId || n.channels[0]?.channelId;
+    if (ch) this.router.navigate([...this.nodeLink(n.id), 'channels', ch]);
+    else this.openNode(n);
+  }
+
+  private shareTextOf(n: SheetNode | null): string {
+    if (!n) return '';
+    if (n.lat === null || n.lon === null) return n.code ? `${n.label} (${n.code})` : n.label;
+    return nodeShareText(n.label, n.code, n.lat, n.lon);
+  }
+
+  // ── Map controls ─────────────────────────────────────────
+
+  zoom(delta: number): void {
+    this.mapCmp?.zoomBy(delta);
+  }
+
+  fitAll(): void {
+    this.mapCmp?.resetView();
+  }
+
+  /** Toggle: first tap shows "Lokasi saya", next tap removes the dot. */
+  locate(): void {
+    if (this.userLocated) {
+      this.userLocated = false;
+      this.mapCmp?.setUserLocation(null);
+      return;
+    }
+    if (!('geolocation' in navigator) || !window.isSecureContext) {
+      this.showToast('Lokasi tidak didukung di perangkat/peramban ini');
+      return;
+    }
+    this.locating = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => this.zone.run(() => {
+        this.locating = false;
+        const lonLat: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        this.userLocated = true;
+        this.mapCmp?.setUserLocation(lonLat);
+        this.mapCmp?.flyTo(lonLat, 15);
+      }),
+      (err) => this.zone.run(() => {
+        this.locating = false;
+        this.showToast(err.code === err.PERMISSION_DENIED
+          ? 'Izin lokasi ditolak — aktifkan di pengaturan peramban'
+          : err.code === err.TIMEOUT ? 'Lokasi tidak ditemukan (waktu habis)' : 'Lokasi tidak tersedia');
+      }),
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
+    );
+  }
+
+  toggleFullscreen(): void {
+    const el = this.rootEl.nativeElement;
+    if (this.fullscreen) {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    if (this.cssFullscreen) {
+      this.cssFullscreen = false;
+      setTimeout(() => { this.measure(); this.mapCmp?.updateSize(); });
+      return;
+    }
+    if (el.requestFullscreen && document.fullscreenEnabled) {
+      el.requestFullscreen().catch(() => this.zone.run(() => this.enterCssFullscreen()));
+    } else {
+      this.enterCssFullscreen();
+    }
+  }
+
+  get isFull(): boolean {
+    return this.fullscreen || this.cssFullscreen;
+  }
+
+  private enterCssFullscreen(): void {
+    this.cssFullscreen = true;
+    setTimeout(() => this.mapCmp?.updateSize());
+  }
+
+  // ── Layout ───────────────────────────────────────────────
+
+  /**
+   * Fill the viewport between the map's top and the bottom chrome. The bottom limit is the scroll
+   * container's bottom (bottom nav is its sibling) minus its padding, or the top of any visible
+   * `.m-bottomnav` above it — no hard-coded tab/app-bar heights (layout is being restructured).
+   */
+  private measure(): void {
+    const el = this.rootEl?.nativeElement;
+    if (!el || this.isFull) return;
+    const viewportH = window.visualViewport?.height || window.innerHeight;
+    const top = el.getBoundingClientRect().top;
+    let limit = viewportH;
+    const content = el.closest('.m-content') as HTMLElement | null;
+    if (content) {
+      const r = content.getBoundingClientRect();
+      const pad = parseFloat(getComputedStyle(content).paddingBottom) || 0;
+      limit = Math.min(limit, r.bottom - Math.min(pad, 12));
+    } else {
+      const css = parseFloat(getComputedStyle(el).getPropertyValue('--m-bottomnav-h')) || 64;
+      limit = viewportH - css;
+    }
+    let navTop = viewportH;
+    // In-project bottom nav (fixed): its real height is written to --m-bottomnav-h on .m-app.
+    if (this.store || el.closest('.m-projshell')) {
+      const app = (el.closest('.m-app') as HTMLElement | null) || document.documentElement;
+      const navH = parseFloat(getComputedStyle(app).getPropertyValue('--m-bottomnav-h'));
+      if (Number.isFinite(navH) && navH > 0) navTop = Math.min(navTop, viewportH - navH);
+    }
+    document.querySelectorAll<HTMLElement>('.m-bottomnav').forEach((nav) => {
+      const r = nav.getBoundingClientRect();
+      if (r.height > 0 && r.top > top) navTop = Math.min(navTop, r.top);
+    });
+    limit = Math.min(limit, navTop - 4);
+    const landscape = viewportH <= 480;
+    this.landscape = landscape;
+    if (landscape && this.legendOpen && !this.legendTouched) this.legendOpen = false;
+    this.fitChips();
+    this.narrow = el.getBoundingClientRect().width < 480;
+    this.height = fillHeight(limit, top, 0, landscape ? 160 : 280);
+    const pad = landscape ? FIT_PAD_LANDSCAPE : FIT_PAD_PORTRAIT;
+    if (pad !== this.fitPadding) this.fitPadding = pad;
+    const insets = landscape ? INSETS_LANDSCAPE : INSETS_PORTRAIT;
+    if (insets !== this.labelInsets) this.labelInsets = insets;
+    this.sheetBottom = Math.max(0, Math.round(viewportH - navTop));
+  }
+
+  /** Compact chips whenever the full labels overflow the toolbar (any width), back when room returns. */
+  private fitChips(): void {
+    const row = this.rootEl?.nativeElement.querySelector<HTMLElement>('.pm-chips');
+    if (!row) return;
+    const w = row.clientWidth;
+    if (!this.compactChips && row.scrollWidth > w + 1) {
+      this.chipsOverflowAt = w;
+      this.compactChips = true;
+    } else if (this.compactChips && this.chipsOverflowAt && w > this.chipsOverflowAt + 60) {
+      this.compactChips = false;
+      setTimeout(() => this.fitChips()); // re-check with full labels
+    }
+  }
+
+  private showToast(text: string): void {
+    this.toast = text;
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => (this.toast = null), 2200);
+  }
+
+  /** Device page: in-project route when hosted at /mobile/p/:pid, else the old global one. */
+  private nodeLink(nodeId: string): any[] {
+    return this.pid ? ['/mobile/p', this.pid, 'nodes', nodeId] : ['/mobile/nodes', nodeId];
+  }
+
+  private readProjectId(): string | null {
+    // `pid` (new /mobile/p/:pid/… routes) or `id` (/mobile/projects/:id/map) on the nearest ancestor.
+    let r: ActivatedRoute | null = this.route;
+    while (r) {
+      const p = r.snapshot.paramMap;
+      const pid = p.get('pid');
+      if (pid) {
+        this.pid = pid;
+        return pid;
+      }
+      const id = p.get('id');
+      if (id) return id;
+      r = r.parent;
+    }
+    return null;
+  }
+}
+
+const NO_POINTS: MapPoint[] = [];
+
+function toNum(v: unknown): number {
+  if (v === null || v === undefined || v === '') return NaN;
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/** Clipboard API, falling back to a hidden textarea + execCommand (http / older WebViews). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
   }
 }
