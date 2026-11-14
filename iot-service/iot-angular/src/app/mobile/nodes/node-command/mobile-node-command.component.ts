@@ -1,12 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { NodesService } from '@sdk/core/services/nodes.service';
+import { filter, map, take, takeUntil } from 'rxjs/operators';
+import { MobileProjectStore } from '../../shared/mobile-project-store.service';
+import { mErrorText } from '../../shared/labels';
 import { NodeModelCommandsService } from '@sdk/core/services/node-model-commands.service';
 import { NodeCommandService } from '@sdk/core/services/node-command.service';
 
-/** Tab Command: daftar command dinamis (node_model_commands) SMS/MQTT, isi param + konfirmasi + kirim. */
+/** Segmen Perintah: daftar command dinamis (node_model_commands) SMS/MQTT, isi param + konfirmasi + kirim. */
 @Component({
   selector: 'mobile-node-command',
   templateUrl: './mobile-node-command.component.html',
@@ -35,24 +36,27 @@ export class MobileNodeCommandComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private nodesSvc: NodesService,
+    private store: MobileProjectStore,
     private cmdModelSvc: NodeModelCommandsService,
     private cmdSvc: NodeCommandService,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.nodeUuid = this.route.parent?.snapshot.paramMap.get('id') || '';
-    this.nodesSvc.nodesControllerFindOne$Response({ id: this.nodeUuid }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res: any) => {
-        let b: any = res.body; if (typeof b === 'string') { b = JSON.parse(b); }
-        const node = b?.data || b || {};
-        this.serial = node.code || this.nodeUuid;
-        this.picPhone = node.picPhone || '';
-        this.idNodeModel = node.idNodeModel || node.nodeModel?.idNodeModel || '';
-        if (this.idNodeModel) { this.loadCommands(); } else { this.error = 'Node model tidak diketahui'; this.loading = false; }
-      },
-      error: (e) => { this.error = e?.message || 'Gagal memuat node'; this.loading = false; }
+    // Node dari store project (sudah dimuat shell) — tidak ada GET /nodes/{id} ulang per tab.
+    const nid = this.route.parent?.snapshot.paramMap.get('nid') || '';
+    this.store.state$.pipe(
+      map((s) => ({ s, node: (s.nodes || []).find((n) => n.idNode === nid || n.code === nid) || null })),
+      filter(({ s, node }) => !!node || !s.firstLoad),
+      take(1),
+      takeUntil(this.destroy$)
+    ).subscribe(({ s, node }) => {
+      if (!node) { this.error = s.nodesError || 'Perangkat tidak ditemukan'; this.loading = false; return; }
+      this.nodeUuid = node.idNode;
+      this.serial = node.code || this.nodeUuid;
+      this.picPhone = node.picPhone || '';
+      this.idNodeModel = node.idNodeModel || node.nodeModel?.idNodeModel || '';
+      if (this.idNodeModel) { this.loadCommands(); } else { this.error = 'Model perangkat tidak diketahui'; this.loading = false; }
     });
   }
 
@@ -66,7 +70,7 @@ export class MobileNodeCommandComponent implements OnInit, OnDestroy {
           this.commands = list.filter((c) => c.isActive !== false).sort((a, b2) => (a.sortOrder || 0) - (b2.sortOrder || 0));
           this.loading = false;
         },
-        error: (e) => { this.error = e?.message || 'Gagal memuat command'; this.loading = false; }
+        error: (e) => { this.error = mErrorText(e, 'daftar perintah'); this.loading = false; }
       });
   }
 

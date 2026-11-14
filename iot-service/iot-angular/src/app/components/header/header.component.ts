@@ -43,7 +43,7 @@ export class HeaderComponent implements OnInit {
 
 	goMobile(): void {
 		this.viewMode.set('mobile');
-		this.router.navigateByUrl('/mobile/dashboard');
+		this.router.navigateByUrl('/mobile'); // landing guard decides: 1 project → project, >1 → list
 	}
 	
 	ngOnInit(): void {

@@ -1,12 +1,14 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ScadaService, ScadaDiagram } from '@services/scada.service';
+import { ScadaService } from '@services/scada.service';
+import { MobileChromeService } from '../../../shared/mobile-chrome.service';
 
 /**
- * Tab SCADA: (1) list diagram, (2) klik → embed viewer (view-only) — sama desktop analytics.
- * Iframe + auth handshake: <app-scada-embed> (shared/scada-embed).
+ * Bagan SCADA layar penuh `/mobile/p/:pid/scada/:did` (dibuka dari kartu Ringkasan).
+ * Iframe + auth handshake: <app-scada-embed> bersama (shared/scada-embed) — input tidak diubah.
+ * Satu tombol back saja (kembali ke Ringkasan).
  */
 @Component({
   selector: 'mobile-project-scada',
@@ -14,45 +16,35 @@ import { ScadaService, ScadaDiagram } from '@services/scada.service';
   standalone: false
 })
 export class MobileProjectScadaComponent implements OnInit, OnDestroy {
-  loading = true;
-  error = '';
-  diagrams: ScadaDiagram[] = [];
   projectId = '';
-
   activeId = '';
-  activeName = '';
+  activeName = 'Bagan SCADA';
   embedFullscreen = false;
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private scada: ScadaService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router,
+    private chrome: MobileChromeService
   ) {}
 
   ngOnInit(): void {
-    this.projectId = this.route.parent?.snapshot.paramMap.get('id') || '';
-    this.load();
-  }
-
-  load(): void {
-    this.loading = true; this.error = '';
+    this.projectId = this.route.parent?.snapshot.paramMap.get('pid') || '';
+    this.activeId = this.route.snapshot.paramMap.get('did') || '';
     this.scada.getDiagramsByProject(this.projectId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (d) => { this.diagrams = d || []; this.loading = false; },
-      error: (e) => { this.error = e?.error?.message || e?.message || 'Gagal memuat SCADA'; this.loading = false; }
+      next: (list) => {
+        const d = (list || []).find((x) => x.id === this.activeId);
+        if (d?.name) { this.activeName = d.name; this.chrome.setTitle('page', d.name); }
+      },
+      error: () => { /* nama opsional; viewer tetap jalan */ }
     });
   }
 
-  open(d: ScadaDiagram): void {
-    this.activeId = d.id;
-    this.activeName = d.name;
-    this.embedFullscreen = false;
-  }
-
   back(): void {
-    this.activeId = '';
-    this.activeName = '';
-    this.embedFullscreen = false;
+    if (this.chrome.canGoBackInApp) { history.back(); return; }
+    this.router.navigate(['/mobile/p', this.projectId, 'ringkasan'], { replaceUrl: true });
   }
 
   // Embedded SCADA can't reliably go native-fullscreen inside an iframe on mobile —
@@ -64,6 +56,7 @@ export class MobileProjectScadaComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.chrome.clearTitle('page');
     this.destroy$.next(); this.destroy$.complete();
   }
 }

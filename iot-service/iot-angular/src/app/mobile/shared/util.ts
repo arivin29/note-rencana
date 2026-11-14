@@ -1,17 +1,4 @@
-/** Waktu relatif singkat (Bahasa Indonesia) untuk last-seen / timestamp. */
-export function relTime(iso?: string | null): string {
-  if (!iso) { return 'belum pernah'; }
-  const t = new Date(iso).getTime();
-  if (isNaN(t)) { return '-'; }
-  const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
-  if (s < 60) { return `${s} dtk lalu`; }
-  const m = Math.floor(s / 60);
-  if (m < 60) { return `${m} mnt lalu`; }
-  const h = Math.floor(m / 60);
-  if (h < 24) { return `${h} jam lalu`; }
-  const d = Math.floor(h / 24);
-  return `${d} hr lalu`;
-}
+/** Waktu relatif: pakai `timeAgoId` dari src/app/shared/utils/channel-display.ts (relTime dihapus). */
 
 export interface ChartPoint { t: number; v: number; }
 
@@ -30,4 +17,10 @@ export function buildChartPaths(points: ChartPoint[], W = 320, H = 130, pad = 6)
     path: 'M' + pts.join(' L'),
     area: `M${sx(minX).toFixed(1)},${(H - pad).toFixed(1)} L` + pts.join(' L') + ` L${sx(maxX).toFixed(1)},${(H - pad).toFixed(1)} Z`
   };
+}
+
+/** Timestamp dari backend → null bila kosong atau zero-time Go (`0001-01-01…`), supaya tidak tampil "739933 hari lalu". */
+export function cleanTs<T extends string | Date | null | undefined>(v: T): T | null {
+  if (!v) { return null; }
+  return String(v).startsWith('0001-') ? null : v;
 }

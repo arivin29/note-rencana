@@ -130,11 +130,14 @@ export class AuthService {
    * Logout user and clear session
    */
   logout(): void {
+    // Mobile (/mobile/**) punya layar login sendiri — jangan lempar ke login desktop.
+    const fromMobile = this.router.url.startsWith('/mobile');
+
     // Clear session first
     this.clearSession();
     
     // Navigate to login
-    this.router.navigate(['/auth/login']);
+    this.router.navigate([fromMobile ? '/mobile/login' : '/auth/login']);
     
     // Call backend logout endpoint (fire and forget)
     this.http.post(`${this.API_URL}/logout`, {}).subscribe({
@@ -202,7 +205,7 @@ export class AuthService {
       catchError(error => {
         // If refresh fails, logout user
         this.clearSession();
-        this.router.navigate(['/auth/login']);
+        this.router.navigate([this.router.url.startsWith('/mobile') ? '/mobile/login' : '/auth/login']);
         return throwError(() => error);
       })
     );
@@ -324,6 +327,10 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    // Mobile: project aktif lama (chip "Pilih Project") tidak boleh terbawa ke akun berikut
+    // di HP yang sama (audit mobile F8). Cache daftar project/landing mobile ada di memori
+    // (MobileScopeService) dan dibuang otomatis saat currentUser$ berganti.
+    localStorage.removeItem('devetek.activeProject');
     
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);

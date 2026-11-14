@@ -4,13 +4,18 @@
 
 <div class="m-empty" *ngIf="!loading && error">
   <i class="fa fa-triangle-exclamation"></i>{{ error }}
-  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="load(true)">Coba lagi</button></div>
 </div>
 
 <div class="m-empty" *ngIf="!loading && !error && logs.length === 0">
   <i class="fa fa-file-lines"></i>Belum ada log
 </div>
 
+<div class="m-banner m-banner--warn" *ngIf="!loading && refreshError" role="status">
+  <i class="fa fa-triangle-exclamation"></i><span>{{ refreshError }}</span>
+  <button class="m-banner__btn" type="button" (click)="load(false)">Coba lagi</button>
+</div>
+<div class="m-result-count" *ngIf="!loading && !error && logs.length > 0">{{ logs.length }} log terbaru · tarik ke bawah untuk memuat ulang</div>
 <div class="m-card" *ngIf="!loading && !error && logs.length > 0">
   <div class="m-list__item" *ngFor="let l of logs" (click)="open(l)" style="align-items:flex-start">
     <div class="m-list__body" style="min-width:0">

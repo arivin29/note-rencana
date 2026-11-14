@@ -10,43 +10,41 @@
 
 <div class="m-section">Preferensi</div>
 <div class="m-card">
-  <div class="m-list__item"><div class="m-list__body"><div class="m-list__title">Satuan</div></div><span class="m-list__sub">Metrik</span></div>
-  <div class="m-list__item"><div class="m-list__body"><div class="m-list__title">Bahasa</div></div><span class="m-list__sub">Indonesia</span></div>
-  <div class="m-list__item" (click)="openRefreshSheet()">
-    <div class="m-list__body"><div class="m-list__title">Auto-reload</div></div>
+  <button type="button" class="m-list__item m-list__item--btn" (click)="openRefreshSheet()">
+    <div class="m-list__body"><div class="m-list__title">Muat ulang otomatis</div></div>
     <span class="m-list__sub" style="margin-right:8px">{{ refreshLabel }}</span>
     <i class="fa fa-chevron-right m-list__chev"></i>
-  </div>
+  </button>
 </div>
 
 <div class="m-section">Tampilan</div>
 <div class="m-card">
-  <div class="m-list__item" (click)="goDesktop()">
+  <button type="button" class="m-list__item m-list__item--btn" (click)="goDesktop()">
     <div class="m-list__body"><div class="m-list__title">Tampilan Desktop</div></div>
     <i class="fa fa-desktop m-list__chev"></i>
-  </div>
+  </button>
 </div>
 
 <div class="m-section">Akun</div>
 <div class="m-card">
-  <div class="m-list__item" (click)="logout()">
+  <button type="button" class="m-list__item m-list__item--btn" (click)="logout()">
     <div class="m-list__body"><div class="m-list__title" style="color:var(--m-danger)">Keluar</div></div>
     <i class="fa fa-arrow-right-from-bracket m-list__chev" style="color:var(--m-danger)"></i>
-  </div>
+  </button>
 </div>
 
 <!-- Sheet: pilih interval auto-reload -->
 <div class="m-scrim" [class.open]="refreshSheetOpen" (click)="closeRefreshSheet()"></div>
 <div class="m-sheet" [class.open]="refreshSheetOpen">
   <div class="m-sheet__grip"></div>
-  <div class="m-sheet__head">Auto-reload</div>
-  <div class="m-subtle" style="padding:0 var(--m-4) 10px">Seberapa sering halaman memuat ulang data. Berlaku untuk semua halaman mobile.</div>
+  <div class="m-sheet__head">Muat ulang otomatis</div>
+  <div class="m-subtle" style="padding:0 var(--m-4) 10px">Data perangkat masuk tiap ±2 menit, jadi aplikasi memuat ulang tiap 60 detik saat layar terbuka. Pilih Mati untuk hemat kuota — tarik layar ke bawah untuk memuat ulang manual.</div>
   <div class="m-sheet__body">
     <div class="m-card">
-      <div class="m-list__item" *ngFor="let o of refreshOptions" (click)="selectRefresh(o.value)">
+      <button type="button" class="m-list__item m-list__item--btn" *ngFor="let o of refreshOptions" (click)="selectRefresh(o.value)">
         <div class="m-list__body"><div class="m-list__title">{{ o.label }}</div></div>
         <span class="m-radio" [class.on]="refreshValue === o.value"></span>
-      </div>
+      </button>
     </div>
   </div>
 </div>

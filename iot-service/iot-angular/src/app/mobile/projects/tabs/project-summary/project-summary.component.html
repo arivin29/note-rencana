@@ -1,0 +1,127 @@
+<!-- Muatan pertama -->
+<div class="m-card m-pad" *ngIf="s.firstLoad">
+  <div class="m-skel w-50"></div><div class="m-skel w-70"></div><div class="m-skel w-40"></div>
+</div>
+
+<!-- Gagal total (belum ada data sama sekali) -->
+<div class="m-empty" *ngIf="!s.firstLoad && !s.nodes && s.nodesError">
+  <i class="fa fa-triangle-exclamation"></i>{{ s.nodesError }}
+  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+</div>
+
+<ng-container *ngIf="!s.firstLoad && s.nodes">
+
+  <div class="m-banner m-banner--warn" *ngIf="s.refreshFailed" role="status">
+    <i class="fa fa-triangle-exclamation"></i>
+    <span>Sebagian data gagal diperbarui<ng-container *ngIf="updated"> · data per {{ updated }}</ng-container></span>
+    <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
+  </div>
+  <div class="m-banner m-banner--warn" *ngIf="!s.latestAvailable" role="status">
+    <i class="fa fa-circle-info"></i>
+    <span>Nilai terakhir channel sedang tidak tersedia dari server. Status ambang tidak dapat dinilai.</span>
+  </div>
+
+  <!-- Kepala status -->
+  <div class="m-card m-statushead">
+    <div class="m-statushead__meta m-mt-0">
+      <ng-container *ngIf="meta.lastData">Data terakhir masuk {{ meta.lastData }}</ng-container>
+      <ng-container *ngIf="!meta.lastData">Belum ada data masuk</ng-container>
+      <ng-container *ngIf="meta.interval"> · kirim {{ meta.interval }}</ng-container>
+    </div>
+    <div class="m-sbar m-mt-3" *ngIf="total > 0" role="img"
+         [attr.aria-label]="'Status perangkat: ' + segs[0].n + ' aktif, ' + segs[1].n + ' terlambat, ' + segs[2].n + ' offline, ' + segs[3].n + ' belum ada data'">
+      <span *ngFor="let g of segs" class="m-sbar__seg" [ngClass]="'m-sbar__seg--' + g.tone" [style.width.%]="g.pct"></span>
+    </div>
+    <div class="m-sbar__legend">
+      <span *ngFor="let g of segs" class="m-sbar__item"><span class="m-dot" [ngClass]="'m-dot--' + g.tone"></span>{{ g.label }} <b>{{ g.n }}</b></span>
+    </div>
+    <div class="m-statushead__meta" *ngIf="meta.area || meta.owner || updated">
+      <ng-container *ngIf="meta.owner">{{ meta.owner }}</ng-container><ng-container *ngIf="meta.owner && meta.area"> · </ng-container><ng-container *ngIf="meta.area">{{ meta.area }}</ng-container>
+      <ng-container *ngIf="updated"><ng-container *ngIf="meta.owner || meta.area"> · </ng-container>Diperbarui {{ updated }}</ng-container>
+    </div>
+  </div>
+
+  <!-- KPI (ketuk → daftar terfilter) -->
+  <div class="m-stats m-mt-3">
+    <a class="m-stat m-stat--tap m-stat--accent" [routerLink]="['/mobile/p', pid, 'perangkat']" aria-label="Semua perangkat">
+      <div class="m-stat__top"><span class="m-stat__ic"><i class="fa fa-microchip"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value">{{ total }}</div>
+      <div class="m-stat__label">Perangkat</div>
+    </a>
+    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/p', pid, 'perangkat']" [queryParams]="{ status: 'offline' }" aria-label="Perangkat offline">
+      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="offline ? 'm-stat__ic--danger' : 'm-stat__ic--muted'"><i class="fa fa-plug-circle-xmark"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value" [class.m-tx-danger]="offline > 0">{{ offline }}</div>
+      <div class="m-stat__label">Offline<ng-container *ngIf="nodata"> · {{ nodata }} belum ada data</ng-container></div>
+    </a>
+    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/p', pid, 'channel']" [queryParams]="{ status: 'out' }" aria-label="Channel di luar ambang">
+      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="outCount ? 'm-stat__ic--danger' : 'm-stat__ic--warn'"><i class="fa fa-wave-square"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value" [class.m-tx-danger]="outCount > 0">{{ s.sensors && s.latestAvailable ? outCount : '—' }}</div>
+      <div class="m-stat__label">
+        Di luar ambang
+      </div>
+      <div class="m-stat__hint" *ngIf="s.sensors">
+        {{ withThreshold ? (withThreshold + ' dari ' + channelsTotal + ' channel punya ambang') : 'Ambang belum diatur' }}
+      </div>
+    </a>
+    <a class="m-stat m-stat--tap" [routerLink]="['/mobile/p', pid, 'peringatan']" aria-label="Peringatan aktif">
+      <div class="m-stat__top"><span class="m-stat__ic" [ngClass]="(s.alerts?.total || 0) > 0 ? 'm-stat__ic--danger' : 'm-stat__ic--muted'"><i class="fa fa-bell"></i></span><i class="fa fa-chevron-right m-stat__go"></i></div>
+      <div class="m-stat__value" [class.m-tx-danger]="(s.alerts?.total || 0) > 0">{{ s.alerts ? s.alerts.total : '—' }}</div>
+      <div class="m-stat__label">Peringatan aktif</div>
+      <div class="m-stat__hint m-tx-danger" *ngIf="!s.alerts && s.alertsError">gagal dimuat</div>
+    </a>
+  </div>
+
+  <!-- Perlu perhatian -->
+  <div class="m-section">Perlu perhatian <span class="m-tag m-tag--active" *ngIf="attention.length">{{ attention.length }}</span></div>
+
+  <div class="m-card m-pad m-row-between" *ngIf="s.alertsError && !s.alerts">
+    <span class="m-subtle"><i class="fa fa-triangle-exclamation m-tx-danger"></i> Peringatan gagal dimuat — {{ s.alertsError }}</span>
+    <button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button>
+  </div>
+
+  <div class="m-card" *ngIf="attention.length > 0">
+    <div class="m-attn" *ngFor="let a of attention; trackBy: trackByKey">
+      <a class="m-attn__main" [routerLink]="a.link">
+        <div class="m-attn__top">
+          <span class="m-attn__title">{{ a.title }}</span>
+          <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + a.tone"><span class="dot"></span>{{ a.badge }}</span>
+        </div>
+        <div class="m-list__sub" *ngIf="a.code">{{ a.code }}</div>
+        <div class="m-attn__line">{{ a.line }}<ng-container *ngIf="a.time"> · {{ a.time }}</ng-container></div>
+      </a>
+      <a class="m-callbtn" *ngIf="a.phone" [href]="tel(a.phone)" [attr.aria-label]="'Telepon ' + a.phoneLabel + ' ' + a.title" title="Telepon PIC">
+        <i class="fa fa-phone"></i>
+      </a>
+    </div>
+  </div>
+  <a class="m-link m-more" *ngIf="s.alerts && s.alerts.total > s.alerts.list.length" [routerLink]="['/mobile/p', pid, 'peringatan']">
+    Lihat semua {{ s.alerts.total }} peringatan aktif <i class="fa fa-chevron-right"></i>
+  </a>
+
+  <div class="m-empty m-empty--sm" *ngIf="allClear">
+    <i class="fa fa-circle-check m-tx-ok"></i>
+    Semua perangkat aktif, tidak ada peringatan aktif<ng-container *ngIf="withThreshold"> dan tidak ada channel di luar ambang</ng-container>.
+  </div>
+
+  <!-- Bagan SCADA -->
+  <ng-container *ngIf="scadaLoading || scadaError || diagrams.length">
+    <div class="m-section">Bagan SCADA</div>
+    <div class="m-card m-pad" *ngIf="scadaLoading"><div class="m-skel w-60"></div></div>
+    <div class="m-card m-pad m-row-between" *ngIf="!scadaLoading && scadaError">
+      <span class="m-subtle">{{ scadaError }}</span>
+      <button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="loadScada()">Coba lagi</button>
+    </div>
+    <div class="m-card" *ngIf="!scadaLoading && !scadaError">
+      <a class="m-list__item" *ngFor="let d of diagrams" [routerLink]="['/mobile/p', pid, 'scada', d.id]">
+        <div class="m-scada-ic"><i class="fa fa-diagram-project"></i></div>
+        <div class="m-list__body">
+          <div class="m-list__title">{{ d.name }}</div>
+          <div class="m-list__sub">Buka layar penuh</div>
+        </div>
+        <i class="fa fa-expand m-list__chev"></i>
+      </a>
+    </div>
+  </ng-container>
+
+  <div class="m-spacer"></div>
+</ng-container>

@@ -1,175 +1,140 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Inject, LOCALE_ID, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { NodesService } from '@sdk/core/services/nodes.service';
-import { AutoRefreshService } from '@services/auto-refresh.service';
-import { relTime } from '../../shared/util';
-import { ChannelItem, ChStatus } from '../../shared/channel-list/mobile-channel-list.component';
-import { RefreshBusService } from '../../shared/refresh-bus.service';
+import { combineLatest, interval, Subject } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
+import { formatInterval } from '@app/shared/utils/channel-display';
+import { ChannelTrend } from '@app/shared/utils/channel-display';
 import { FlowChannelLike, FlowMeterInput, FlowMeterService } from '@services/flow-meter.service';
+import { MobileProjectStore, ProjectData } from '../../shared/mobile-project-store.service';
+import { buildChannelRows, ChannelRow, sortChannelRows } from '../../shared/channel-rows';
+import { clockText } from '../../shared/labels';
 
 /** Satu kartu diagram hidrolika per sensor flow meter. */
 interface FlowCard { sensorId: string; label: string; data: FlowMeterInput; }
-
-type NodeStatus = 'online' | 'offline' | 'degraded';
 interface Row { k: string; v: string; }
 
-/** Tab Info: status → lokasi/kontak → channel(accordion+chart) → info → kesehatan. */
+const NODE_STATUS_ID: Record<string, string> = {
+  active: 'Aktif', inactive: 'Nonaktif', maintenance: 'Perawatan', pending: 'Menunggu', decommissioned: 'Tidak dipakai'
+};
+
+/**
+ * Segmen Nilai: channel nilai terbaru (`/api/sensors` via store, difilter per perangkat) +
+ * sparkline 24 jam (satu /sensors/trends project) → hidrolika → konteks pemasangan →
+ * info teknis (dilipat). Tidak menampilkan "Uptime"/"Baterai" backend (heuristik, bukan metrik).
+ */
 @Component({
   selector: 'mobile-node-info',
   templateUrl: './mobile-node-info.component.html',
   standalone: false
 })
 export class MobileNodeInfoComponent implements OnInit, OnDestroy {
-  loading = true;
-  error: string | null = null;
-  nodeId = '';
-
-  head = { code: '', status: 'offline' as NodeStatus, lastSeen: '' };
-  loc = { text: '', coords: '' };
-  pic = { name: '', phone: '', email: '' };
-  channels: ChannelItem[] = [];
-  info: Row[] = [];
-  health: Row[] = [];
-
-  // diagram hidrolika per sensor flow meter (TUF-2000M dsb)
+  s!: ProjectData;
+  nid = '';
+  rows: ChannelRow[] = [];
   flowCards: FlowCard[] = [];
-
-  // installation context (per-sensor)
   sensors: { id: string; label: string }[] = [];
+  info: Row[] = [];
+  updated = '';
+
   ctxOpen = false;
   ctxSensorId = '';
   ctxSensorLabel = '';
 
+  /** diameter dari release context, diambil SEKALI per sensor (bukan tiap poll) */
+  private diameterCache = new Map<string, number | null>();
+  private diameterPending = new Set<string>();
   private destroy$ = new Subject<void>();
 
   constructor(
-    private nodesSvc: NodesService,
     private route: ActivatedRoute,
-    private auto: AutoRefreshService,
-    private refreshBus: RefreshBusService,
-    private flowMeter: FlowMeterService
+    public store: MobileProjectStore,
+    private flowMeter: FlowMeterService,
+    @Inject(LOCALE_ID) private locale: string
   ) {}
 
   ngOnInit(): void {
-    this.nodeId = this.route.parent?.snapshot.paramMap.get('id') || '';
-    this.auto.everyDefault().pipe(takeUntil(this.destroy$)).subscribe(() => this.load(false));
-    this.refreshBus.refresh$.pipe(takeUntil(this.destroy$)).subscribe(() => this.load(true));
-  }
-
-  get hasLocContact(): boolean {
-    return !!(this.loc.text || this.loc.coords || this.pic.name || this.pic.phone || this.pic.email);
-  }
-
-  load(showLoading: boolean): void {
-    if (showLoading) { this.loading = true; }
-    this.nodesSvc.nodesControllerGetDashboard$Response({ id: this.nodeId })
-      .pipe(takeUntil(this.destroy$)).subscribe({
-        next: (res: any) => {
-          let d: any = res.body;
-          if (typeof d === 'string') { d = JSON.parse(d); }
-          const node = d?.node || {};
-
-          this.head = {
-            code: node.code || node.name || this.nodeId,
-            status: this.mapStatus(node.connectivityStatus),
-            lastSeen: relTime(node.lastSeenAt)
-          };
-          this.loc = {
-            text: [node.address, node.city, node.province].filter(Boolean).join(', '),
-            coords: (node.latitude != null && node.longitude != null) ? `${node.latitude}, ${node.longitude}` : ''
-          };
-          this.pic = { name: node.picName || '', phone: node.picPhone || '', email: node.picEmail || '' };
-
-          const sensors = (d?.sensorsWithData || []) as any[];
-          const ch: ChannelItem[] = [];
-          const sList: { id: string; label: string }[] = [];
-          const cards: FlowCard[] = [];
-          const updatedAt = node.lastSeenAt ? new Date(node.lastSeenAt).toLocaleString('id-ID') : null;
-          for (const s of sensors) {
-            const sensorLabel = s.sensorCode || s.catalogName || '';
-            const sid = s.idSensor || s.id || '';
-            if (sid) { sList.push({ id: sid, label: sensorLabel || sid }); }
-
-            // Sensor flow meter dapat kartu diagram d/Q/V + totalizer
-            const flowCh: FlowChannelLike[] = (s.channels || []).map((c: any) => ({
-              id: c.idSensorChannel,
-              metric: c.metricCode,
-              unit: c.unit || '',
-              latest: c.latestValue != null ? Number(c.latestValue) : null
-            }));
-            if (sid && this.flowMeter.isFlowMeter(flowCh, s.catalogName)) {
-              cards.push({ sensorId: sid, label: sensorLabel || s.catalogName || sid, data: this.flowMeter.build(flowCh, updatedAt) });
-            }
-
-            for (const c of (s.channels || [])) {
-              ch.push({
-                id: c.idSensorChannel, nodeId: this.nodeId, metric: c.metricCode, subtitle: sensorLabel,
-                unit: c.unit || '',
-                value: c.latestValue != null ? String(Math.round(Number(c.latestValue) * 100) / 100) : '—',
-                status: this.mapCh(c.status), updated: relTime(c.timestamp || c.ts), range: ''
-              });
-            }
-          }
-          ch.sort((a, b) => (a.metric || '').localeCompare(b.metric || ''));
-          this.channels = ch;
-          this.sensors = sList;
-          this.flowCards = cards;
-          this.fillDiametersFromContext();
-
-          this.info = [
-            { k: 'Model', v: node.nodeModel?.modelName || '-' },
-            { k: 'Vendor', v: node.nodeModel?.vendor || '-' },
-            { k: 'Protokol', v: (node.nodeModel?.protocol || '').toUpperCase() || '-' },
-            { k: 'Firmware', v: node.firmwareVersion || '-' },
-            { k: 'Serial', v: node.serialNumber || '-' },
-            { k: 'Dev EUI', v: node.devEui || '-' },
-            { k: 'Interval', v: node.telemetryIntervalSec ? `${node.telemetryIntervalSec} dtk` : '-' },
-            { k: 'Power', v: node.powerSource || node.batteryType || '-' },
-            { k: 'Instalasi', v: node.installationType || '-' },
-            { k: 'Status', v: node.status || '-' }
-          ];
-
-          const h = d?.health || {};
-          const up = d?.uptime || {};
-          this.health = [
-            { k: 'Uptime', v: up.percentage != null ? `${up.percentage.toFixed(1)}%` : '-' },
-            { k: 'Kondisi', v: h.overall || '-' },
-            { k: 'Konektivitas', v: h.connectivity || '-' },
-            { k: 'Baterai', v: h.battery || '-' }
-          ];
-
-          this.loading = false; this.error = null;
-        },
-        error: (err) => { this.error = err?.message || 'Gagal memuat perangkat'; this.loading = false; }
-      });
-  }
-
-  /** Lengkapi diameter dari release context untuk kartu yang alatnya belum kirim. */
-  private fillDiametersFromContext(): void {
-    this.flowCards
-      .filter((card) => card.data.diameterMm === null)
-      .forEach((card) => {
-        this.flowMeter.diameterFromContext(card.sensorId)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe((diameterMm) => {
-            if (diameterMm === null) { return; }
-            // ganti referensi supaya ngOnChanges komponen diagram ikut jalan
-            card.data = { ...card.data, diameterMm, diameterSource: 'context' };
-          });
-      });
+    this.store.ensureTrends();
+    const nid$ = (this.route.parent || this.route).paramMap.pipe(map((p) => p.get('nid') || ''));
+    combineLatest([nid$, this.store.state$, this.store.trends$, interval(30_000).pipe(startWith(0))])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([nid, s, trends]) => this.build(nid, s, trends));
   }
 
   openCtx(s: { id: string; label: string }): void { this.ctxSensorId = s.id; this.ctxSensorLabel = s.label; this.ctxOpen = true; }
   closeCtx(): void { this.ctxOpen = false; }
+  retry(): void { this.store.refresh(); }
 
-  private mapStatus(s: string): NodeStatus { return s === 'online' ? 'online' : s === 'degraded' ? 'degraded' : 'offline'; }
-  private mapCh(s: string): ChStatus {
-    if (s === 'ok') { return 'ok'; }
-    if (s === 'offline' || s === 'stale') { return 'off'; }
-    if (s === 'out_of_range') { return 'danger'; }
-    return 'warn';
+  private build(nid: string, s: ProjectData, trends: Map<string, ChannelTrend> | null): void {
+    this.nid = nid;
+    this.s = s;
+    this.updated = clockText(s.updatedAt);
+    const node = (s.nodes || []).find((n) => n.idNode === nid || n.code === nid);
+    const realId = node?.idNode || nid;
+    const mine = (s.sensors || []).filter((x) => (x.idNode || x.node?.idNode) === realId);
+    const byId = new Map<string, any>(node ? [[realId, node]] : []);
+    this.rows = sortChannelRows(buildChannelRows({
+      sensors: mine, nodesById: byId, pid: this.store.pid, locale: this.locale,
+      now: Date.now(), latestAvailable: s.latestAvailable, context: 'node', trends
+    }));
+
+    const cards: FlowCard[] = [];
+    const list: { id: string; label: string }[] = [];
+    for (const sen of mine) {
+      const sid = sen.idSensor || '';
+      const label = (sen.label || sen.sensorCode || sen.sensorCatalog?.modelName || '').trim() || 'Sensor';
+      if (sid) { list.push({ id: sid, label }); }
+      const flowCh: FlowChannelLike[] = (sen.channels || []).map((c: any) => ({
+        id: c.idSensorChannel, metric: c.metricCode, unit: c.unit || '',
+        latest: c.lastValue != null && s.latestAvailable ? Number(c.lastValue) : null
+      }));
+      if (sid && this.flowMeter.isFlowMeter(flowCh, sen.sensorCatalog?.modelName || sen.label)) {
+        let data = this.flowMeter.build(flowCh, sen.lastValueAt || null);
+        if (data.diameterMm === null) {
+          const cached = this.diameterCache.get(sid);
+          if (cached != null) { data = { ...data, diameterMm: cached, diameterSource: 'context' }; }
+          else if (!this.diameterCache.has(sid)) { this.fetchDiameter(sid); }
+        }
+        cards.push({ sensorId: sid, label, data });
+      }
+    }
+    this.flowCards = cards;
+    this.sensors = list;
+    this.info = node ? this.infoRows(node) : [];
+  }
+
+  private fetchDiameter(sid: string): void {
+    if (this.diameterPending.has(sid)) { return; }
+    this.diameterPending.add(sid);
+    this.flowMeter.diameterFromContext(sid).pipe(takeUntil(this.destroy$)).subscribe((d) => {
+      this.diameterPending.delete(sid);
+      this.diameterCache.set(sid, d);
+      if (d === null) { return; }
+      // ganti referensi supaya ngOnChanges komponen diagram ikut jalan
+      this.flowCards = this.flowCards.map((c) => c.sensorId === sid && c.data.diameterMm === null
+        ? { ...c, data: { ...c.data, diameterMm: d, diameterSource: 'context' } } : c);
+    });
+  }
+
+  private infoRows(n: any): Row[] {
+    const dash = '—';
+    const rows: Row[] = [
+      { k: 'Kode', v: n.code || dash },
+      { k: 'Model', v: [n.nodeModel?.vendor, n.nodeModel?.modelName].filter(Boolean).join(' ') || dash },
+      { k: 'Protokol', v: (n.nodeModel?.protocol || '').toUpperCase() || dash },
+      { k: 'Interval kirim', v: formatInterval(n.telemetryIntervalSec) || dash },
+      { k: 'Firmware', v: n.firmwareVersion || dash },
+      { k: 'Nomor seri', v: n.serialNumber || dash },
+      { k: 'Dev EUI', v: n.devEui || dash },
+      { k: 'Sumber daya', v: n.powerSource || n.batteryType || dash },
+      { k: 'Jenis instalasi', v: n.installationType || dash },
+      { k: 'Lokasi', v: [n.city, n.province].filter(Boolean).join(', ') || dash },
+      { k: 'Koordinat', v: n.latitude != null && n.longitude != null ? `${n.latitude}, ${n.longitude}` : dash },
+      { k: 'Status perangkat', v: NODE_STATUS_ID[(n.status || '').toLowerCase()] || n.status || dash }
+    ];
+    if (n.picName || n.picEmail) {
+      rows.push({ k: 'PIC', v: [n.picName, n.picEmail].filter(Boolean).join(' · ') });
+    }
+    return rows;
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }

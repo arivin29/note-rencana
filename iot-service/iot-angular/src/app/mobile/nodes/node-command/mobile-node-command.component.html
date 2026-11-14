@@ -6,7 +6,7 @@
 </div>
 
 <ng-container *ngIf="!loading && !error">
-  <div class="m-empty" *ngIf="commands.length === 0"><i class="fa fa-terminal"></i>Tidak ada command untuk model ini</div>
+  <div class="m-empty" *ngIf="commands.length === 0"><i class="fa fa-terminal"></i>Belum ada perintah untuk model perangkat ini</div>
 
   <div class="m-cmdgrid" *ngIf="commands.length > 0">
     <div class="m-cmd" *ngFor="let c of commands" (click)="open(c)" [style.borderColor]="tint(c.color)">
@@ -42,15 +42,15 @@
     <div class="m-subtle" style="margin-bottom:5px">Tujuan (nomor PIC)</div>
     <div class="m-field" style="margin:0 0 var(--m-3)"><i class="fa fa-phone"></i><input [(ngModel)]="destination" placeholder="Nomor tujuan SMS"></div>
 
-    <div class="m-subtle" style="margin-bottom:5px">Preview</div>
+    <div class="m-subtle" style="margin-bottom:5px">Pratinjau</div>
     <div class="m-log__p" style="margin:0 0 var(--m-3)">{{ preview || '—' }}</div>
 
     <label *ngIf="activeDanger" style="display:flex;align-items:center;gap:9px;margin-bottom:var(--m-3);color:var(--m-danger);font-size:var(--m-sm)">
-      <input type="checkbox" [(ngModel)]="confirmed"> Saya paham command ini berisiko / berbahaya.
+      <input type="checkbox" [(ngModel)]="confirmed"> Saya paham perintah ini berisiko / berbahaya.
     </label>
 
     <div style="display:flex;gap:8px">
-      <button class="m-btn m-btn--ghost m-btn--sm" style="flex:0 0 auto" (click)="copy()"><i class="fa fa-copy"></i></button>
+      <button class="m-btn m-btn--ghost m-btn--sm" style="flex:0 0 auto" (click)="copy()" aria-label="Salin teks perintah" title="Salin teks perintah"><i class="fa fa-copy"></i></button>
       <button class="m-btn m-btn--primary" style="flex:1" [disabled]="sending" (click)="send()">
         <span *ngIf="!sending"><i class="fa fa-paper-plane"></i> Kirim</span>
         <span *ngIf="sending"><i class="fa fa-spinner fa-spin"></i> Mengirim…</span>

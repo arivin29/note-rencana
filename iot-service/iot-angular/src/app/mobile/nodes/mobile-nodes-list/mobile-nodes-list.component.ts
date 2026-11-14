@@ -1,106 +1,104 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { debounceTime, skip, takeUntil } from 'rxjs/operators';
-import { NodesService } from '@sdk/core/services/nodes.service';
-import { ProjectContextService } from '@services/project-context.service';
-import { AutoRefreshService } from '@services/auto-refresh.service';
-import { relTime } from '../../shared/util';
-import { RefreshBusService } from '../../shared/refresh-bus.service';
+import { combineLatest, interval, Subject } from 'rxjs';
+import { startWith, takeUntil } from 'rxjs/operators';
+import { formatInterval, telHref, timeAgoId } from '@app/shared/utils/channel-display';
+import { nodeLabel, nodeSubLabel } from '@app/shared/utils/channel-verdict';
+import { Freshness } from '@app/shared/utils/telemetry-freshness';
+import { MobileProjectStore, ProjectData } from '../../shared/mobile-project-store.service';
+import { nodeFreshness, toNodeLite } from '../../shared/channel-rows';
+import { clockText, FRESHNESS_LABEL_ID, FRESHNESS_TONE, MTone } from '../../shared/labels';
 
-type NodeStatus = 'online' | 'offline' | 'degraded';
+type StatusFilter = 'all' | Freshness;
+
 interface NodeVM {
-  id: string; code: string; status: NodeStatus; lastSeen: string;
-  location: string; picName: string; picPhone: string;
+  id: string; title: string; code: string; city: string;
+  freshness: Freshness; tone: MTone; statusLabel: string;
+  lastText: string; interval: string;
+  picName: string; picPhone: string; hay: string;
 }
 
-/** Daftar perangkat (read), ter-scope project aktif. docs/mobile/05 §3. */
+const ORDER: Record<Freshness, number> = { offline: 0, stale: 1, nodata: 2, fresh: 3 };
+
+/**
+ * Tab Perangkat project: semua perangkat (fetchAll, tidak terpotong), judul = alamat,
+ * status = getFreshness(lastSeenAt, telemetryIntervalSec). Chip status menjumlah ke total;
+ * filter `?status=` dipakai KPI Ringkasan.
+ */
 @Component({
   selector: 'mobile-nodes-list',
   templateUrl: './mobile-nodes-list.component.html',
   standalone: false
 })
 export class MobileNodesListComponent implements OnInit, OnDestroy {
-  loading = true;
-  error: string | null = null;
-  nodes: NodeVM[] = [];
+  s!: ProjectData;
+  pid = '';
   search = '';
-  statusFilter: string | null = null;
+  status: StatusFilter = 'all';
+  readonly options: StatusFilter[] = ['all', 'fresh', 'stale', 'offline', 'nodata'];
+  counts: Record<StatusFilter, number> = { all: 0, fresh: 0, stale: 0, offline: 0, nodata: 0 };
+  nodes: NodeVM[] = [];
+  updated = '';
 
-  private allNodes: NodeVM[] = [];
+  private all: NodeVM[] = [];
   private destroy$ = new Subject<void>();
-  private search$ = new Subject<void>();
-  // Bila dipakai sbg tab di project detail (/mobile/projects/:id/nodes), scope dari route.
-  private scopedProjectId: string | null = null;
 
-  constructor(
-    private nodesSvc: NodesService,
-    private projectCtx: ProjectContextService,
-    private auto: AutoRefreshService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private refreshBus: RefreshBusService
-  ) {}
+  constructor(private store: MobileProjectStore, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
-    this.scopedProjectId = this.route.parent?.snapshot.paramMap.get('id') || null;
-    this.search$.pipe(debounceTime(350), takeUntil(this.destroy$)).subscribe(() => this.load(true));
-    // Hanya ikut project aktif global kalau TIDAK di-scope oleh route project.
-    if (!this.scopedProjectId) {
-      this.projectCtx.active$.pipe(skip(1), takeUntil(this.destroy$)).subscribe(() => this.load(true));
-    }
-    this.auto.everyDefault().pipe(takeUntil(this.destroy$)).subscribe(() => this.load(false));
-    this.refreshBus.refresh$.pipe(takeUntil(this.destroy$)).subscribe(() => this.load(true));
-    // Filter status dari query param (mis. dari dashboard: ?status=online|offline)
-    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((q) => {
-      this.statusFilter = q.get('status');
-      this.nodes = this.applyStatus(this.allNodes);
+    this.pid = this.store.pid;
+    combineLatest([this.store.state$, this.route.queryParamMap, interval(30_000).pipe(startWith(0))])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([s, q]) => {
+        const st = q.get('status') as StatusFilter | null;
+        this.status = st && (this.options as string[]).includes(st) ? st : 'all';
+        if (s.pid) { this.pid = s.pid; }
+        this.build(s);
+      });
+  }
+
+  label(o: StatusFilter): string { return o === 'all' ? 'Semua' : FRESHNESS_LABEL_ID[o]; }
+
+  setStatus(o: StatusFilter): void {
+    this.router.navigate([], {
+      relativeTo: this.route, replaceUrl: true,
+      queryParams: { status: o === 'all' ? null : o }, queryParamsHandling: 'merge'
     });
   }
 
-  private applyStatus(list: NodeVM[]): NodeVM[] {
-    if (!this.statusFilter) { return list; }
-    if (this.statusFilter === 'online') { return list.filter((n) => n.status === 'online'); }
-    return list.filter((n) => n.status !== 'online'); // offline = tidak online (offline + degraded)
+  onSearch(v: string): void { this.search = v; this.apply(); }
+  retry(): void { this.store.refresh(); }
+  tel(p: string): string { return telHref(p); }
+  trackById(_: number, n: NodeVM): string { return n.id; }
+
+  private build(s: ProjectData): void {
+    this.s = s;
+    this.updated = clockText(s.updatedAt);
+    const now = Date.now();
+    this.all = (s.nodes || []).map((raw) => {
+      const n = toNodeLite(raw);
+      const f = nodeFreshness(n, now);
+      return {
+        id: n.idNode,
+        title: nodeLabel(n) || '(tanpa alamat)',
+        code: nodeSubLabel(n),
+        city: [raw.city, raw.province].filter(Boolean).join(', '),
+        freshness: f, tone: FRESHNESS_TONE[f], statusLabel: FRESHNESS_LABEL_ID[f],
+        lastText: n.lastSeenAt ? `Data terakhir ${timeAgoId(n.lastSeenAt, now)}` : 'Belum pernah kirim',
+        interval: formatInterval(n.telemetryIntervalSec),
+        picName: n.picName, picPhone: n.picPhone,
+        hay: `${n.address} ${n.code} ${n.name} ${n.city}`.toLowerCase()
+      };
+    }).sort((a, b) => (ORDER[a.freshness] - ORDER[b.freshness]) || a.title.localeCompare(b.title, 'id'));
+    this.apply();
   }
 
-  clearStatus(): void {
-    this.router.navigate([], { relativeTo: this.route, queryParams: { status: null }, queryParamsHandling: 'merge' });
-  }
-
-  onSearch(): void { this.search$.next(); }
-
-  load(showLoading: boolean): void {
-    if (showLoading) { this.loading = true; }
-    const idProject = this.scopedProjectId || this.projectCtx.active.idProject || undefined;
-    this.nodesSvc.nodesControllerFindAll$Response({
-      page: 1, limit: 50, search: this.search || undefined, idProject
-    }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (res: any) => {
-        let b: any = res.body;
-        if (typeof b === 'string') { b = JSON.parse(b); }
-        const rows = (b?.data || []) as any[];
-        this.allNodes = rows.map((n) => ({
-          id: n.idNode || n.id,
-          code: n.code || n.name || '(tanpa kode)',
-          status: this.mapStatus(n.connectivityStatus),
-          lastSeen: relTime(n.lastSeenAt),
-          location: [n.city, n.province].filter(Boolean).join(', ') || n.address || '',
-          picName: n.picName || '',
-          picPhone: n.picPhone || ''
-        }));
-        this.nodes = this.applyStatus(this.allNodes);
-        this.loading = false;
-        this.error = null;
-      },
-      error: (err) => { this.error = err?.message || 'Gagal memuat perangkat'; this.loading = false; }
-    });
-  }
-
-  open(id: string): void { this.router.navigate(['/mobile/nodes', id]); }
-
-  private mapStatus(s: string): NodeStatus {
-    return s === 'online' ? 'online' : s === 'degraded' ? 'degraded' : 'offline';
+  private apply(): void {
+    const term = this.search.trim().toLowerCase();
+    const base = term ? this.all.filter((n) => n.hay.includes(term)) : this.all;
+    this.counts = { all: base.length, fresh: 0, stale: 0, offline: 0, nodata: 0 };
+    for (const n of base) { this.counts[n.freshness]++; }
+    this.nodes = this.status === 'all' ? base : base.filter((n) => n.freshness === this.status);
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }

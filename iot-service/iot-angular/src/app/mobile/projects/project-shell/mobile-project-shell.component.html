@@ -1,0 +1,18 @@
+<div class="m-projshell">
+  <div class="m-empty" *ngIf="notFound">
+    <i class="fa fa-lock"></i>Project tidak ditemukan atau Anda tidak punya akses
+    <div class="m-mt-3"><a class="m-btn m-btn--ghost m-btn--tap" routerLink="/mobile">Kembali</a></div>
+  </div>
+  <router-outlet *ngIf="!notFound"></router-outlet>
+</div>
+
+<nav class="m-bottomnav m-projnav" #nav [hidden]="notFound" aria-label="Navigasi project">
+  <a *ngFor="let t of tabs" class="m-bottomnav__item" [class.active]="active === t.key"
+     [routerLink]="['/mobile/p', pid, t.key]" [replaceUrl]="true"
+     [attr.aria-current]="active === t.key ? 'page' : null">
+    <span class="ic-wrap">
+      <i class="fa" [ngClass]="t.icon"></i>
+      <span class="m-navbadge" *ngIf="t.key === 'peringatan' && alertTotal > 0" [attr.aria-label]="alertTotal + ' peringatan aktif'">{{ alertTotal > 99 ? '99+' : alertTotal }}</span>
+    </span>{{ t.label }}
+  </a>
+</nav>

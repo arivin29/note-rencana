@@ -1,43 +1,45 @@
 <div class="m-search">
   <i class="fa fa-magnifying-glass"></i>
-  <input placeholder="Cari project…" [(ngModel)]="search" (ngModelChange)="onSearch()">
+  <input placeholder="Cari project…" aria-label="Cari project" [ngModel]="search" (ngModelChange)="onSearch($event)">
+  <button class="m-iconbtn m-iconbtn--flat" type="button" *ngIf="search" (click)="onSearch('')" aria-label="Hapus pencarian" title="Hapus pencarian">
+    <i class="fa fa-xmark"></i>
+  </button>
 </div>
 
-<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
-  <div class="m-skel" style="width:58%"></div>
-  <div class="m-skel" style="width:40%"></div>
-  <div class="m-skel" style="width:52%"></div>
+<div class="m-card m-pad" *ngIf="loading">
+  <div class="m-skel w-60"></div><div class="m-skel w-40"></div><div class="m-skel w-50"></div>
 </div>
 
 <div class="m-empty" *ngIf="!loading && error">
-  <i class="fa fa-triangle-exclamation"></i>
-  {{ error }}
-  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
+  <i class="fa fa-triangle-exclamation"></i>{{ error }}
+  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
 </div>
 
-<div class="m-empty" *ngIf="!loading && !error && projects.length === 0">
-  <i class="fa fa-folder-open"></i>
-  Tidak ada project
-</div>
-
-<div class="m-card" *ngIf="!loading && !error && projects.length > 0">
-  <div class="m-list__item" *ngFor="let p of projects" (click)="open(p)" style="align-items:flex-start">
-    <div class="m-list__body">
-      <div class="m-list__title">
-        {{ p.name }}
-        <span *ngIf="p.id === activeId" class="m-tag m-tag--active" style="margin-left:6px">Aktif</span>
-      </div>
-      <div class="m-node-meta">
-        <div *ngIf="p.area"><i class="fa fa-map"></i><span>{{ p.area }}</span></div>
-        <div><i class="fa fa-microchip"></i><span>{{ p.nodes }} perangkat<ng-container *ngIf="p.nodes"> · {{ p.online }} online</ng-container></span></div>
-      </div>
-    </div>
-    <span class="m-pill" style="margin-top:2px" [ngClass]="{
-      'm-pill--ok': p.status === 'ok',
-      'm-pill--off': p.status === 'off',
-      'm-pill--warn': p.status === 'warn'
-    }">
-      <span class="dot"></span>{{ p.statusLabel }}
-    </span>
+<ng-container *ngIf="!loading && !error">
+  <div class="m-banner m-banner--warn" *ngIf="refreshError" role="status">
+    <i class="fa fa-triangle-exclamation"></i><span>Gagal memperbarui · data per {{ updated }}</span>
+    <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
-</div>
+
+  <div class="m-result-count" *ngIf="all.length">{{ projects.length }} project<ng-container *ngIf="projects.length !== all.length"> · dari {{ all.length }}</ng-container> · diperbarui {{ updated }}</div>
+
+  <div class="m-empty" *ngIf="projects.length === 0">
+    <i class="fa fa-folder-open"></i>{{ all.length ? 'Tidak ada project yang cocok' : 'Belum ada project' }}
+  </div>
+
+  <div class="m-card" *ngIf="projects.length > 0">
+    <a class="m-list__item m-list__item--top" *ngFor="let p of projects" [routerLink]="['/mobile/p', p.id, 'ringkasan']">
+      <div class="m-list__body">
+        <div class="m-list__title">{{ p.name }}</div>
+        <div class="m-node-meta">
+          <div *ngIf="p.owner || p.area"><i class="fa fa-map"></i><span>{{ p.owner }}<ng-container *ngIf="p.owner && p.area"> · </ng-container>{{ p.area }}</span></div>
+          <div><i class="fa fa-microchip"></i><span>{{ p.nodes }} perangkat<ng-container *ngIf="p.nodes"> · {{ p.online }} online</ng-container></span></div>
+          <div *ngIf="p.lastSync"><i class="fa fa-clock"></i><span>Data terakhir {{ p.lastSync }}</span></div>
+          <div *ngIf="!p.lastSync"><i class="fa fa-clock"></i><span>Belum ada data</span></div>
+        </div>
+      </div>
+      <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + p.status"><span class="dot"></span>{{ p.statusLabel }}</span>
+    </a>
+  </div>
+  <div class="m-spacer"></div>
+</ng-container>

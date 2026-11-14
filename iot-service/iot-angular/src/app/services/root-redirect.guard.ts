@@ -10,6 +10,6 @@ export const rootRedirectGuard: CanActivateFn = (): UrlTree => {
   const viewMode = inject(ViewModeService);
   const router = inject(Router);
   return viewMode.resolveEffective() === 'mobile'
-    ? router.parseUrl('/mobile/dashboard')
+    ? router.parseUrl('/mobile') // landing guard decides by project count
     : router.parseUrl('/iot/dashboard');
 };

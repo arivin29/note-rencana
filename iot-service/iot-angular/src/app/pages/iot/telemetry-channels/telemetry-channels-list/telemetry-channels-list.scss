@@ -8,7 +8,13 @@ th.sortable {
   }
 }
 
-.channel-row {
+// Baris tabel. JANGAN diberi nama `.channel-row`: ada aturan GLOBAL
+// `.channel-row { display: flex }` di src/scss/styles.scss:104 milik label peta
+// WebGIS (lihat `.label-body` tepat di atasnya). Kelas global itu tidak
+// terenkapsulasi, jadi ia ikut mengenai <tr> di sini dan mengubah setiap baris
+// menjadi wadah flex sendiri — kolomnya berhenti sejajar dengan <thead> dan
+// lebar sel berbeda-beda tiap baris.
+.tc-row {
   cursor: pointer;
 }
 

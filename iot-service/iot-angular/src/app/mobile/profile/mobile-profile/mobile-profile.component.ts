@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '@services/auth.service';
 import { ViewModeService } from '@services/view-mode.service';
-import { AutoRefreshService, RefreshInterval, REFRESH_OPTIONS } from '@services/auto-refresh.service';
+import { AutoRefreshService, RefreshInterval } from '@services/auto-refresh.service';
 import { User } from '@models/auth.model';
 
 /** Profil & preferensi. Logout, switch desktop, dan interval auto-reload aktif. docs/mobile/05 §10. */
@@ -14,7 +14,11 @@ import { User } from '@models/auth.model';
 export class MobileProfileComponent {
   user: User | null = this.auth.currentUserValue;
 
-  readonly refreshOptions = REFRESH_OPTIONS;
+  /** Mobile hanya punya dua pilihan jujur: polling 60 dtk (mobilePoll$) atau mati. */
+  readonly refreshOptions: { value: RefreshInterval; label: string }[] = [
+    { value: 60000, label: 'Tiap 60 detik' },
+    { value: 0, label: 'Mati' }
+  ];
   refreshSheetOpen = false;
 
   constructor(
@@ -30,11 +34,11 @@ export class MobileProfileComponent {
   }
 
   get refreshLabel(): string {
-    return this.refreshOptions.find(o => o.value === this.auto.interval)?.label ?? 'Mati';
+    return this.auto.interval > 0 ? 'Tiap 60 detik' : 'Mati';
   }
 
   get refreshValue(): RefreshInterval {
-    return this.auto.interval;
+    return this.auto.interval > 0 ? 60000 : 0;
   }
 
   openRefreshSheet(): void { this.refreshSheetOpen = true; }

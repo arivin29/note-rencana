@@ -1,12 +1,15 @@
-import { Directive, ElementRef, EventEmitter, OnDestroy, OnInit, Output, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 
 /**
  * Pull-to-refresh untuk container scroll (.m-content). Saat scrollTop<=0 dan user tarik ke bawah
- * melewati ambang → emit (mPull). Skip area peta/embed/json (punya scroll/gesture sendiri).
+ * melewati ambang → panggil handler `[mPull]` dan tahan spinner SAMPAI promise-nya selesai
+ * (bukan timer tetap). Skip area peta/embed/json (punya scroll/gesture sendiri).
+ * Handler null / `mPullEnabled=false` → gestur tidak aktif (layar tanpa muat ulang).
  */
 @Directive({ selector: '[mPull]', standalone: false })
 export class PullRefreshDirective implements OnInit, OnDestroy {
-  @Output() mPull = new EventEmitter<void>();
+  @Input('mPull') handler: (() => Promise<unknown>) | null = null;
+  @Input() mPullEnabled = true;
 
   private ind!: HTMLElement;
   private icon!: HTMLElement;
@@ -44,7 +47,7 @@ export class PullRefreshDirective implements OnInit, OnDestroy {
   }
 
   private onStart(e: TouchEvent): void {
-    if (this.refreshing) { return; }
+    if (this.refreshing || !this.handler || !this.mPullEnabled) { return; }
     const t = e.target as HTMLElement;
     if (t.closest && t.closest('.m-olmap, .m-scada-embed, .m-json, .ol-viewport')) { return; }
     if (this.el.nativeElement.scrollTop <= 0) { this.startY = e.touches[0].clientY; this.active = true; this.dist = 0; }
@@ -76,14 +79,14 @@ export class PullRefreshDirective implements OnInit, OnDestroy {
     this.r.setStyle(this.icon, 'transform', 'none');
     this.r.setStyle(this.ind, 'transform', `translateX(-50%) translateY(${this.TH}px)`);
     this.r.setStyle(this.ind, 'opacity', '1');
-    this.mPull.emit();
-    setTimeout(() => {
+    const finish = () => {
       this.refreshing = false;
       this.r.removeClass(this.icon, 'fa-spinner');
       this.r.removeClass(this.icon, 'fa-spin');
       this.r.addClass(this.icon, 'fa-arrow-down');
       this.set(0);
-    }, 1000);
+    };
+    Promise.resolve(this.handler ? this.handler() : undefined).then(finish, finish);
   }
 
   ngOnDestroy(): void { this.cleanup.forEach((fn) => fn()); }

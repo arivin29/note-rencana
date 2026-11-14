@@ -69,9 +69,12 @@ export class AutoRefreshService {
   }
 
   private read(): RefreshInterval {
-    const v = Number(localStorage.getItem(this.KEY));
+    let raw: string | null = null;
+    try { raw = localStorage.getItem(this.KEY); } catch { /* storage tidak tersedia */ }
+    if (raw === null) return 60000; // belum pernah dipilih → default 60 dtk
+    const v = Number(raw);
     return ([0, 10000, 15000, 30000, 60000] as number[]).includes(v)
       ? (v as RefreshInterval)
-      : 30000; // default 30s
+      : 60000;
   }
 }

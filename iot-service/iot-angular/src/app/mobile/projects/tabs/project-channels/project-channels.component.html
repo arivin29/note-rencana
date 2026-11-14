@@ -1,44 +1,43 @@
-<!-- Filters (mirror desktop /iot/telemetry-channels) -->
-<div class="m-filterbar" *ngIf="!loading && !error && raw.length">
+<div class="m-filterbar">
   <div class="m-search">
     <i class="fa fa-search"></i>
-    <input type="text" placeholder="Cari channel / node / sensor..." [ngModel]="search" (ngModelChange)="onSearch($event)">
-    <i class="fa fa-xmark" *ngIf="hasActiveFilter" (click)="resetFilters()" style="cursor:pointer"></i>
-  </div>
-
-  <div class="m-chips">
-    <button class="m-chip" *ngFor="let s of statusOptions" [class.active]="filters.status === s" (click)="setStatus(s)">
-      {{ statusLabel(s) }}<span class="m-chip__n">{{ counts[s] || 0 }}</span>
+    <input type="text" placeholder="Cari alamat / channel / sensor…" aria-label="Cari channel" [ngModel]="search" (ngModelChange)="onSearch($event)">
+    <button class="m-iconbtn m-iconbtn--flat" type="button" *ngIf="search" (click)="onSearch('')" aria-label="Hapus pencarian" title="Hapus pencarian">
+      <i class="fa fa-xmark"></i>
     </button>
   </div>
-
-  <div class="m-selects" *ngIf="nodeTypes.length > 1 || channelTypes.length > 1">
-    <select class="m-select" *ngIf="nodeTypes.length > 1" [(ngModel)]="filters.nodeModelId" (ngModelChange)="onFilter()">
-      <option value="">Semua Tipe Node</option>
-      <option *ngFor="let o of nodeTypes" [value]="o.id">{{ o.label }}</option>
-    </select>
-    <select class="m-select" *ngIf="channelTypes.length > 1" [(ngModel)]="filters.sensorTypeId" (ngModelChange)="onFilter()">
-      <option value="">Semua Tipe Channel</option>
-      <option *ngFor="let o of channelTypes" [value]="o.id">{{ o.label }}</option>
-    </select>
+  <div class="m-chips m-chips--scroll" role="tablist" aria-label="Filter status channel">
+    <button class="m-chip" type="button" role="tab" *ngFor="let o of options" [class.active]="status === o"
+            [attr.aria-selected]="status === o" (click)="setStatus(o)">
+      {{ label(o) }}<span class="m-chip__n">{{ counts[o] || 0 }}</span>
+    </button>
   </div>
 </div>
 
-<!-- Loading -->
-<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
-  <div class="m-skel"></div>
-  <div class="m-skel" style="width:55%"></div>
+<div class="m-card m-pad" *ngIf="s.firstLoad"><div class="m-skel"></div><div class="m-skel w-50"></div></div>
+
+<div class="m-empty" *ngIf="!s.firstLoad && !s.sensors && s.sensorsError">
+  <i class="fa fa-triangle-exclamation"></i>{{ s.sensorsError }}
+  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
 </div>
 
-<!-- Error -->
-<div class="m-empty" *ngIf="!loading && error">
-  <i class="fa fa-triangle-exclamation"></i>{{ error }}
-</div>
+<ng-container *ngIf="!s.firstLoad && s.sensors">
+  <div class="m-banner m-banner--warn" *ngIf="s.sensorsError" role="status">
+    <i class="fa fa-triangle-exclamation"></i>
+    <span>Gagal memperbarui<ng-container *ngIf="updated"> · data per {{ updated }}</ng-container></span>
+    <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
+  </div>
+  <div class="m-banner m-banner--warn" *ngIf="!s.latestAvailable" role="status">
+    <i class="fa fa-circle-info"></i>
+    <span>Nilai terakhir sedang tidak tersedia dari server — nilai dan status channel tidak ditampilkan.</span>
+  </div>
 
-<!-- Result count -->
-<div *ngIf="!loading && !error && raw.length" class="m-result-count">
-  {{ viewChannels.length }} channel<span *ngIf="hasActiveFilter"> · dari {{ raw.length }}</span>
-</div>
+  <div class="m-result-count">
+    {{ rows.length }} channel<ng-container *ngIf="rows.length !== total"> · dari {{ total }}</ng-container>
+    <ng-container *ngIf="updated"> · diperbarui {{ updated }}</ng-container>
+    <ng-container *ngIf="store.trendsError"> · tren 24 jam gagal dimuat</ng-container>
+  </div>
 
-<!-- List -->
-<mobile-channel-list *ngIf="!loading && !error" [channels]="viewChannels"></mobile-channel-list>
+  <mobile-channel-list [rows]="rows" [emptyText]="total ? 'Tidak ada channel yang cocok' : 'Belum ada channel aktif di project ini'"></mobile-channel-list>
+  <div class="m-spacer"></div>
+</ng-container>

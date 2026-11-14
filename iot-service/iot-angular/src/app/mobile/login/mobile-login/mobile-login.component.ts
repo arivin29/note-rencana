@@ -15,7 +15,7 @@ export class MobileLoginComponent implements OnDestroy {
   password = '';
   loading = false;
   errorMessage = '';
-  returnUrl = '/mobile/dashboard';
+  returnUrl = '/mobile';
 
   constructor(
     private router: Router,
@@ -26,7 +26,7 @@ export class MobileLoginComponent implements OnDestroy {
     this.appSettings.appSidebarNone = true;
     this.appSettings.appHeaderNone = true;
     this.appSettings.appContentClass = 'p-0';
-    this.returnUrl = (this.route.snapshot.queryParams['returnUrl'] as string) || '/mobile/dashboard';
+    this.returnUrl = (this.route.snapshot.queryParams['returnUrl'] as string) || '/mobile';
   }
 
   ngOnDestroy(): void {
@@ -40,7 +40,7 @@ export class MobileLoginComponent implements OnDestroy {
     this.loading = true;
     this.errorMessage = '';
     this.auth.login({ email: this.email, password: this.password }).subscribe({
-      next: () => this.router.navigateByUrl(this.returnUrl),
+      next: () => this.router.navigateByUrl(this.returnUrl, { replaceUrl: true }),
       error: (err) => {
         this.loading = false;
         this.errorMessage = err?.message || 'Email atau kata sandi salah';

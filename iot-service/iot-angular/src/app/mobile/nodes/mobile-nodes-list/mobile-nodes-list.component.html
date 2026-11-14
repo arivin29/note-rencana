@@ -1,53 +1,53 @@
 <div class="m-search">
   <i class="fa fa-magnifying-glass"></i>
-  <input placeholder="Cari perangkat…" [(ngModel)]="search" (ngModelChange)="onSearch()">
+  <input placeholder="Cari alamat / kode perangkat…" aria-label="Cari perangkat" [ngModel]="search" (ngModelChange)="onSearch($event)">
+  <button class="m-iconbtn m-iconbtn--flat" type="button" *ngIf="search" (click)="onSearch('')" aria-label="Hapus pencarian" title="Hapus pencarian">
+    <i class="fa fa-xmark"></i>
+  </button>
 </div>
 
-<div class="m-chips" *ngIf="statusFilter" style="margin-top:-4px">
-  <div class="m-chip active" (click)="clearStatus()">
-    {{ statusFilter === 'online' ? 'Online' : 'Offline' }} <i class="fa fa-xmark" style="margin-left:6px"></i>
+<div class="m-chips m-chips--scroll" role="tablist" aria-label="Filter status perangkat">
+  <button class="m-chip" type="button" role="tab" *ngFor="let o of options" [class.active]="status === o"
+          [attr.aria-selected]="status === o" (click)="setStatus(o)">
+    {{ label(o) }}<span class="m-chip__n">{{ counts[o] }}</span>
+  </button>
+</div>
+
+<div class="m-card m-pad" *ngIf="s.firstLoad">
+  <div class="m-skel w-60"></div><div class="m-skel w-40"></div><div class="m-skel w-50"></div>
+</div>
+
+<div class="m-empty" *ngIf="!s.firstLoad && !s.nodes && s.nodesError">
+  <i class="fa fa-triangle-exclamation"></i>{{ s.nodesError }}
+  <div class="m-mt-3"><button class="m-btn m-btn--ghost m-btn--tap" type="button" (click)="retry()">Coba lagi</button></div>
+</div>
+
+<ng-container *ngIf="!s.firstLoad && s.nodes">
+  <div class="m-banner m-banner--warn" *ngIf="s.nodesError" role="status">
+    <i class="fa fa-triangle-exclamation"></i>
+    <span>Gagal memperbarui<ng-container *ngIf="updated"> · data per {{ updated }}</ng-container></span>
+    <button class="m-banner__btn" type="button" (click)="retry()">Coba lagi</button>
   </div>
-</div>
 
-<div class="m-card" *ngIf="loading" style="padding:var(--m-3)">
-  <div class="m-skel" style="width:60%"></div>
-  <div class="m-skel" style="width:42%"></div>
-  <div class="m-skel" style="width:55%"></div>
-  <div class="m-skel" style="width:38%"></div>
-</div>
+  <div class="m-result-count">{{ nodes.length }} perangkat<ng-container *ngIf="nodes.length !== s.nodes.length"> · dari {{ s.nodes.length }}</ng-container><ng-container *ngIf="updated"> · diperbarui {{ updated }}</ng-container></div>
 
-<div class="m-empty" *ngIf="!loading && error">
-  <i class="fa fa-triangle-exclamation"></i>
-  {{ error }}
-  <div style="margin-top:12px"><button class="m-btn m-btn--ghost m-btn--sm" (click)="load(true)">Coba lagi</button></div>
-</div>
+  <div class="m-empty" *ngIf="nodes.length === 0">
+    <i class="fa fa-microchip"></i>{{ s.nodes.length ? 'Tidak ada perangkat yang cocok' : 'Belum ada perangkat di project ini' }}
+  </div>
 
-<div class="m-empty" *ngIf="!loading && !error && nodes.length === 0">
-  <i class="fa fa-microchip"></i>
-  Tidak ada perangkat
-</div>
-
-<div class="m-card" *ngIf="!loading && !error && nodes.length > 0">
-  <div class="m-list__item" *ngFor="let n of nodes" (click)="open(n.id)" style="align-items:flex-start">
-    <div class="m-list__body">
-      <div class="m-list__title">{{ n.code }}</div>
-      <div class="m-node-meta">
-        <div *ngIf="n.location"><i class="fa fa-location-dot"></i><span>{{ n.location }}</span></div>
-        <div *ngIf="n.picName || n.picPhone">
-          <i class="fa fa-user"></i>
-          <span>
-            {{ n.picName }}<ng-container *ngIf="n.picName && n.picPhone"> · </ng-container><a *ngIf="n.picPhone" [href]="'tel:' + n.picPhone" (click)="$event.stopPropagation()">{{ n.picPhone }}</a>
-          </span>
+  <div class="m-card" *ngIf="nodes.length > 0">
+    <div class="m-attn" *ngFor="let n of nodes; trackBy: trackById">
+      <a class="m-attn__main" [routerLink]="['/mobile/p', pid, 'nodes', n.id]">
+        <div class="m-attn__top">
+          <span class="m-attn__title">{{ n.title }}</span>
+          <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + n.tone"><span class="dot"></span>{{ n.statusLabel }}</span>
         </div>
-        <div><i class="fa fa-clock"></i><span>terakhir kirim {{ n.lastSeen }}</span></div>
-      </div>
+        <div class="m-list__sub" *ngIf="n.code || n.city">{{ n.code }}<ng-container *ngIf="n.code && n.city"> · </ng-container>{{ n.city }}</div>
+        <div class="m-attn__line"><i class="fa fa-clock"></i> {{ n.lastText }}<ng-container *ngIf="n.interval"> · kirim {{ n.interval }}</ng-container></div>
+      </a>
+      <a class="m-callbtn" *ngIf="n.picPhone" [href]="tel(n.picPhone)" [attr.aria-label]="'Telepon ' + (n.picName || 'PIC') + ' ' + n.title" title="Telepon PIC">
+        <i class="fa fa-phone"></i>
+      </a>
     </div>
-    <span class="m-pill" style="margin-top:2px" [ngClass]="{
-      'm-pill--ok': n.status === 'online',
-      'm-pill--off': n.status === 'offline',
-      'm-pill--warn': n.status === 'degraded'
-    }">
-      <span class="dot"></span>{{ n.status === 'online' ? 'Online' : n.status === 'degraded' ? 'Degraded' : 'Offline' }}
-    </span>
   </div>
-</div>
+</ng-container>

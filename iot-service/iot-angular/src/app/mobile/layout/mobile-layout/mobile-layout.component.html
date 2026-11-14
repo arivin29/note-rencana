@@ -1,7 +1,7 @@
-<div class="m-app">
-  <mobile-header [title]="title" [showBack]="showBack"></mobile-header>
-  <main class="m-content" mPull (mPull)="onPull()">
+<div class="m-app" [class.m-app--project]="nav === 'project'">
+  <mobile-header [title]="title" [sub]="sub" [showBack]="showBack" [onProfile]="onProfile" (back)="back()"></mobile-header>
+  <main class="m-content" [mPull]="pullHandler" [mPullEnabled]="pullEnabled">
     <router-outlet></router-outlet>
   </main>
-  <mobile-bottom-nav></mobile-bottom-nav>
+  <mobile-bottom-nav *ngIf="nav === 'global'"></mobile-bottom-nav>
 </div>
