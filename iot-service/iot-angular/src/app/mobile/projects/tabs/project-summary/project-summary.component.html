@@ -55,30 +55,6 @@
     </div>
   </m-panel>
 
-  <!-- Nilai terkini (tekanan / debit) — data store yang sama, tanpa request baru -->
-  <m-panel *ngIf="keyNodes.length" label="Nilai terkini" icon="bi-activity">
-    <span panelAside><b>{{ keyNodesTotal }}</b> perangkat</span>
-    <div class="m-attn" *ngFor="let k of keyNodes; trackBy: trackById">
-      <a class="m-attn__main" [routerLink]="['/mobile/p', pid, 'nodes', k.id]" [attr.aria-label]="'Buka perangkat ' + k.title">
-        <div class="m-attn__top">
-          <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + k.tone"><span class="dot"></span>{{ k.statusLabel }}</span>
-          <span class="m-attn__iv" *ngIf="k.last">{{ k.last }}</span>
-        </div>
-        <div class="m-attn__title">{{ k.title }}<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
-        <div class="m-list__sub" *ngIf="k.code">{{ k.code }}</div>
-        <div class="m-reads m-attn__reads">
-          <div class="m-read" *ngFor="let r of k.reads" [class.m-read--out]="r.out" [class.m-read--stale]="r.stale">
-            <div class="m-read__k">{{ r.label }}</div>
-            <div class="m-read__v">{{ r.valueText }}<u *ngIf="r.unit">{{ r.unit }}</u></div>
-          </div>
-        </div>
-      </a>
-    </div>
-    <div class="m-panel__foot" *ngIf="channelsTotal">
-      <a class="m-link m-more" [routerLink]="['/mobile/p', pid, 'channel']">Semua {{ channelsTotal }} channel <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    </div>
-  </m-panel>
-
   <!-- KPI (ketuk → daftar terfilter): satu panel, grid 2×2 -->
   <m-panel>
     <div class="m-kpis">
@@ -137,6 +113,30 @@
     <div class="m-empty" *ngIf="allClear">
       <b>Semua normal</b>
       Semua perangkat aktif, tidak ada peringatan aktif<ng-container *ngIf="withThreshold"> dan tidak ada channel di luar ambang</ng-container>.
+    </div>
+  </m-panel>
+
+  <!-- Nilai terkini (tekanan / debit) — data store yang sama, tanpa request baru -->
+  <m-panel *ngIf="keyNodes.length" label="Nilai terkini" icon="bi-activity">
+    <span panelAside><b>{{ keyNodesTotal }}</b> perangkat</span>
+    <div class="m-attn" *ngFor="let k of keyNodes; trackBy: trackById">
+      <a class="m-attn__main" [routerLink]="['/mobile/p', pid, 'nodes', k.id]" [attr.aria-label]="'Buka perangkat ' + k.title">
+        <div class="m-attn__top">
+          <span class="m-pill m-pill--xs" [ngClass]="'m-pill--' + k.tone"><span class="dot"></span>{{ k.statusLabel }}</span>
+          <span class="m-attn__iv" *ngIf="k.last">{{ k.last }}</span>
+        </div>
+        <div class="m-attn__title">{{ k.title }}<i class="bi bi-chevron-right" aria-hidden="true"></i></div>
+        <div class="m-list__sub" *ngIf="k.code">{{ k.code }}</div>
+        <div class="m-reads m-attn__reads">
+          <div class="m-read" *ngFor="let r of k.reads" [class.m-read--out]="r.out" [class.m-read--stale]="r.stale">
+            <div class="m-read__k">{{ r.label }}</div>
+            <div class="m-read__v">{{ r.valueText }}<u *ngIf="r.unit">{{ r.unit }}</u></div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="m-panel__foot" *ngIf="channelsTotal">
+      <a class="m-link m-more" [routerLink]="['/mobile/p', pid, 'channel']">Semua {{ channelsTotal }} channel <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
     </div>
   </m-panel>
 
