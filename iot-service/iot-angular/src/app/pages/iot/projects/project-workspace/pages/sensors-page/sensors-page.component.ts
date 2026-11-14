@@ -8,7 +8,7 @@ import { decimalsFromPrecision, excelNumFmt, thresholdState, ThresholdState } fr
 import { saveAs } from 'file-saver';
 import {
   formatDuration as fmtDuration, formatInterval as fmtInterval, localTzLabel as tzLabel,
-  sparkPath as buildSparkPath, telHref as buildTelHref, timeAgoId } from '../../../../../../shared/utils/channel-display';
+  sparkPath as buildSparkPath, timeAgoId } from '../../../../../../shared/utils/channel-display';
 import {
   FRESHNESS_BADGE, FRESHNESS_LABEL, Freshness, freshnessThresholds, getFreshness, timeAgo
 } from '../../../../../../shared/utils/telemetry-freshness';
@@ -275,8 +275,7 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
         (s.node?.code || '').toLowerCase().includes(q) ||
         (s.node?.address || '').toLowerCase().includes(q) ||
         (s.node?.name || '').toLowerCase().includes(q) ||
-        (s.node?.picName || '').toLowerCase().includes(q) ||
-        (s.node?.picPhone || '').toLowerCase().includes(q)
+        (s.node?.picName || '').toLowerCase().includes(q)
       );
     }
 
@@ -559,11 +558,6 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
     return tzLabel();
   }
 
-  /** tel: link for the node PIC (quick follow-up on a dead logger). */
-  telHref(phone?: string): string {
-    return buildTelHref(phone);
-  }
-
   stop(event: Event) {
     event.stopPropagation();
   }
@@ -601,7 +595,7 @@ export class SensorsPageComponent implements OnInit, OnDestroy {
         { header: 'Keterangan', key: 'note', width: 28 },
         { header: 'Interval Lapor (dtk)', key: 'interval', width: 12 },
         { header: 'PIC', key: 'pic', width: 18 },
-        { header: 'Telepon PIC', key: 'phone', width: 16 }
+        { header: 'Nomor SMS perangkat', key: 'phone', width: 16 }
       ];
       ws.getRow(1).font = { bold: true };
       ws.views = [{ state: 'frozen', ySplit: 1 }];

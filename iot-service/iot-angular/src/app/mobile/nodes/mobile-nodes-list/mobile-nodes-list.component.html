@@ -54,9 +54,6 @@
         </div>
         <div class="m-attn__line"><i class="bi bi-clock" aria-hidden="true"></i> {{ n.lastText }}</div>
       </a>
-      <a class="m-callbtn" *ngIf="n.picPhone" [href]="tel(n.picPhone)" [attr.aria-label]="'Telepon ' + (n.picName || 'PIC') + ' ' + n.title" title="Telepon PIC">
-        <i class="bi bi-telephone" aria-hidden="true"></i>
-      </a>
     </div>
   </m-panel>
 </ng-container>

@@ -2,7 +2,7 @@ import { Component, Inject, LOCALE_ID, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, interval, Subject } from 'rxjs';
 import { startWith, takeUntil } from 'rxjs/operators';
-import { formatInterval, telHref, timeAgoId } from '@app/shared/utils/channel-display';
+import { formatInterval, timeAgoId } from '@app/shared/utils/channel-display';
 import { nodeLabel, nodeSubLabel } from '@app/shared/utils/channel-verdict';
 import { Freshness } from '@app/shared/utils/telemetry-freshness';
 import { MobileProjectStore, ProjectData } from '../../shared/mobile-project-store.service';
@@ -15,7 +15,7 @@ interface NodeVM {
   id: string; title: string; code: string; city: string;
   freshness: Freshness; tone: MTone; statusLabel: string;
   lastText: string; interval: string;
-  picName: string; picPhone: string; hay: string;
+  hay: string;
   /** nilai kunci (tekanan/debit) dari /sensors yang sudah ada di store */
   reads: KeyReading[];
 }
@@ -73,7 +73,6 @@ export class MobileNodesListComponent implements OnInit, OnDestroy {
 
   onSearch(v: string): void { this.search = v; this.apply(); }
   retry(): void { this.store.refresh(); }
-  tel(p: string): string { return telHref(p); }
   trackById(_: number, n: NodeVM): string { return n.id; }
 
   private build(s: ProjectData): void {
@@ -96,7 +95,6 @@ export class MobileNodesListComponent implements OnInit, OnDestroy {
         freshness: f, tone: FRESHNESS_TONE[f], statusLabel: FRESHNESS_LABEL_ID[f],
         lastText: n.lastSeenAt ? `Data terakhir ${timeAgoId(n.lastSeenAt, now)}` : 'Belum pernah kirim',
         interval: formatInterval(n.telemetryIntervalSec),
-        picName: n.picName, picPhone: n.picPhone,
         hay: `${n.address} ${n.code} ${n.name} ${n.city}`.toLowerCase(),
         reads: reads.get(n.idNode) || []
       };

@@ -41,9 +41,6 @@
         <div class="m-attn__line">{{ a.line }}</div>
         <div class="m-attn__line">{{ a.time }}<ng-container *ngIf="a.when"> · {{ a.when }}</ng-container></div>
       </a>
-      <a class="m-callbtn" *ngIf="a.phone" [href]="tel(a.phone)" [attr.aria-label]="'Telepon ' + a.phoneLabel + ' ' + a.title" title="Telepon PIC">
-        <i class="bi bi-telephone" aria-hidden="true"></i>
-      </a>
     </div>
   </m-panel>
 

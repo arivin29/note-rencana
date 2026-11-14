@@ -271,11 +271,6 @@
                   <div class="text-muted small text-truncate cell-mw" *ngIf="r.projectName" [title]="r.projectName">
                     <i class="fa fa-diagram-project fa-fw opacity-50"></i>{{ r.projectName }}
                   </div>
-                  <a *ngIf="r.isProblem && r.picPhone" class="small text-decoration-none d-inline-block text-truncate cell-mw"
-                    [href]="telHref(r.picPhone)" (click)="stop($event)"
-                    [title]="'Telepon PIC ' + (r.picName || '') + ' · ' + r.picPhone">
-                    <i class="fa fa-phone fa-fw"></i>{{ r.picName || 'Telepon PIC' }}
-                  </a>
                 </ng-container>
                 <ng-template #noNode><span class="text-muted">-</span></ng-template>
               </td>

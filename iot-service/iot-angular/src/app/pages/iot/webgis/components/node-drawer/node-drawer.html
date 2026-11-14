@@ -88,11 +88,10 @@
           <span class="info-label">PIC Name</span>
           <span class="info-value">{{ node.picName }}</span>
         </div>
+        <!-- picPhone is the DEVICE's SMS control number (commands), not a person to call — no tel: link -->
         <div class="info-item" *ngIf="node.picPhone">
-          <span class="info-label">Phone</span>
-          <span class="info-value">
-            <a [href]="'tel:' + node.picPhone">{{ node.picPhone }}</a>
-          </span>
+          <span class="info-label">Nomor SMS perangkat</span>
+          <span class="info-value">{{ node.picPhone }}</span>
         </div>
       </div>
 

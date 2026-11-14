@@ -27,9 +27,6 @@
         <div><div class="m-facts__k">Interval kirim</div><div class="m-facts__v">{{ head.interval || '—' }}</div></div>
       </div>
       <div class="m-statushead__meta">Aturan status: {{ head.rule }}</div>
-      <a class="m-btn m-btn--ghost m-mt-3" *ngIf="head.phone" [href]="tel(head.phone)" [attr.aria-label]="'Telepon ' + (head.picName || 'PIC')">
-        <i class="bi bi-telephone" aria-hidden="true"></i> Telepon {{ head.picName || 'PIC' }} · {{ head.phone }}
-      </a>
     </div>
   </m-panel>
 

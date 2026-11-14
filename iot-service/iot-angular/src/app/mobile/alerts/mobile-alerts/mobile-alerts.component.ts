@@ -5,7 +5,7 @@ import { catchError, map, switchMap, take, takeUntil } from 'rxjs/operators';
 import { AlertEventsService } from '@sdk/core/services/alert-events.service';
 import { AutoRefreshService } from '@services/auto-refresh.service';
 import { listOf, parseBody, totalOf } from '@app/shared/utils/fetch-all';
-import { formatDuration, telHref, timeAgoId } from '@app/shared/utils/channel-display';
+import { formatDuration, timeAgoId } from '@app/shared/utils/channel-display';
 import { nodeLabel, nodeSubLabel, thresholdText } from '@app/shared/utils/channel-verdict';
 import { fetchActiveAlerts$, MobileProjectStore } from '../../shared/mobile-project-store.service';
 import { metricLabel, toNodeLite } from '../../shared/channel-rows';
@@ -16,7 +16,7 @@ import { mFormatNumber } from '../../shared/mobile-format';
 interface AlertVM {
   id: string; link: any[] | null; title: string; code: string;
   sev: Sev; sevLabel: string; line: string; time: string; when: string;
-  phone: string; phoneLabel: string; acked: boolean;
+  acked: boolean;
 }
 
 const PAGE = 20;
@@ -69,7 +69,7 @@ export class MobileAlertsComponent implements OnInit, OnDestroy {
       this.done$.next();
     });
     if (this.inProject) {
-      // nilai vs ambang & telepon PIC butuh data project (store)
+      // nilai vs ambang butuh data project (store)
       this.store!.state$.pipe(takeUntil(this.destroy$)).subscribe(() => {
         if (this.fromStore()) { this.applyStore(); } else { this.rebuild(); }
       });
@@ -125,7 +125,6 @@ export class MobileAlertsComponent implements OnInit, OnDestroy {
     });
   }
 
-  tel(p: string): string { return telHref(p); }
 
   private fetch$(page: number): Observable<{ list: any[]; total: number; err: string | null }> {
     const idProject = this.store?.pid || undefined;
@@ -190,8 +189,6 @@ export class MobileAlertsComponent implements OnInit, OnDestroy {
         line,
         time: (this.filter === 'history' ? 'Selesai ' : '') + timeAgoId(at, now),
         when: d && !isNaN(d.getTime()) ? formatDate(d, 'd MMM, HH:mm', this.locale) : '',
-        phone: nl.picPhone,
-        phoneLabel: nl.picName || 'PIC',
         acked: a.status === 'acknowledged'
       };
     });

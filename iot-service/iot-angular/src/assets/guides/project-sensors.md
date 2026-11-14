@@ -1,6 +1,6 @@
 ---
 title: Daftar Sensor Project
-version: 1.3.2
+version: 1.3.3
 updatedAt: 2026-11-13
 audience: operator, supervisor distribusi, admin
 sources: [src/app/pages/iot/projects/project-workspace/pages/sensors-page/sensors-page.component.ts, src/app/pages/iot/projects/project-workspace/pages/sensors-page/sensors-page.component.html, src/app/shared/utils/telemetry-freshness.ts, src/app/shared/utils/threshold.ts, src/app/shared/utils/fetch-all.ts]
@@ -9,7 +9,7 @@ related: [project-overview, sensor-channel-detail, node-detail]
 
 ## 1. Untuk apa halaman ini
 
-Halaman ini menampilkan **semua sensor di satu project** beserta nilai terakhir, status kirim datanya, dan apakah nilainya keluar dari batas (ambang) yang sudah diatur. Pakai untuk mencari titik pantau yang berhenti mengirim data, memeriksa titik yang tekanannya di luar batas, menghubungi penanggung jawabnya, dan membuat laporan Excel untuk atasan.
+Halaman ini menampilkan **semua sensor di satu project** beserta nilai terakhir, status kirim datanya, dan apakah nilainya keluar dari batas (ambang) yang sudah diatur. Pakai untuk mencari titik pantau yang berhenti mengirim data, memeriksa titik yang tekanannya di luar batas, mengetahui penanggung jawabnya, dan membuat laporan Excel untuk atasan.
 
 > **Node** = alat pencatat (logger) di satu titik. **Sensor** menempel pada node. Satu sensor bisa punya beberapa **channel** (misalnya tekanan dan debit). **Ambang** = batas bawah (min) dan batas atas (maks) yang dianggap normal untuk satu channel.
 
@@ -57,7 +57,7 @@ Ketik sebagian nama untuk mencari. Yang dicari:
 
 - nama sensor dan kode sensor,
 - kode node, **alamat** node, dan nama node,
-- nama atau nomor telepon penanggung jawab (PIC).
+- nama penanggung jawab (PIC).
 
 Huruf besar atau kecil tidak berpengaruh. Hasil muncul sekitar setengah detik setelah Anda berhenti mengetik.
 
@@ -72,7 +72,7 @@ Huruf besar atau kecil tidak berpengaruh. Hasil muncul sekitar setengah detik se
 | Updated | Waktu data terakhir (lihat penjelasan di bawah) |
 
 - Kolom **Node** memakai alamat sebagai nama utama. Kalau alamat kosong, yang tampil kode node. Klik alamat untuk membuka detail node.
-- Pada baris **bermasalah** (Stale, Offline, atau No Data), kalau node punya nomor telepon PIC, di kolom Node muncul baris dengan ikon telepon dan **nama PIC**. Nomornya tidak tampil di baris, tetapi ada di tooltip (arahkan kursor). Kalau nama PIC kosong, tertulis "Telepon PIC". Klik untuk menelepon (tautan `tel:`, jadi di komputer akan membuka aplikasi telepon yang terpasang, kalau ada). Klik ini tidak membuka detail sensor. Baris Fresh tidak menampilkan telepon ini, tetapi pencarian PIC tetap bekerja.
+- Kolom Node tidak punya tombol telepon. Nomor yang tersimpan pada node (di Excel: **Nomor SMS perangkat**) adalah nomor **perangkat** untuk mengirim perintah kontrol (misalnya restart lewat SMS), bukan nomor telepon orang. Perintah dikirim dari tab **Perintah** pada detail node.
 - Kolom **Status** menampilkan interval lapor node di bawah lencana, misalnya "tiap 15 dtk", "tiap 2 mnt", atau "tiap 1 jam". Kalau interval node tidak diketahui, baris ini tidak ada.
 - Kolom **Last Value**:
   - Satu baris per channel. Kalau sensor punya lebih dari satu channel, nama metrik tampil di depan nilainya. Klik satu baris untuk membuka channel itu.
@@ -135,7 +135,7 @@ Kolom di file:
 | Data Terakhir (WIB/WITA/WIT) | Tanggal dan jam data terakhir. Judul kolom menyebut zona waktu komputer Anda |
 | Keterangan | Diisi untuk baris Stale, Offline, No Data: "Data terakhir ... lalu", atau "Belum pernah kirim" (ditambah "· node terlihat ... lalu" kalau node pernah terlihat). Kosong untuk baris Fresh |
 | Interval Lapor (dtk) | Interval kirim node, dalam detik |
-| PIC, Telepon PIC | Penanggung jawab node |
+| PIC, Nomor SMS perangkat | PIC = penanggung jawab node. Nomor SMS perangkat = nomor perangkat untuk perintah kontrol (bukan telepon orang) |
 
 Arti **Status Ambang** di file:
 
@@ -165,7 +165,7 @@ Hal lain tentang file:
 4. Urutkan kolom **Updated** supaya yang paling lama diam ada di atas.
 5. Baca kolom **Updated**. Tulisan "sejak ..." menunjukkan kapan data terakhir masuk (bukan saat alat pasti mati). Kalau tertulis "Channel belum pernah kirim · node terakhir terlihat ...", alatnya hidup tetapi channel itu belum pernah mengirim nilai.
 6. Arahkan kursor ke lencana status untuk melihat ambang waktunya.
-7. Hubungi PIC lewat tautan telepon di kolom **Node** pada baris itu. Atau klik alamat node untuk memeriksa detail alat.
+7. Klik alamat node untuk memeriksa detail alat. Bila perlu me-restart perangkat, kirim perintah dari tab **Perintah** pada detail node.
 8. Untuk menghapus chip, klik tanda **×** di chip itu.
 9. Untuk laporan, klik **Ekspor Excel** (lihat tugas berikutnya).
 
@@ -176,7 +176,7 @@ Hal lain tentang file:
 3. Di kolom **Last Value**, cari nilai merah dengan panah. Baca catatan di bawahnya: "di bawah min 0.5" berarti tekanan lebih rendah dari batas bawah, "di atas maks 5" berarti lebih tinggi dari batas atas.
 4. Arahkan kursor ke nilai itu untuk melihat ambang lengkapnya, misalnya "Ambang 0.5–5 bar".
 5. Klik nilai (atau barisnya) untuk membuka detail sensor. Lihat grafik, apakah turun mendadak atau sudah lama rendah.
-6. Periksa kalibrasi dan kondisi lapangan: sensor lepas, kabel, katup tertutup sebagian, atau memang gangguan distribusi. Hubungi PIC dari kolom **Node** kalau perlu (telepon hanya tampil di baris bermasalah, yaitu Stale, Offline, No Data).
+6. Periksa kalibrasi dan kondisi lapangan: sensor lepas, kabel, katup tertutup sebagian, atau memang gangguan distribusi. Kalau perangkat perlu di-restart, kirim perintah dari tab **Perintah** pada detail node.
 7. Kalau batas dirasa tidak cocok, ubah di halaman detail sensor, kartu **Ambang**, tombol **Atur**.
 8. Untuk laporan, klik **Ekspor Excel** saat tab **Di luar ambang** aktif. Kolom **Status Ambang** memuat keterangannya.
 
@@ -186,7 +186,7 @@ Hal lain tentang file:
 2. Kalau perlu, ketik lokasi atau nama PIC di kotak pencarian, dan urutkan kolom sesuai selera (misalnya **Updated** supaya yang terlama di atas).
 3. Klik **Ekspor Excel** di header. Tunggu sampai file terunduh.
 4. Buka file. Isinya mengikuti tab atau filter, pencarian, dan urutan tadi, semua halaman, satu baris per channel.
-5. Pakai kolom **Keterangan** untuk bahasa siap tulis ("Data terakhir 5 jam lalu"), kolom **Status Ambang** untuk kondisi batas, dan **PIC** serta **Telepon PIC** untuk tindak lanjut.
+5. Pakai kolom **Keterangan** untuk bahasa siap tulis ("Data terakhir 5 jam lalu"), kolom **Status Ambang** untuk kondisi batas, dan **PIC** serta **Nomor SMS perangkat** untuk tindak lanjut.
 6. Cantumkan jam unduh dari nama file di laporan. Angka "lalu" di kolom Keterangan dihitung pada saat Anda mengunduh.
 
 ### Mencari sensor di lokasi tertentu
@@ -196,7 +196,7 @@ Hal lain tentang file:
 
 ### Melihat tren sebuah sensor
 
-1. Klik barisnya (di mana saja selain alamat node dan telepon PIC). Anda dibawa ke detail sensor.
+1. Klik barisnya (di mana saja selain alamat node). Anda dibawa ke detail sensor.
 2. Untuk sensor multi-channel, klik langsung nama channel yang diinginkan.
 3. Di halaman detail, pilih periode dan lihat grafiknya (lihat panduan Detail Sensor Channel).
 
@@ -306,8 +306,8 @@ Karena nilai terakhir sensor tidak dapat dibaca dari server data, dan banner kun
 **Kenapa chip merah "Filter: Mati / belum pernah kirim" muncul dan tidak ada tabnya?**
 Chip itu muncul karena Anda mengklik kartu **Mati / belum pernah kirim**. Isinya Offline dan No Data digabung. Klik **×** di chip untuk menghapus, atau klik tab lain.
 
-**Kenapa tidak ada nomor telepon PIC di baris saya?**
-Nomor hanya tampil di baris Stale, Offline, dan No Data, dan hanya kalau node punya nomor PIC. Baris Fresh tidak menampilkannya. Kalau barisnya bermasalah tetapi tidak ada nomor, data PIC node itu belum terisi. Hubungi admin.
+**Kenapa tidak ada tombol untuk menelepon PIC?**
+Nomor pada node bukan telepon orang, melainkan nomor perangkat untuk mengirim perintah kontrol (SMS restart dan sejenisnya). Karena itu halaman ini tidak menyediakan tautan telepon. Kirim perintah dari tab **Perintah** pada detail node.
 
 **Kenapa tombol Ekspor Excel tidak bisa diklik?**
 Data sedang dimuat, ekspor sebelumnya masih berjalan, daftar kosong karena tab atau pencarian tidak menemukan sensor, atau banner kuning "nilai terakhir tidak dapat dibaca" sedang tampil. Tunggu sebentar, atau klik tab **All** dan kosongkan kotak pencarian.

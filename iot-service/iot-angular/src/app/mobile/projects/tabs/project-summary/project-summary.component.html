@@ -126,9 +126,6 @@
         <div class="m-list__sub" *ngIf="a.code">{{ a.code }}</div>
         <div class="m-attn__line">{{ a.line }}<ng-container *ngIf="a.time"> · {{ a.time }}</ng-container></div>
       </a>
-      <a class="m-callbtn" *ngIf="a.phone" [href]="tel(a.phone)" [attr.aria-label]="'Telepon ' + a.phoneLabel + ' ' + a.title" title="Telepon PIC">
-        <i class="bi bi-telephone" aria-hidden="true"></i>
-      </a>
     </div>
 
     <div class="m-panel__foot" *ngIf="s.alerts && s.alerts.total > s.alerts.list.length">

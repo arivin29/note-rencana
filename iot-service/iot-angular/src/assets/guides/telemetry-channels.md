@@ -1,6 +1,6 @@
 ---
 title: Kanal Telemetri
-version: 1.0.1
+version: 1.0.2
 updatedAt: 2026-11-13
 audience: operator, supervisor distribusi, admin
 sources: [src/app/pages/iot/telemetry-channels/telemetry-channels-list/telemetry-channels-list.ts, src/app/pages/iot/telemetry-channels/telemetry-channels-list/telemetry-channels-list.html, src/app/shared/utils/channel-display.ts, src/app/shared/utils/telemetry-freshness.ts, src/app/shared/utils/threshold.ts, src/app/shared/utils/fetch-all.ts]
@@ -9,7 +9,7 @@ related: [project-sensors, sensor-channel-detail, project-overview]
 
 ## 1. Untuk apa halaman ini
 
-Halaman ini menampilkan **semua channel telemetri dari semua project yang boleh Anda lihat** dalam satu tabel: nilai terakhir, status kirim datanya, dan apakah nilainya keluar dari ambang. Pakai untuk menyapu seluruh wilayah sekaligus pada pagi hari: mana yang berhenti mengirim data, mana yang di luar batas, project mana yang paling banyak masalah, lalu menghubungi PIC atau membuat laporan Excel.
+Halaman ini menampilkan **semua channel telemetri dari semua project yang boleh Anda lihat** dalam satu tabel: nilai terakhir, status kirim datanya, dan apakah nilainya keluar dari ambang. Pakai untuk menyapu seluruh wilayah sekaligus pada pagi hari: mana yang berhenti mengirim data, mana yang di luar batas, project mana yang paling banyak masalah, lalu membuat laporan Excel.
 
 > **Node** = alat pencatat (logger) di satu titik. **Sensor** menempel pada node. Satu sensor bisa punya beberapa **channel** (misalnya tekanan dan debit). **Ambang** = batas bawah (min) dan batas atas (maks) yang dianggap normal untuk satu channel.
 
@@ -23,7 +23,7 @@ Halaman ini menampilkan **semua channel telemetri dari semua project yang boleh 
 
 - Satu baris = **satu channel**, bukan satu sensor. Sensor dengan dua channel tampil dua baris.
 - Lintas project. Nama project tampil di kolom **Node**.
-- Status, penanda ambang, dan telepon PIC dinilai **per channel**.
+- Status dan penanda ambang dinilai **per channel**.
 - Kartu ringkasan dan jumlah di tab **ikut berubah** mengikuti filter dan pencarian (di tab Sensors tidak).
 
 ## 2. Bagian-bagian layar
@@ -79,21 +79,21 @@ Tab **Di luar ambang** berisi channel yang nilainya melewati ambang **dan datany
 - **Filter lanjutan**: klik tombolnya untuk membuka **Jenis ukuran**.
 - Semua filter aktif tampil sebagai **chip** di atas tabel (Status, Owner, Project, Kelompok, Jenis, Cari). Klik **×** untuk melepas satu filter, atau **Reset filter** untuk melepas semuanya.
 
-**Kotak Cari** mencari di: alamat node, kode node, nama sensor, kode sensor, metrik, nama project, nama dan telepon PIC, serta kelompok. Huruf besar atau kecil tidak berpengaruh. Hasil muncul sekitar setengah detik setelah Anda berhenti mengetik. Owner dan Jenis ukuran tidak ikut dicari (gunakan filternya).
+**Kotak Cari** mencari di: alamat node, kode node, nama sensor, kode sensor, metrik, nama project, nama PIC, serta kelompok. Huruf besar atau kecil tidak berpengaruh. Hasil muncul sekitar setengah detik setelah Anda berhenti mengetik. Owner dan Jenis ukuran tidak ikut dicari (gunakan filternya).
 
 ### Tabel channel
 
 | Kolom | Isinya |
 |---|---|
 | Kanal | Metrik (nama channel). Baris kedua: nama sensor · kelompok |
-| Node | Alamat node (kode di bawahnya), nama project, telepon PIC |
+| Node | Alamat node (kode di bawahnya), nama project |
 | Nilai terakhir | Nilai dengan satuan, tren 24 jam, penanda ambang |
 | Status | Lencana Fresh / Stale / Offline / No Data, interval lapor |
 | Data terakhir | Waktu data terakhir channel |
 
 - **Klik baris** membuka **detail sensor di dalam workspace project**-nya, langsung pada channel yang Anda klik. Kalau channel tidak punya project, dibuka lewat halaman node.
 - Klik **alamat node** membuka detail node (bukan detail sensor).
-- Kolom **Node**: kalau alamat kosong, yang tampil kode node. Telepon PIC (ikon telepon dan nama PIC) tampil di baris **bermasalah**, yaitu Stale, Offline, No Data, **atau Fresh yang di luar ambang**, dan hanya kalau node punya nomor. Nomor ada di tooltip. Kalau nama kosong, tertulis "Telepon PIC". Klik untuk menelepon (tautan `tel:`, di komputer membuka aplikasi telepon bila ada).
+- Kolom **Node**: kalau alamat kosong, yang tampil kode node. Kolom ini tidak punya tombol telepon. Nomor yang tersimpan pada node adalah nomor **perangkat** untuk mengirim perintah kontrol (SMS restart dan sejenisnya), bukan telepon orang. Perintah dikirim dari tab **Perintah** pada detail node.
 - Kolom **Status** menampilkan interval lapor node, mis. "tiap 15 dtk", "tiap 2 mnt", "tiap 1 jam". Kalau tidak diketahui, baris ini tidak ada.
 - Kolom **Nilai terakhir**: jumlah desimal mengikuti **presisi channel** (kalau belum diatur, 2 desimal). Nilai kosong ditulis "-". Arahkan kursor untuk melihat ambang, mis. "Ambang 0,5–5 bar", atau **"Ambang belum diatur"**.
 - Kolom **Data terakhir**:
@@ -153,7 +153,7 @@ Kolom di file, urut dari kiri:
 | Status | Fresh / Stale / Offline / No Data |
 | Data Terakhir (WIB/WITA/WIT) | Judul menyebut zona waktu komputer Anda |
 | Keterangan | Hanya untuk **Offline dan No Data**: "Data terakhir ... lalu" atau "Belum pernah kirim", ditambah "node terlihat ... lalu". Kosong untuk Fresh dan Stale |
-| Interval Lapor (dtk), PIC, Telepon PIC | Data node |
+| Interval Lapor (dtk), PIC, Nomor SMS perangkat | Data node (Nomor SMS perangkat = nomor perangkat untuk perintah kontrol, bukan telepon orang) |
 
 Hal lain tentang file:
 
@@ -171,7 +171,7 @@ Hal lain tentang file:
 2. Lihat kartu **Project terdampak**: berapa project yang punya masalah dan project mana yang terbanyak.
 3. Klik kartu itu. Tabel menampilkan semua channel bermasalah, dengan chip merah "Bermasalah".
 4. Urutan awal sudah menaruh yang terparah di atas. Baca kolom **Status** dan **Data terakhir**.
-5. Klik baris untuk membuka detail sensor pada channel itu, atau hubungi PIC lewat telepon di kolom **Node**.
+5. Klik baris untuk membuka detail sensor pada channel itu, atau kirim perintah ke perangkat dari tab **Perintah** pada detail node.
 
 ### Mencari titik pantau yang mati
 
@@ -179,7 +179,7 @@ Hal lain tentang file:
 2. Klik kartu. Tabel menyaring Offline dan No Data sekaligus. Untuk memisahkan, klik tab **Offline** atau **No Data**. Untuk yang baru terlambat, klik kartu **Terlambat**.
 3. Urutkan **Data terakhir** supaya yang paling lama diam di atas.
 4. Baca "sejak ..." dan, untuk yang belum pernah kirim, "node terlihat ...".
-5. Hubungi PIC lewat telepon di kolom **Node** (tampil di baris bermasalah).
+5. Bila perangkat perlu di-restart, kirim perintah dari tab **Perintah** pada detail node.
 6. Hapus chip dengan **×**.
 
 ### Mempersempit ke satu owner atau project (admin)
@@ -207,7 +207,7 @@ Hal lain tentang file:
 1. Pilih owner, project, tab, dan pencarian yang ingin dilaporkan. Urutkan sesuai selera.
 2. Klik **Ekspor Excel** dan tunggu file terunduh.
 3. File mengikuti pilihan Anda, semua halaman. Kolom **Owner** (admin), **Project**, **Kelompok**, dan **Jenis Ukuran** membantu mengelompokkan.
-4. Pakai **Keterangan** untuk kalimat siap tulis dan **PIC** serta **Telepon PIC** untuk tindak lanjut.
+4. Pakai **Keterangan** untuk kalimat siap tulis dan **PIC** serta **Nomor SMS perangkat** untuk tindak lanjut.
 5. Cantumkan jam unduh dari nama file. File adalah potret saat diunduh.
 
 ## 4. Arti status, warna & angka
@@ -296,8 +296,8 @@ Di halaman ini kartu dan tab menghitung channel yang lolos filter Owner, Project
 **Kenapa chip merah "Bermasalah" atau "Mati / belum pernah kirim" tidak punya tab?**
 Chip itu muncul karena Anda mengklik kartu **Project terdampak** atau **Mati / belum pernah kirim**. Klik **×** untuk menghapus, atau klik tab lain.
 
-**Kenapa nomor telepon PIC tidak ada di baris saya?**
-Nomor hanya tampil di baris bermasalah (Stale, Offline, No Data, atau Fresh yang di luar ambang), dan hanya kalau node punya nomor PIC. Kalau barisnya bermasalah tetapi tidak ada nomor, data PIC node belum terisi. Hubungi admin.
+**Kenapa tidak ada tombol untuk menelepon PIC?**
+Nomor pada node bukan telepon orang, melainkan nomor perangkat untuk mengirim perintah kontrol (SMS restart dan sejenisnya). Karena itu halaman ini tidak menyediakan tautan telepon. Kirim perintah dari tab **Perintah** pada detail node.
 
 **Kenapa klik baris tidak membuka apa-apa?**
 Channel itu tidak terhubung ke node atau sensor, jadi detailnya tidak bisa dibuka. Hubungi admin.

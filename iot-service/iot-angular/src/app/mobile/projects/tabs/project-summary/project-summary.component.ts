@@ -2,7 +2,7 @@ import { Component, Inject, LOCALE_ID, OnDestroy, OnInit } from '@angular/core';
 import { combineLatest, interval, Subject } from 'rxjs';
 import { startWith, takeUntil } from 'rxjs/operators';
 import { ScadaDiagram, ScadaService } from '@services/scada.service';
-import { deadSinceText, formatDuration, formatInterval, telHref, timeAgoId } from '@app/shared/utils/channel-display';
+import { deadSinceText, formatDuration, formatInterval, timeAgoId } from '@app/shared/utils/channel-display';
 import { nodeLabel, nodeSubLabel, thresholdText } from '@app/shared/utils/channel-verdict';
 import { Freshness } from '@app/shared/utils/telemetry-freshness';
 import { MobileProjectStore, ProjectData } from '../../../shared/mobile-project-store.service';
@@ -24,8 +24,6 @@ interface AttnItem {
   tone: MTone;
   line: string;
   time: string;
-  phone: string;
-  phoneLabel: string;
   link: any[];
 }
 
@@ -39,7 +37,7 @@ const KEY_NODES_MAX = 6;
 /**
  * Ringkasan project (pengganti Dashboard): bar status perangkat Aktif/Terlambat/Offline/Belum ada
  * data (getFreshness), 4 KPI yang membuka daftar terfilter, "Perlu perhatian" (peringatan aktif +
- * channel di luar ambang + perangkat mati, dengan alamat, nilai vs ambang, telepon PIC) dan
+ * channel di luar ambang + perangkat mati, dengan alamat, nilai vs ambang) dan
  * kartu Bagan SCADA (layar penuh). Data dari MobileProjectStore (dibagi dengan tab lain).
  */
 @Component({
@@ -97,7 +95,6 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
     });
   }
 
-  tel(p: string): string { return telHref(p); }
   trackById(_: number, n: KeyNode): string { return n.id; }
   get freshCount(): number { return this.segs[0]?.n || 0; }
   /** warna garis severity kiri baris perhatian */
@@ -196,8 +193,6 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
         tone: severityTone(a.severity) === 'info' ? 'off' : severityTone(a.severity) as MTone,
         line,
         time: timeAgoId(a.triggeredAt || a.createdAt, now),
-        phone: nl.picPhone,
-        phoneLabel: nl.picName || 'PIC',
         link: nid ? ['/mobile/p', this.pid, 'nodes', nid] : ['/mobile/p', this.pid, 'peringatan']
       });
     }
@@ -209,7 +204,6 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
         badge: 'Di luar ambang', tone: 'danger',
         line: `${r.metricLabel} ${r.valueText} ${r.unit} · ${r.outText || r.thresholdText}`.trim(),
         time: r.lastAt ? timeAgoId(r.lastAt, now) : '',
-        phone: n.picPhone, phoneLabel: n.picName || 'PIC',
         link: r.link
       });
     }
@@ -224,7 +218,6 @@ export class MobileProjectSummaryComponent implements OnInit, OnDestroy {
         badge: FRESHNESS_LABEL_ID[f], tone: FRESHNESS_TONE[f],
         line: deadSinceText(cleanTs(n.lastSeenAt), now),
         time: '',
-        phone: nl.picPhone, phoneLabel: nl.picName || 'PIC',
         link: ['/mobile/p', this.pid, 'nodes', n.idNode]
       });
     }

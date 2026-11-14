@@ -59,7 +59,7 @@
 
   .m-stat__hint { font-size: var(--m-xs); color: var(--m-text-muted); margin-top: -4px; }
 
-  /* ---- baris "perlu perhatian" / perangkat / peringatan (baris + tombol telepon) ---- */
+  /* ---- baris "perlu perhatian" / perangkat / peringatan (baris) ---- */
   .m-attn { display: flex; align-items: stretch; border-bottom: 1px solid var(--m-hair); position: relative; }
   .m-attn__sev { position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--m-off); }
   .m-attn__sev--ok { background: var(--m-ok); } .m-attn__sev--warn { background: var(--m-warn); } .m-attn__sev--danger { background: var(--m-danger); }
@@ -76,12 +76,6 @@
   .m-attn__line i { width: 13px; text-align: center; color: var(--m-text-dim); }
   .m-attn__line b { color: var(--m-text); font-weight: 500; }
   .m-attn__reads { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--m-hair); }
-  .m-callbtn {
-    flex: 0 0 auto; width: 52px; min-height: var(--m-tap);
-    display: flex; align-items: center; justify-content: center;
-    border-left: 1px solid var(--m-hair); color: var(--m-theme); font-size: 18px; text-decoration: none;
-  }
-  .m-callbtn:active { background: rgba(var(--m-theme-rgb), .08); }
   .m-more { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: var(--m-tap); padding: 0 var(--m-1); text-decoration: none; }
   .m-empty--sm { padding: 14px 12px; }
 

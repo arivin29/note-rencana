@@ -15,7 +15,7 @@ import {
 import { decimalsFromPrecision, excelNumFmt, thresholdState, ThresholdState } from '../../../../shared/utils/threshold';
 import {
   ChannelTrend, deadSinceText, excelThresholdLabel, fileStamp, formatDuration, formatInterval,
-  hasSparkPoints, localTzLabel, nodeSeenText, sparkPath, telHref, timeAgoId, toExcelLocal
+  hasSparkPoints, localTzLabel, nodeSeenText, sparkPath, timeAgoId, toExcelLocal
 } from '../../../../shared/utils/channel-display';
 
 /** One row = one CHANNEL (flattened from /api/sensors → sensor.channels[]). */
@@ -375,7 +375,7 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
     r.intervalText = formatInterval(r.intervalSec);
     r.deadText = deadSinceText(r.lastValueAt, this.nowMs, this.latestAvailable);
     r.seenText = r.lastValueAt ? '' : nodeSeenText(r.nodeLastSeenAt, this.nowMs);
-    r.search = [r.nodeAddress, r.nodeCode, r.sensorLabel, r.sensorCode, r.metricCode, r.projectName, r.picName, r.picPhone, r.groupName]
+    r.search = [r.nodeAddress, r.nodeCode, r.sensorLabel, r.sensorCode, r.metricCode, r.projectName, r.picName, r.groupName]
       .join(' ').toLowerCase();
   }
 
@@ -668,10 +668,6 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
     return formatDuration(ms);
   }
 
-  telHref(phone: string): string {
-    return telHref(phone);
-  }
-
   // ---------------------------------------------------------------------------
   // Navigation (canonical workspace URLs)
   // ---------------------------------------------------------------------------
@@ -735,7 +731,7 @@ export class TelemetryChannelsListPage implements OnInit, OnDestroy {
         { header: 'Keterangan', key: 'note', width: 30 },
         { header: 'Interval Lapor (dtk)', key: 'interval', width: 12 },
         { header: 'PIC', key: 'pic', width: 18 },
-        { header: 'Telepon PIC', key: 'phone', width: 16 }
+        { header: 'Nomor SMS perangkat', key: 'phone', width: 16 }
       ];
       ws.getRow(1).font = { bold: true };
       ws.views = [{ state: 'frozen', ySplit: 1 }];

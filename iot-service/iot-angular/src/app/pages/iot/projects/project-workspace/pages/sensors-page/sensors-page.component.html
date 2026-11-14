@@ -199,11 +199,6 @@
                                         {{ sensor.node.address || sensor.node.code }}
                                     </a>
                                     <div class="text-muted small" *ngIf="sensor.node.address">{{ sensor.node.code }}</div>
-                                    <a *ngIf="isProblem(sensor) && sensor.node.picPhone" class="small text-decoration-none d-inline-block text-truncate cell-mw"
-                                        [href]="telHref(sensor.node.picPhone)" (click)="stop($event)"
-                                        [title]="'Telepon PIC ' + (sensor.node.picName || '') + ' · ' + sensor.node.picPhone">
-                                        <i class="fa fa-phone fa-fw"></i>{{ sensor.node.picName || 'Telepon PIC' }}
-                                    </a>
                                 </ng-container>
                                 <ng-template #noNode><span class="text-muted">-</span></ng-template>
                             </td>
